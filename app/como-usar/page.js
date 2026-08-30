@@ -1,0 +1,331 @@
+import Link from 'next/link'
+import TabletMockup from '@/components/TabletMockup'
+import { Breadcrumbs, SectionHead, Faq, Check } from '@/components/ui'
+import { tools, steps, usos } from '@/lib/tools'
+import { faq } from '@/lib/faq'
+import { site, priceBRL } from '@/lib/site'
+
+export const metadata = {
+  title: 'Como usar multitrack na igreja: guia completo (Reaper, Ableton e tablet)',
+  description:
+    'Guia prático de como tocar com multitrack gospel na igreja: qual programa usar, como separar clique e guia do mix da banda, que interface de áudio comprar e como rodar tudo no tablet.',
+  alternates: { canonical: '/como-usar' },
+  openGraph: {
+    title: 'Como usar multitrack na igreja — guia completo',
+    description:
+      'Reaper, Ableton Live, Prime no iPad, roteamento de clique e guia, interface de áudio e passo a passo até o domingo.',
+    url: `${site.url}/como-usar`,
+    type: 'article',
+  },
+}
+
+const howToLd = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'Como usar multitrack gospel na igreja',
+  description:
+    'Passo a passo para tocar com multitracks (VS) no culto: baixar, abrir no programa, separar clique e guia, ajustar canais e ensaiar.',
+  inLanguage: 'pt-BR',
+  totalTime: 'PT40M',
+  tool: [
+    { '@type': 'HowToTool', name: 'Notebook ou tablet' },
+    { '@type': 'HowToTool', name: 'Interface de áudio com 2 ou mais saídas' },
+    { '@type': 'HowToTool', name: 'Fone de ouvido para o clique' },
+    { '@type': 'HowToTool', name: 'Cabos P10 ou XLR balanceados' },
+  ],
+  step: steps.map((s, i) => ({
+    '@type': 'HowToStep',
+    position: i + 1,
+    name: s.title,
+    text: s.body,
+  })),
+}
+
+const equipamentos = [
+  {
+    t: 'Notebook ou tablet',
+    d: 'Não precisa ser potente. Um i3 ou um iPad de entrada já roda 10 canais sem estalar, desde que você feche o resto dos programas.',
+  },
+  {
+    t: 'Interface de áudio',
+    d: 'O item mais importante. Com 2 saídas já dá para separar clique do mix; com 4 ou mais, você manda canais independentes para a mesa.',
+  },
+  {
+    t: 'Fone de ouvido fechado',
+    d: 'Para o baterista e para quem conduz. Fechado porque não pode vazar clique no microfone da igreja.',
+  },
+  {
+    t: 'Cabos P10 ou XLR',
+    d: 'Balanceados, do tamanho certo. Cabo ruim é a causa número um de chiado na trilha.',
+  },
+  {
+    t: 'Um canal reservado na mesa',
+    d: 'Combine com o operador de som quais canais da mesa são da trilha, para ele não precisar caçar no meio do culto.',
+  },
+  {
+    t: 'Um plano B',
+    d: 'Deixe as trilhas também num pendrive ou no celular. Notebook trava; o culto não pode parar.',
+  },
+]
+
+export default function ComoUsarPage() {
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }} />
+
+      <div className="shell pt-10">
+        <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Como usar' }]} />
+
+        <header className="mt-7 max-w-3xl border-b border-line pb-12">
+          <span className="eyebrow">Guia completo</span>
+          <h1 className="mt-5 text-[38px] font-extrabold leading-[1.06] tracking-[-0.042em] text-ink sm:text-[52px]">
+            Como usar multitrack na sua igreja
+          </h1>
+          <p className="mt-5 text-[18px] leading-[1.65] text-ink-muted">
+            Se a sua banda é pequena, se falta um instrumento ou se você quer que o som de domingo
+            chegue mais perto do que se ouve no Spotify, o multitrack resolve. Este guia mostra o
+            caminho inteiro: qual programa usar, como ligar na mesa e como não errar no meio do
+            culto.
+          </p>
+        </header>
+      </div>
+
+      <section className="shell pt-16">
+        <div className="grid gap-12 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
+          <div className="prose-tv max-w-xl">
+            <h2 className="!mt-0">Playback fechado x multitrack</h2>
+            <p>
+              O <strong>playback tradicional</strong> é um arquivo só, com tudo misturado. Se a sua
+              banda tem baterista, azar: a bateria do playback continua tocando por cima.
+            </p>
+            <p>
+              O <strong>multitrack (ou VS)</strong> entrega a mesma música aberta em canais
+              separados. Você muta a bateria, muta a guitarra, deixa só os pads e os sopros, e a sua
+              equipe toca o resto ao vivo. É por isso que praticamente toda igreja grande no Brasil
+              trabalha assim hoje.
+            </p>
+            <p>
+              Junto com os instrumentos vêm dois canais que nunca vão para a caixa de som:{' '}
+              <strong>o clique</strong> (o metrônomo que mantém a banda no tempo) e{' '}
+              <strong>a guia</strong> (uma voz avisando &ldquo;refrão&rdquo;, &ldquo;ponte&rdquo;,
+              &ldquo;último&rdquo;). Esses dois vão só para o fone da equipe.
+            </p>
+          </div>
+
+          <div className="relative">
+            <TabletMockup />
+          </div>
+        </div>
+      </section>
+
+      <section className="shell pt-20 sm:pt-28">
+        <SectionHead
+          eyebrow="Passo a passo"
+          title="Do download ao domingo"
+          sub="Cinco passos. Nenhum deles exige que você seja técnico de áudio."
+        />
+        <ol className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line lg:grid-cols-2">
+          {steps.map((s) => (
+            <li key={s.n} className="flex gap-5 bg-white p-7">
+              <span className="mt-0.5 text-[13px] font-bold tabular-nums text-flame-500">{s.n}</span>
+              <div>
+                <h3 className="text-[17px] font-semibold tracking-[-0.02em] text-ink">{s.title}</h3>
+                <p className="mt-2 text-[15px] leading-[1.68] text-ink-muted">{s.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section id="reaper" className="mt-20 scroll-mt-24 bg-surface py-20 sm:mt-28 sm:py-28">
+        <div className="shell">
+          <SectionHead
+            eyebrow="Programas"
+            title="Qual software usar para rodar multitrack"
+            sub="Todos abaixo dão conta do recado. A diferença está no bolso, no sistema operacional e em quanto você quer aprender."
+          />
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+            {tools.map((t) => (
+              <article key={t.slug} id={t.slug} className="card scroll-mt-24 p-7 sm:p-8">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h3 className="text-[22px] font-bold tracking-[-0.03em] text-ink">{t.name}</h3>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wide ${
+                      t.badge === 'Recomendado'
+                        ? 'bg-flame-500/12 text-flame-600'
+                        : t.badge === 'Grátis'
+                          ? 'bg-emerald-500/12 text-emerald-700'
+                          : 'bg-brand-50 text-brand-600'
+                    }`}
+                  >
+                    {t.badge}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[13px] font-medium text-ink-faint">{t.platform}</p>
+                <p className="mt-4 text-[15px] leading-[1.68] text-ink-muted">{t.summary}</p>
+                <ul className="mt-5 space-y-2.5">
+                  {t.why.map((w) => (
+                    <li key={w} className="flex items-start gap-2.5 text-[14.5px] leading-[1.55] text-ink-muted">
+                      <Check className="mt-0.5 shrink-0 text-brand-600" />
+                      {w}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
+                  <p className="text-[13px] font-medium text-ink">{t.price}</p>
+                  <a
+                    href={t.url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="text-[13.5px] font-semibold text-brand-600 hover:text-brand-700"
+                  >
+                    Site oficial →
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-10 rounded-2xl border border-line bg-white p-7 sm:p-8">
+            <h3 className="text-[18px] font-bold tracking-[-0.025em] text-ink">
+              Se você está começando hoje, faça assim
+            </h3>
+            <p className="mt-3 max-w-3xl text-[15.5px] leading-[1.7] text-ink-muted">
+              Instale o <strong className="font-semibold text-ink">REAPER</strong> e use os 60 dias
+              de avaliação completa para testar sem gastar nada. Monte uma música, ligue na mesa,
+              rode um ensaio. Se funcionar (e vai funcionar), a licença pessoal é barata perto de
+              qualquer outra DAW. Se a igreja usa só iPad,{' '}
+              <strong className="font-semibold text-ink">Prime</strong> é o caminho mais curto.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="shell pt-20 sm:pt-28">
+        <div className="grid gap-12 lg:grid-cols-[1fr_1.05fr] lg:gap-16">
+          <div className="prose-tv">
+            <h2 className="!mt-0">O segredo está no roteamento</h2>
+            <p>
+              Noventa por cento dos problemas com trilha ao vivo vêm daqui: o clique vazou para a
+              caixa de som. A regra é simples e não muda de igreja para igreja.
+            </p>
+            <ul>
+              <li>
+                <strong>Saída 1 (fones):</strong> clique + guia. Vai para o retorno do baterista e de
+                quem conduz o louvor. Nunca para o público.
+              </li>
+              <li>
+                <strong>Saída 2 (PA):</strong> a soma dos instrumentos da trilha. É o que a igreja
+                ouve.
+              </li>
+              <li>
+                <strong>Saídas 3 e 4 (opcional):</strong> se a sua interface tiver, mande grupos
+                separados — teclado num canal, pads noutro — e deixe o operador de som mixar na mesa.
+              </li>
+            </ul>
+            <p>
+              No REAPER isso é resolvido em dois minutos: selecione as faixas de clique e guia, abra o
+              roteamento e mande para o par de saídas 1/2 da interface; deixe todo o resto no par
+              3/4. Feito uma vez, salve como modelo de projeto e reutilize em toda música.
+            </p>
+          </div>
+
+          <div className="rounded-[24px] border border-line bg-ink p-8 text-white sm:p-10">
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-white/50">
+              Checklist antes do culto
+            </h3>
+            <ul className="mt-6 space-y-4">
+              {[
+                'Projeto salvo e testado com a banda inteira',
+                'Clique só no fone — confirme pedindo silêncio no PA',
+                'Volume da trilha ajustado com a igreja vazia e depois cheia',
+                'Notebook no modo alto desempenho, Wi-Fi e notificações desligados',
+                'Bateria do tablet acima de 80% ou na tomada',
+                'Cópia das músicas do dia num pendrive',
+              ].map((t) => (
+                <li key={t} className="flex items-start gap-3 text-[15px] leading-[1.55] text-white/75">
+                  <Check className="mt-0.5 shrink-0 text-flame-400" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="tablet" className="shell scroll-mt-24 pt-20 sm:pt-28">
+        <SectionHead
+          eyebrow="No tablet"
+          title="Subir no palco só com um tablet"
+          sub="Muita igreja abandonou o notebook. O tablet liga mais rápido, não trava com atualização do sistema no meio do culto e ocupa menos espaço no praticável."
+        />
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            {
+              t: 'No iPad',
+              d: 'O app Prime, da Loop Community, aceita os seus próprios arquivos e já separa o clique dos instrumentos entre os canais esquerdo e direito. Com um cabo P2 em Y você resolve sem interface.',
+            },
+            {
+              t: 'Com interface',
+              d: 'Uma interface compacta ligada ao tablet libera saídas de verdade: clique num canal, mix noutro, tudo balanceado até a mesa.',
+            },
+            {
+              t: 'Setlist na tela',
+              d: 'Deixe as músicas do domingo em ordem, com marcação de entrada. Quem conduz o louvor toca na tela e a próxima música já entra.',
+            },
+          ].map((c) => (
+            <div key={c.t} className="card p-7">
+              <h3 className="text-[17px] font-semibold tracking-[-0.02em] text-ink">{c.t}</h3>
+              <p className="mt-2.5 text-[15px] leading-[1.68] text-ink-muted">{c.d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="shell pt-20 sm:pt-28">
+        <SectionHead eyebrow="Equipamentos" title="O que você realmente precisa comprar" />
+        <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
+          {equipamentos.map((e) => (
+            <div key={e.t} className="bg-white p-7">
+              <h3 className="text-[16.5px] font-semibold tracking-[-0.02em] text-ink">{e.t}</h3>
+              <p className="mt-2.5 text-[14.5px] leading-[1.65] text-ink-muted">{e.d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="shell pt-20 sm:pt-28">
+        <SectionHead eyebrow="Onde usar" title="Não é só no domingo de manhã" />
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {usos.map((u) => (
+            <div key={u.title} className="card p-6">
+              <h3 className="text-[16.5px] font-semibold tracking-[-0.02em] text-ink">{u.title}</h3>
+              <p className="mt-2.5 text-[14.5px] leading-[1.65] text-ink-muted">{u.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="shell pt-20 sm:pt-28">
+        <SectionHead eyebrow="Dúvidas" title="Perguntas sobre uso" />
+        <Faq items={faq.slice(3, 9)} className="mt-10" />
+      </section>
+
+      <section className="shell pt-20 sm:pt-28">
+        <div className="rounded-[28px] border border-line bg-surface px-8 py-12 text-center sm:px-14 sm:py-16">
+          <h2 className="mx-auto max-w-2xl text-[28px] font-bold leading-[1.12] tracking-[-0.035em] text-ink sm:text-[38px]">
+            Agora só falta o acervo.
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-[16.5px] leading-[1.6] text-ink-muted">
+            Mais de 4.000 multitracks gospel com clique, guia e canais separados — em um pacote
+            único, por {priceBRL(site.price)}.
+          </p>
+          <Link href="/assinar" className="btn-flame mt-8">
+            Liberar meu acesso
+          </Link>
+        </div>
+      </section>
+    </>
+  )
+}
