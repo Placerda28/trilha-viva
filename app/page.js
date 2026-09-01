@@ -89,7 +89,7 @@ export default function Home() {
 
               <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link href="/assinar" className="btn-accent w-full sm:w-auto">
-                  Liberar acesso por {priceBRL(site.price)}
+                  Liberar acesso vitalício por {priceBRL(site.price)}
                 </Link>
                 <Link href="/musicas" className="btn-light w-full sm:w-auto">
                   Ver o acervo
