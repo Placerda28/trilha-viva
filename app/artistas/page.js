@@ -23,38 +23,36 @@ export default function ArtistasPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
-      <div className="shell pt-10">
+      <div className="shell pt-12">
         <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Artistas' }]} />
 
-        <div className="mt-7 max-w-2xl border-b border-line pb-10">
-          <h1 className="text-[36px] font-extrabold leading-[1.08] tracking-[-0.04em] text-ink sm:text-[46px]">
+        <div className="mt-8 max-w-2xl border-b border-line pb-12">
+          <h1 className="font-display text-[36px] font-normal leading-[1.1] text-ink sm:text-[48px]">
             Artistas e ministérios
           </h1>
-          <p className="mt-4 text-[17px] leading-[1.62] text-ink-muted">
+          <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
             Os louvores que a sua igreja canta, com multitrack pronto para o culto. Todos incluídos
             no mesmo pacote por {priceBRL(site.price)}.
           </p>
         </div>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-2 grid divide-y divide-line sm:grid-cols-2 sm:gap-x-14 lg:grid-cols-3">
           {artistList.map((a) => (
             <Link
               key={a.slug}
               href={`/artistas/${a.slug}`}
-              className="group card flex items-center gap-4 p-4 transition-shadow hover:shadow-lift"
+              className="group flex items-center gap-4 py-5"
             >
-              <Cover song={a.songs[0]} rounded="rounded-lg" className="h-16 w-16 shrink-0" />
+              <Cover song={a.songs[0]} className="h-14 w-14 shrink-0" />
               <div className="min-w-0">
-                <h2 className="truncate text-[16px] font-semibold tracking-[-0.02em] text-ink">
+                <h2 className="truncate font-display text-[18px] text-ink group-hover:text-accent">
                   {a.name}
                 </h2>
-                <p className="mt-0.5 text-[13.5px] text-ink-faint">
-                  {a.songs.length} {a.songs.length === 1 ? 'multitrack na amostra' : 'multitracks na amostra'}
+                <p className="mt-0.5 text-[13px] text-ink-faint">
+                  {a.songs.length}{' '}
+                  {a.songs.length === 1 ? 'multitrack na amostra' : 'multitracks na amostra'}
                 </p>
               </div>
-              <span className="ml-auto shrink-0 text-ink-faint transition-transform group-hover:translate-x-0.5">
-                →
-              </span>
             </Link>
           ))}
         </div>

@@ -10,10 +10,10 @@ export const dynamic = 'force-dynamic'
 
 export default function SucessoPage() {
   return (
-    <div className="shell max-w-3xl pb-16 pt-16">
+    <div className="shell max-w-3xl pb-20 pt-20">
       <Suspense
         fallback={
-          <div className="rounded-[24px] border border-line bg-white p-11 shadow-lift">
+          <div className="border border-line bg-white p-11">
             <p className="text-[16px] text-ink-muted">Carregando…</p>
           </div>
         }

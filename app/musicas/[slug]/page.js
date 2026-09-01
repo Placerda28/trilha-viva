@@ -32,12 +32,7 @@ export async function generateMetadata({ params }) {
     title,
     description,
     alternates: { canonical: `/musicas/${song.slug}` },
-    openGraph: {
-      title,
-      description,
-      url: `${site.url}/musicas/${song.slug}`,
-      type: 'music.song',
-    },
+    openGraph: { title, description, url: `${site.url}/musicas/${song.slug}`, type: 'music.song' },
   }
 }
 
@@ -75,7 +70,12 @@ export default async function SongPage({ params }) {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Início', item: site.url },
       { '@type': 'ListItem', position: 2, name: 'Acervo', item: `${site.url}/musicas` },
-      { '@type': 'ListItem', position: 3, name: song.title, item: `${site.url}/musicas/${song.slug}` },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: song.title,
+        item: `${site.url}/musicas/${song.slug}`,
+      },
     ],
   }
 
@@ -86,7 +86,7 @@ export default async function SongPage({ params }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify([ld, crumbLd]) }}
       />
 
-      <article className="shell pt-10">
+      <article className="shell pt-12">
         <Breadcrumbs
           items={[
             { href: '/', label: 'Início' },
@@ -95,86 +95,79 @@ export default async function SongPage({ params }) {
           ]}
         />
 
-        <div className="mt-8 grid gap-10 lg:grid-cols-[340px_1fr] lg:gap-14">
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <Cover song={song} rounded="rounded-2xl" className="w-full max-w-[340px] shadow-lift" />
+        <div className="mt-10 grid gap-12 lg:grid-cols-[340px_1fr] lg:gap-16">
+          <div className="lg:sticky lg:top-28 lg:self-start">
+            <Cover song={song} className="aspect-square w-full max-w-[340px]" />
             <Link
               href={`/artistas/${artistSlug(song.artist)}`}
-              className="mt-5 inline-flex text-[14px] font-medium text-brand-600 hover:text-brand-700"
+              className="link-underline mt-6 inline-block text-[14.5px]"
             >
-              Ver todos os multitracks de {song.artist} →
+              Ver todos os multitracks de {song.artist}
             </Link>
           </div>
 
           <div>
-            <span className="eyebrow">{song.categoria}</span>
-            <h1 className="mt-4 text-[38px] font-extrabold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">
+            <p className="text-[11.5px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
+              {song.categoria}
+            </p>
+            <h1 className="mt-4 font-display text-[38px] font-normal leading-[1.08] text-ink sm:text-[50px]">
               {song.title}
             </h1>
-            <p className="mt-2 text-[19px] font-medium text-ink-muted">{song.artist}</p>
+            <p className="mt-3 text-[19px] text-ink-muted">{song.artist}</p>
 
-            <p className="mt-6 max-w-2xl text-[16.5px] leading-[1.7] text-ink-muted">
+            <p className="mt-7 max-w-2xl text-[16.5px] leading-[1.75] text-ink-muted">
               Multitrack de <strong className="font-semibold text-ink">{song.title}</strong> com o
               clique e a guia em canais próprios e cada instrumento separado, para a sua banda tocar
               por cima e o operador mandar só o que interessa para o PA. Preparada para transposição,
               então você toca no tom em que o seu ministro canta melhor.
             </p>
 
-            <h2 className="mt-10 text-[13px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
-              Canais inclusos
-            </h2>
-            <ul className="mt-4 flex flex-wrap gap-2">
-              {CANAIS.map((c) => (
-                <li
-                  key={c}
-                  className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-[13.5px] font-medium text-ink-muted"
-                >
-                  {c}
-                </li>
-              ))}
-            </ul>
+            <h2 className="label mt-12">Canais inclusos</h2>
+            <p className="mt-5 max-w-2xl text-[16px] leading-[1.8] text-ink-muted">
+              {CANAIS.join(' · ')}
+            </p>
 
-            <dl className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4">
+            <dl className="mt-12 grid grid-cols-2 divide-line border-y border-line sm:grid-cols-4 sm:divide-x">
               {[
                 ['Formato', 'WAV + MP3'],
                 ['Tons', 'Todos'],
                 ['Clique e guia', 'Separados'],
                 ['Uso', 'Ao vivo e ensaio'],
               ].map(([k, v]) => (
-                <div key={k} className="bg-white p-5">
+                <div key={k} className="py-5 sm:px-5 sm:first:pl-0">
                   <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
                     {k}
                   </dt>
-                  <dd className="mt-1.5 text-[15px] font-semibold text-ink">{v}</dd>
+                  <dd className="mt-1.5 font-display text-[17px] text-ink">{v}</dd>
                 </div>
               ))}
             </dl>
 
-            <div className="mt-10 overflow-hidden rounded-2xl border border-line bg-ink p-7 text-white sm:p-9">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
+            <div className="mt-12 bg-ink p-8 text-paper sm:p-11">
+              <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-accent-soft">
                 Não vendemos por música
-              </span>
-              <h2 className="mt-5 text-[24px] font-bold leading-[1.15] tracking-[-0.03em] sm:text-[30px]">
+              </p>
+              <h2 className="mt-6 font-display text-[26px] leading-[1.18] sm:text-[32px]">
                 Esta música vem no pacote com mais de 4.000 multitracks.
               </h2>
-              <p className="mt-3 max-w-lg text-[15px] leading-[1.65] text-white/60">
+              <p className="mt-4 max-w-lg text-[15.5px] leading-[1.7] text-paper/60">
                 Em vez de pagar dezenas de reais por faixa, você leva o acervo inteiro de uma vez —
                 pagamento único, acesso vitalício.
               </p>
-              <div className="mt-7 flex flex-wrap items-center gap-5">
-                <Link href="/assinar" className="btn-flame">
+              <div className="mt-8 flex flex-wrap items-center gap-6">
+                <Link href="/assinar" className="btn-accent">
                   Liberar acesso por {priceBRL(site.price)}
                 </Link>
-                <p className="text-[14px] text-white/50">
+                <p className="text-[14px] text-paper/50">
                   <span className="line-through">{priceBRL(site.fullPrice)}</span> · -{discountPct}%
                   no lançamento
                 </p>
               </div>
-              <ul className="mt-7 grid gap-2.5 border-t border-white/10 pt-6 sm:grid-cols-2">
+              <ul className="mt-8 grid gap-3 border-t border-white/10 pt-7 sm:grid-cols-2">
                 {['Download imediato', 'Pix ou cartão', 'Sem mensalidade', 'Garantia de 7 dias'].map(
                   (t) => (
-                    <li key={t} className="flex items-center gap-2.5 text-[14px] text-white/70">
-                      <Check className="shrink-0 text-flame-400" />
+                    <li key={t} className="flex items-center gap-3 text-[14.5px] text-paper/70">
+                      <Check className="shrink-0 text-accent-soft" />
                       {t}
                     </li>
                   )
@@ -182,7 +175,7 @@ export default async function SongPage({ params }) {
               </ul>
             </div>
 
-            <p className="mt-6 text-[13px] leading-relaxed text-ink-faint">
+            <p className="mt-7 text-[13px] leading-relaxed text-ink-faint">
               Títulos e nomes de artistas são citados apenas para identificar a versão instrumental
               correspondente. Trilha Viva não é afiliada aos artistas mencionados.
             </p>
@@ -190,11 +183,11 @@ export default async function SongPage({ params }) {
         </div>
 
         {related.length > 0 && (
-          <section className="mt-20 border-t border-line pt-14">
-            <h2 className="text-[24px] font-bold tracking-[-0.03em] text-ink sm:text-[30px]">
+          <section className="mt-24 border-t border-line pt-16">
+            <h2 className="display text-[26px] sm:text-[32px]">
               Quem toca {song.title} também usa
             </h2>
-            <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-6">
               {related.map((s) => (
                 <SongCard key={s.slug} song={s} />
               ))}
