@@ -156,7 +156,7 @@ export default async function SongPage({ params }) {
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-6">
                 <Link href="/assinar" className="btn-accent">
-                  Liberar acesso por {priceBRL(site.price)}
+                  Liberar acesso vitalício por {priceBRL(site.price)}
                 </Link>
                 <p className="text-[14px] text-paper/50">
                   <span className="line-through">{priceBRL(site.fullPrice)}</span> · -{discountPct}%
