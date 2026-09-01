@@ -7,14 +7,6 @@ import { nav, priceBRL, site } from '@/lib/site'
 
 export default function Header() {
   const [open, setOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -24,30 +16,26 @@ export default function Header() {
   }, [open])
 
   return (
-    <header
-      className={`sticky top-0 z-50 border-b bg-white/85 backdrop-blur-xl transition-colors ${
-        scrolled ? 'border-line' : 'border-transparent'
-      }`}
-    >
-      <div className="shell flex h-[68px] items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-md">
+      <div className="shell flex h-[70px] items-center justify-between gap-4">
         <Link href="/" aria-label="Trilha Viva — página inicial" onClick={() => setOpen(false)}>
           <Logo />
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Principal">
+        <nav className="hidden items-center gap-7 lg:flex" aria-label="Principal">
           {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-full px-3.5 py-2 text-[14.5px] font-medium text-ink-muted transition-colors hover:bg-surface hover:text-ink"
+              className="text-[14.5px] text-ink-muted transition-colors hover:text-ink"
             >
               {item.label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <Link href="/assinar" className="btn-primary hidden !px-5 !py-2.5 !text-[14px] sm:inline-flex">
+        <div className="flex items-center gap-3">
+          <Link href="/assinar" className="btn-solid hidden !px-5 !py-2.5 !text-[14px] sm:inline-flex">
             Garantir por {priceBRL(site.price)}
           </Link>
           <button
@@ -55,13 +43,13 @@ export default function Header() {
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-label={open ? 'Fechar menu' : 'Abrir menu'}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-line text-ink lg:hidden"
+            className="flex h-9 w-9 items-center justify-center text-ink lg:hidden"
           >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               {open ? (
-                <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.5" />
               ) : (
-                <path d="M2.5 5h13M2.5 9h13M2.5 13h13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" strokeWidth="1.5" />
               )}
             </svg>
           </button>
@@ -69,21 +57,23 @@ export default function Header() {
       </div>
 
       {open && (
-        <div className="border-t border-line bg-white lg:hidden">
-          <div className="shell flex flex-col gap-1 py-4">
+        <div className="border-t border-line bg-paper lg:hidden">
+          <div className="shell flex flex-col divide-y divide-line">
             {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className="rounded-xl px-3 py-3 text-[16px] font-medium text-ink hover:bg-surface"
+                className="py-4 text-[16px] text-ink"
               >
                 {item.label}
               </Link>
             ))}
-            <Link href="/assinar" onClick={() => setOpen(false)} className="btn-flame mt-2 w-full">
-              Garantir acesso por {priceBRL(site.price)}
-            </Link>
+            <div className="py-5">
+              <Link href="/assinar" onClick={() => setOpen(false)} className="btn-accent w-full">
+                Garantir por {priceBRL(site.price)}
+              </Link>
+            </div>
           </div>
         </div>
       )}

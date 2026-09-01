@@ -36,31 +36,31 @@ const columns = [
 
 export default function Footer() {
   return (
-    <footer className="mt-24 bg-ink text-white">
-      <div className="shell py-16">
-        <div className="grid gap-12 md:grid-cols-[1.3fr_repeat(3,1fr)]">
+    <footer className="mt-28 bg-ink text-paper">
+      <div className="shell py-20">
+        <div className="grid gap-14 md:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div>
             <LogoInverse />
-            <p className="mt-5 max-w-xs text-[14.5px] leading-relaxed text-white/55">
+            <p className="mt-6 max-w-xs text-[14.5px] leading-[1.7] text-paper/50">
               O acervo de multitracks gospel para igrejas que querem tocar com clique, guia e canais
               separados — sem mensalidade.
             </p>
-            <Link href="/assinar" className="btn-flame mt-6 !py-3 !px-6 !text-[14.5px]">
+            <Link href="/assinar" className="btn-accent mt-8 !py-3 !px-6 !text-[14.5px]">
               Ver o pacote completo
             </Link>
           </div>
 
           {columns.map((col) => (
             <div key={col.title}>
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-paper/35">
                 {col.title}
               </h3>
-              <ul className="mt-4 space-y-2.5">
+              <ul className="mt-5 space-y-3">
                 {col.links.map((l) => (
                   <li key={l.href + l.label}>
                     <Link
                       href={l.href}
-                      className="text-[14.5px] text-white/70 transition-colors hover:text-white"
+                      className="text-[14.5px] text-paper/65 transition-colors hover:text-paper"
                     >
                       {l.label}
                     </Link>
@@ -71,12 +71,11 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-14 flex flex-col gap-4 border-t border-white/10 pt-7 text-[13px] text-white/40 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-16 flex flex-col gap-3 border-t border-white/10 pt-8 text-[13px] text-paper/35 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {new Date().getFullYear()} {site.name}. Multitracks Gospel. Todos os direitos
-            reservados.
+            © {new Date().getFullYear()} {site.name}. Multitracks Gospel.
           </p>
-          <p>Pagamento seguro via Pix e cartão · Processado pela Stripe</p>
+          <p>Pagamento seguro via Pix e cartão · processado pela Stripe</p>
         </div>
       </div>
     </footer>

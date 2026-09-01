@@ -52,7 +52,7 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
             }}
             placeholder="Buscar por música ou artista…"
             aria-label="Buscar multitrack por música ou artista"
-            className="w-full rounded-full border border-line bg-white py-3 pl-11 pr-4 text-[15px] text-ink placeholder:text-ink-faint focus:border-ink/25 focus:outline-none focus:ring-2 focus:ring-brand-600/15"
+            className="w-full rounded-sm border border-line bg-white py-3 pl-11 pr-4 text-[15px] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
           />
         </div>
 
@@ -63,8 +63,8 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
               setCat('')
               setLimit(PAGE)
             }}
-            className={`rounded-full border px-4 py-2 text-[13.5px] font-medium transition-colors ${
-              cat === '' ? 'border-ink bg-ink text-white' : 'border-line bg-white text-ink-muted hover:border-ink/25'
+            className={`rounded-sm border px-4 py-2 text-[13.5px] transition-colors ${
+              cat === '' ? 'border-ink bg-ink text-white' : 'border-line text-ink-muted hover:border-ink'
             }`}
           >
             Todas
@@ -77,8 +77,8 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
                 setCat(c)
                 setLimit(PAGE)
               }}
-              className={`rounded-full border px-4 py-2 text-[13.5px] font-medium transition-colors ${
-                cat === c ? 'border-ink bg-ink text-white' : 'border-line bg-white text-ink-muted hover:border-ink/25'
+              className={`rounded-sm border px-4 py-2 text-[13.5px] transition-colors ${
+                cat === c ? 'border-ink bg-ink text-white' : 'border-line text-ink-muted hover:border-ink'
               }`}
             >
               {c}
@@ -93,14 +93,14 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
       </p>
 
       {shown.length === 0 ? (
-        <div className="mt-14 rounded-2xl border border-dashed border-line py-16 text-center">
-          <p className="text-[16px] font-semibold text-ink">Nada encontrado com esse termo.</p>
+        <div className="mt-14 border border-dashed border-line py-16 text-center">
+          <p className="font-display text-[19px] text-ink">Nada encontrado com esse termo.</p>
           <p className="mt-2 text-[14.5px] text-ink-muted">
             A amostra pública mostra parte do acervo. O pacote completo tem mais de 4.000 multitracks.
           </p>
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-6">
           {shown.map((s) => (
             <SongCard key={s.slug} song={s} />
           ))}
@@ -109,7 +109,7 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
 
       {limit < filtered.length && (
         <div className="mt-12 text-center">
-          <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="btn-ghost">
+          <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="btn-outline">
             Carregar mais músicas
           </button>
         </div>

@@ -46,13 +46,13 @@ export default function CheckoutForm() {
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           placeholder="Como devemos te chamar"
-          className="mt-2 w-full rounded-xl border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-faint focus:border-ink/25 focus:outline-none focus:ring-2 focus:ring-brand-600/15"
+          className="mt-2 w-full rounded-sm border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
         />
       </div>
 
       <div>
         <label htmlFor="email" className="block text-[13px] font-semibold text-ink">
-          E-mail para receber o acesso <span className="text-flame-500">*</span>
+          E-mail para receber o acesso <span className="text-accent">*</span>
         </label>
         <input
           id="email"
@@ -65,7 +65,7 @@ export default function CheckoutForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="voce@email.com"
           aria-describedby="email-help"
-          className="mt-2 w-full rounded-xl border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-faint focus:border-ink/25 focus:outline-none focus:ring-2 focus:ring-brand-600/15"
+          className="mt-2 w-full rounded-sm border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
         />
         <p id="email-help" className="mt-2 text-[12.5px] text-ink-faint">
           É para esse endereço que enviamos o link do acervo. Confira antes de continuar.
@@ -73,12 +73,12 @@ export default function CheckoutForm() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-[14px] font-medium text-red-700">
+        <p role="alert" className="rounded-sm bg-accent-wash px-4 py-3 text-[14px] font-medium text-accent">
           {error}
         </p>
       )}
 
-      <button type="submit" disabled={loading} className="btn-flame w-full disabled:opacity-60">
+      <button type="submit" disabled={loading} className="btn-accent w-full disabled:opacity-60">
         {loading ? 'Abrindo pagamento seguro…' : `Pagar ${priceBRL(site.price)} e liberar acesso`}
       </button>
 
