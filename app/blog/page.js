@@ -11,7 +11,11 @@ export const metadata = {
 }
 
 const fmt = (d) =>
-  new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+  new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  })
 
 export default function BlogPage() {
   const ld = {
@@ -32,31 +36,33 @@ export default function BlogPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
-      <div className="shell pt-10">
+      <div className="shell pt-12">
         <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Blog' }]} />
 
-        <header className="mt-7 max-w-2xl border-b border-line pb-10">
-          <h1 className="text-[36px] font-extrabold leading-[1.08] tracking-[-0.04em] text-ink sm:text-[46px]">
+        <header className="mt-8 max-w-2xl border-b border-line pb-12">
+          <h1 className="font-display text-[36px] font-normal leading-[1.1] text-ink sm:text-[48px]">
             Blog do ministério de louvor
           </h1>
-          <p className="mt-4 text-[17px] leading-[1.62] text-ink-muted">
+          <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
             Conteúdo direto ao ponto sobre multitrack, clique, guia e como tirar o melhor da sua
             equipe no domingo.
           </p>
         </header>
 
-        <div className="mt-10 grid gap-5 lg:grid-cols-2">
+        <div className="divide-y divide-line">
           {posts.map((p) => (
-            <Link key={p.slug} href={`/blog/${p.slug}`} className="group card flex flex-col p-7 transition-shadow hover:shadow-lift">
-              <div className="flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
-                <span className="rounded-full bg-brand-50 px-2.5 py-1 text-brand-600">{p.tag}</span>
-                <span>{p.read} de leitura</span>
+            <Link key={p.slug} href={`/blog/${p.slug}`} className="group block py-9">
+              <div className="flex items-center gap-4 text-[11.5px] font-semibold uppercase tracking-[0.12em]">
+                <span className="text-accent">{p.tag}</span>
+                <span className="text-ink-faint">{p.read} de leitura</span>
+                <span className="text-ink-faint">{fmt(p.date)}</span>
               </div>
-              <h2 className="mt-5 text-[22px] font-bold leading-[1.2] tracking-[-0.03em] text-ink group-hover:text-brand-700">
+              <h2 className="mt-4 max-w-3xl font-display text-[24px] font-normal leading-[1.22] text-ink group-hover:text-accent sm:text-[30px]">
                 {p.title}
               </h2>
-              <p className="mt-3 flex-1 text-[15px] leading-[1.65] text-ink-muted">{p.description}</p>
-              <p className="mt-6 text-[13px] text-ink-faint">{fmt(p.date)}</p>
+              <p className="mt-3 max-w-2xl text-[16px] leading-[1.7] text-ink-muted">
+                {p.description}
+              </p>
             </Link>
           ))}
         </div>

@@ -9,12 +9,12 @@ export const metadata = {
 
 export default function PrivacidadePage() {
   return (
-    <div className="shell max-w-3xl pt-10">
+    <div className="shell max-w-3xl pt-12">
       <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Privacidade' }]} />
-      <h1 className="mt-7 text-[34px] font-extrabold leading-[1.1] tracking-[-0.04em] text-ink sm:text-[42px]">
+      <h1 className="mt-8 font-display text-[34px] font-normal leading-[1.12] text-ink sm:text-[44px]">
         Política de privacidade
       </h1>
-      <div className="prose-tv pb-6">
+      <div className="prose-tv pb-8">
         <h2>Quais dados coletamos</h2>
         <ul>
           <li>Nome e e-mail informados no checkout, para enviar o acesso e dar suporte.</li>

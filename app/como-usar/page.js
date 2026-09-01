@@ -71,17 +71,22 @@ const equipamentos = [
 export default function ComoUsarPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }}
+      />
 
-      <div className="shell pt-10">
+      <div className="shell pt-12">
         <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Como usar' }]} />
 
-        <header className="mt-7 max-w-3xl border-b border-line pb-12">
-          <span className="eyebrow">Guia completo</span>
-          <h1 className="mt-5 text-[38px] font-extrabold leading-[1.06] tracking-[-0.042em] text-ink sm:text-[52px]">
+        <header className="mt-8 max-w-3xl border-b border-line pb-14">
+          <p className="text-[11.5px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
+            Guia completo
+          </p>
+          <h1 className="mt-6 font-display text-[38px] font-normal leading-[1.08] text-ink sm:text-[54px]">
             Como usar multitrack na sua igreja
           </h1>
-          <p className="mt-5 text-[18px] leading-[1.65] text-ink-muted">
+          <p className="mt-6 text-[18px] leading-[1.7] text-ink-muted">
             Se a sua banda é pequena, se falta um instrumento ou se você quer que o som de domingo
             chegue mais perto do que se ouve no Spotify, o multitrack resolve. Este guia mostra o
             caminho inteiro: qual programa usar, como ligar na mesa e como não errar no meio do
@@ -90,8 +95,8 @@ export default function ComoUsarPage() {
         </header>
       </div>
 
-      <section className="shell pt-16">
-        <div className="grid gap-12 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
+      <section className="shell pt-20">
+        <div className="grid gap-14 lg:grid-cols-2 lg:items-center lg:gap-20">
           <div className="prose-tv max-w-xl">
             <h2 className="!mt-0">Playback fechado x multitrack</h2>
             <p>
@@ -112,32 +117,30 @@ export default function ComoUsarPage() {
             </p>
           </div>
 
-          <div className="relative">
-            <TabletMockup />
-          </div>
+          <TabletMockup />
         </div>
       </section>
 
-      <section className="shell pt-20 sm:pt-28">
+      <section className="shell pt-24 sm:pt-32">
         <SectionHead
           eyebrow="Passo a passo"
           title="Do download ao domingo"
           sub="Cinco passos. Nenhum deles exige que você seja técnico de áudio."
         />
-        <ol className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line lg:grid-cols-2">
+        <ol className="mt-12 grid divide-y divide-line border-y border-line lg:grid-cols-2 lg:gap-x-16 lg:divide-y-0">
           {steps.map((s) => (
-            <li key={s.n} className="flex gap-5 bg-white p-7">
-              <span className="mt-0.5 text-[13px] font-bold tabular-nums text-flame-500">{s.n}</span>
+            <li key={s.n} className="grid gap-3 py-7 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-6">
+              <span className="font-display text-[22px] leading-none text-accent">{s.n}</span>
               <div>
-                <h3 className="text-[17px] font-semibold tracking-[-0.02em] text-ink">{s.title}</h3>
-                <p className="mt-2 text-[15px] leading-[1.68] text-ink-muted">{s.body}</p>
+                <h3 className="font-display text-[19px] leading-snug text-ink">{s.title}</h3>
+                <p className="mt-2 text-[15px] leading-[1.7] text-ink-muted">{s.body}</p>
               </div>
             </li>
           ))}
         </ol>
       </section>
 
-      <section id="reaper" className="mt-20 scroll-mt-24 bg-surface py-20 sm:mt-28 sm:py-28">
+      <section id="reaper" className="mt-24 scroll-mt-24 border-y border-line bg-white py-24 sm:mt-32 sm:py-32">
         <div className="shell">
           <SectionHead
             eyebrow="Programas"
@@ -145,53 +148,54 @@ export default function ComoUsarPage() {
             sub="Todos abaixo dão conta do recado. A diferença está no bolso, no sistema operacional e em quanto você quer aprender."
           />
 
-          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+          <div className="mt-12 divide-y divide-line border-y border-line">
             {tools.map((t) => (
-              <article key={t.slug} id={t.slug} className="card scroll-mt-24 p-7 sm:p-8">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h3 className="text-[22px] font-bold tracking-[-0.03em] text-ink">{t.name}</h3>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wide ${
-                      t.badge === 'Recomendado'
-                        ? 'bg-flame-500/12 text-flame-600'
-                        : t.badge === 'Grátis'
-                          ? 'bg-emerald-500/12 text-emerald-700'
-                          : 'bg-brand-50 text-brand-600'
-                    }`}
-                  >
+              <article
+                key={t.slug}
+                id={t.slug}
+                className="grid scroll-mt-24 gap-6 py-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)] lg:gap-12"
+              >
+                <div>
+                  <h3 className="font-display text-[26px] leading-none text-ink">{t.name}</h3>
+                  <p className="mt-2 text-[11.5px] font-semibold uppercase tracking-[0.12em] text-accent">
                     {t.badge}
-                  </span>
+                  </p>
+                  <p className="mt-1 text-[12.5px] text-ink-faint">{t.platform}</p>
                 </div>
-                <p className="mt-1.5 text-[13px] font-medium text-ink-faint">{t.platform}</p>
-                <p className="mt-4 text-[15px] leading-[1.68] text-ink-muted">{t.summary}</p>
-                <ul className="mt-5 space-y-2.5">
-                  {t.why.map((w) => (
-                    <li key={w} className="flex items-start gap-2.5 text-[14.5px] leading-[1.55] text-ink-muted">
-                      <Check className="mt-0.5 shrink-0 text-brand-600" />
-                      {w}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-                  <p className="text-[13px] font-medium text-ink">{t.price}</p>
-                  <a
-                    href={t.url}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
-                    className="text-[13.5px] font-semibold text-brand-600 hover:text-brand-700"
-                  >
-                    Site oficial →
-                  </a>
+                <div>
+                  <p className="max-w-2xl text-[16px] leading-[1.72] text-ink-muted">{t.summary}</p>
+                  <ul className="mt-5 space-y-2.5">
+                    {t.why.map((w) => (
+                      <li
+                        key={w}
+                        className="flex items-start gap-3 text-[14.5px] leading-[1.6] text-ink-muted"
+                      >
+                        <Check className="mt-[6px] shrink-0 text-accent" />
+                        {w}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-5">
+                    <p className="text-[13.5px] text-ink">{t.price}</p>
+                    <a
+                      href={t.url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="link-underline text-[13.5px]"
+                    >
+                      Site oficial
+                    </a>
+                  </div>
                 </div>
               </article>
             ))}
           </div>
 
-          <div className="mt-10 rounded-2xl border border-line bg-white p-7 sm:p-8">
-            <h3 className="text-[18px] font-bold tracking-[-0.025em] text-ink">
+          <div className="mt-12 max-w-3xl">
+            <h3 className="font-display text-[22px] text-ink">
               Se você está começando hoje, faça assim
             </h3>
-            <p className="mt-3 max-w-3xl text-[15.5px] leading-[1.7] text-ink-muted">
+            <p className="mt-4 text-[16px] leading-[1.75] text-ink-muted">
               Instale o <strong className="font-semibold text-ink">REAPER</strong> e use os 60 dias
               de avaliação completa para testar sem gastar nada. Monte uma música, ligue na mesa,
               rode um ensaio. Se funcionar (e vai funcionar), a licença pessoal é barata perto de
@@ -202,8 +206,8 @@ export default function ComoUsarPage() {
         </div>
       </section>
 
-      <section className="shell pt-20 sm:pt-28">
-        <div className="grid gap-12 lg:grid-cols-[1fr_1.05fr] lg:gap-16">
+      <section className="shell pt-24 sm:pt-32">
+        <div className="grid gap-14 lg:grid-cols-2 lg:gap-20">
           <div className="prose-tv">
             <h2 className="!mt-0">O segredo está no roteamento</h2>
             <p>
@@ -225,17 +229,17 @@ export default function ComoUsarPage() {
               </li>
             </ul>
             <p>
-              No REAPER isso é resolvido em dois minutos: selecione as faixas de clique e guia, abra o
-              roteamento e mande para o par de saídas 1/2 da interface; deixe todo o resto no par
+              No REAPER isso é resolvido em dois minutos: selecione as faixas de clique e guia, abra
+              o roteamento e mande para o par de saídas 1/2 da interface; deixe todo o resto no par
               3/4. Feito uma vez, salve como modelo de projeto e reutilize em toda música.
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-line bg-ink p-8 text-white sm:p-10">
-            <h3 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-white/50">
+          <div className="bg-ink p-10 text-paper sm:p-12">
+            <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-paper/45">
               Checklist antes do culto
-            </h3>
-            <ul className="mt-6 space-y-4">
+            </p>
+            <ul className="mt-8 divide-y divide-white/10 border-y border-white/10">
               {[
                 'Projeto salvo e testado com a banda inteira',
                 'Clique só no fone — confirme pedindo silêncio no PA',
@@ -244,8 +248,11 @@ export default function ComoUsarPage() {
                 'Bateria do tablet acima de 80% ou na tomada',
                 'Cópia das músicas do dia num pendrive',
               ].map((t) => (
-                <li key={t} className="flex items-start gap-3 text-[15px] leading-[1.55] text-white/75">
-                  <Check className="mt-0.5 shrink-0 text-flame-400" />
+                <li
+                  key={t}
+                  className="flex items-start gap-4 py-3.5 text-[15px] leading-[1.6] text-paper/75"
+                >
+                  <Check className="mt-[7px] shrink-0 text-accent-soft" />
                   {t}
                 </li>
               ))}
@@ -254,13 +261,13 @@ export default function ComoUsarPage() {
         </div>
       </section>
 
-      <section id="tablet" className="shell scroll-mt-24 pt-20 sm:pt-28">
+      <section id="tablet" className="shell scroll-mt-24 pt-24 sm:pt-32">
         <SectionHead
           eyebrow="No tablet"
           title="Subir no palco só com um tablet"
           sub="Muita igreja abandonou o notebook. O tablet liga mais rápido, não trava com atualização do sistema no meio do culto e ocupa menos espaço no praticável."
         />
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid gap-x-14 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               t: 'No iPad',
@@ -275,53 +282,53 @@ export default function ComoUsarPage() {
               d: 'Deixe as músicas do domingo em ordem, com marcação de entrada. Quem conduz o louvor toca na tela e a próxima música já entra.',
             },
           ].map((c) => (
-            <div key={c.t} className="card p-7">
-              <h3 className="text-[17px] font-semibold tracking-[-0.02em] text-ink">{c.t}</h3>
-              <p className="mt-2.5 text-[15px] leading-[1.68] text-ink-muted">{c.d}</p>
+            <div key={c.t}>
+              <h3 className="font-display text-[20px] leading-snug text-ink">{c.t}</h3>
+              <p className="mt-2.5 text-[15px] leading-[1.7] text-ink-muted">{c.d}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="shell pt-20 sm:pt-28">
+      <section className="shell pt-24 sm:pt-32">
         <SectionHead eyebrow="Equipamentos" title="O que você realmente precisa comprar" />
-        <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid gap-x-14 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {equipamentos.map((e) => (
-            <div key={e.t} className="bg-white p-7">
-              <h3 className="text-[16.5px] font-semibold tracking-[-0.02em] text-ink">{e.t}</h3>
-              <p className="mt-2.5 text-[14.5px] leading-[1.65] text-ink-muted">{e.d}</p>
+            <div key={e.t}>
+              <h3 className="font-display text-[19px] leading-snug text-ink">{e.t}</h3>
+              <p className="mt-2.5 text-[15px] leading-[1.7] text-ink-muted">{e.d}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="shell pt-20 sm:pt-28">
+      <section className="shell pt-24 sm:pt-32">
         <SectionHead eyebrow="Onde usar" title="Não é só no domingo de manhã" />
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid gap-x-14 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {usos.map((u) => (
-            <div key={u.title} className="card p-6">
-              <h3 className="text-[16.5px] font-semibold tracking-[-0.02em] text-ink">{u.title}</h3>
-              <p className="mt-2.5 text-[14.5px] leading-[1.65] text-ink-muted">{u.body}</p>
+            <div key={u.title}>
+              <h3 className="font-display text-[19px] leading-snug text-ink">{u.title}</h3>
+              <p className="mt-2.5 text-[15px] leading-[1.7] text-ink-muted">{u.body}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="shell pt-20 sm:pt-28">
+      <section className="shell pt-24 sm:pt-32">
         <SectionHead eyebrow="Dúvidas" title="Perguntas sobre uso" />
         <Faq items={faq.slice(3, 9)} className="mt-10" />
       </section>
 
-      <section className="shell pt-20 sm:pt-28">
-        <div className="rounded-[28px] border border-line bg-surface px-8 py-12 text-center sm:px-14 sm:py-16">
-          <h2 className="mx-auto max-w-2xl text-[28px] font-bold leading-[1.12] tracking-[-0.035em] text-ink sm:text-[38px]">
+      <section className="shell pt-24 sm:pt-32">
+        <div className="border-y border-line py-16 text-center sm:py-20">
+          <h2 className="display mx-auto max-w-2xl text-[30px] leading-[1.14] sm:text-[42px]">
             Agora só falta o acervo.
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-[16.5px] leading-[1.6] text-ink-muted">
+          <p className="mx-auto mt-5 max-w-xl text-[16.5px] leading-[1.7] text-ink-muted">
             Mais de 4.000 multitracks gospel com clique, guia e canais separados — em um pacote
             único, por {priceBRL(site.price)}.
           </p>
-          <Link href="/assinar" className="btn-flame mt-8">
+          <Link href="/assinar" className="btn-accent mt-9">
             Liberar meu acesso
           </Link>
         </div>
