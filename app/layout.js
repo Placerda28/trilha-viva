@@ -50,10 +50,9 @@ export const metadata = {
     follow: true,
     googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
   },
-  icons: {
-    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
-    apple: '/icon.svg',
-  },
+  // Sem bloco `icons` de propósito: o Next serve app/icon.svg e app/apple-icon.jsx
+  // em uma URL com hash do conteúdo, então trocar o desenho invalida o cache do
+  // navegador. Declarar /icon.svg na mão fixava a URL e o favicon antigo colava.
   category: 'music',
 }
 
