@@ -1,110 +1,68 @@
-const PALETTES = [
-  ['#1D4ED8', '#7C3AED', '#0EA5E9'],
-  ['#0F766E', '#22C55E', '#065F46'],
-  ['#B45309', '#F97316', '#DC2626'],
-  ['#4C1D95', '#DB2777', '#7C3AED'],
-  ['#0C4A6E', '#0EA5E9', '#1E40AF'],
-  ['#7C2D12', '#F59E0B', '#B91C1C'],
-  ['#1E293B', '#475569', '#0F172A'],
-  ['#831843', '#F43F5E', '#9D174D'],
+// Capas no espírito de encarte de disco: tom sobre tom, sem gradiente colorido.
+const TONES = [
+  { bg: '#17130F', ink: '#EFE9E2', mark: '#A8431E' },
+  { bg: '#1D1A17', ink: '#EDE7E0', mark: '#7C7168' },
+  { bg: '#221A15', ink: '#F0E8E0', mark: '#A8431E' },
+  { bg: '#15171A', ink: '#E8EAEC', mark: '#6E7A85' },
+  { bg: '#1A1512', ink: '#EFE8E1', mark: '#8A6A4F' },
+  { bg: '#101312', ink: '#E7ECEA', mark: '#5F7A70' },
 ]
 
-function initials(title) {
-  const words = title
-    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-    .split(/\s+/)
-    .filter((w) => w.length > 2 || /^[A-ZÁÉÍÓÚÂÊÔÃÕÇ]/.test(w))
-  const letters = (words.length ? words : title.split(/\s+/)).slice(0, 2).map((w) => w[0])
-  return letters.join('').toUpperCase()
-}
-
-export default function Cover({ song, className = '', rounded = 'rounded-xl' }) {
-  const p = PALETTES[song.seed % PALETTES.length]
-  const uid = `c${song.seed}${song.hue}`
-  const rot = (song.seed % 60) - 30
-  const bars = Array.from({ length: 22 }, (_, i) => {
-    const n = (song.seed * (i + 3)) % 100
-    return 12 + (n / 100) * 62
-  })
+export default function Cover({ song, className = '', rounded = '' }) {
+  const t = TONES[song.seed % TONES.length]
+  const angle = 12 + (song.seed % 5) * 14
+  const shift = 18 + (song.seed % 7) * 6
 
   return (
-    <div className={`relative overflow-hidden ${rounded} ${className}`}>
-      <svg viewBox="0 0 400 400" className="h-full w-full" role="img" aria-label={`Capa de ${song.title}`}>
-        <defs>
-          <linearGradient id={`${uid}-bg`} x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
-            <stop stopColor={p[0]} />
-            <stop offset="0.55" stopColor={p[1]} />
-            <stop offset="1" stopColor={p[2]} />
-          </linearGradient>
-          <radialGradient id={`${uid}-glow`} cx="0.3" cy="0.15" r="0.9">
-            <stop stopColor="#fff" stopOpacity="0.45" />
-            <stop offset="1" stopColor="#fff" stopOpacity="0" />
-          </radialGradient>
-          <clipPath id={`${uid}-clip`}>
-            <rect width="400" height="400" />
-          </clipPath>
-        </defs>
+    <div
+      className={`relative flex flex-col justify-end overflow-hidden ${rounded} ${className}`}
+      style={{ background: t.bg }}
+      role="img"
+      aria-label={`Capa de ${song.title}, de ${song.artist}`}
+    >
+      {/* faixa tonal diagonal — textura, não decoração colorida */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background: `repeating-linear-gradient(${angle}deg, rgba(255,255,255,.05) 0 1px, transparent 1px ${shift}px)`,
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -right-[18%] -top-[22%] h-[70%] w-[70%] rounded-full"
+        style={{ background: t.mark, opacity: 0.16 }}
+      />
 
-        <g clipPath={`url(#${uid}-clip)`}>
-          <rect width="400" height="400" fill={`url(#${uid}-bg)`} />
-          <rect width="400" height="400" fill={`url(#${uid}-glow)`} />
+      <div className="relative flex h-full flex-col justify-between p-[7%]">
+        <span
+          className="font-semibold uppercase leading-none tracking-[0.16em]"
+          style={{ color: t.ink, opacity: 0.5, fontSize: 'clamp(7px, 6.5%, 11px)' }}
+        >
+          VS · Multitrack
+        </span>
 
-          <g transform={`rotate(${rot} 200 200)`} opacity="0.22">
-            {[0, 1, 2, 3].map((i) => (
-              <circle
-                key={i}
-                cx="200"
-                cy="200"
-                r={70 + i * 58}
-                fill="none"
-                stroke="#fff"
-                strokeWidth="1.4"
-              />
-            ))}
-          </g>
-
-          <g opacity="0.5">
-            {bars.map((h, i) => (
-              <rect
-                key={i}
-                x={16 + i * 17.2}
-                y={330 - h}
-                width="7"
-                height={h}
-                rx="3.5"
-                fill="#fff"
-                opacity={0.35 + (i % 5) * 0.13}
-              />
-            ))}
-          </g>
-
-          <text
-            x="30"
-            y="120"
-            fill="#fff"
-            fillOpacity="0.92"
-            fontSize="86"
-            fontWeight="800"
-            letterSpacing="-4"
-            fontFamily="Inter, system-ui, sans-serif"
+        <span className="block">
+          <span
+            className="block font-display leading-[1.12]"
+            style={{ color: t.ink, fontSize: 'clamp(13px, 13%, 26px)' }}
           >
-            {initials(song.title)}
-          </text>
-          <text
-            x="32"
-            y="372"
-            fill="#fff"
-            fillOpacity="0.8"
-            fontSize="15"
-            fontWeight="600"
-            letterSpacing="2.6"
-            fontFamily="Inter, system-ui, sans-serif"
+            {song.title}
+          </span>
+          <span
+            className="mt-[4%] block leading-tight"
+            style={{ color: t.ink, opacity: 0.55, fontSize: 'clamp(9px, 7.5%, 13px)' }}
           >
-            MULTITRACK
-          </text>
-        </g>
-      </svg>
-      <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/10" />
+            {song.artist}
+          </span>
+        </span>
+      </div>
+
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{ boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.09)' }}
+      />
     </div>
   )
 }

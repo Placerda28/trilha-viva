@@ -8,83 +8,88 @@ html {
 }
 
 body {
-  background: #ffffff;
-  color: #0a0a0b;
+  background: #fbfaf8;
+  color: #14110f;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: #dce6ff;
-  color: #0a0a0b;
+  background: #f4ebe5;
+  color: #14110f;
 }
 
 @layer components {
   .shell {
-    @apply mx-auto w-full max-w-shell px-5 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-shell px-5 sm:px-8 lg:px-10;
   }
 
-  .eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted;
+  /* rótulo de seção: fio + texto pequeno, sem pílula */
+  .label {
+    @apply flex items-center gap-3 text-[11.5px] font-semibold uppercase tracking-[0.1em] text-ink-faint;
+  }
+  .label::after {
+    content: '';
+    @apply h-px flex-1 bg-line;
+  }
+
+  .display {
+    @apply font-display font-normal tracking-[-0.015em] text-ink;
   }
 
   .btn {
-    @apply inline-flex select-none items-center justify-center gap-2 rounded-full text-[15px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2;
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-sm text-[15px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2;
+  }
+  .btn-solid {
+    @apply btn bg-ink px-7 py-3.5 text-paper hover:bg-ink-soft;
+  }
+  .btn-accent {
+    @apply btn bg-accent px-7 py-3.5 text-white hover:bg-[#8F3717];
+  }
+  .btn-outline {
+    @apply btn border border-ink/25 bg-transparent px-7 py-3.5 text-ink hover:border-ink hover:bg-ink hover:text-paper;
+  }
+  .btn-light {
+    @apply btn border border-white/30 bg-transparent px-7 py-3.5 text-white hover:bg-white hover:text-ink;
   }
 
-  .btn-primary {
-    @apply btn bg-ink px-6 py-3.5 text-white hover:bg-ink-soft hover:shadow-lift active:scale-[.985];
+  .rule {
+    @apply h-px w-full bg-line;
   }
 
-  .btn-flame {
-    @apply btn px-7 py-4 text-white shadow-[0_10px_30px_-10px_rgba(234,88,12,.7)] active:scale-[.985];
-    background-image: linear-gradient(100deg, #f97316, #ea580c 55%, #dc2626);
-  }
-
-  .btn-ghost {
-    @apply btn border border-line bg-white px-6 py-3.5 text-ink hover:border-ink/25 hover:bg-surface;
-  }
-
-  .card {
-    @apply rounded-2xl border border-line bg-white shadow-card;
+  .link-underline {
+    @apply border-b border-ink/25 pb-0.5 text-ink transition-colors hover:border-accent hover:text-accent;
   }
 
   .prose-tv h2 {
-    @apply mt-12 text-2xl font-semibold tracking-[-0.02em] text-ink sm:text-[28px];
+    @apply mt-14 font-display text-[26px] font-normal leading-[1.25] tracking-[-0.01em] text-ink sm:text-[31px];
   }
   .prose-tv h3 {
-    @apply mt-8 text-lg font-semibold text-ink;
+    @apply mt-9 text-[17px] font-semibold text-ink;
   }
   .prose-tv p {
-    @apply mt-4 text-[16.5px] leading-[1.75] text-ink-muted;
+    @apply mt-4 text-[17px] leading-[1.75] text-ink-muted;
   }
   .prose-tv ul {
-    @apply mt-4 space-y-2 text-[16.5px] leading-[1.75] text-ink-muted;
+    @apply mt-5 space-y-2.5 text-[17px] leading-[1.72] text-ink-muted;
   }
   .prose-tv li {
-    @apply relative pl-6;
+    @apply relative pl-5;
   }
   .prose-tv li::before {
     content: '';
-    @apply absolute left-1 top-[11px] h-1.5 w-1.5 rounded-full bg-flame-500;
+    @apply absolute left-0 top-[13px] h-[5px] w-[5px] rounded-full bg-accent;
   }
   .prose-tv strong {
     @apply font-semibold text-ink;
   }
   .prose-tv a {
-    @apply font-medium text-brand-600 underline underline-offset-2 hover:text-brand-700;
+    @apply border-b border-accent/40 text-accent hover:border-accent;
   }
 }
 
-.grid-fade {
-  background-image: linear-gradient(to right, #e9e9ef 1px, transparent 1px),
-    linear-gradient(to bottom, #e9e9ef 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
-}
-
 .marquee {
-  animation: slide 38s linear infinite;
+  animation: slide 46s linear infinite;
 }
 @keyframes slide {
   from {

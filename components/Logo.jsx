@@ -1,43 +1,26 @@
-export function LogoMark({ size = 36, className = '', id = 'tv' }) {
+export function LogoMark({ size = 30, className = '', tone = 'ink' }) {
+  const main = tone === 'light' ? '#FBFAF8' : '#14110F'
+  const accent = '#A8431E'
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 64 64"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id={`${id}-g`} x1="4" y1="4" x2="60" y2="60" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#2B5CE6" />
-          <stop offset="0.55" stopColor="#7C3AED" />
-          <stop offset="1" stopColor="#F97316" />
-        </linearGradient>
-      </defs>
-      <rect width="64" height="64" rx="17" fill={`url(#${id}-g)`} />
-      <rect x="10" y="27" width="5" height="10" rx="2.5" fill="#fff" fillOpacity=".62" />
-      <rect x="17.5" y="22" width="5" height="20" rx="2.5" fill="#fff" fillOpacity=".82" />
-      <rect x="29.5" y="11" width="5.5" height="42" rx="2.75" fill="#fff" />
-      <rect x="24" y="23" width="16.5" height="5.5" rx="2.75" fill="#fff" />
-      <rect x="45" y="22" width="5" height="20" rx="2.5" fill="#fff" fillOpacity=".82" />
-      <rect x="52.5" y="27" width="5" height="10" rx="2.5" fill="#fff" fillOpacity=".62" />
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" className={className} aria-hidden="true">
+      {/* onda + cruz, traço plano, sem gradiente */}
+      <rect x="0" y="16" width="3" height="8" rx="1.5" fill={main} opacity=".35" />
+      <rect x="6" y="11" width="3" height="18" rx="1.5" fill={main} opacity=".6" />
+      <rect x="18.5" y="2" width="3.5" height="36" rx="1" fill={main} />
+      <rect x="13" y="12" width="14.5" height="3.5" rx="1" fill={accent} />
+      <rect x="31" y="11" width="3" height="18" rx="1.5" fill={main} opacity=".6" />
+      <rect x="37" y="16" width="3" height="8" rx="1.5" fill={main} opacity=".35" />
     </svg>
   )
 }
 
-export function Logo({ className = '', markSize = 34, id = 'tv' }) {
+export function Logo({ markSize = 28 }) {
   return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      <LogoMark size={markSize} id={id} />
+    <span className="inline-flex items-center gap-2.5">
+      <LogoMark size={markSize} />
       <span className="flex flex-col leading-none">
-        <span className="text-[17px] font-bold tracking-[-0.03em] text-ink">
-          Trilha{' '}
-          <span className="bg-gradient-to-r from-brand-600 to-flame-500 bg-clip-text text-transparent">
-            Viva
-          </span>
-        </span>
-        <span className="mt-[3px] text-[9.5px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+        <span className="font-display text-[19px] tracking-[-0.01em] text-ink">Trilha Viva</span>
+        <span className="mt-[4px] text-[9px] font-semibold uppercase tracking-[0.2em] text-ink-faint">
           Multitracks Gospel
         </span>
       </span>
@@ -45,15 +28,13 @@ export function Logo({ className = '', markSize = 34, id = 'tv' }) {
   )
 }
 
-export function LogoInverse({ markSize = 34, id = 'tvi' }) {
+export function LogoInverse({ markSize = 28 }) {
   return (
     <span className="inline-flex items-center gap-2.5">
-      <LogoMark size={markSize} id={id} />
+      <LogoMark size={markSize} tone="light" />
       <span className="flex flex-col leading-none">
-        <span className="text-[17px] font-bold tracking-[-0.03em] text-white">
-          Trilha <span className="text-flame-400">Viva</span>
-        </span>
-        <span className="mt-[3px] text-[9.5px] font-semibold uppercase tracking-[0.18em] text-white/45">
+        <span className="font-display text-[19px] tracking-[-0.01em] text-paper">Trilha Viva</span>
+        <span className="mt-[4px] text-[9px] font-semibold uppercase tracking-[0.2em] text-paper/45">
           Multitracks Gospel
         </span>
       </span>

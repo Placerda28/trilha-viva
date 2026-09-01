@@ -5,53 +5,41 @@ module.exports = {
     extend: {
       colors: {
         ink: {
-          DEFAULT: '#0A0A0B',
-          soft: '#1C1C21',
-          muted: '#61616B',
-          faint: '#8E8E98',
+          DEFAULT: '#14110F',
+          soft: '#2C2622',
+          muted: '#6B615A',
+          faint: '#9A918A',
         },
-        line: '#E9E9EF',
-        surface: '#F7F7FA',
-        brand: {
-          50: '#EEF3FF',
-          100: '#DCE6FF',
-          500: '#2B5CE6',
-          600: '#1D4ED8',
-          700: '#1739A8',
-        },
-        flame: {
-          400: '#FB923C',
-          500: '#F97316',
-          600: '#EA580C',
+        paper: '#FBFAF8',
+        line: '#E3DED7',
+        accent: {
+          DEFAULT: '#A8431E',
+          soft: '#C4653F',
+          wash: '#F4EBE5',
         },
       },
       fontFamily: {
-        sans: [
-          'Inter',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          'Segoe UI',
-          'Roboto',
-          'Helvetica Neue',
-          'Arial',
-          'sans-serif',
+        sans: [ '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif',
         ],
+        display: ['Georgia', 'Iowan Old Style', 'Times New Roman', 'serif'],
       },
       maxWidth: {
-        shell: '1180px',
+        shell: '1220px',
+        text: '38rem',
       },
-      boxShadow: {
-        card: '0 1px 2px rgba(10,10,11,.04), 0 8px 24px -12px rgba(10,10,11,.12)',
-        lift: '0 2px 4px rgba(10,10,11,.04), 0 24px 48px -20px rgba(10,10,11,.24)',
+      borderRadius: {
+        none: '0',
+        sm: '2px',
+        DEFAULT: '3px',
+        md: '4px',
+        lg: '6px',
       },
       keyframes: {
-        rise: {
-          '0%': { opacity: 0, transform: 'translateY(12px)' },
-          '100%': { opacity: 1, transform: 'translateY(0)' },
+        rise: { '0%': { opacity: 0, transform: 'translateY(10px)' }, '100%': { opacity: 1, transform: 'translateY(0)' },
         },
       },
       animation: {
-        rise: 'rise .6s cubic-bezier(.16,1,.3,1) both',
+        rise: 'rise .7s cubic-bezier(.16,1,.3,1) both',
       },
     },
   },
