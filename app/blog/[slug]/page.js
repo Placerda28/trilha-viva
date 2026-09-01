@@ -103,7 +103,7 @@ export default async function PostPage({ params }) {
             Clique, guia e canais separados, em todos os tons. Pagamento único, acesso vitalício.
           </p>
           <Link href="/assinar" className="btn-accent mt-8">
-            Liberar acesso por {priceBRL(site.price)}
+            Liberar acesso vitalício por {priceBRL(site.price)}
           </Link>
         </aside>
 
