@@ -17,7 +17,8 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-md">
-      <div className="shell flex h-[70px] items-center justify-between gap-4">
+      {/* largura total: a marca encosta na esquerda, o botão na direita */}
+      <div className="flex h-[70px] w-full items-center justify-between gap-4 px-4 sm:px-5">
         <Link href="/" aria-label="Trilha Viva — página inicial" onClick={() => setOpen(false)}>
           <Logo />
         </Link>
@@ -58,7 +59,7 @@ export default function Header() {
 
       {open && (
         <div className="border-t border-line bg-paper lg:hidden">
-          <div className="shell flex flex-col divide-y divide-line">
+          <div className="flex flex-col divide-y divide-line px-4 sm:px-5">
             {nav.map((item) => (
               <Link
                 key={item.href}
