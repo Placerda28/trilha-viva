@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/decode-assets.mjs && next dev",
+    "prebuild": "node scripts/decode-assets.mjs",
     "build": "next build",
     "start": "next start"
   },
