@@ -15,6 +15,10 @@ export const metadata = {
 
 const destaques = songs.slice(0, 12)
 
+// "R$ 89,90" quebrado em reais e centavos para o preço grande do topo,
+// sempre derivado de site.price — não repetir o número na mão.
+const [precoReais, precoCentavos] = site.price.toFixed(2).split('.')
+
 const productLd = {
   '@context': 'https://schema.org',
   '@type': 'Product',
@@ -75,19 +79,41 @@ export default function Home() {
           <div className="shell relative flex min-h-[560px] items-center py-20 sm:min-h-[640px] lg:min-h-[720px]">
             <div className="max-w-2xl animate-rise">
               <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-accent-soft">
-                Pacote único · {discountPct}% de desconto no lançamento
+                Acervo completo · acesso vitalício · sem mensalidade
               </p>
 
               <h1 className="mt-7 max-w-[15ch] font-display text-[42px] font-normal leading-[1.06] tracking-[-0.015em] text-paper [text-wrap:balance] sm:text-[62px] lg:text-[70px]">
                 Quatro mil multitracks gospel na sua igreja.
               </h1>
 
-              <p className="mt-7 max-w-xl text-[18px] leading-[1.7] text-paper/70">
+              <p className="mt-6 max-w-xl text-[18px] leading-[1.7] text-paper/70">
                 Clique, guia e cada instrumento em um canal separado, em todos os tons. Sua banda
                 toca junto — e o que falta, a trilha completa.
               </p>
 
-              <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+              {/* OFERTA — deixa explícito: 4.000 multitracks por um preço único */}
+              <div className="mt-9 border-t border-paper/20 pt-7">
+                <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-paper/60">
+                  4.000 multitracks gospel por
+                </p>
+
+                <p className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-2">
+                  <span className="font-display text-[64px] font-normal leading-[0.9] tracking-[-0.02em] text-paper sm:text-[84px]">
+                    R$&nbsp;{precoReais}
+                    <span className="align-top text-[0.5em]">,{precoCentavos}</span>
+                  </span>
+                  <span className="flex flex-col text-[15px] leading-[1.45] text-paper/60">
+                    <span className="line-through">de {priceBRL(site.fullPrice)}</span>
+                    <span className="text-accent-soft">{discountPct}% off · pagamento único</span>
+                  </span>
+                </p>
+
+                <p className="mt-4 text-[15px] text-paper/60">
+                  Pagou, recebeu o acervo inteiro. Sem mensalidade, sem cobrança por música.
+                </p>
+              </div>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link href="/assinar" className="btn-accent w-full sm:w-auto">
                   Liberar acesso por {priceBRL(site.price)}
                 </Link>
@@ -97,8 +123,7 @@ export default function Home() {
               </div>
 
               <p className="mt-6 text-[14px] text-paper/45">
-                De <span className="line-through">{priceBRL(site.fullPrice)}</span> por{' '}
-                {priceBRL(site.price)} · pagamento único · Pix ou cartão · garantia de 7 dias
+                Pix ou cartão · acesso liberado na hora · garantia de 7 dias
               </p>
             </div>
           </div>
