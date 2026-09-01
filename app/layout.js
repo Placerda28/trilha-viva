@@ -58,7 +58,7 @@ export const metadata = {
 }
 
 export const viewport = {
-  themeColor: '#ffffff',
+  themeColor: '#FBFAF8',
   width: 'device-width',
   initialScale: 1,
 }
@@ -94,14 +94,14 @@ const siteLd = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-screen bg-white antialiased">
+      <body className="min-h-screen bg-paper antialiased">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify([orgLd, siteLd]) }}
         />
         <a
           href="#conteudo"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:bg-ink focus:px-4 focus:py-2 focus:text-paper"
         >
           Pular para o conteúdo
         </a>
