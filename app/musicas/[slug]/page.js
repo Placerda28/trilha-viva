@@ -5,6 +5,7 @@ import { SessionPanel } from '@/components/Track'
 import { songs, getSong, relatedSongs } from '@/lib/catalog'
 import { artistSlug } from '@/lib/artists'
 import { site, priceBRL, discountPct } from '@/lib/site'
+import { ldJson } from '@/lib/safe'
 
 const CANAIS = [
   'Clique (metrônomo)',
@@ -83,7 +84,7 @@ export default async function SongPage({ params }) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify([ld, crumbLd]) }}
+        dangerouslySetInnerHTML={{ __html: ldJson([ld, crumbLd]) }}
       />
 
       <article className="shell pt-12">

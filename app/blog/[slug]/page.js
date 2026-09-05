@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { Breadcrumbs } from '@/components/ui'
 import { posts, getPost } from '@/lib/posts'
 import { site, priceBRL } from '@/lib/site'
+import { ldJson } from '@/lib/safe'
 
 export function generateStaticParams() {
   return posts.map((p) => ({ slug: p.slug }))
@@ -58,7 +59,7 @@ export default async function PostPage({ params }) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(ld) }} />
       <article className="shell max-w-3xl pt-12">
         <Breadcrumbs
           items={[
