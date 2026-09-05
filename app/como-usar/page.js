@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import TabletMockup from '@/components/TabletMockup'
+import { SessionPanel } from '@/components/Track'
+import { songs } from '@/lib/catalog'
 import { Breadcrumbs, SectionHead, Faq, Check } from '@/components/ui'
 import { tools, steps, usos } from '@/lib/tools'
 import { faq } from '@/lib/faq'
@@ -80,10 +81,10 @@ export default function ComoUsarPage() {
         <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Como usar' }]} />
 
         <header className="mt-8 max-w-3xl border-b border-line pb-14">
-          <p className="text-[11.5px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
+          <p className="text-[14px] font-semibold text-ink-muted">
             Guia completo
           </p>
-          <h1 className="mt-6 font-display text-[38px] font-normal leading-[1.08] text-ink sm:text-[54px]">
+          <h1 className="mt-6 font-bold text-[38px] leading-[1.08] text-ink sm:text-[54px]">
             Como usar multitrack na sua igreja
           </h1>
           <p className="mt-6 text-[18px] leading-[1.7] text-ink-muted">
@@ -117,22 +118,21 @@ export default function ComoUsarPage() {
             </p>
           </div>
 
-          <TabletMockup />
+          <SessionPanel song={songs[0]} />
         </div>
       </section>
 
       <section className="shell pt-24 sm:pt-32">
         <SectionHead
-          eyebrow="Passo a passo"
           title="Do download ao domingo"
           sub="Cinco passos. Nenhum deles exige que você seja técnico de áudio."
         />
         <ol className="mt-12 grid divide-y divide-line border-y border-line lg:grid-cols-2 lg:gap-x-16 lg:divide-y-0">
           {steps.map((s) => (
             <li key={s.n} className="grid gap-3 py-7 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-6">
-              <span className="font-display text-[22px] leading-none text-accent">{s.n}</span>
+              <span className="figs text-[20px] font-extrabold leading-none text-signal-deep">{s.n}</span>
               <div>
-                <h3 className="font-display text-[19px] leading-snug text-ink">{s.title}</h3>
+                <h3 className="font-bold text-[19px] leading-snug text-ink">{s.title}</h3>
                 <p className="mt-2 text-[15px] leading-[1.7] text-ink-muted">{s.body}</p>
               </div>
             </li>
@@ -143,7 +143,6 @@ export default function ComoUsarPage() {
       <section id="reaper" className="mt-24 scroll-mt-24 border-y border-line bg-white py-24 sm:mt-32 sm:py-32">
         <div className="shell">
           <SectionHead
-            eyebrow="Programas"
             title="Qual software usar para rodar multitrack"
             sub="Todos abaixo dão conta do recado. A diferença está no bolso, no sistema operacional e em quanto você quer aprender."
           />
@@ -156,11 +155,11 @@ export default function ComoUsarPage() {
                 className="grid scroll-mt-24 gap-6 py-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)] lg:gap-12"
               >
                 <div>
-                  <h3 className="font-display text-[26px] leading-none text-ink">{t.name}</h3>
-                  <p className="mt-2 text-[11.5px] font-semibold uppercase tracking-[0.12em] text-accent">
+                  <h3 className="font-bold text-[26px] leading-none text-ink">{t.name}</h3>
+                  <p className="mt-2 text-[14px] font-semibold text-ink">
                     {t.badge}
                   </p>
-                  <p className="mt-1 text-[12.5px] text-ink-faint">{t.platform}</p>
+                  <p className="mt-1 text-[12.5px] text-ink-muted">{t.platform}</p>
                 </div>
                 <div>
                   <p className="max-w-2xl text-[16px] leading-[1.72] text-ink-muted">{t.summary}</p>
@@ -170,7 +169,7 @@ export default function ComoUsarPage() {
                         key={w}
                         className="flex items-start gap-3 text-[14.5px] leading-[1.6] text-ink-muted"
                       >
-                        <Check className="mt-[6px] shrink-0 text-accent" />
+                        <Check className="mt-[6px] shrink-0 text-signal" />
                         {w}
                       </li>
                     ))}
@@ -181,7 +180,7 @@ export default function ComoUsarPage() {
                       href={t.url}
                       target="_blank"
                       rel="noopener noreferrer nofollow"
-                      className="link-underline text-[13.5px]"
+                      className="link-quiet text-[13.5px]"
                     >
                       Site oficial
                     </a>
@@ -192,7 +191,7 @@ export default function ComoUsarPage() {
           </div>
 
           <div className="mt-12 max-w-3xl">
-            <h3 className="font-display text-[22px] text-ink">
+            <h3 className="font-bold text-[22px] text-ink">
               Se você está começando hoje, faça assim
             </h3>
             <p className="mt-4 text-[16px] leading-[1.75] text-ink-muted">
@@ -235,8 +234,8 @@ export default function ComoUsarPage() {
             </p>
           </div>
 
-          <div className="bg-ink p-10 text-paper sm:p-12">
-            <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-paper/45">
+          <div className="bg-ink p-10 text-white sm:p-12">
+            <p className="text-[14px] font-semibold text-white/45">
               Checklist antes do culto
             </p>
             <ul className="mt-8 divide-y divide-white/10 border-y border-white/10">
@@ -250,9 +249,9 @@ export default function ComoUsarPage() {
               ].map((t) => (
                 <li
                   key={t}
-                  className="flex items-start gap-4 py-3.5 text-[15px] leading-[1.6] text-paper/75"
+                  className="flex items-start gap-4 py-3.5 text-[15px] leading-[1.6] text-white/75"
                 >
-                  <Check className="mt-[7px] shrink-0 text-accent-soft" />
+                  <Check className="mt-[7px] shrink-0 text-signal" />
                   {t}
                 </li>
               ))}
@@ -263,7 +262,6 @@ export default function ComoUsarPage() {
 
       <section id="tablet" className="shell scroll-mt-24 pt-24 sm:pt-32">
         <SectionHead
-          eyebrow="No tablet"
           title="Subir no palco só com um tablet"
           sub="Muita igreja abandonou o notebook. O tablet liga mais rápido, não trava com atualização do sistema no meio do culto e ocupa menos espaço no praticável."
         />
@@ -283,7 +281,7 @@ export default function ComoUsarPage() {
             },
           ].map((c) => (
             <div key={c.t}>
-              <h3 className="font-display text-[20px] leading-snug text-ink">{c.t}</h3>
+              <h3 className="font-bold text-[20px] leading-snug text-ink">{c.t}</h3>
               <p className="mt-2.5 text-[15px] leading-[1.7] text-ink-muted">{c.d}</p>
             </div>
           ))}
@@ -291,11 +289,11 @@ export default function ComoUsarPage() {
       </section>
 
       <section className="shell pt-24 sm:pt-32">
-        <SectionHead eyebrow="Equipamentos" title="O que você realmente precisa comprar" />
+        <SectionHead title="O que você realmente precisa comprar" />
         <div className="mt-12 grid gap-x-14 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {equipamentos.map((e) => (
             <div key={e.t}>
-              <h3 className="font-display text-[19px] leading-snug text-ink">{e.t}</h3>
+              <h3 className="font-bold text-[19px] leading-snug text-ink">{e.t}</h3>
               <p className="mt-2.5 text-[15px] leading-[1.7] text-ink-muted">{e.d}</p>
             </div>
           ))}
@@ -303,11 +301,11 @@ export default function ComoUsarPage() {
       </section>
 
       <section className="shell pt-24 sm:pt-32">
-        <SectionHead eyebrow="Onde usar" title="Não é só no domingo de manhã" />
+        <SectionHead title="Não é só no domingo de manhã" />
         <div className="mt-12 grid gap-x-14 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {usos.map((u) => (
             <div key={u.title}>
-              <h3 className="font-display text-[19px] leading-snug text-ink">{u.title}</h3>
+              <h3 className="font-bold text-[19px] leading-snug text-ink">{u.title}</h3>
               <p className="mt-2.5 text-[15px] leading-[1.7] text-ink-muted">{u.body}</p>
             </div>
           ))}
@@ -315,20 +313,20 @@ export default function ComoUsarPage() {
       </section>
 
       <section className="shell pt-24 sm:pt-32">
-        <SectionHead eyebrow="Dúvidas" title="Perguntas sobre uso" />
+        <SectionHead title="Perguntas sobre uso" />
         <Faq items={faq.slice(3, 9)} className="mt-10" />
       </section>
 
       <section className="shell pt-24 sm:pt-32">
         <div className="border-y border-line py-16 text-center sm:py-20">
-          <h2 className="display mx-auto max-w-2xl text-[30px] leading-[1.14] sm:text-[42px]">
+          <h2 className="font-bold tracking-[-0.025em] text-ink mx-auto max-w-2xl text-[30px] leading-[1.14] sm:text-[42px]">
             Agora só falta o acervo.
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-[16.5px] leading-[1.7] text-ink-muted">
             Mais de 4.000 multitracks gospel com clique, guia e canais separados — em um pacote
             único, por {priceBRL(site.price)}.
           </p>
-          <Link href="/assinar" className="btn-accent mt-9">
+          <Link href="/assinar" className="btn-signal mt-9">
             Liberar meu acesso
           </Link>
         </div>
