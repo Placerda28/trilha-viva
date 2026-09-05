@@ -59,6 +59,7 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
+            aria-pressed={cat === ''}
             onClick={() => {
               setCat('')
               setLimit(PAGE)
@@ -73,6 +74,7 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
             <button
               key={c}
               type="button"
+              aria-pressed={cat === c}
               onClick={() => {
                 setCat(c)
                 setLimit(PAGE)

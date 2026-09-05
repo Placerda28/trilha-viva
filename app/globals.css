@@ -15,6 +15,18 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Foco de teclado visível em tudo. As linhas do setlist e os links de texto
+   não tinham indicação nenhuma; agora têm um contorno com folga. */
+:focus-visible {
+  outline: 2px solid #2c3e48;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.panel :focus-visible,
+.bg-ink :focus-visible {
+  outline-color: #d4dde2;
+}
+
 ::selection {
   background: #5c7e8f;
   color: #ffffff;
@@ -32,7 +44,7 @@ body {
 
   /* ---- botões ---------------------------------------------------------- */
   .btn {
-    @apply inline-flex select-none items-center justify-center rounded text-[15px] font-semibold leading-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2;
+    @apply inline-flex select-none items-center justify-center rounded text-[15px] font-semibold leading-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
   }
   .btn-signal {
     @apply btn bg-signal-deep px-7 py-4 text-white hover:bg-ink;
