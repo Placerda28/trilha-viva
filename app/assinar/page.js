@@ -42,10 +42,10 @@ export default async function AssinarPage({ searchParams }) {
 
       <div className="mt-10 grid gap-14 lg:grid-cols-[1fr_420px] lg:gap-20">
         <div>
-          <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-accent">
-            Oferta de lançamento · {discountPct}% de desconto
+          <p className="inline-block bg-signal px-3 py-1.5 text-[13.5px] font-bold text-ink">
+            {discountPct}% de desconto no lançamento
           </p>
-          <h1 className="mt-6 font-display text-[38px] font-normal leading-[1.08] text-ink sm:text-[52px]">
+          <h1 className="mt-6 font-bold text-[38px] leading-[1.08] text-ink sm:text-[52px]">
             Um pagamento.
             <br />
             O acervo inteiro.
@@ -62,7 +62,7 @@ export default async function AssinarPage({ searchParams }) {
                 key={t}
                 className="flex items-start gap-3 py-3 text-[15px] leading-[1.6] text-ink-muted"
               >
-                <Check className="mt-[6px] shrink-0 text-accent" />
+                <Check className="mt-[6px] shrink-0 text-signal" />
                 {t}
               </li>
             ))}
@@ -84,19 +84,19 @@ export default async function AssinarPage({ searchParams }) {
               },
             ].map((b) => (
               <div key={b.t}>
-                <h2 className="font-display text-[18px] text-ink">{b.t}</h2>
+                <h2 className="font-bold text-[18px] text-ink">{b.t}</h2>
                 <p className="mt-2 text-[14px] leading-[1.65] text-ink-muted">{b.d}</p>
               </div>
             ))}
           </div>
 
-          <p className="mt-14 text-[14.5px] text-ink-faint">
+          <p className="mt-14 text-[14.5px] text-ink-muted">
             Ainda com dúvida?{' '}
-            <Link href="/faq" className="link-underline">
+            <Link href="/faq" className="link-quiet">
               Veja as perguntas frequentes
             </Link>{' '}
             ou{' '}
-            <Link href="/como-usar" className="link-underline">
+            <Link href="/como-usar" className="link-quiet">
               entenda como usar o multitrack
             </Link>
             .
@@ -106,12 +106,12 @@ export default async function AssinarPage({ searchParams }) {
         <div className="lg:sticky lg:top-28 lg:self-start">
           <div className="border border-line bg-white p-8">
             <div className="flex items-end gap-3">
-              <span className="text-[15px] text-ink-faint line-through">
+              <span className="text-[15px] text-ink-muted line-through">
                 {priceBRL(site.fullPrice)}
               </span>
-              <span className="text-[13px] font-semibold text-accent">-{discountPct}%</span>
+              <span className="bg-signal px-2 py-1 text-[12.5px] font-bold text-ink">-{discountPct}%</span>
             </div>
-            <p className="mt-2 font-display text-[46px] leading-none text-ink">
+            <p className="mt-2 font-bold text-[46px] leading-none text-ink">
               {priceBRL(site.price)}
             </p>
             <p className="mt-3 text-[14px] text-ink-muted">
@@ -123,7 +123,7 @@ export default async function AssinarPage({ searchParams }) {
             <CheckoutForm />
           </div>
 
-          <p className="mt-5 text-center text-[12.5px] text-ink-faint">
+          <p className="mt-5 text-center text-[12.5px] text-ink-muted">
             Conexão criptografada · Stripe · Garantia de 7 dias
           </p>
         </div>

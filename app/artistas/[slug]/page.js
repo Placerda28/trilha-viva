@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Breadcrumbs, SongCard } from '@/components/ui'
+import { Breadcrumbs, SongGrid } from '@/components/ui'
 import { artistList, getArtist } from '@/lib/artists'
 import { site, priceBRL } from '@/lib/site'
 
@@ -54,7 +54,7 @@ export default async function ArtistPage({ params }) {
 
         <div className="mt-8 flex flex-wrap items-end justify-between gap-8 border-b border-line pb-12">
           <div className="max-w-2xl">
-            <h1 className="font-display text-[36px] font-normal leading-[1.1] text-ink sm:text-[48px]">
+            <h1 className="text-d2 text-ink">
               Multitracks de {artist.name}
             </h1>
             <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
@@ -63,15 +63,13 @@ export default async function ArtistPage({ params }) {
               pública, com clique, guia e canais separados. Todos fazem parte do pacote único.
             </p>
           </div>
-          <Link href="/assinar" className="btn-accent shrink-0">
+          <Link href="/assinar" className="btn-signal shrink-0">
             Liberar por {priceBRL(site.price)}
           </Link>
         </div>
 
-        <div className="mt-12 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-6">
-          {artist.songs.map((s) => (
-            <SongCard key={s.slug} song={s} />
-          ))}
+        <div className="mt-10 border-t-2 border-ink">
+          <SongGrid songs={artist.songs} />
         </div>
       </div>
     </>
