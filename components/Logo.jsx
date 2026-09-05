@@ -1,43 +1,43 @@
-export function LogoMark({ size = 30, className = '', tone = 'ink' }) {
-  const main = tone === 'light' ? '#FBFAF8' : '#14110F'
-  const accent = '#A8431E'
+// A marca é o próprio objeto do produto: uma sessão de multitrack vista de perfil.
+// Nove barras — as duas primeiras são o clique e a guia, em âmbar, que é o que
+// separa uma multitrack de um playback.
+const BARS = [0.42, 0.42, 0.68, 0.86, 1, 0.8, 0.6, 0.9, 0.5]
+
+export function LogoMark({ size = 26, tone = 'ink', className = '' }) {
+  const base = tone === 'light' ? 'rgba(255,255,255,.72)' : '#151B34'
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" className={className} aria-hidden="true">
-      {/* onda + cruz, traço plano, sem gradiente */}
-      <rect x="0" y="16" width="3" height="8" rx="1.5" fill={main} opacity=".35" />
-      <rect x="6" y="11" width="3" height="18" rx="1.5" fill={main} opacity=".6" />
-      <rect x="18.5" y="2" width="3.5" height="36" rx="1" fill={main} />
-      <rect x="13" y="12" width="14.5" height="3.5" rx="1" fill={accent} />
-      <rect x="31" y="11" width="3" height="18" rx="1.5" fill={main} opacity=".6" />
-      <rect x="37" y="16" width="3" height="8" rx="1.5" fill={main} opacity=".35" />
-    </svg>
+    <span
+      className={`inline-flex items-end gap-[2.5px] ${className}`}
+      style={{ height: size }}
+      aria-hidden="true"
+    >
+      {BARS.map((h, i) => (
+        <span
+          key={i}
+          className="w-[3px]"
+          style={{ height: `${h * 100}%`, background: i < 2 ? '#F2A93B' : base }}
+        />
+      ))}
+    </span>
   )
 }
 
-export function Logo({ markSize = 28 }) {
+export function Logo({ tone = 'ink', markSize = 24 }) {
+  const light = tone === 'light'
   return (
-    <span className="inline-flex items-center gap-2.5">
-      <LogoMark size={markSize} />
-      <span className="flex flex-col leading-none">
-        <span className="font-display text-[19px] tracking-[-0.01em] text-ink">Trilha Viva</span>
-        <span className="mt-[4px] text-[9px] font-semibold uppercase tracking-[0.2em] text-ink-faint">
-          Multitracks Gospel
-        </span>
+    <span className="inline-flex items-center gap-3">
+      <LogoMark size={markSize} tone={tone} />
+      <span
+        className={`text-[19px] font-extrabold tracking-[-0.03em] ${
+          light ? 'text-white' : 'text-ink'
+        }`}
+      >
+        Trilha Viva
       </span>
     </span>
   )
 }
 
-export function LogoInverse({ markSize = 28 }) {
-  return (
-    <span className="inline-flex items-center gap-2.5">
-      <LogoMark size={markSize} tone="light" />
-      <span className="flex flex-col leading-none">
-        <span className="font-display text-[19px] tracking-[-0.01em] text-paper">Trilha Viva</span>
-        <span className="mt-[4px] text-[9px] font-semibold uppercase tracking-[0.2em] text-paper/45">
-          Multitracks Gospel
-        </span>
-      </span>
-    </span>
-  )
+export function LogoInverse({ markSize = 24 }) {
+  return <Logo tone="light" markSize={markSize} />
 }

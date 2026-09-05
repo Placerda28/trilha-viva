@@ -4,42 +4,64 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Tinta: um azul-marinho profundo. É cor, não um preto disfarçado.
         ink: {
-          DEFAULT: '#14110F',
-          soft: '#2C2622',
-          muted: '#6B615A',
-          faint: '#9A918A',
+          DEFAULT: '#151B34',
+          soft: '#232D52',
+          muted: '#59627F',
+          faint: '#8A92AB',
         },
-        paper: '#FBFAF8',
-        line: '#E3DED7',
+        paper: '#FFFFFF',
+        // Superfície fria — nada de creme.
+        mist: {
+          DEFAULT: '#EEF1F7',
+          deep: '#E1E6F0',
+        },
+        line: '#DCE2ED',
+        // Âmbar de luz de palco. Só como preenchimento, nunca como texto sobre branco.
+        signal: {
+          DEFAULT: '#F2A93B',
+          deep: '#D2871A',
+          wash: '#FFF3DF',
+        },
+        // Apelido herdado: páginas ainda não redesenhadas usam `accent`.
         accent: {
-          DEFAULT: '#A8431E',
-          soft: '#C4653F',
-          wash: '#F4EBE5',
+          DEFAULT: '#F2A93B',
+          soft: '#F2A93B',
+          wash: '#FFF3DF',
         },
       },
       fontFamily: {
-        sans: [ '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif',
-        ],
-        display: ['Georgia', 'Iowan Old Style', 'Times New Roman', 'serif'],
+        sans: ['Archivo Variable', 'system-ui', 'sans-serif'],
+        display: ['Archivo Variable', 'system-ui', 'sans-serif'],
+        read: ['Source Serif 4 Variable', 'Georgia', 'serif'],
+      },
+      fontSize: {
+        d1: ['clamp(42px, 7.4vw, 84px)', { lineHeight: '0.94', letterSpacing: '-0.035em', fontWeight: '800' }],
+        d2: ['clamp(29px, 4.3vw, 52px)', { lineHeight: '1.04', letterSpacing: '-0.028em', fontWeight: '700' }],
+        d3: ['clamp(22px, 2.6vw, 31px)', { lineHeight: '1.14', letterSpacing: '-0.02em', fontWeight: '700' }],
       },
       maxWidth: {
-        shell: '1220px',
-        text: '38rem',
+        shell: '1280px',
+        text: '36rem',
       },
       borderRadius: {
         none: '0',
-        sm: '2px',
-        DEFAULT: '3px',
-        md: '4px',
-        lg: '6px',
+        sm: '3px',
+        DEFAULT: '4px',
+        md: '6px',
+        lg: '10px',
+        xl: '14px',
       },
       keyframes: {
-        rise: { '0%': { opacity: 0, transform: 'translateY(10px)' }, '100%': { opacity: 1, transform: 'translateY(0)' },
+        tick: {
+          '0%, 42%': { opacity: '0.18' },
+          '46%, 54%': { opacity: '1' },
+          '58%, 100%': { opacity: '0.18' },
         },
       },
       animation: {
-        rise: 'rise .7s cubic-bezier(.16,1,.3,1) both',
+        tick: 'tick 1.9s steps(1, end) infinite',
       },
     },
   },
