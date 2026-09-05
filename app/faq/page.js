@@ -28,7 +28,7 @@ export default function FaqPage() {
         <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Dúvidas' }]} />
 
         <header className="mt-8 max-w-2xl border-b border-line pb-12">
-          <h1 className="font-display text-[36px] font-normal leading-[1.1] text-ink sm:text-[48px]">
+          <h1 className="font-bold text-[36px] leading-[1.1] text-ink sm:text-[48px]">
             Dúvidas frequentes
           </h1>
           <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
@@ -47,12 +47,12 @@ export default function FaqPage() {
         </div>
 
         <div className="mt-16 border-b border-line pb-16 text-center">
-          <h2 className="display text-[28px] sm:text-[34px]">Pronto para liberar o acervo?</h2>
+          <h2 className="font-bold tracking-[-0.025em] text-ink text-[28px] sm:text-[34px]">Pronto para liberar o acervo?</h2>
           <p className="mx-auto mt-4 max-w-lg text-[16px] leading-[1.7] text-ink-muted">
             Mais de {site.totalTracks.toLocaleString('pt-BR')} multitracks gospel por{' '}
             {priceBRL(site.price)}, pagamento único.
           </p>
-          <Link href="/assinar" className="btn-accent mt-8">
+          <Link href="/assinar" className="btn-signal mt-8">
             Quero meu acesso
           </Link>
         </div>

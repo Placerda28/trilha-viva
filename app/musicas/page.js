@@ -48,7 +48,7 @@ export default async function MusicasPage({ searchParams }) {
 
         <div className="mt-8 flex flex-wrap items-end justify-between gap-8 border-b border-line pb-12">
           <div className="max-w-2xl">
-            <h1 className="font-display text-[36px] font-normal leading-[1.1] text-ink sm:text-[48px]">
+            <h1 className="font-bold text-[36px] leading-[1.1] text-ink sm:text-[48px]">
               Acervo de multitracks gospel
             </h1>
             <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
@@ -57,7 +57,7 @@ export default async function MusicasPage({ searchParams }) {
               {site.totalTracks.toLocaleString('pt-BR')} multitracks.
             </p>
           </div>
-          <Link href="/assinar" className="btn-accent shrink-0">
+          <Link href="/assinar" className="btn-signal shrink-0">
             Liberar tudo por {priceBRL(site.price)}
           </Link>
         </div>
