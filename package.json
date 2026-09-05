@@ -6,7 +6,11 @@
     "dev": "node scripts/decode-assets.mjs && next dev",
     "prebuild": "node scripts/decode-assets.mjs",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "cf:build": "opennextjs-cloudflare build",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "next": "^15.5.24",
@@ -15,8 +19,10 @@
     "stripe": "17.5.0"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.6",
     "autoprefixer": "10.4.20",
     "postcss": "8.4.49",
-    "tailwindcss": "3.4.17"
+    "tailwindcss": "3.4.17",
+    "wrangler": "^4.129.0"
   }
 }
