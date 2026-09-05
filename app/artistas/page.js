@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import Cover from '@/components/Cover'
+import { ChannelStrip } from '@/components/Track'
 import { Breadcrumbs } from '@/components/ui'
 import { artistList } from '@/lib/artists'
 import { site, priceBRL } from '@/lib/site'
@@ -27,9 +27,7 @@ export default function ArtistasPage() {
         <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Artistas' }]} />
 
         <div className="mt-8 max-w-2xl border-b border-line pb-12">
-          <h1 className="font-display text-[36px] font-normal leading-[1.1] text-ink sm:text-[48px]">
-            Artistas e ministérios
-          </h1>
+          <h1 className="text-d1 text-ink">Artistas e ministérios</h1>
           <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
             Os louvores que a sua igreja canta, com multitrack pronto para o culto. Todos incluídos
             no mesmo pacote por {priceBRL(site.price)}.
@@ -43,12 +41,12 @@ export default function ArtistasPage() {
               href={`/artistas/${a.slug}`}
               className="group flex items-center gap-4 py-5"
             >
-              <Cover song={a.songs[0]} className="h-14 w-14 shrink-0" />
+              <ChannelStrip seed={a.songs[0].seed} height={26} className="shrink-0" />
               <div className="min-w-0">
-                <h2 className="truncate font-display text-[18px] text-ink group-hover:text-accent">
+                <h2 className="truncate text-[17px] font-bold tracking-[-0.015em] text-ink group-hover:underline group-hover:decoration-signal group-hover:decoration-2 group-hover:underline-offset-4">
                   {a.name}
                 </h2>
-                <p className="mt-0.5 text-[13px] text-ink-faint">
+                <p className="figs mt-0.5 text-[13px] text-ink-muted">
                   {a.songs.length}{' '}
                   {a.songs.length === 1 ? 'multitrack na amostra' : 'multitracks na amostra'}
                 </p>

@@ -11,7 +11,7 @@ export default function PrivacidadePage() {
   return (
     <div className="shell max-w-3xl pt-12">
       <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Privacidade' }]} />
-      <h1 className="mt-8 font-display text-[34px] font-normal leading-[1.12] text-ink sm:text-[44px]">
+      <h1 className="mt-8 font-bold text-[34px] leading-[1.12] text-ink sm:text-[44px]">
         Política de privacidade
       </h1>
       <div className="prose-tv pb-8">
