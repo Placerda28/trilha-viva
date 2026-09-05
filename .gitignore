@@ -11,3 +11,4 @@ out
 .wrangler
 .dev.vars
 cloudflare-env.d.ts
+public/img
