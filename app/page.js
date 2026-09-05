@@ -59,7 +59,7 @@ export default function Home() {
       <section className="shell pt-14 sm:pt-20 lg:pt-24">
         <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:gap-16">
           <div>
-            <p className="inline-block bg-signal px-3 py-1.5 text-[13.5px] font-bold text-ink">
+            <p className="chip">
               {discountPct}% de desconto no lançamento
             </p>
 
@@ -97,7 +97,7 @@ export default function Home() {
             <div className="border-t border-white/10 px-4 py-4 sm:px-5">
               <Link
                 href="/musicas"
-                className="text-[14.5px] font-semibold text-signal underline decoration-signal/40 decoration-2 underline-offset-4 hover:decoration-signal"
+                className="text-[14.5px] font-semibold text-mist underline decoration-mist/40 decoration-2 underline-offset-4 hover:decoration-mist"
               >
                 Abrir o acervo inteiro
               </Link>
@@ -359,7 +359,7 @@ export default function Home() {
                     key={t}
                     className="flex items-start gap-4 py-3.5 text-[15.5px] leading-[1.6] text-white/75"
                   >
-                    <Check className="mt-[8px] shrink-0" />
+                    <Check tone="light" className="mt-[8px] shrink-0" />
                     {t}
                   </li>
                 ))}
