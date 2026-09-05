@@ -169,7 +169,7 @@ export default function ComoUsarPage() {
                         key={w}
                         className="flex items-start gap-3 text-[14.5px] leading-[1.6] text-ink-muted"
                       >
-                        <Check className="mt-[6px] shrink-0 text-signal" />
+                        <Check className="mt-[6px] shrink-0" />
                         {w}
                       </li>
                     ))}
@@ -251,7 +251,7 @@ export default function ComoUsarPage() {
                   key={t}
                   className="flex items-start gap-4 py-3.5 text-[15px] leading-[1.6] text-white/75"
                 >
-                  <Check className="mt-[7px] shrink-0 text-signal" />
+                  <Check tone="light" className="mt-[7px] shrink-0" />
                   {t}
                 </li>
               ))}
