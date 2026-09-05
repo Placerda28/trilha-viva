@@ -135,7 +135,7 @@ export default function AccessPanel() {
           {[ 'Guarde o e-mail: ele é o seu comprovante de acesso vitalício', 'O acesso é pessoal, para o seu ministério', 'Comece pelo guia de configuração do REAPER', 'Qualquer dúvida, é só responder o e-mail da compra',
           ].map((t) => (
             <li key={t} className="flex items-start gap-3 text-[14px] text-ink-muted">
-              <Check className="mt-[6px] shrink-0 text-signal" />
+              <Check className="mt-[6px] shrink-0" />
               {t}
             </li>
           ))}
@@ -169,11 +169,11 @@ function Panel({ tone, title, children }) {
     <div className={`border ${ring} bg-white p-8 sm:p-11`}>
       <div className="flex items-center gap-3">
         {tone === 'ok' && (
-          <span className="flex h-9 w-9 items-center justify-center border border-signal/30">
+          <span className="flex h-9 w-9 items-center justify-center border border-signal/30 text-signal">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path
                 d="M5 10.5l3.2 3.2L15 7"
-                stroke="#A9702F"
+                stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="square"
               />
