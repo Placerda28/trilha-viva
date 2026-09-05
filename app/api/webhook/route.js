@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getStripe } from '@/lib/stripe'
+import { getCryptoProvider, getStripe } from '@/lib/stripe'
 import { site } from '@/lib/site'
 
 export const runtime = 'nodejs'
@@ -61,7 +61,15 @@ export async function POST(req) {
 
   let event
   try {
-    event = stripe.webhooks.constructEvent(raw, sig, secret)
+    // constructEventAsync + SubtleCrypto: o constructEvent síncrono depende do
+    // crypto do Node e não roda nos Cloudflare Workers.
+    event = await stripe.webhooks.constructEventAsync(
+      raw,
+      sig,
+      secret,
+      undefined,
+      getCryptoProvider()
+    )
   } catch (err) {
     console.error('webhook signature error', err?.message)
     return NextResponse.json({ error: 'assinatura inválida' }, { status: 400 })
