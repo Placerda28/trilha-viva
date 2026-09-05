@@ -42,7 +42,7 @@ export default async function AssinarPage({ searchParams }) {
 
       <div className="mt-10 grid gap-14 lg:grid-cols-[1fr_420px] lg:gap-20">
         <div>
-          <p className="inline-block bg-signal px-3 py-1.5 text-[13.5px] font-bold text-ink">
+          <p className="chip">
             {discountPct}% de desconto no lançamento
           </p>
           <h1 className="mt-6 font-bold text-[38px] leading-[1.08] text-ink sm:text-[52px]">
@@ -62,7 +62,7 @@ export default async function AssinarPage({ searchParams }) {
                 key={t}
                 className="flex items-start gap-3 py-3 text-[15px] leading-[1.6] text-ink-muted"
               >
-                <Check className="mt-[6px] shrink-0 text-signal" />
+                <Check className="mt-[6px] shrink-0" />
                 {t}
               </li>
             ))}
@@ -109,7 +109,7 @@ export default async function AssinarPage({ searchParams }) {
               <span className="text-[15px] text-ink-muted line-through">
                 {priceBRL(site.fullPrice)}
               </span>
-              <span className="bg-signal px-2 py-1 text-[12.5px] font-bold text-ink">-{discountPct}%</span>
+              <span className="chip-sm">-{discountPct}%</span>
             </div>
             <p className="mt-2 font-bold text-[46px] leading-none text-ink">
               {priceBRL(site.price)}
