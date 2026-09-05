@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import TabletMockup from '@/components/TabletMockup'
-import { SectionHead, SongCard, Faq, Check, Figure } from '@/components/ui'
-import { songs, artists } from '@/lib/catalog'
+import { SectionHead, SongGrid, Faq, Check, Figure } from '@/components/ui'
+import { SessionPanel, TrackList, CHANNELS } from '@/components/Track'
+import { songs } from '@/lib/catalog'
 import { site, includes, priceBRL, discountPct } from '@/lib/site'
 import { tools, usos, steps } from '@/lib/tools'
 import { faq } from '@/lib/faq'
@@ -13,7 +13,9 @@ export const metadata = {
   alternates: { canonical: '/' },
 }
 
-const destaques = songs.slice(0, 12)
+const setlist = songs.slice(0, 8)
+const amostra = songs.slice(8, 24)
+const aberta = songs[0]
 
 const productLd = {
   '@context': 'https://schema.org',
@@ -53,83 +55,78 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify([productLd, faqLd]) }}
       />
 
-      {/* HERO */}
-      <section className="relative">
-        <div className="relative min-h-[560px] overflow-hidden bg-ink sm:min-h-[640px] lg:min-h-[720px]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/img/banda-palco.webp"
-            alt="Equipe de louvor cantando no palco, com banda completa e luzes de show"
-            fetchPriority="high"
-            className="absolute inset-0 h-full w-full object-cover object-center opacity-75"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(90deg, rgba(12,10,9,.94) 0%, rgba(12,10,9,.80) 42%, rgba(12,10,9,.30) 78%, rgba(12,10,9,.55) 100%)',
-            }}
-          />
+      {/* ABERTURA — o setlist é o produto, então ele abre a página */}
+      <section className="shell pt-14 sm:pt-20 lg:pt-24">
+        <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:gap-16">
+          <div>
+            <p className="inline-block bg-signal px-3 py-1.5 text-[13.5px] font-bold text-ink">
+              {discountPct}% de desconto no lançamento
+            </p>
 
-          <div className="shell relative flex min-h-[560px] items-center py-20 sm:min-h-[640px] lg:min-h-[720px]">
-            <div className="max-w-2xl animate-rise">
-              <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-accent-soft">
-                Pacote único · {discountPct}% de desconto no lançamento
-              </p>
+            <h1 className="text-d1 mt-7 max-w-[13ch] text-ink [text-wrap:balance]">
+              4.000 multitracks gospel na sua igreja.
+            </h1>
 
-              <h1 className="mt-7 max-w-[20ch] font-display text-[42px] font-normal leading-[1.06] tracking-[-0.015em] text-paper [text-wrap:balance] sm:text-[60px] lg:text-[68px]">
-                4.000 multitracks gospel na sua igreja.
-              </h1>
+            <p className="mt-7 max-w-lg font-read text-[19px] leading-[1.6] text-ink-muted">
+              Clique, guia e cada instrumento em um canal separado, em todos os tons. Sua banda toca
+              junto, e o que falta vem da trilha.
+            </p>
 
-              <p className="mt-7 max-w-xl text-[18px] leading-[1.7] text-paper/70">
-                Clique, guia e cada instrumento em um canal separado, em todos os tons. Sua banda
-                toca junto — e o que falta, a trilha completa.
-              </p>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link href="/assinar" className="btn-signal w-full sm:w-auto">
+                Liberar acesso vitalício por {priceBRL(site.price)}
+              </Link>
+              <Link href="/musicas" className="btn-quiet w-full sm:w-auto">
+                Ver o acervo
+              </Link>
+            </div>
 
-              <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Link href="/assinar" className="btn-accent w-full sm:w-auto">
-                  Liberar acesso vitalício por {priceBRL(site.price)}
-                </Link>
-                <Link href="/musicas" className="btn-light w-full sm:w-auto">
-                  Ver o acervo
-                </Link>
-              </div>
+            <p className="mt-6 max-w-md text-[14.5px] leading-[1.6] text-ink-muted">
+              De <span className="line-through">{priceBRL(site.fullPrice)}</span> por{' '}
+              {priceBRL(site.price)} em pagamento único, no Pix ou no cartão. Sete dias de garantia.
+            </p>
+          </div>
 
-              <p className="mt-6 text-[14px] text-paper/45">
-                De <span className="line-through">{priceBRL(site.fullPrice)}</span> por{' '}
-                {priceBRL(site.price)} · pagamento único · Pix ou cartão · garantia de 7 dias
-              </p>
+          {/* O setlist: prova e navegação ao mesmo tempo */}
+          <div className="panel overflow-hidden">
+            <div className="flex items-baseline justify-between gap-4 px-4 py-4 sm:px-5">
+              <p className="text-[15px] font-bold">Domingo de manhã</p>
+              <p className="figs text-[13px] text-white/45">8 de mais de 4.000</p>
+            </div>
+            <TrackList songs={setlist} tone="light" />
+            <div className="border-t border-white/10 px-4 py-4 sm:px-5">
+              <Link
+                href="/musicas"
+                className="text-[14.5px] font-semibold text-signal underline decoration-signal/40 decoration-2 underline-offset-4 hover:decoration-signal"
+              >
+                Abrir o acervo inteiro
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* MARQUEE */}
-      <section className="border-b border-line py-6">
-        <div className="relative overflow-hidden">
-          <div className="marquee flex w-max gap-12 whitespace-nowrap">
-            {[...artists, ...artists].map((a, i) => (
-              <span key={a + i} className="font-display text-[19px] text-ink/25">
-                {a}
-              </span>
-            ))}
-          </div>
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-paper to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-paper to-transparent" />
+      {/* A FOTO — a igreja, em tamanho real */}
+      <section className="mt-20 sm:mt-28">
+        <div className="relative h-[300px] overflow-hidden bg-ink sm:h-[420px] lg:h-[520px]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/img/banda-palco.webp"
+            alt="Equipe de louvor cantando no palco, com banda completa e luzes de show"
+            fetchPriority="high"
+            className="h-full w-full object-cover object-center"
+          />
         </div>
       </section>
 
       {/* O QUE É */}
-      <section className="shell pt-24 sm:pt-32">
+      <section className="shell pt-20 sm:pt-28">
         <div className="grid gap-14 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-20">
           <div>
-            <p className="label">O que é</p>
-            <h2 className="display mt-6 text-[30px] leading-[1.18] sm:text-[42px]">
-              Não é playback fechado.
-              <br />É a música aberta, canal por canal.
+            <h2 className="text-d2 text-ink">
+              Não é playback fechado. É a música aberta, canal por canal.
             </h2>
-            <div className="mt-8 max-w-text space-y-5 text-[17px] leading-[1.75] text-ink-muted">
+            <div className="mt-8 max-w-text space-y-5 font-read text-[18px] leading-[1.72] text-ink-muted">
               <p>
                 No playback comum está tudo misturado num arquivo só. Se a sua igreja tem baterista,
                 a bateria da gravação continua tocando por cima dele.
@@ -146,74 +143,82 @@ export default function Home() {
                 vem em seguida. Esses dois vão só para o fone da equipe.
               </p>
             </div>
-            <Link href="/como-usar" className="link-underline mt-9 inline-block text-[16px]">
+            <Link href="/como-usar" className="link-quiet mt-8 inline-block text-[16px] font-semibold">
               Ver o guia completo de uso
             </Link>
           </div>
 
-          <dl className="divide-y divide-line border-t border-line">
+          <dl className="divide-y divide-line border-t-2 border-ink">
             {includes.map((it) => (
               <div key={it.title} className="py-6">
-                <dt className="font-display text-[19px] leading-snug text-ink">{it.title}</dt>
-                <dd className="mt-2 text-[15px] leading-[1.7] text-ink-muted">{it.body}</dd>
+                <dt className="text-[18px] font-bold leading-snug tracking-[-0.015em] text-ink">
+                  {it.title}
+                </dt>
+                <dd className="mt-2 text-[15px] leading-[1.68] text-ink-muted">{it.body}</dd>
               </div>
             ))}
           </dl>
         </div>
       </section>
 
-      {/* NO PALCO */}
-      <section className="shell pt-24 sm:pt-32">
-        <div className="grid gap-14 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-center lg:gap-20">
+      {/* NO PALCO — a sessão aberta */}
+      <section className="shell pt-20 sm:pt-28">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-center lg:gap-20">
           <div>
-            <p className="label">No palco</p>
-            <h2 className="display mt-6 text-[30px] leading-[1.18] sm:text-[40px]">
-              O clique fica no fone. O resto vai para a igreja.
-            </h2>
-            <p className="mt-6 max-w-text text-[17px] leading-[1.75] text-ink-muted">
+            <h2 className="text-d2 text-ink">O clique fica no fone. O resto vai para a igreja.</h2>
+            <p className="mt-6 max-w-text font-read text-[18px] leading-[1.72] text-ink-muted">
               É a única regra que importa, e ela se resolve uma vez só no seu programa. Depois é
               abrir a música e tocar.
             </p>
             <ul className="mt-8 divide-y divide-line border-y border-line">
               {[
-                ['Saída 1 · fones', 'Clique e guia vão só para o baterista e para quem conduz.'],
-                ['Saída 2 · PA', 'O mix dos instrumentos da trilha vai para a mesa de som.'],
+                ['Saída 1, fones', 'Clique e guia vão só para o baterista e para quem conduz.'],
+                ['Saída 2, PA', 'O mix dos instrumentos da trilha vai para a mesa de som.'],
                 ['Mute o que a banda toca', 'O multitrack completa a equipe, não substitui ninguém.'],
               ].map(([t, d]) => (
                 <li key={t} className="flex gap-4 py-4">
-                  <Check className="mt-[7px] shrink-0 text-accent" />
-                  <span className="text-[15.5px] leading-[1.65] text-ink-muted">
-                    <strong className="font-semibold text-ink">{t}</strong> — {d}
+                  <Check className="mt-[8px] shrink-0" />
+                  <span className="text-[16px] leading-[1.62] text-ink-muted">
+                    <strong className="font-semibold text-ink">{t}.</strong> {d}
                   </span>
                 </li>
               ))}
             </ul>
           </div>
-          <TabletMockup />
+
+          <div>
+            <SessionPanel song={aberta} />
+            <p className="mt-3 text-[13px] text-ink-muted">
+              Uma música do acervo aberta no programa: {CHANNELS.length} canais, com o clique e a
+              guia saindo só para o fone.
+            </p>
+          </div>
         </div>
       </section>
 
       {/* ACERVO */}
-      <section className="shell pt-24 sm:pt-32">
-        <p className="label">Amostra do acervo</p>
-        <div className="mt-6 flex flex-wrap items-end justify-between gap-8">
-          <h2 className="display max-w-2xl text-[30px] leading-[1.18] sm:text-[42px]">
-            Os louvores que a sua igreja já canta
-          </h2>
-          <Link href="/musicas" className="link-underline text-[16px]">
-            Ver todas as músicas
-          </Link>
-        </div>
+      <section className="mt-20 bg-mist py-20 sm:mt-28 sm:py-28">
+        <div className="shell">
+          <div className="flex flex-wrap items-end justify-between gap-8">
+            <h2 className="text-d2 max-w-2xl text-ink">Os louvores que a sua igreja já canta</h2>
+            <Link href="/musicas" className="link-quiet text-[16px] font-semibold">
+              Ver todas as músicas
+            </Link>
+          </div>
 
-        <div className="mt-12 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-6">
-          {destaques.map((s) => (
-            <SongCard key={s.slug} song={s} />
-          ))}
+          <div className="mt-10 border-t-2 border-ink bg-white">
+            <SongGrid songs={amostra} />
+          </div>
+
+          <p className="mt-6 text-[15px] text-ink-muted">
+            Esta é uma amostra. Toda música do pacote vem com os mesmos {CHANNELS.length} canais, e o
+            acervo continua crescendo.
+          </p>
         </div>
       </section>
 
-      {/* FOTO CONGREGAÇÃO + USOS */}
-      <section className="pt-24 sm:pt-32">
+      {/* CONGREGAÇÃO + USOS */}
+      <section className="pt-20 sm:pt-28">
         <div className="shell">
           <Figure
             src="/img/louvor-congregacao.webp"
@@ -224,13 +229,15 @@ export default function Home() {
           />
         </div>
 
-        <div className="shell mt-16">
-          <p className="label">Onde usar</p>
+        <div className="shell mt-14">
+          <h2 className="text-d3 text-ink">Não é só no domingo de manhã</h2>
           <div className="mt-8 grid gap-x-14 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
             {usos.map((u) => (
-              <div key={u.title}>
-                <h3 className="font-display text-[20px] leading-snug text-ink">{u.title}</h3>
-                <p className="mt-2.5 text-[15px] leading-[1.7] text-ink-muted">{u.body}</p>
+              <div key={u.title} className="border-t-2 border-ink pt-4">
+                <h3 className="text-[18px] font-bold leading-snug tracking-[-0.015em] text-ink">
+                  {u.title}
+                </h3>
+                <p className="mt-2.5 text-[15px] leading-[1.68] text-ink-muted">{u.body}</p>
               </div>
             ))}
           </div>
@@ -238,64 +245,64 @@ export default function Home() {
       </section>
 
       {/* FERRAMENTAS */}
-      <section className="mt-24 border-y border-line bg-white py-24 sm:mt-32 sm:py-32">
+      <section className="mt-20 bg-mist py-20 sm:mt-28 sm:py-28">
         <div className="shell">
           <SectionHead
-            eyebrow="Como tocar"
             title="Qual programa usar para rodar o multitrack"
             sub="Você precisa de algo que toque vários canais ao mesmo tempo e mande o clique só para o fone. Estes são os que mais funcionam em igreja no Brasil."
           />
 
-          <div className="mt-12 divide-y divide-line border-y border-line">
+          <div className="mt-12 divide-y divide-line border-y border-line bg-white">
             {tools.slice(0, 3).map((t) => (
               <article
                 key={t.slug}
-                className="grid gap-4 py-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)] lg:gap-12"
+                className="grid gap-4 px-5 py-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)] lg:gap-12"
               >
                 <div>
-                  <h3 className="font-display text-[24px] leading-none text-ink">{t.name}</h3>
-                  <p className="mt-2 text-[12.5px] uppercase tracking-[0.08em] text-ink-faint">
-                    {t.platform}
-                  </p>
+                  <h3 className="text-[22px] font-bold leading-none tracking-[-0.02em] text-ink">
+                    {t.name}
+                  </h3>
+                  <p className="mt-2 text-[13.5px] text-ink-muted">{t.platform}</p>
                 </div>
                 <div>
-                  <p className="max-w-2xl text-[16px] leading-[1.7] text-ink-muted">{t.summary}</p>
-                  <p className="mt-3 text-[14px] text-ink">{t.price}</p>
+                  <p className="max-w-2xl text-[16px] leading-[1.68] text-ink-muted">{t.summary}</p>
+                  <p className="mt-3 text-[14.5px] font-semibold text-ink">{t.price}</p>
                 </div>
               </article>
             ))}
           </div>
 
           <div className="mt-10 flex flex-wrap items-center gap-6">
-            <Link href="/como-usar" className="btn-solid">
+            <Link href="/como-usar" className="btn-ink">
               Ver o guia de configuração
             </Link>
-            <p className="text-[14.5px] text-ink-faint">
+            <p className="max-w-sm text-[14.5px] text-ink-muted">
               Também cobrimos Waveform Free, Cantabile, Studio One e uso no tablet.
             </p>
           </div>
         </div>
       </section>
 
-      {/* PASSO A PASSO */}
-      <section className="shell pt-24 sm:pt-32">
-        <div className="grid gap-14 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] lg:gap-20">
+      {/* PASSO A PASSO — aqui a numeração é real, é uma sequência */}
+      <section className="shell pt-20 sm:pt-28">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] lg:gap-20">
           <div className="lg:sticky lg:top-28 lg:self-start">
-            <p className="label">Passo a passo</p>
-            <h2 className="display mt-6 text-[30px] leading-[1.18] sm:text-[40px]">
-              Do download ao domingo
-            </h2>
-            <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
+            <h2 className="text-d2 text-ink">Do download ao domingo</h2>
+            <p className="mt-5 font-read text-[18px] leading-[1.7] text-ink-muted">
               Cinco passos. Nenhum deles exige que você seja técnico de áudio.
             </p>
           </div>
           <ol className="divide-y divide-line border-y border-line">
             {steps.map((s) => (
               <li key={s.n} className="grid gap-3 py-7 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-8">
-                <span className="font-display text-[22px] leading-none text-accent">{s.n}</span>
+                <span className="figs text-[20px] font-extrabold leading-none text-signal-deep">
+                  {s.n}
+                </span>
                 <div>
-                  <h3 className="font-display text-[20px] leading-snug text-ink">{s.title}</h3>
-                  <p className="mt-2 text-[15.5px] leading-[1.72] text-ink-muted">{s.body}</p>
+                  <h3 className="text-[19px] font-bold leading-snug tracking-[-0.015em] text-ink">
+                    {s.title}
+                  </h3>
+                  <p className="mt-2 text-[15.5px] leading-[1.7] text-ink-muted">{s.body}</p>
                 </div>
               </li>
             ))}
@@ -304,45 +311,39 @@ export default function Home() {
       </section>
 
       {/* PREÇO */}
-      <section id="preco" className="shell pt-24 sm:pt-32">
-        <div className="bg-ink text-paper">
+      <section id="preco" className="shell pt-20 sm:pt-28">
+        <div className="panel overflow-hidden">
           <div className="grid lg:grid-cols-2">
-            <div className="border-b border-white/10 p-10 sm:p-14 lg:border-b-0 lg:border-r">
-              <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-accent-soft">
-                Pacote único
-              </p>
-              <h2 className="mt-7 font-display text-[34px] leading-[1.12] sm:text-[44px]">
-                Um pagamento.
-                <br />O acervo inteiro.
-              </h2>
-              <p className="mt-6 max-w-md text-[16px] leading-[1.72] text-paper/60">
+            <div className="border-b border-white/10 p-8 sm:p-12 lg:border-b-0 lg:border-r">
+              <h2 className="text-d2 text-white">Um pagamento. O acervo inteiro.</h2>
+              <p className="mt-6 max-w-md font-read text-[17px] leading-[1.68] text-white/60">
                 Sem plano mensal, sem crédito por música, sem escolher faixa a faixa. Você paga uma
                 vez e leva os 4.000 multitracks.
               </p>
 
-              <div className="mt-12 flex items-baseline gap-4">
-                <span className="font-display text-[54px] leading-none">{priceBRL(site.price)}</span>
-                <span className="text-[16px] text-paper/40 line-through">
+              <div className="mt-10 flex items-baseline gap-4">
+                <span className="figs text-[52px] font-extrabold leading-none tracking-[-0.04em]">
+                  {priceBRL(site.price)}
+                </span>
+                <span className="figs text-[16px] text-white/40 line-through">
                   {priceBRL(site.fullPrice)}
                 </span>
               </div>
-              <p className="mt-3 text-[14.5px] text-paper/50">
-                à vista no Pix ou parcelado no cartão
+              <p className="mt-3 text-[14.5px] text-white/55">
+                À vista no Pix ou parcelado no cartão.
               </p>
 
-              <Link href="/assinar" className="btn-accent mt-9 w-full sm:w-auto">
+              <Link href="/assinar" className="btn-signal mt-8 w-full sm:w-auto">
                 Liberar meu acesso agora
               </Link>
-              <p className="mt-5 text-[13.5px] text-paper/40">
-                Pagamento pela Stripe · garantia de 7 dias
+              <p className="mt-5 text-[13.5px] text-white/45">
+                Pagamento pela Stripe, com sete dias de garantia.
               </p>
             </div>
 
-            <div className="p-10 sm:p-14">
-              <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-paper/40">
-                Está tudo incluso
-              </p>
-              <ul className="mt-8 divide-y divide-white/10 border-y border-white/10">
+            <div className="p-8 sm:p-12">
+              <h3 className="text-[17px] font-bold text-white">Está tudo incluso</h3>
+              <ul className="mt-6 divide-y divide-white/10 border-y border-white/10">
                 {[
                   'Mais de 4.000 multitracks gospel (VS)',
                   'Clique e guia em canais separados',
@@ -356,9 +357,9 @@ export default function Home() {
                 ].map((t) => (
                   <li
                     key={t}
-                    className="flex items-start gap-4 py-3.5 text-[15.5px] leading-[1.6] text-paper/75"
+                    className="flex items-start gap-4 py-3.5 text-[15.5px] leading-[1.6] text-white/75"
                   >
-                    <Check className="mt-[7px] shrink-0 text-accent-soft" />
+                    <Check className="mt-[8px] shrink-0" />
                     {t}
                   </li>
                 ))}
@@ -368,29 +369,23 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="shell pt-24 sm:pt-32">
-        <p className="label">Dúvidas</p>
-        <h2 className="display mt-6 text-[30px] leading-[1.18] sm:text-[42px]">
-          Perguntas que sempre chegam
-        </h2>
+      {/* DÚVIDAS */}
+      <section className="shell pt-20 sm:pt-28">
+        <h2 className="text-d2 text-ink">Perguntas que sempre chegam</h2>
         <Faq items={faq.slice(0, 8)} className="mt-10" />
-        <Link href="/faq" className="link-underline mt-8 inline-block text-[16px]">
+        <Link href="/faq" className="link-quiet mt-8 inline-block text-[16px] font-semibold">
           Ver todas as dúvidas
         </Link>
       </section>
 
-      {/* CTA FINAL */}
-      <section className="shell pt-24 sm:pt-32">
-        <div className="border-y border-line py-16 text-center sm:py-20">
-          <h2 className="display mx-auto max-w-2xl text-[32px] leading-[1.14] sm:text-[46px]">
-            Domingo chega rápido.
-          </h2>
-          <p className="mx-auto mt-5 max-w-xl text-[17px] leading-[1.7] text-ink-muted">
-            Libere o acervo hoje, monte o setlist ainda esta semana e leve a sua equipe para o
-            próximo nível de louvor.
+      {/* FECHAMENTO */}
+      <section className="shell pt-20 sm:pt-28">
+        <div className="border-y-2 border-ink py-14 sm:py-20">
+          <h2 className="text-d2 max-w-2xl text-ink">Domingo chega rápido.</h2>
+          <p className="mt-5 max-w-xl font-read text-[18px] leading-[1.7] text-ink-muted">
+            Libere o acervo hoje e monte o setlist ainda esta semana.
           </p>
-          <Link href="/assinar" className="btn-solid mt-9">
+          <Link href="/assinar" className="btn-signal mt-8">
             Garantir por {priceBRL(site.price)}
           </Link>
         </div>
