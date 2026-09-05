@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import Cover from '@/components/Cover'
-import { Breadcrumbs, SongCard, Check } from '@/components/ui'
+import { Breadcrumbs, SongGrid, Check } from '@/components/ui'
+import { SessionPanel } from '@/components/Track'
 import { songs, getSong, relatedSongs } from '@/lib/catalog'
 import { artistSlug } from '@/lib/artists'
 import { site, priceBRL, discountPct } from '@/lib/site'
@@ -95,25 +95,21 @@ export default async function SongPage({ params }) {
           ]}
         />
 
-        <div className="mt-10 grid gap-12 lg:grid-cols-[340px_1fr] lg:gap-16">
+        <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-16">
           <div className="lg:sticky lg:top-28 lg:self-start">
-            <Cover song={song} className="aspect-square w-full max-w-[340px]" />
+            <SessionPanel song={song} />
             <Link
               href={`/artistas/${artistSlug(song.artist)}`}
-              className="link-underline mt-6 inline-block text-[14.5px]"
+              className="link-quiet mt-6 inline-block text-[14.5px] font-semibold"
             >
               Ver todos os multitracks de {song.artist}
             </Link>
           </div>
 
           <div>
-            <p className="text-[11.5px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
-              {song.categoria}
-            </p>
-            <h1 className="mt-4 font-display text-[38px] font-normal leading-[1.08] text-ink sm:text-[50px]">
-              {song.title}
-            </h1>
-            <p className="mt-3 text-[19px] text-ink-muted">{song.artist}</p>
+            <p className="text-[14px] font-semibold text-ink-muted">{song.categoria}</p>
+            <h1 className="text-d1 mt-3 text-ink [text-wrap:balance]">{song.title}</h1>
+            <p className="mt-4 text-[20px] text-ink-muted">{song.artist}</p>
 
             <p className="mt-7 max-w-2xl text-[16.5px] leading-[1.75] text-ink-muted">
               Multitrack de <strong className="font-semibold text-ink">{song.title}</strong> com o
@@ -122,10 +118,19 @@ export default async function SongPage({ params }) {
               então você toca no tom em que o seu ministro canta melhor.
             </p>
 
-            <h2 className="label mt-12">Canais inclusos</h2>
-            <p className="mt-5 max-w-2xl text-[16px] leading-[1.8] text-ink-muted">
-              {CANAIS.join(' · ')}
-            </p>
+            <h2 className="mt-12 text-[19px] font-bold tracking-[-0.015em] text-ink">
+              Canais inclusos
+            </h2>
+            <ul className="mt-5 flex max-w-2xl flex-wrap gap-2">
+              {CANAIS.map((c) => (
+                <li
+                  key={c}
+                  className="border border-line px-3 py-1.5 text-[14.5px] text-ink-muted"
+                >
+                  {c}
+                </li>
+              ))}
+            </ul>
 
             <dl className="mt-12 grid grid-cols-2 divide-line border-y border-line sm:grid-cols-4 sm:divide-x">
               {[
@@ -135,39 +140,37 @@ export default async function SongPage({ params }) {
                 ['Uso', 'Ao vivo e ensaio'],
               ].map(([k, v]) => (
                 <div key={k} className="py-5 sm:px-5 sm:first:pl-0">
-                  <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                    {k}
-                  </dt>
-                  <dd className="mt-1.5 font-display text-[17px] text-ink">{v}</dd>
+                  <dt className="text-[13.5px] text-ink-muted">{k}</dt>
+                  <dd className="mt-1.5 text-[17px] font-bold text-ink">{v}</dd>
                 </div>
               ))}
             </dl>
 
-            <div className="mt-12 bg-ink p-8 text-paper sm:p-11">
-              <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-accent-soft">
+            <div className="panel mt-12 p-8 sm:p-11">
+              <p className="inline-block bg-signal px-3 py-1.5 text-[13.5px] font-bold text-ink">
                 Não vendemos por música
               </p>
-              <h2 className="mt-6 font-display text-[26px] leading-[1.18] sm:text-[32px]">
+              <h2 className="text-d3 mt-6 text-white">
                 Esta música vem no pacote com mais de 4.000 multitracks.
               </h2>
-              <p className="mt-4 max-w-lg text-[15.5px] leading-[1.7] text-paper/60">
+              <p className="mt-4 max-w-lg text-[15.5px] leading-[1.7] text-white/60">
                 Em vez de pagar dezenas de reais por faixa, você leva o acervo inteiro de uma vez —
                 pagamento único, acesso vitalício.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-6">
-                <Link href="/assinar" className="btn-accent">
+                <Link href="/assinar" className="btn-signal">
                   Liberar acesso vitalício por {priceBRL(site.price)}
                 </Link>
-                <p className="text-[14px] text-paper/50">
-                  <span className="line-through">{priceBRL(site.fullPrice)}</span> · -{discountPct}%
-                  no lançamento
+                <p className="text-[14px] text-white/55">
+                  De <span className="line-through">{priceBRL(site.fullPrice)}</span>, com{' '}
+                  {discountPct}% de desconto no lançamento
                 </p>
               </div>
               <ul className="mt-8 grid gap-3 border-t border-white/10 pt-7 sm:grid-cols-2">
                 {['Download imediato', 'Pix ou cartão', 'Sem mensalidade', 'Garantia de 7 dias'].map(
                   (t) => (
-                    <li key={t} className="flex items-center gap-3 text-[14.5px] text-paper/70">
-                      <Check className="shrink-0 text-accent-soft" />
+                    <li key={t} className="flex items-center gap-3 text-[14.5px] text-white/75">
+                      <Check className="shrink-0" />
                       {t}
                     </li>
                   )
@@ -175,7 +178,7 @@ export default async function SongPage({ params }) {
               </ul>
             </div>
 
-            <p className="mt-7 text-[13px] leading-relaxed text-ink-faint">
+            <p className="mt-7 max-w-2xl text-[13px] leading-relaxed text-ink-muted">
               Títulos e nomes de artistas são citados apenas para identificar a versão instrumental
               correspondente. Trilha Viva não é afiliada aos artistas mencionados.
             </p>
@@ -184,13 +187,9 @@ export default async function SongPage({ params }) {
 
         {related.length > 0 && (
           <section className="mt-24 border-t border-line pt-16">
-            <h2 className="display text-[26px] sm:text-[32px]">
-              Quem toca {song.title} também usa
-            </h2>
-            <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-6">
-              {related.map((s) => (
-                <SongCard key={s.slug} song={s} />
-              ))}
+            <h2 className="text-d3 text-ink">Quem toca {song.title} também usa</h2>
+            <div className="mt-8 border-t-2 border-ink">
+              <SongGrid songs={related} />
             </div>
           </section>
         )}

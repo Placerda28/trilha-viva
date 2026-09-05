@@ -46,13 +46,13 @@ export default function CheckoutForm() {
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           placeholder="Como devemos te chamar"
-          className="mt-2 w-full rounded-sm border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
+          className="mt-2 w-full rounded border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
         />
       </div>
 
       <div>
         <label htmlFor="email" className="block text-[13px] font-semibold text-ink">
-          E-mail para receber o acesso <span className="text-accent">*</span>
+          E-mail para receber o acesso <span aria-hidden="true" className="text-ink-muted">*</span>
         </label>
         <input
           id="email"
@@ -65,24 +65,24 @@ export default function CheckoutForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="voce@email.com"
           aria-describedby="email-help"
-          className="mt-2 w-full rounded-sm border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
+          className="mt-2 w-full rounded border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
         />
-        <p id="email-help" className="mt-2 text-[12.5px] text-ink-faint">
+        <p id="email-help" className="mt-2 text-[12.5px] text-ink-muted">
           É para esse endereço que enviamos o link do acervo. Confira antes de continuar.
         </p>
       </div>
 
       {error && (
-        <p role="alert" className="rounded-sm bg-accent-wash px-4 py-3 text-[14px] font-medium text-accent">
+        <p role="alert" className="rounded border-l-4 border-signal bg-signal-wash px-4 py-3 text-[14px] font-medium text-ink">
           {error}
         </p>
       )}
 
-      <button type="submit" disabled={loading} className="btn-accent w-full disabled:opacity-60">
+      <button type="submit" disabled={loading} className="btn-signal w-full disabled:opacity-60">
         {loading ? 'Abrindo pagamento seguro…' : `Pagar ${priceBRL(site.price)} e liberar acesso`}
       </button>
 
-      <p className="text-center text-[12.5px] leading-relaxed text-ink-faint">
+      <p className="text-center text-[12.5px] leading-relaxed text-ink-muted">
         Você será levado ao ambiente seguro da Stripe para pagar com{' '}
         <strong className="font-semibold text-ink-muted">Pix</strong> ou{' '}
         <strong className="font-semibold text-ink-muted">cartão</strong>. Não guardamos dados de
