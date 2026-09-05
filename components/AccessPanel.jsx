@@ -68,7 +68,7 @@ export default function AccessPanel() {
           Esta página só mostra o acervo depois de um pagamento confirmado. Se você já pagou, abra o
           link que enviamos para o seu e-mail.
         </p>
-        <Link href="/assinar" className="btn-solid mt-6">
+        <Link href="/assinar" className="btn-ink mt-6">
           Ir para o pagamento
         </Link>
       </Panel>
@@ -80,7 +80,7 @@ export default function AccessPanel() {
       <Panel tone="neutral" title="Confirmando seu pagamento…">
         <p>Só um instante. Estamos verificando com a operadora.</p>
         <div className="mt-6 h-[2px] w-full overflow-hidden bg-line">
-          <div className="h-full w-1/3 animate-pulse bg-accent" />
+          <div className="h-full w-1/3 animate-pulse bg-signal" />
         </div>
       </Panel>
     )
@@ -115,15 +115,15 @@ export default function AccessPanel() {
                 href={state.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-accent flex-1"
+                className="btn-signal flex-1"
               >
                 Abrir o acervo completo
               </a>
-              <button type="button" onClick={copy} className="btn-outline">
+              <button type="button" onClick={copy} className="btn-quiet">
                 {copied ? 'Link copiado!' : 'Copiar link'}
               </button>
             </div>
-            <p className="mt-4 break-all border border-line px-4 py-3 text-[12.5px] text-ink-faint">
+            <p className="mt-4 break-all border border-line px-4 py-3 text-[12.5px] text-ink-muted">
               {state.url}
             </p>
           </>
@@ -135,13 +135,13 @@ export default function AccessPanel() {
           {[ 'Guarde o e-mail: ele é o seu comprovante de acesso vitalício', 'O acesso é pessoal, para o seu ministério', 'Comece pelo guia de configuração do REAPER', 'Qualquer dúvida, é só responder o e-mail da compra',
           ].map((t) => (
             <li key={t} className="flex items-start gap-3 text-[14px] text-ink-muted">
-              <Check className="mt-[6px] shrink-0 text-accent" />
+              <Check className="mt-[6px] shrink-0 text-signal" />
               {t}
             </li>
           ))}
         </ul>
 
-        <Link href="/como-usar" className="btn-solid mt-7">
+        <Link href="/como-usar" className="btn-ink mt-7">
           Ver o guia: do download ao domingo
         </Link>
       </Panel>
@@ -156,7 +156,7 @@ export default function AccessPanel() {
         informado no checkout. Se não chegar em alguns minutos, confira a caixa de spam e responda
         o recibo da Stripe que você recebeu.
       </p>
-      <button type="button" onClick={check} className="btn-outline mt-6">
+      <button type="button" onClick={check} className="btn-quiet mt-6">
         Verificar de novo
       </button>
     </Panel>
@@ -164,16 +164,16 @@ export default function AccessPanel() {
 }
 
 function Panel({ tone, title, children }) {
-  const ring = tone === 'pending' ? 'border-accent/40' : 'border-line'
+  const ring = tone === 'pending' ? 'border-signal/40' : 'border-line'
   return (
     <div className={`border ${ring} bg-white p-8 sm:p-11`}>
       <div className="flex items-center gap-3">
         {tone === 'ok' && (
-          <span className="flex h-9 w-9 items-center justify-center border border-accent/30">
+          <span className="flex h-9 w-9 items-center justify-center border border-signal/30">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path
                 d="M5 10.5l3.2 3.2L15 7"
-                stroke="#A8431E"
+                stroke="#A9702F"
                 strokeWidth="2"
                 strokeLinecap="square"
               />
@@ -181,14 +181,14 @@ function Panel({ tone, title, children }) {
           </span>
         )}
         {tone === 'pending' && (
-          <span className="flex h-9 w-9 items-center justify-center border border-accent/30 text-accent">
+          <span className="flex h-9 w-9 items-center justify-center border border-signal/30 text-signal">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               <circle cx="9" cy="9" r="7.2" stroke="currentColor" strokeWidth="1.5" />
               <path d="M9 5v4.3l2.6 1.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </span>
         )}
-        <h1 className="font-display text-[26px] font-normal leading-[1.18] text-ink sm:text-[32px]">
+        <h1 className="font-bold text-[26px] leading-[1.18] text-ink sm:text-[32px]">
           {title}
         </h1>
       </div>
