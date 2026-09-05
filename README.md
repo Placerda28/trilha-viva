@@ -1,7 +1,8 @@
 # Trilha Viva — Multitracks Gospel
 
 Site de venda do pacote único com mais de 4.000 multitracks (VS) gospel.
-Next.js 15 (App Router) + Tailwind CSS + Stripe. Publicado na Vercel.
+Next.js 15 (App Router) + Tailwind CSS + Stripe. Publicado na Cloudflare Workers
+com o adapter OpenNext, com deploy automático a cada push na `main`.
 
 ---
 
@@ -13,7 +14,14 @@ cp .env.example .env.local   # preencha as variáveis
 npm run dev                  # abre em http://localhost:3000
 ```
 
-Para gerar a versão de produção: `npm run build && npm start`.
+Para ver o site rodando no runtime dos Workers (igual à produção):
+
+```bash
+cp .dev.vars.example .dev.vars   # preencha as variáveis
+npm run preview                  # build do OpenNext + workerd local
+```
+
+Para publicar direto da sua máquina, sem passar pelo GitHub: `npm run deploy`.
 
 ---
 
@@ -21,7 +29,7 @@ Para gerar a versão de produção: `npm run build && npm start`.
 
 | Variável | Onde conseguir | Obrigatória |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | A URL do site na Vercel | Sim |
+| `NEXT_PUBLIC_SITE_URL` | A URL pública do site | Sim (em *build*) |
 | `STRIPE_SECRET_KEY` | Stripe → Desenvolvedores → Chaves de API | Sim |
 | `STRIPE_WEBHOOK_SECRET` | Stripe → Webhooks → endpoint `/api/webhook` | Sim |
 | `DRIVE_URL` | Link do Google Drive com as 4.000 VS | Sim |
@@ -29,8 +37,13 @@ Para gerar a versão de produção: `npm run build && npm start`.
 | `EMAIL_FROM` | Remetente verificado no Resend | Recomendada |
 | `NEXT_PUBLIC_PAYMENT_LINK` | Payment Link da Stripe (plano B) | Não |
 
-Na Vercel: **Settings → Environment Variables**. Depois de salvar, faça
-**Redeploy** para as variáveis valerem.
+Na Cloudflare há **dois lugares** e a diferença importa:
+
+- `NEXT_PUBLIC_SITE_URL` é embutida no HTML durante o build, então vai em
+  **Settings → Build → Variables and secrets**. Mudou o valor? Precisa de um
+  novo build para valer.
+- Todas as outras são lidas em tempo de execução e vão em
+  **Settings → Variables and secrets** do Worker, sempre como **Secret**.
 
 ---
 
@@ -56,7 +69,7 @@ O código protege o link; o Google Drive protege o arquivo. Faça as duas coisas
 - Compartilhe a pasta como **"Qualquer pessoa com o link — Leitor"**.
 - Trabalhe sempre numa **pasta espelho**, nunca na original.
 - Acompanhe os acessos e, se detectar vazamento, troque a pasta de lugar e
-  atualize `DRIVE_URL` na Vercel — todos os links antigos morrem de uma vez.
+  atualize `DRIVE_URL` na Cloudflare — todos os links antigos morrem de uma vez.
 
 ---
 
@@ -87,6 +100,10 @@ lib/
   posts.js      Artigos do blog
   faq.js        Perguntas frequentes
 public/icon.svg Logo/favicon
+assets/         Fotos fatiadas em base64 + manifest com sha256
+scripts/        decode-assets.mjs — remonta as fotos no prebuild
+wrangler.jsonc  Configuração do Worker
+open-next.config.ts
 ```
 
 ---
