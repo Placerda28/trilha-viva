@@ -8,16 +8,16 @@ html {
 }
 
 body {
-  background: #ffffff;
-  color: #151b34;
+  background: #f8f7f3;
+  color: #322d27;
   font-feature-settings: 'ss01' 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: #f2a93b;
-  color: #151b34;
+  background: #bf8440;
+  color: #f8f7f3;
 }
 
 @layer components {
@@ -35,13 +35,13 @@ body {
     @apply inline-flex select-none items-center justify-center rounded text-[15px] font-semibold leading-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2;
   }
   .btn-signal {
-    @apply btn bg-signal px-7 py-4 text-ink hover:bg-signal-deep;
+    @apply btn bg-signal-deep px-7 py-4 text-white hover:bg-ink;
   }
   .btn-ink {
     @apply btn bg-ink px-7 py-4 text-white hover:bg-ink-soft;
   }
   .btn-quiet {
-    @apply btn border border-line bg-white px-7 py-4 text-ink hover:border-ink hover:bg-mist;
+    @apply btn border border-ink/25 bg-transparent px-7 py-4 text-ink hover:border-ink hover:bg-mist;
   }
   .btn-onink {
     @apply btn border border-white/25 bg-transparent px-7 py-4 text-white hover:border-white hover:bg-white hover:text-ink;

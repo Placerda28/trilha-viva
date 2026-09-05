@@ -4,31 +4,34 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Tinta: um azul-marinho profundo. É cor, não um preto disfarçado.
+        // Paleta Autumn luxe. As cinco cores da paleta são ink, mist, ink-muted,
+        // signal e ink-faint; as variantes -soft e -deep são degraus da mesma
+        // família, criados só para hover e para o contraste de texto passar.
         ink: {
-          DEFAULT: '#151B34',
-          soft: '#232D52',
-          muted: '#59627F',
-          faint: '#8A92AB',
+          DEFAULT: '#322D27', // marrom escuro da paleta
+          soft: '#4A423A',
+          muted: '#6C6157', // degrau escuro do taupe #7F7265, legível em texto
+          faint: '#AAAAAE', // cinza da paleta
         },
-        paper: '#FFFFFF',
-        // Superfície fria — nada de creme.
+        paper: '#F8F7F3', // off-white, como o Paulo pediu
         mist: {
-          DEFAULT: '#EEF1F7',
-          deep: '#E1E6F0',
+          DEFAULT: '#E2E1EB', // cinza-lavanda da paleta
+          deep: '#D5D3DF',
         },
-        line: '#DCE2ED',
-        // Âmbar de luz de palco. Só como preenchimento, nunca como texto sobre branco.
+        line: '#DCDAE0',
+        taupe: '#7F7265', // taupe da paleta, para superfícies e marcas
+        // Ocre da paleta. Como preenchimento vale o tom da paleta; em bloco com
+        // texto por cima usamos o -deep, que passa no contraste.
         signal: {
-          DEFAULT: '#F2A93B',
-          deep: '#D2871A',
-          wash: '#FFF3DF',
+          DEFAULT: '#BF8440',
+          deep: '#A9702F',
+          wash: '#F3E9DC',
         },
         // Apelido herdado: páginas ainda não redesenhadas usam `accent`.
         accent: {
-          DEFAULT: '#F2A93B',
-          soft: '#F2A93B',
-          wash: '#FFF3DF',
+          DEFAULT: '#BF8440',
+          soft: '#BF8440',
+          wash: '#F3E9DC',
         },
       },
       fontFamily: {

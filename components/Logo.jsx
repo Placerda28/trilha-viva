@@ -4,7 +4,7 @@
 const BARS = [0.42, 0.42, 0.68, 0.86, 1, 0.8, 0.6, 0.9, 0.5]
 
 export function LogoMark({ size = 26, tone = 'ink', className = '' }) {
-  const base = tone === 'light' ? 'rgba(255,255,255,.72)' : '#151B34'
+  const base = tone === 'light' ? 'rgba(255,255,255,.72)' : '#322D27'
   return (
     <span
       className={`inline-flex items-end gap-[2.5px] ${className}`}
@@ -15,7 +15,7 @@ export function LogoMark({ size = 26, tone = 'ink', className = '' }) {
         <span
           key={i}
           className="w-[3px]"
-          style={{ height: `${h * 100}%`, background: i < 2 ? '#F2A93B' : base }}
+          style={{ height: `${h * 100}%`, background: i < 2 ? '#BF8440' : base }}
         />
       ))}
     </span>

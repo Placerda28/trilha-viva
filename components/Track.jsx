@@ -36,7 +36,7 @@ function sampleHeight(channel, row, j, amp) {
 /** Miniatura da sessão: uma barra por canal, as duas primeiras são clique e guia. */
 export function ChannelStrip({ seed = 7, tone = 'ink', className = '', height = 22 }) {
   const hs = heights(seed)
-  const base = tone === 'light' ? 'rgba(255,255,255,.34)' : '#B9C0D2'
+  const base = tone === 'light' ? 'rgba(255,255,255,.34)' : '#B0A79C'
   return (
     <span
       className={`inline-flex items-end gap-[3px] ${className}`}
@@ -49,7 +49,7 @@ export function ChannelStrip({ seed = 7, tone = 'ink', className = '', height = 
           className="w-[3px]"
           style={{
             height: `${Math.round(h * 100)}%`,
-            background: CHANNELS[i].cue ? '#F2A93B' : base,
+            background: CHANNELS[i].cue ? '#BF8440' : base,
           }}
         />
       ))}
@@ -152,7 +152,7 @@ export function SessionPanel({ song, className = '' }) {
                   className="w-[3px] shrink-0"
                   style={{
                     height: `${sampleHeight(c, i, j, hs[i])}%`,
-                    background: c.cue ? 'rgba(242,169,59,.8)' : 'rgba(255,255,255,.22)',
+                    background: c.cue ? 'rgba(191,132,64,.9)' : 'rgba(255,255,255,.22)',
                   }}
                 />
               ))}
