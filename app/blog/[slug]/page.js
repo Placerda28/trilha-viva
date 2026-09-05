@@ -69,15 +69,15 @@ export default async function PostPage({ params }) {
         />
 
         <header className="mt-8 border-b border-line pb-10">
-          <div className="flex items-center gap-4 text-[11.5px] font-semibold uppercase tracking-[0.12em]">
-            <span className="text-accent">{post.tag}</span>
-            <span className="text-ink-faint">{post.read} de leitura</span>
+          <div className="flex items-center gap-4 text-[14px] font-semibold">
+            <span className="font-semibold text-ink">{post.tag}</span>
+            <span className="text-ink-muted">{post.read} de leitura</span>
           </div>
-          <h1 className="mt-6 font-display text-[34px] font-normal leading-[1.12] text-ink sm:text-[46px]">
+          <h1 className="mt-6 font-bold text-[34px] leading-[1.12] text-ink sm:text-[46px]">
             {post.title}
           </h1>
           <p className="mt-5 text-[17.5px] leading-[1.65] text-ink-muted">{post.description}</p>
-          <p className="mt-6 text-[13.5px] text-ink-faint">Publicado em {fmt(post.date)}</p>
+          <p className="mt-6 text-[13.5px] text-ink-muted">Publicado em {fmt(post.date)}</p>
         </header>
 
         <div className="prose-tv pb-6">
@@ -95,20 +95,20 @@ export default async function PostPage({ params }) {
           })}
         </div>
 
-        <aside className="mt-16 bg-ink p-9 text-paper sm:p-12">
-          <h2 className="font-display text-[26px] leading-[1.18] sm:text-[32px]">
+        <aside className="mt-16 bg-ink p-9 text-white sm:p-12">
+          <h2 className="font-bold text-[26px] leading-[1.18] sm:text-[32px]">
             Mais de 4.000 multitracks gospel, em um pacote só
           </h2>
-          <p className="mt-4 max-w-lg text-[15.5px] leading-[1.7] text-paper/60">
+          <p className="mt-4 max-w-lg text-[15.5px] leading-[1.7] text-white/60">
             Clique, guia e canais separados, em todos os tons. Pagamento único, acesso vitalício.
           </p>
-          <Link href="/assinar" className="btn-accent mt-8">
+          <Link href="/assinar" className="btn-signal mt-8">
             Liberar acesso vitalício por {priceBRL(site.price)}
           </Link>
         </aside>
 
         <section className="mt-16 border-t border-line pt-10">
-          <p className="label">Continue lendo</p>
+          <p className="text-[19px] font-bold tracking-[-0.015em] text-ink">Continue lendo</p>
           <div className="mt-6 divide-y divide-line border-y border-line">
             {others.map((p) => (
               <Link
@@ -116,10 +116,10 @@ export default async function PostPage({ params }) {
                 href={`/blog/${p.slug}`}
                 className="group flex items-baseline justify-between gap-6 py-4"
               >
-                <span className="font-display text-[18px] text-ink group-hover:text-accent">
+                <span className="font-bold text-[18px] text-ink group-hover:underline group-hover:decoration-signal group-hover:decoration-2 group-hover:underline-offset-4">
                   {p.title}
                 </span>
-                <span className="shrink-0 text-[13px] text-ink-faint">{p.read}</span>
+                <span className="shrink-0 text-[13px] text-ink-muted">{p.read}</span>
               </Link>
             ))}
           </div>
