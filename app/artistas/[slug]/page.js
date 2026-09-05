@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { Breadcrumbs, SongGrid } from '@/components/ui'
 import { artistList, getArtist } from '@/lib/artists'
 import { site, priceBRL } from '@/lib/site'
+import { ldJson } from '@/lib/safe'
 
 export function generateStaticParams() {
   return artistList.map((a) => ({ slug: a.slug }))
@@ -42,7 +43,7 @@ export default async function ArtistPage({ params }) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(ld) }} />
       <div className="shell pt-12">
         <Breadcrumbs
           items={[

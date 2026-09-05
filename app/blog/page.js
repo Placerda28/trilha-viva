@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Breadcrumbs } from '@/components/ui'
 import { posts } from '@/lib/posts'
 import { site } from '@/lib/site'
+import { ldJson } from '@/lib/safe'
 
 export const metadata = {
   title: 'Blog — multitrack, clique e guia para ministérios de louvor',
@@ -35,7 +36,7 @@ export default function BlogPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(ld) }} />
       <div className="shell pt-12">
         <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Blog' }]} />
 

@@ -3,6 +3,7 @@ import CatalogBrowser from '@/components/CatalogBrowser'
 import { Breadcrumbs } from '@/components/ui'
 import { songs, categorias } from '@/lib/catalog'
 import { site, priceBRL } from '@/lib/site'
+import { ldJson } from '@/lib/safe'
 
 export const metadata = {
   title: 'Acervo de Multitracks Gospel — todas as músicas (VS)',
@@ -42,7 +43,7 @@ export default async function MusicasPage({ searchParams }) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(ld) }} />
       <div className="shell pt-12">
         <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Acervo' }]} />
 
