@@ -4,34 +4,32 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Paleta Autumn luxe. As cinco cores da paleta são ink, mist, ink-muted,
-        // signal e ink-faint; as variantes -soft e -deep são degraus da mesma
-        // família, criados só para hover e para o contraste de texto passar.
+        // Paleta Frosted aura. As cores da paleta são signal (#5C7E8F), ink-faint
+        // (#A2A2A2), mist (#D4DDE2) e o branco. A paleta não tem um tom escuro,
+        // então `ink` e `signal-deep` são degraus mais fechados do próprio
+        // #5C7E8F — sem eles, texto e painel escuro não teriam contraste.
         ink: {
-          DEFAULT: '#322D27', // marrom escuro da paleta
-          soft: '#4A423A',
-          muted: '#6C6157', // degrau escuro do taupe #7F7265, legível em texto
-          faint: '#AAAAAE', // cinza da paleta
+          DEFAULT: '#2C3E48',
+          soft: '#3D5462',
+          muted: '#5A6B75',
+          faint: '#A2A2A2', // cinza da paleta
         },
-        paper: '#F8F7F3', // off-white, como o Paulo pediu
+        paper: '#F7F9FB', // off-white frio
         mist: {
-          DEFAULT: '#E2E1EB', // cinza-lavanda da paleta
-          deep: '#D5D3DF',
+          DEFAULT: '#D4DDE2', // azul pálido da paleta
+          deep: '#C3CFD6',
         },
-        line: '#DCDAE0',
-        taupe: '#7F7265', // taupe da paleta, para superfícies e marcas
-        // Ocre da paleta. Como preenchimento vale o tom da paleta; em bloco com
-        // texto por cima usamos o -deep, que passa no contraste.
+        line: '#DDE4E8',
         signal: {
-          DEFAULT: '#BF8440',
-          deep: '#A9702F',
-          wash: '#F3E9DC',
+          DEFAULT: '#5C7E8F', // azul-ardósia da paleta
+          deep: '#46626F', // fundo de botão, com texto branco
+          wash: '#EAF0F3',
         },
         // Apelido herdado: páginas ainda não redesenhadas usam `accent`.
         accent: {
-          DEFAULT: '#BF8440',
-          soft: '#BF8440',
-          wash: '#F3E9DC',
+          DEFAULT: '#5C7E8F',
+          soft: '#5C7E8F',
+          wash: '#EAF0F3',
         },
       },
       fontFamily: {

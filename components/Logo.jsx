@@ -1,10 +1,11 @@
 // A marca é o próprio objeto do produto: uma sessão de multitrack vista de perfil.
-// Nove barras — as duas primeiras são o clique e a guia, em âmbar, que é o que
+// Nove barras — as duas primeiras são o clique e a guia, destacadas, que é o que
 // separa uma multitrack de um playback.
 const BARS = [0.42, 0.42, 0.68, 0.86, 1, 0.8, 0.6, 0.9, 0.5]
 
 export function LogoMark({ size = 26, tone = 'ink', className = '' }) {
-  const base = tone === 'light' ? 'rgba(255,255,255,.72)' : '#322D27'
+  const base = tone === 'light' ? 'rgba(255,255,255,.7)' : '#2C3E48'
+  const cue = tone === 'light' ? '#D4DDE2' : '#5C7E8F'
   return (
     <span
       className={`inline-flex items-end gap-[2.5px] ${className}`}
@@ -15,7 +16,7 @@ export function LogoMark({ size = 26, tone = 'ink', className = '' }) {
         <span
           key={i}
           className="w-[3px]"
-          style={{ height: `${h * 100}%`, background: i < 2 ? '#BF8440' : base }}
+          style={{ height: `${h * 100}%`, background: i < 2 ? cue : base }}
         />
       ))}
     </span>

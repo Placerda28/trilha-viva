@@ -8,16 +8,16 @@ html {
 }
 
 body {
-  background: #f8f7f3;
-  color: #322d27;
+  background: #f7f9fb;
+  color: #2c3e48;
   font-feature-settings: 'ss01' 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: #bf8440;
-  color: #f8f7f3;
+  background: #5c7e8f;
+  color: #ffffff;
 }
 
 @layer components {
@@ -45,6 +45,15 @@ body {
   }
   .btn-onink {
     @apply btn border border-white/25 bg-transparent px-7 py-4 text-white hover:border-white hover:bg-white hover:text-ink;
+  }
+
+  /* Etiqueta curta e forte (desconto, aviso). Cor definida só aqui, para uma
+     troca de paleta não precisar passar por todas as páginas. */
+  .chip {
+    @apply inline-block bg-signal-deep px-3 py-1.5 text-[13.5px] font-bold text-white;
+  }
+  .chip-sm {
+    @apply inline-block bg-signal-deep px-2 py-1 text-[12.5px] font-bold text-white;
   }
 
   /* ---- superfícies ----------------------------------------------------- */
