@@ -257,6 +257,42 @@ foram enviados pelo conector do GitHub. Para confirmar que nada se perdeu
 no caminho, comparei o hash de cada arquivo local com o hash do blob que o
 GitHub devolveu — os cinco arquivos do `ldJson` bateram byte a byte.
 
+### O build estava quebrado e eu não tinha visto
+
+Achei isso conferindo arquivo por arquivo no fim do trabalho, e é sério o
+bastante para ficar registrado.
+
+O `lib/safe.js` **não compilava no repositório** desde o commit que o
+criou:
+
+```
+SyntaxError: Invalid regular expression: missing /
+```
+
+Causa: os separadores U+2028 e U+2029 estavam dentro de literais de regex
+escritos como sequência de escape, e o caminho de envio até o GitHub
+converte a sequência no caractere cru. Os dois são terminadores de linha
+em JavaScript, e um literal de regex não pode atravessar linha — então o
+arquivo deixou de compilar. As três primeiras substituições (`<`, `>` e
+`&`) estavam corretas; só as duas últimas quebraram.
+
+**Consequência:** todo build da Cloudflare desde aquele commit falhou, e o
+site no ar seguia servindo a versão anterior ao `ldJson`. O build local
+passava porque a cópia local estava certa — o estrago só existia no
+repositório.
+
+Correção: em vez de reenviar o mesmo código com escape (tentei duas vezes,
+e nas duas o caractere chegou cru), troquei a forma de escrever os dois
+caracteres. Agora são constantes montadas com
+`String.fromCharCode(0x2028)` e `(0x2029)`, e a substituição usa
+`split`/`join` no lugar da regex. Não há caractere invisível no arquivo e
+não há nada para o caminho de envio corromper. Comportamento idêntico,
+provado com entrada hostil e com `next build` passando.
+
+**Lição para as próximas vezes:** conferir o blob sha de **todo** arquivo
+enviado, não só dos que eu acabei de mexer. Foi exatamente essa conferência
+que achou o problema.
+
 ### Uma coisa que eu tentei e não consegui entregar
 
 O filtro de acentos do `CatalogBrowser` guarda dois caracteres
