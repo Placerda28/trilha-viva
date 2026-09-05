@@ -1,9 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { SongCard } from './ui'
+import { SongGrid } from './ui'
 
-const PAGE = 36
+const PAGE = 40
 
 function norm(s) {
   return s
@@ -50,9 +50,9 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
               setQ(e.target.value)
               setLimit(PAGE)
             }}
-            placeholder="Buscar por música ou artista…"
+            placeholder="Buscar por música ou artista"
             aria-label="Buscar multitrack por música ou artista"
-            className="w-full rounded-sm border border-line bg-white py-3 pl-11 pr-4 text-[15px] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
+            className="w-full rounded border border-line bg-white py-3.5 pl-11 pr-4 text-[15px] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
           />
         </div>
 
@@ -63,7 +63,7 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
               setCat('')
               setLimit(PAGE)
             }}
-            className={`rounded-sm border px-4 py-2 text-[13.5px] transition-colors ${
+            className={`rounded border px-4 py-2 text-[13.5px] font-medium transition-colors ${
               cat === '' ? 'border-ink bg-ink text-white' : 'border-line text-ink-muted hover:border-ink'
             }`}
           >
@@ -77,7 +77,7 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
                 setCat(c)
                 setLimit(PAGE)
               }}
-              className={`rounded-sm border px-4 py-2 text-[13.5px] transition-colors ${
+              className={`rounded border px-4 py-2 text-[13.5px] font-medium transition-colors ${
                 cat === c ? 'border-ink bg-ink text-white' : 'border-line text-ink-muted hover:border-ink'
               }`}
             >
@@ -87,29 +87,27 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
         </div>
       </div>
 
-      <p className="mt-6 text-[13.5px] text-ink-faint" aria-live="polite">
+      <p className="figs mt-6 text-[14px] text-ink-muted" aria-live="polite">
         {filtered.length} {filtered.length === 1 ? 'música encontrada' : 'músicas encontradas'} nesta
         amostra pública do acervo.
       </p>
 
       {shown.length === 0 ? (
-        <div className="mt-14 border border-dashed border-line py-16 text-center">
-          <p className="font-display text-[19px] text-ink">Nada encontrado com esse termo.</p>
-          <p className="mt-2 text-[14.5px] text-ink-muted">
+        <div className="mt-10 rounded-lg bg-mist px-6 py-16 text-center">
+          <p className="text-[19px] font-bold text-ink">Nada encontrado com esse termo.</p>
+          <p className="mx-auto mt-2 max-w-md text-[14.5px] text-ink-muted">
             A amostra pública mostra parte do acervo. O pacote completo tem mais de 4.000 multitracks.
           </p>
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-6">
-          {shown.map((s) => (
-            <SongCard key={s.slug} song={s} />
-          ))}
+        <div className="mt-8 border-t-2 border-ink">
+          <SongGrid songs={shown} />
         </div>
       )}
 
       {limit < filtered.length && (
         <div className="mt-12 text-center">
-          <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="btn-outline">
+          <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="btn-quiet">
             Carregar mais músicas
           </button>
         </div>

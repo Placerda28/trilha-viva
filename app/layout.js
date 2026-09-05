@@ -1,4 +1,6 @@
 import './globals.css'
+import '@fontsource-variable/archivo'
+import '@fontsource-variable/source-serif-4'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { site } from '@/lib/site'
@@ -57,7 +59,7 @@ export const metadata = {
 }
 
 export const viewport = {
-  themeColor: '#FBFAF8',
+  themeColor: '#151B34',
   width: 'device-width',
   initialScale: 1,
 }
@@ -93,14 +95,14 @@ const siteLd = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-screen bg-paper antialiased">
+      <body className="min-h-screen bg-paper font-sans antialiased">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify([orgLd, siteLd]) }}
         />
         <a
           href="#conteudo"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:bg-ink focus:px-4 focus:py-2 focus:text-paper"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:bg-signal focus:px-4 focus:py-2 focus:font-semibold focus:text-ink"
         >
           Pular para o conteúdo
         </a>
