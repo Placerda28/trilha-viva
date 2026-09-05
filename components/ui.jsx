@@ -1,24 +1,40 @@
 import Link from 'next/link'
-import Cover from './Cover'
+import { TrackList } from './Track'
 
-export function SectionHead({ eyebrow, title, sub, className = '' }) {
+export { TrackList, TrackRow, ChannelStrip, SessionPanel, CHANNELS } from './Track'
+
+/**
+ * Cabeça de seção. Sem rótulo em caixa alta em cima: quem separa as seções é a
+ * troca de superfície (branco, névoa, tinta) e o tamanho do título.
+ */
+export function SectionHead({ title, sub, className = '', tone = 'ink' }) {
+  const light = tone === 'light'
   return (
     <div className={className}>
-      {eyebrow && <p className="label">{eyebrow}</p>}
-      <h2 className="display mt-6 max-w-3xl text-[30px] leading-[1.16] sm:text-[42px]">{title}</h2>
-      {sub && <p className="mt-5 max-w-text text-[17px] leading-[1.7] text-ink-muted">{sub}</p>}
+      <h2 className={`text-d2 max-w-4xl ${light ? 'text-white' : 'text-ink'}`}>{title}</h2>
+      {sub && (
+        <p
+          className={`mt-5 max-w-text font-read text-[18px] leading-[1.7] ${
+            light ? 'text-white/60' : 'text-ink-muted'
+          }`}
+        >
+          {sub}
+        </p>
+      )}
     </div>
   )
 }
 
-export function SongCard({ song }) {
+/** Lista de músicas em duas colunas no desktop, uma no celular. */
+export function SongGrid({ songs, tone = 'ink', className = '' }) {
+  const half = Math.ceil(songs.length / 2)
+  const left = songs.slice(0, half)
+  const right = songs.slice(half)
   return (
-    <Link href={`/musicas/${song.slug}`} className="group block" aria-label={`${song.title} — ${song.artist}`}>
-      <Cover song={song} className="aspect-square transition-opacity duration-200 group-hover:opacity-80" />
-      <p className="mt-2.5 text-[12.5px] text-ink-faint opacity-0 transition-opacity group-hover:opacity-100">
-        Ver detalhes
-      </p>
-    </Link>
+    <div className={`grid gap-x-10 md:grid-cols-2 ${className}`}>
+      <TrackList songs={left} tone={tone} start={0} />
+      {right.length > 0 && <TrackList songs={right} tone={tone} start={half} />}
+    </div>
   )
 }
 
@@ -27,37 +43,45 @@ export function Faq({ items, className = '' }) {
     <div className={`border-t border-line ${className}`}>
       {items.map((item) => (
         <details key={item.q} className="group border-b border-line py-6">
-          <summary className="flex cursor-pointer list-none items-baseline gap-5 marker:hidden">
-            <span className="mt-1 h-px w-4 shrink-0 bg-ink-faint transition-colors group-open:bg-accent" />
-            <span className="font-display text-[19px] leading-snug text-ink sm:text-[21px]">{item.q}</span>
+          <summary className="flex cursor-pointer list-none items-start gap-4 marker:hidden">
+            <span
+              aria-hidden="true"
+              className="mt-2.5 h-[9px] w-[9px] shrink-0 bg-line transition-colors group-open:bg-signal"
+            />
+            <span className="text-[19px] font-bold leading-snug tracking-[-0.015em] text-ink sm:text-[21px]">
+              {item.q}
+            </span>
           </summary>
-          <div className="mt-4 max-w-3xl pl-9 text-[16px] leading-[1.75] text-ink-muted">{item.a}</div>
+          <div className="mt-4 max-w-3xl pl-[25px] font-read text-[17px] leading-[1.72] text-ink-muted">
+            {item.a}
+          </div>
         </details>
       ))}
     </div>
   )
 }
 
+/** Marca de item incluído. Um quadrado âmbar, não um check genérico. */
 export function Check({ className = '' }) {
-  return (
-    <svg width="13" height="10" viewBox="0 0 13 10" fill="none" className={className} aria-hidden="true">
-      <path d="M1 5.2L4.6 8.8L12 1.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="square" />
-    </svg>
-  )
+  return <span aria-hidden="true" className={`block h-[9px] w-[9px] bg-signal ${className}`} />
 }
 
 export function Breadcrumbs({ items }) {
   return (
-    <nav aria-label="Trilha de navegação" className="flex flex-wrap items-center gap-2 text-[13px] text-ink-faint">
+    <nav aria-label="Trilha de navegação" className="flex flex-wrap items-center gap-2 text-[13.5px]">
       {items.map((it, i) => (
         <span key={it.href || it.label} className="flex items-center gap-2">
-          {i > 0 && <span className="text-line">·</span>}
+          {i > 0 && (
+            <svg width="5" height="9" viewBox="0 0 5 9" fill="none" aria-hidden="true" className="text-line">
+              <path d="M1 1l3 3.5L1 8" stroke="currentColor" strokeWidth="1.4" />
+            </svg>
+          )}
           {it.href ? (
-            <Link href={it.href} className="hover:text-ink">
+            <Link href={it.href} className="text-ink-muted hover:text-ink">
               {it.label}
             </Link>
           ) : (
-            <span className="text-ink-muted">{it.label}</span>
+            <span className="text-ink">{it.label}</span>
           )}
         </span>
       ))}
@@ -65,7 +89,15 @@ export function Breadcrumbs({ items }) {
   )
 }
 
-export function Figure({ src, alt, caption, className = '', priority = false, ratio = 'aspect-[16/9]', position = 'center' }) {
+export function Figure({
+  src,
+  alt,
+  caption,
+  className = '',
+  priority = false,
+  ratio = 'aspect-[16/9]',
+  position = 'center',
+}) {
   return (
     <figure className={className}>
       <div className={`relative overflow-hidden bg-ink ${ratio}`}>
@@ -79,7 +111,7 @@ export function Figure({ src, alt, caption, className = '', priority = false, ra
           style={{ objectPosition: position }}
         />
       </div>
-      {caption && <figcaption className="mt-3 text-[12.5px] text-ink-faint">{caption}</figcaption>}
+      {caption && <figcaption className="mt-3 text-[13px] text-ink-muted">{caption}</figcaption>}
     </figure>
   )
 }

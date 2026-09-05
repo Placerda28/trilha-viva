@@ -8,104 +8,122 @@ html {
 }
 
 body {
-  background: #fbfaf8;
-  color: #14110f;
+  background: #ffffff;
+  color: #151b34;
+  font-feature-settings: 'ss01' 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: #f4ebe5;
-  color: #14110f;
+  background: #f2a93b;
+  color: #151b34;
 }
 
 @layer components {
   .shell {
-    @apply mx-auto w-full max-w-shell px-5 sm:px-8 lg:px-10;
+    @apply mx-auto w-full max-w-shell px-5 sm:px-8 lg:px-12;
   }
 
-  /* rótulo de seção: fio + texto pequeno, sem pílula */
-  .label {
-    @apply flex items-center gap-3 text-[11.5px] font-semibold uppercase tracking-[0.1em] text-ink-faint;
-  }
-  .label::after {
-    content: '';
-    @apply h-px flex-1 bg-line;
+  /* Números que precisam alinhar em coluna: canais, faixas, preço. */
+  .figs {
+    font-variant-numeric: tabular-nums;
   }
 
-  .display {
-    @apply font-display font-normal tracking-[-0.015em] text-ink;
-  }
-
+  /* ---- botões ---------------------------------------------------------- */
   .btn {
-    @apply inline-flex select-none items-center justify-center gap-2 rounded-sm text-[15px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2;
+    @apply inline-flex select-none items-center justify-center rounded text-[15px] font-semibold leading-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2;
   }
+  .btn-signal {
+    @apply btn bg-signal px-7 py-4 text-ink hover:bg-signal-deep;
+  }
+  .btn-ink {
+    @apply btn bg-ink px-7 py-4 text-white hover:bg-ink-soft;
+  }
+  .btn-quiet {
+    @apply btn border border-line bg-white px-7 py-4 text-ink hover:border-ink hover:bg-mist;
+  }
+  .btn-onink {
+    @apply btn border border-white/25 bg-transparent px-7 py-4 text-white hover:border-white hover:bg-white hover:text-ink;
+  }
+
+  /* ---- superfícies ----------------------------------------------------- */
+  .panel {
+    @apply rounded-lg bg-ink text-white;
+  }
+  .panel-light {
+    @apply rounded-lg bg-mist;
+  }
+
+  .link-quiet {
+    @apply text-ink underline decoration-line decoration-2 underline-offset-4 transition-colors hover:decoration-signal;
+  }
+
+  /* Apelidos herdados do visual antigo. Ficam aqui só para nenhuma página
+     ficar sem estilo enquanto o redesenho não chega nela. Remover no fim. */
   .btn-solid {
-    @apply btn bg-ink px-7 py-3.5 text-paper hover:bg-ink-soft;
+    @apply btn-ink;
   }
   .btn-accent {
-    @apply btn bg-accent px-7 py-3.5 text-white hover:bg-[#8F3717];
+    @apply btn-signal;
   }
   .btn-outline {
-    @apply btn border border-ink/25 bg-transparent px-7 py-3.5 text-ink hover:border-ink hover:bg-ink hover:text-paper;
+    @apply btn-quiet;
   }
   .btn-light {
-    @apply btn border border-white/30 bg-transparent px-7 py-3.5 text-white hover:bg-white hover:text-ink;
+    @apply btn-onink;
   }
-
+  .link-underline {
+    @apply link-quiet;
+  }
+  .display {
+    @apply font-sans font-bold tracking-[-0.025em] text-ink;
+  }
+  .label {
+    @apply text-[15px] font-bold text-ink;
+  }
   .rule {
     @apply h-px w-full bg-line;
   }
 
-  .link-underline {
-    @apply border-b border-ink/25 pb-0.5 text-ink transition-colors hover:border-accent hover:text-accent;
+  /* ---- texto corrido --------------------------------------------------- */
+  .prose-tv {
+    @apply font-read;
   }
-
   .prose-tv h2 {
-    @apply mt-14 font-display text-[26px] font-normal leading-[1.25] tracking-[-0.01em] text-ink sm:text-[31px];
+    @apply mt-14 font-sans text-[25px] font-bold leading-[1.16] tracking-[-0.02em] text-ink sm:text-[30px];
   }
   .prose-tv h3 {
-    @apply mt-9 text-[17px] font-semibold text-ink;
+    @apply mt-9 font-sans text-[18px] font-bold text-ink;
   }
   .prose-tv p {
-    @apply mt-4 text-[17px] leading-[1.75] text-ink-muted;
+    @apply mt-4 text-[18px] leading-[1.72] text-ink-muted;
   }
   .prose-tv ul {
-    @apply mt-5 space-y-2.5 text-[17px] leading-[1.72] text-ink-muted;
+    @apply mt-5 space-y-2.5 text-[18px] leading-[1.7] text-ink-muted;
   }
   .prose-tv li {
     @apply relative pl-5;
   }
   .prose-tv li::before {
     content: '';
-    @apply absolute left-0 top-[13px] h-[5px] w-[5px] rounded-full bg-accent;
+    @apply absolute left-0 top-[14px] h-[6px] w-[6px] bg-signal;
   }
   .prose-tv strong {
     @apply font-semibold text-ink;
   }
   .prose-tv a {
-    @apply border-b border-accent/40 text-accent hover:border-accent;
-  }
-}
-
-.marquee {
-  animation: slide 46s linear infinite;
-}
-@keyframes slide {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
+    @apply text-ink underline decoration-signal decoration-2 underline-offset-4;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .marquee {
-    animation: none;
-  }
-  * {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
