@@ -147,7 +147,7 @@ export default async function SongPage({ params }) {
             </dl>
 
             <div className="panel mt-12 p-8 sm:p-11">
-              <p className="inline-block bg-signal px-3 py-1.5 text-[13.5px] font-bold text-ink">
+              <p className="chip">
                 Não vendemos por música
               </p>
               <h2 className="text-d3 mt-6 text-white">
@@ -170,7 +170,7 @@ export default async function SongPage({ params }) {
                 {['Download imediato', 'Pix ou cartão', 'Sem mensalidade', 'Garantia de 7 dias'].map(
                   (t) => (
                     <li key={t} className="flex items-center gap-3 text-[14.5px] text-white/75">
-                      <Check className="shrink-0" />
+                      <Check tone="light" className="shrink-0" />
                       {t}
                     </li>
                   )
