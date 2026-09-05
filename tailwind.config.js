@@ -66,5 +66,9 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  // Único plugin, e só por causa do dialog: ele traz os utilitários
+  // `animate-in` / `fade-in-0` / `zoom-in-95` que o componente do shadcn usa
+  // para entrar e sair da tela. Não adiciona cor, não mexe no body, não liga
+  // darkMode.
+  plugins: [require('tailwindcss-animate')],
 }
