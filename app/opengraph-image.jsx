@@ -9,32 +9,48 @@ const INK = '#0D0D0D'
 const PAPER = '#F2F3F5'
 const MUTED = '#5C5C5C'
 const LINE = '#E0E2E6'
-const ACCENT = '#C40F24'
+const ACCENT = '#C40F24' // vermelho de texto, para o preco
+const SIGNAL = '#E5152D' // vermelho de traco, para o canal de clique da marca
 
-// A marca desenhada com retângulos — mesma geometria do LogoMark do site.
+// A marca desenhada para o satori: disco redondo com os canais dentro. Mesma
+// geometria do LogoMark e do app/icon.svg.
+const CANAIS = [
+  { x: 7.4, h: 19.7 },
+  { x: 14.77, h: 34.46 },
+  { x: 22.15, h: 49.23 },
+  { x: 29.54, h: 29.54, cue: true },
+  { x: 36.92, h: 44.31 },
+  { x: 44.31, h: 24.62 },
+  { x: 51.69, h: 12.31 },
+]
+
 function Mark({ size: s = 64 }) {
   const u = s / 64
-  const bar = (left, top, w, h, fill, opacity = 1) => (
-    <div
-      key={`${left}-${top}`}
-      style={{
-        position: 'absolute',
-        left: left * u,
-        top: top * u,
-        width: w * u,
-        height: h * u,
-        background: fill,
-        opacity,
-        borderRadius: 2 * u,
-      }}
-    />
-  )
   return (
-    <div style={{ position: 'relative', display: 'flex', width: s, height: s }}>
-      {bar(13, 20, 5, 24, INK, 0.45)}
-      {bar(29, 11, 6, 42, INK)}
-      {bar(21, 22, 22, 6, ACCENT)}
-      {bar(46, 20, 5, 24, INK, 0.45)}
+    <div
+      style={{
+        position: 'relative',
+        display: 'flex',
+        width: s,
+        height: s,
+        borderRadius: s,
+        background: INK,
+        overflow: 'hidden',
+      }}
+    >
+      {CANAIS.map((c) => (
+        <div
+          key={c.x}
+          style={{
+            position: 'absolute',
+            left: c.x * u,
+            top: (32 - c.h / 2) * u,
+            width: 3.94 * u,
+            height: c.h * u,
+            background: c.cue ? SIGNAL : PAPER,
+          }}
+        />
+      ))}
     </div>
   )
 }
