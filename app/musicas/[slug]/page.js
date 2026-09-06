@@ -122,11 +122,20 @@ export default async function SongPage({ params }) {
             <h2 className="mt-12 text-[19px] font-bold tracking-[-0.015em] text-ink">
               Canais inclusos
             </h2>
+            {/* Os dois primeiros canais sao o clique e a guia: e o que separa
+                multitrack de playback, e o site destaca esses dois em todo
+                lugar. Aqui eles ganham o contorno vermelho; os outros sete
+                ficam com o fio cinza, para o vermelho continuar significando
+                alguma coisa. */}
             <ul className="mt-5 flex max-w-2xl flex-wrap gap-2">
-              {CANAIS.map((c) => (
+              {CANAIS.map((c, i) => (
                 <li
                   key={c}
-                  className="border border-line px-3 py-1.5 text-[14.5px] text-ink-muted"
+                  className={
+                    i < 2
+                      ? 'border border-signal px-3 py-1.5 text-[14.5px] font-semibold text-signal-deep'
+                      : 'border border-line px-3 py-1.5 text-[14.5px] text-ink-muted'
+                  }
                 >
                   {c}
                 </li>

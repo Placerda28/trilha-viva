@@ -5,11 +5,11 @@ export const alt = 'Trilha Viva — Multitracks Gospel'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-const INK = '#14110F'
-const PAPER = '#FBFAF8'
-const MUTED = '#6B615A'
-const LINE = '#E3DED7'
-const ACCENT = '#A8431E'
+const INK = '#0D0D0D'
+const PAPER = '#F2F3F5'
+const MUTED = '#5C5C5C'
+const LINE = '#E0E2E6'
+const ACCENT = '#C40F24'
 
 // A marca desenhada com retângulos — mesma geometria do LogoMark do site.
 function Mark({ size: s = 64 }) {

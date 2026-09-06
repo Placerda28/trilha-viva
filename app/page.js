@@ -333,7 +333,7 @@ export default function Home() {
                 À vista no Pix ou parcelado no cartão.
               </p>
 
-              <Link href="/assinar" className="btn-signal mt-8 w-full sm:w-auto">
+              <Link href="/assinar" className="btn-glow mt-8 w-full sm:w-auto">
                 Liberar meu acesso agora
               </Link>
               <p className="mt-5 text-[13.5px] text-white/45">
@@ -380,7 +380,7 @@ export default function Home() {
 
       {/* FECHAMENTO */}
       <section className="shell pt-20 sm:pt-28">
-        <div className="border-y-2 border-ink py-14 sm:py-20">
+        <div className="border-y-2 border-signal py-14 sm:py-20">
           <h2 className="text-d2 max-w-2xl text-ink">Domingo chega rápido.</h2>
           <p className="mt-5 max-w-xl font-read text-[18px] leading-[1.7] text-ink-muted">
             Libere o acervo hoje e monte o setlist ainda esta semana.

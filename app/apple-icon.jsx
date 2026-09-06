@@ -6,9 +6,9 @@ export const runtime = 'nodejs'
 export const size = { width: 180, height: 180 }
 export const contentType = 'image/png'
 
-const INK = '#14110F'
-const PAPER = '#FBFAF8'
-const ACCENT = '#C4653F'
+const INK = '#0D0D0D'
+const PAPER = '#FFFFFF'
+const ACCENT = '#E5152D'
 
 export default function AppleIcon() {
   const u = 180 / 64
