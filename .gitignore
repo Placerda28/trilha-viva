@@ -12,3 +12,8 @@ out
 .dev.vars
 cloudflare-env.d.ts
 public/img
+
+# Resumo de sessão do Claude, para começar um chat novo sem perder contexto.
+# Fica na pasta local e no OneDrive (Claude outputs), não no repositório: muda a
+# cada compactação e o que interessa do projeto já está em tasks/todo.md.
+contexto-compactado-*.md
