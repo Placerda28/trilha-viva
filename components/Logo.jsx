@@ -4,8 +4,8 @@
 const BARS = [0.42, 0.42, 0.68, 0.86, 1, 0.8, 0.6, 0.9, 0.5]
 
 export function LogoMark({ size = 26, tone = 'ink', className = '' }) {
-  const base = tone === 'light' ? 'rgba(255,255,255,.7)' : '#2C3E48'
-  const cue = tone === 'light' ? '#D4DDE2' : '#5C7E8F'
+  const base = tone === 'light' ? 'rgba(255,255,255,.75)' : '#0D0D0D'
+  const cue = tone === 'light' ? '#FF5566' : '#E5152D'
   return (
     <span
       className={`inline-flex items-end gap-[2.5px] ${className}`}

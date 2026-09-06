@@ -63,7 +63,7 @@ export function Faq({ items, className = '' }) {
 
 /** Marca de item incluído. Um quadrado, não um check genérico. */
 export function Check({ className = '', tone = 'ink' }) {
-  const cor = tone === 'light' ? 'bg-mist' : 'bg-signal'
+  const cor = tone === 'light' ? 'bg-signal-lite' : 'bg-signal'
   return <span aria-hidden="true" className={`block h-[9px] w-[9px] ${cor} ${className}`} />
 }
 

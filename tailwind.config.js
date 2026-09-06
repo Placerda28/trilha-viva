@@ -4,32 +4,36 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Paleta Frosted aura. As cores da paleta são signal (#5C7E8F), ink-faint
-        // (#A2A2A2), mist (#D4DDE2) e o branco. A paleta não tem um tom escuro,
-        // então `ink` e `signal-deep` são degraus mais fechados do próprio
-        // #5C7E8F — sem eles, texto e painel escuro não teriam contraste.
+        // Paleta "Preto no branco, corte vermelho" (06/09/2026). Base
+        // acromatica: preto no texto e nos paineis, cinza-clarissimo de fundo,
+        // branco nos cards. A unica cor do sistema e o vermelho, e ele so
+        // aparece em borda, marca de canal, chip e botao — nunca em area
+        // grande. `signal` e o vermelho de traco e grafico; `signal-deep` e o
+        // de texto e de fundo de botao (branco por cima passa em 6.11);
+        // `signal-lite` e o degrau claro, para vermelho dentro de painel preto.
         ink: {
-          DEFAULT: '#2C3E48',
-          soft: '#3D5462',
-          muted: '#5A6B75',
-          faint: '#A2A2A2', // cinza da paleta
+          DEFAULT: '#0D0D0D',
+          soft: '#232323', // hover de botao preto
+          muted: '#5C5C5C', // texto secundario, 6.02 sobre o fundo
+          faint: '#8A8A8A', // numeracao e metadado discreto
         },
-        paper: '#F7F9FB', // off-white frio
+        paper: '#F2F3F5', // cinza-clarissimo do fundo
         mist: {
-          DEFAULT: '#D4DDE2', // azul pálido da paleta
-          deep: '#C3CFD6',
+          DEFAULT: '#E7E8EB', // faixas de secao
+          deep: '#DADCE0',
         },
-        line: '#DDE4E8',
+        line: '#E0E2E6',
         signal: {
-          DEFAULT: '#5C7E8F', // azul-ardósia da paleta
-          deep: '#46626F', // fundo de botão, com texto branco
-          wash: '#EAF0F3',
+          DEFAULT: '#E5152D', // vermelho de borda, onda e marca de canal
+          deep: '#C40F24', // texto e fundo de botao
+          lite: '#FF5566', // vermelho dentro de painel preto (6.25)
+          wash: '#FDEDEF',
         },
-        // Apelido herdado: páginas ainda não redesenhadas usam `accent`.
+        // Apelido herdado: paginas ainda nao redesenhadas usam `accent`.
         accent: {
-          DEFAULT: '#5C7E8F',
-          soft: '#5C7E8F',
-          wash: '#EAF0F3',
+          DEFAULT: '#E5152D',
+          soft: '#E5152D',
+          wash: '#FDEDEF',
         },
       },
       fontFamily: {
@@ -53,6 +57,14 @@ module.exports = {
         md: '6px',
         lg: '10px',
         xl: '14px',
+      },
+      boxShadow: {
+        // Excecao unica a regra "sem sombra em lugar nenhum": o halo vermelho
+        // atras do CTA principal, dentro de secao preta. Nao e sombra de
+        // elevacao — e luz, e o efeito do print que o Paulo mandou.
+        glow: '0 0 0 1px rgba(229,21,45,.55), 0 0 22px 2px rgba(229,21,45,.42), 0 0 60px 8px rgba(229,21,45,.22)',
+        'glow-strong':
+          '0 0 0 1px rgba(229,21,45,.8), 0 0 26px 3px rgba(229,21,45,.6), 0 0 76px 12px rgba(229,21,45,.3)',
       },
       keyframes: {
         tick: {

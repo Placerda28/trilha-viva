@@ -8,8 +8,8 @@ html {
 }
 
 body {
-  background: #f7f9fb;
-  color: #2c3e48;
+  background: #f2f3f5;
+  color: #0d0d0d;
   font-feature-settings: 'ss01' 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -18,17 +18,17 @@ body {
 /* Foco de teclado visível em tudo. As linhas do setlist e os links de texto
    não tinham indicação nenhuma; agora têm um contorno com folga. */
 :focus-visible {
-  outline: 2px solid #2c3e48;
+  outline: 2px solid #0d0d0d;
   outline-offset: 2px;
   border-radius: 2px;
 }
 .panel :focus-visible,
 .bg-ink :focus-visible {
-  outline-color: #d4dde2;
+  outline-color: #ff5566;
 }
 
 ::selection {
-  background: #5c7e8f;
+  background: #e5152d;
   color: #ffffff;
 }
 
@@ -49,14 +49,22 @@ body {
   .btn-signal {
     @apply btn bg-signal-deep px-7 py-4 text-white hover:bg-ink;
   }
+
+  /* CTA principal dentro de secao preta: o mesmo botao vermelho com halo de
+     luz atras, como no print. Unico lugar do site com sombra, e ela nao e
+     sombra de elevacao — e brilho da propria cor. O hover fecha o halo em vez
+     de abrir, para o botao parecer que "acende" ao ser apontado. */
+  .btn-glow {
+    @apply btn-signal rounded-full shadow-glow transition-shadow duration-150 hover:bg-signal-deep hover:shadow-glow-strong;
+  }
   .btn-ink {
     @apply btn bg-ink px-7 py-4 text-white hover:bg-ink-soft;
   }
   .btn-quiet {
-    @apply btn border border-ink/25 bg-transparent px-7 py-4 text-ink hover:border-ink hover:bg-mist;
+    @apply btn border border-line bg-white px-7 py-4 text-ink transition-colors hover:border-signal hover:text-signal-deep;
   }
   .btn-onink {
-    @apply btn border border-white/25 bg-transparent px-7 py-4 text-white hover:border-white hover:bg-white hover:text-ink;
+    @apply btn border border-white/25 bg-transparent px-7 py-4 text-white transition-colors hover:border-signal hover:text-signal-lite;
   }
 
   /* Etiqueta curta e forte (desconto, aviso). Cor definida só aqui, para uma
@@ -76,8 +84,36 @@ body {
     @apply rounded-lg bg-mist;
   }
 
+  /* Card branco sobre o fundo cinza, como nos prints. O fio e cinza; o
+     vermelho entra so no conteudo (icone, marca, link) — e no hover, quando o
+     card e clicavel. */
+  .card-line {
+    @apply rounded-lg border border-line bg-white;
+  }
+  .card-line-hover {
+    @apply card-line transition-colors hover:border-signal;
+  }
+
+  /* Corte vermelho: fio de 2px em cima do card. E o "detalhe de borda" da
+     direcao nova, e substitui o rotulo em caixa alta que o site nao usa mais. */
+  .card-cut {
+    @apply card-line border-t-2 border-t-signal;
+  }
+
+  /* Pilula de contorno vermelho, como as bolhas do print do Cloud Pro. */
+  .pill-line {
+    @apply inline-flex items-center gap-2 rounded-full border border-signal bg-white px-3.5 py-1.5 text-[13px] font-semibold text-signal-deep;
+  }
+
   .link-quiet {
     @apply text-ink underline decoration-line decoration-2 underline-offset-4 transition-colors hover:decoration-signal;
+  }
+
+  /* Link de acao em vermelho, o "Veja como funciona" dos prints. O vermelho de
+     texto e o signal-deep: o #E5152D puro sobre o fundo claro fica em 4.24,
+     abaixo do minimo. */
+  .link-signal {
+    @apply inline-flex items-center gap-1.5 text-[15px] font-semibold text-signal-deep underline decoration-transparent decoration-2 underline-offset-4 transition-colors hover:decoration-signal;
   }
 
   /* Apelidos herdados do visual antigo. Ficam aqui só para nenhuma página

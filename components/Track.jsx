@@ -36,7 +36,7 @@ function sampleHeight(channel, row, j, amp) {
 /** Miniatura da sessão: uma barra por canal, as duas primeiras são clique e guia. */
 export function ChannelStrip({ seed = 7, tone = 'ink', className = '', height = 22 }) {
   const hs = heights(seed)
-  const base = tone === 'light' ? 'rgba(255,255,255,.30)' : '#C6CDD2'
+  const base = tone === 'light' ? 'rgba(255,255,255,.30)' : '#C9CCD2'
   return (
     <span
       className={`inline-flex items-end gap-[3px] ${className}`}
@@ -49,7 +49,7 @@ export function ChannelStrip({ seed = 7, tone = 'ink', className = '', height = 
           className="w-[3px]"
           style={{
             height: `${Math.round(h * 100)}%`,
-            background: CHANNELS[i].cue ? (tone === 'light' ? '#D4DDE2' : '#5C7E8F') : base,
+            background: CHANNELS[i].cue ? (tone === 'light' ? '#FF5566' : '#E5152D') : base,
           }}
         />
       ))}
@@ -135,12 +135,12 @@ export function SessionPanel({ song, className = '' }) {
           <li key={c.name} className="flex items-center gap-4 px-5 py-2.5">
             <span
               className={`h-[7px] w-[7px] shrink-0 ${
-                c.cue ? 'bg-mist' : 'bg-white/25'
+                c.cue ? 'bg-signal-lite' : 'bg-white/25'
               } ${c.name === 'clique' ? 'animate-tick' : ''}`}
             />
             <span
               className={`w-[76px] shrink-0 text-[13.5px] ${
-                c.cue ? 'font-semibold text-mist' : 'text-white/70'
+                c.cue ? 'font-semibold text-signal-lite' : 'text-white/70'
               }`}
             >
               {c.name}
@@ -152,7 +152,7 @@ export function SessionPanel({ song, className = '' }) {
                   className="w-[3px] shrink-0"
                   style={{
                     height: `${sampleHeight(c, i, j, hs[i])}%`,
-                    background: c.cue ? 'rgba(212,221,226,.95)' : 'rgba(255,255,255,.22)',
+                    background: c.cue ? 'rgba(255,85,102,.95)' : 'rgba(255,255,255,.22)',
                   }}
                 />
               ))}
