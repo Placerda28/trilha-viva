@@ -60,7 +60,7 @@ export async function POST(req) {
           status: 'pending',
           email: session.customer_details?.email || null,
           message:
-            'Estamos aguardando a confirmação do pagamento. No Pix isso costuma levar menos de um minuto.',
+            'Estamos aguardando a confirmação do pagamento. Costuma levar menos de um minuto.',
         },
         { headers: noStore }
       )

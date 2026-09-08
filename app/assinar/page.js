@@ -6,11 +6,11 @@ import { site, priceBRL, discountPct } from '@/lib/site'
 export const metadata = {
   title: 'Liberar acesso ao pacote de 4.000 Multitracks Gospel',
   description:
-    'Pagamento único de R$ 89,90 (de R$ 899,00) com Pix ou cartão. Acesso vitalício a mais de 4.000 multitracks gospel com clique, guia e canais separados. Liberação imediata.',
+    'Pagamento único de R$ 89,90 (de R$ 899,00) no cartão. Acesso vitalício a mais de 4.000 multitracks gospel com clique, guia e canais separados. Liberação imediata.',
   alternates: { canonical: '/assinar' },
   openGraph: {
     title: 'Pacote único — 4.000 Multitracks Gospel | Trilha Viva',
-    description: 'R$ 89,90 no Pix ou cartão. Acesso vitalício e liberação imediata.',
+    description: 'R$ 89,90 no cartão. Acesso vitalício e liberação imediata.',
     url: `${site.url}/assinar`,
   },
 }
@@ -115,7 +115,7 @@ export default async function AssinarPage({ searchParams }) {
               {priceBRL(site.price)}
             </p>
             <p className="mt-3 text-[14px] text-ink-muted">
-              Pagamento único · acesso vitalício · Pix ou cartão
+              Pagamento único · acesso vitalício · cartão
             </p>
 
             <div className="my-8 h-px bg-line" />
