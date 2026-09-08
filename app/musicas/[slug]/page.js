@@ -177,7 +177,7 @@ export default async function SongPage({ params }) {
                 </p>
               </div>
               <ul className="mt-8 grid gap-3 border-t border-white/10 pt-7 sm:grid-cols-2">
-                {['Download imediato', 'Pix ou cartão', 'Sem mensalidade', 'Garantia de 7 dias'].map(
+                {['Download imediato', 'Pagamento no cartão', 'Sem mensalidade', 'Garantia de 7 dias'].map(
                   (t) => (
                     <li key={t} className="flex items-center gap-3 text-[14.5px] text-white/75">
                       <Check tone="light" className="shrink-0" />
