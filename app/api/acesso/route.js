@@ -81,6 +81,9 @@ export async function POST(req) {
       {
         status: 'paid',
         url: driveUrl,
+        // Diz a pagina se o e-mail automatico esta realmente ligado, para ela
+        // nao prometer "enviamos por e-mail" quando o envio nao esta configurado.
+        mailed: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
         email: session.customer_details?.email || null,
         nome: session.metadata?.nome || null,
       },

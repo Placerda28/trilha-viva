@@ -102,11 +102,29 @@ export default function AccessPanel() {
   if (state.status === 'paid' || state.status === 'paid_no_link') {
     return (
       <Panel tone="ok" title="Pagamento confirmado. Acesso liberado!">
-        <p>
-          Enviamos o link do acervo para{' '}
-          <strong className="font-semibold text-ink">{state.email || 'o seu e-mail'}</strong> — e ele
-          já está aqui embaixo, pronto para abrir agora.
-        </p>
+        {state.url ? (
+          <p>
+            O acervo completo está aqui embaixo, pronto para abrir agora
+            {state.mailed ? (
+              <>
+                {' '}
+                — e também enviamos o link para{' '}
+                <strong className="font-semibold text-ink">
+                  {state.email || 'o seu e-mail'}
+                </strong>
+                .
+              </>
+            ) : (
+              <>. Guarde o link ou salve a pasta nos seus favoritos.</>
+            )}
+          </p>
+        ) : (
+          <p>
+            Vamos enviar o link do acervo para{' '}
+            <strong className="font-semibold text-ink">{state.email || 'o seu e-mail'}</strong>. Se
+            não chegar em alguns minutos, responda o e-mail da compra que a gente resolve.
+          </p>
+        )}
 
         {state.url ? (
           <>
@@ -132,7 +150,7 @@ export default function AccessPanel() {
         )}
 
         <ul className="mt-8 grid gap-3 border-t border-line pt-6 sm:grid-cols-2">
-          {[ 'Guarde o e-mail: ele é o seu comprovante de acesso vitalício', 'O acesso é pessoal, para o seu ministério', 'Comece pelo guia de configuração do REAPER', 'Qualquer dúvida, é só responder o e-mail da compra',
+          {[ 'Guarde este link: ele abre o acervo sempre que você precisar', 'O acesso é pessoal, para o seu ministério', 'Comece pelo guia de configuração do REAPER', 'Qualquer dúvida, é só responder o recibo da compra',
           ].map((t) => (
             <li key={t} className="flex items-start gap-3 text-[14px] text-ink-muted">
               <Check className="mt-[6px] shrink-0" />
