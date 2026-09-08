@@ -83,7 +83,7 @@ export default function Home() {
 
             <p className="mt-6 max-w-md text-[14.5px] leading-[1.6] text-ink-muted">
               De <span className="line-through">{priceBRL(site.fullPrice)}</span> por{' '}
-              {priceBRL(site.price)} em pagamento único, no Pix ou no cartão. Sete dias de garantia.
+              {priceBRL(site.price)} em pagamento único, no cartão. Sete dias de garantia.
             </p>
           </div>
 
@@ -330,7 +330,7 @@ export default function Home() {
                 </span>
               </div>
               <p className="mt-3 text-[14.5px] text-white/55">
-                À vista no Pix ou parcelado no cartão.
+                Pagamento único no cartão de crédito ou débito.
               </p>
 
               <Link href="/assinar" className="btn-glow mt-8 w-full sm:w-auto">
