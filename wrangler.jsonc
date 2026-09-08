@@ -14,5 +14,9 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  // As variaveis (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, DRIVE_URL, etc.)
+  // sao cadastradas no painel do Cloudflare, nao neste arquivo. Sem esta linha,
+  // cada "wrangler deploy" apagaria todas elas e o site quebraria.
+  "keep_vars": true
 }
