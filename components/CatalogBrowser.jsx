@@ -8,7 +8,7 @@ const PAGE = 40
 function norm(s) {
   return s
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/\p{M}/gu, '')
     .toLowerCase()
 }
 
