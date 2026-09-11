@@ -7,9 +7,9 @@ import { tools, usos, steps } from '@/lib/tools'
 import { faq } from '@/lib/faq'
 
 export const metadata = {
-  title: 'Multitracks Gospel: 4.000 VS com clique e guia | Trilha Viva',
+  title: 'Multitracks Gospel: 1.000 VS com clique e guia | Trilha Viva',
   description:
-    'Pacote único com mais de 4.000 multitracks gospel (VS) — clique, guia e canais separados, em todos os tons. Acesso vitalício por R$ 89,90, sem mensalidade.',
+    'Pacote único com mais de 1.000 multitracks gospel (VS) — clique, guia e canais separados, em todos os tons. Acesso vitalício por R$ 89,90, sem mensalidade.',
   alternates: { canonical: '/' },
 }
 
@@ -20,7 +20,7 @@ const aberta = songs[0]
 const productLd = {
   '@context': 'https://schema.org',
   '@type': 'Product',
-  name: 'Trilha Viva — Pacote Completo com 4.000 Multitracks Gospel',
+  name: 'Trilha Viva — Pacote Completo com 1.000 Multitracks Gospel',
   description: site.description,
   brand: { '@type': 'Brand', name: 'Trilha Viva' },
   category: 'Multitracks Gospel',
@@ -64,7 +64,7 @@ export default function Home() {
             </p>
 
             <h1 className="text-d1 mt-7 max-w-[13ch] text-ink [text-wrap:balance]">
-              4.000 multitracks gospel na sua igreja.
+              1.000 multitracks gospel na sua igreja.
             </h1>
 
             <p className="mt-7 max-w-lg font-read text-[19px] leading-[1.6] text-ink-muted">
@@ -91,7 +91,7 @@ export default function Home() {
           <div className="panel overflow-hidden">
             <div className="flex items-baseline justify-between gap-4 px-4 py-4 sm:px-5">
               <p className="text-[15px] font-bold">Domingo de manhã</p>
-              <p className="figs text-[13px] text-white/45">8 de mais de 4.000</p>
+              <p className="figs text-[13px] text-white/45">8 de mais de 1.000</p>
             </div>
             <TrackList songs={setlist} tone="light" />
             <div className="border-t border-white/10 px-4 py-4 sm:px-5">
@@ -318,7 +318,7 @@ export default function Home() {
               <h2 className="text-d2 text-white">Um pagamento. O acervo inteiro.</h2>
               <p className="mt-6 max-w-md font-read text-[17px] leading-[1.68] text-white/60">
                 Sem plano mensal, sem crédito por música, sem escolher faixa a faixa. Você paga uma
-                vez e leva os 4.000 multitracks.
+                vez e leva os 1.000 multitracks.
               </p>
 
               <div className="mt-10 flex items-baseline gap-4">
@@ -345,7 +345,7 @@ export default function Home() {
               <h3 className="text-[17px] font-bold text-white">Está tudo incluso</h3>
               <ul className="mt-6 divide-y divide-white/10 border-y border-white/10">
                 {[
-                  'Mais de 4.000 multitracks gospel (VS)',
+                  'Mais de 1.000 multitracks gospel (VS)',
                   'Clique e guia em canais separados',
                   'Bateria, baixo, teclado, guitarra, pads, sopros e vocais isolados',
                   'Arquivos em WAV e MP3, organizados por música',
