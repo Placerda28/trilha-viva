@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { SectionHead, SongGrid, Faq, Check, Figure } from '@/components/ui'
 import { SessionPanel, TrackList, CHANNELS } from '@/components/Track'
-import { songs } from '@/lib/catalog'
+import { destaques } from '@/lib/catalog'
 import { site, includes, priceBRL, discountPct } from '@/lib/site'
 import { tools, usos, steps } from '@/lib/tools'
 import { faq } from '@/lib/faq'
@@ -13,9 +13,9 @@ export const metadata = {
   alternates: { canonical: '/' },
 }
 
-const setlist = songs.slice(0, 8)
-const amostra = songs.slice(8, 24)
-const aberta = songs[0]
+const setlist = destaques.slice(0, 8)
+const amostra = destaques.slice(8, 24)
+const aberta = destaques[0]
 
 const productLd = {
   '@context': 'https://schema.org',
