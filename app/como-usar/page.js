@@ -323,7 +323,7 @@ export default function ComoUsarPage() {
             Agora só falta o acervo.
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-[16.5px] leading-[1.7] text-ink-muted">
-            Mais de 4.000 multitracks gospel com clique, guia e canais separados — em um pacote
+            Mais de 1.000 multitracks gospel com clique, guia e canais separados — em um pacote
             único, por {priceBRL(site.price)}.
           </p>
           <Link href="/assinar" className="btn-signal mt-9">
