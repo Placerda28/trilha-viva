@@ -27,8 +27,15 @@ export async function generateMetadata({ params }) {
   const { slug } = await params
   const song = getSong(slug)
   if (!song) return {}
-  const title = `Multitrack ${song.title} — ${song.artist} (VS com clique e guia)`
-  const description = `Multitrack de ${song.title}, de ${song.artist}, com clique, guia e canais separados em todos os tons. Incluída no pacote Trilha Viva com mais de 1.000 VS gospel por ${priceBRL(site.price)}.`
+  // O titulo e a descricao sao o que aparece no Google. Num VS MP3, prometer
+  // "clique e guia" ali seria a mesma promessa falsa que a pagina ja evita.
+  const ehVs = song.tipo === 'VS MP3'
+  const title = ehVs
+    ? `VS ${song.title} — ${song.artist} (playback mixado em MP3)`
+    : `Multitrack ${song.title} — ${song.artist} (VS com clique e guia)`
+  const description = ehVs
+    ? `VS de ${song.title}, de ${song.artist}: MP3 já mixado, pronto para tocar, sem canais separados. Incluído no pacote Trilha Viva com mais de 1.000 VS gospel por ${priceBRL(site.price)}.`
+    : `Multitrack de ${song.title}, de ${song.artist}, com clique, guia e canais separados em todos os tons. Incluída no pacote Trilha Viva com mais de 1.000 VS gospel por ${priceBRL(site.price)}.`
   return {
     title,
     description,
@@ -70,7 +77,10 @@ export default async function SongPage({ params }) {
     genre: ['Gospel', 'Música cristã', song.categoria],
     inLanguage: 'pt-BR',
     url: `${site.url}/musicas/${song.slug}`,
-    description: `Multitrack (VS) de ${song.title}, de ${song.artist}, com clique, guia e canais separados.`,
+    description:
+      song.tipo === 'VS MP3'
+        ? `VS de ${song.title}, de ${song.artist}: MP3 já mixado, sem canais separados.`
+        : `Multitrack (VS) de ${song.title}, de ${song.artist}, com clique, guia e canais separados.`,
     isPartOf: {
       '@type': 'Product',
       name: 'Trilha Viva — Pacote Completo com 1.000 Multitracks Gospel',
@@ -122,7 +132,9 @@ export default async function SongPage({ params }) {
               href={`/artistas/${artistSlug(song.artist)}`}
               className="link-quiet mt-6 inline-block text-[14.5px] font-semibold"
             >
-              Ver todos os multitracks de {song.artist}
+              {song.tipo === 'VS MP3'
+                ? `Ver todo o acervo de ${song.artist}`
+                : `Ver todos os multitracks de ${song.artist}`}
             </Link>
           </div>
 
