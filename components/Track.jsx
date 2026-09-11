@@ -120,6 +120,9 @@ export function TrackList({ songs, tone = 'ink', className = '', start = 0 }) {
 /** Bloco da sessão aberta: os nove canais com nome, como no programa. */
 export function SessionPanel({ song, className = '' }) {
   const hs = heights(song?.seed ?? 11)
+  // Um VS em MP3 e uma mixagem so. Mostrar os nove canais em cima dele seria
+  // prometer o que o arquivo nao tem, entao o painel mostra a faixa unica.
+  const canais = song?.tipo === 'VS MP3' ? [{ name: 'mixagem' }] : CHANNELS
   return (
     <div className={`panel overflow-hidden ${className}`}>
       <div className="flex items-baseline justify-between gap-4 border-b border-white/10 px-5 py-4">
@@ -127,11 +130,13 @@ export function SessionPanel({ song, className = '' }) {
           <p className="truncate text-[17px] font-bold leading-tight">{song.title}</p>
           <p className="mt-1 truncate text-[13.5px] text-white/50">{song.artist}</p>
         </div>
-        <p className="figs shrink-0 text-[13px] text-white/45">{CHANNELS.length} canais</p>
+        <p className="figs shrink-0 text-[13px] text-white/45">
+          {song?.tipo === 'VS MP3' ? 'faixa única' : `${CHANNELS.length} canais`}
+        </p>
       </div>
 
       <ul className="divide-y divide-white/[.07]">
-        {CHANNELS.map((c, i) => (
+        {canais.map((c, i) => (
           <li key={c.name} className="flex items-center gap-4 px-5 py-2.5">
             <span
               className={`h-[7px] w-[7px] shrink-0 ${

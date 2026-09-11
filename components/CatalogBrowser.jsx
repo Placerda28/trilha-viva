@@ -12,19 +12,19 @@ function norm(s) {
     .toLowerCase()
 }
 
-export default function CatalogBrowser({ songs, categorias, initialCat = '', initialQuery = '' }) {
+export default function CatalogBrowser({ songs, artistas = [], initialArtist = '', initialQuery = '' }) {
   const [q, setQ] = useState(initialQuery)
-  const [cat, setCat] = useState(initialCat)
+  const [artist, setArtist] = useState(initialArtist)
   const [limit, setLimit] = useState(PAGE)
 
   const filtered = useMemo(() => {
     const nq = norm(q.trim())
     return songs.filter((s) => {
-      if (cat && s.categoria !== cat) return false
+      if (artist && s.artist !== artist && s.tambem !== artist) return false
       if (!nq) return true
       return norm(s.title).includes(nq) || norm(s.artist).includes(nq)
     })
-  }, [songs, q, cat])
+  }, [songs, q, artist])
 
   const shown = filtered.slice(0, limit)
 
@@ -56,49 +56,42 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            aria-pressed={cat === ''}
-            onClick={() => {
-              setCat('')
+        {/* Filtro por artista: com 77 bandas no acervo, e por artista que a
+            pessoa procura, nao por categoria. */}
+        <div className="w-full lg:w-auto">
+          <label htmlFor="filtro-artista" className="sr-only">
+            Filtrar por artista ou ministério
+          </label>
+          <select
+            id="filtro-artista"
+            value={artist}
+            onChange={(e) => {
+              setArtist(e.target.value)
               setLimit(PAGE)
             }}
-            className={`rounded border px-4 py-2 text-[13.5px] font-medium transition-colors ${
-              cat === '' ? 'border-ink bg-ink text-white' : 'border-line text-ink-muted hover:border-ink'
-            }`}
+            className="w-full rounded border border-line bg-white px-4 py-3.5 text-[15px] text-ink focus:border-ink focus:outline-none lg:w-auto"
           >
-            Todas
-          </button>
-          {categorias.map((c) => (
-            <button
-              key={c}
-              type="button"
-              aria-pressed={cat === c}
-              onClick={() => {
-                setCat(c)
-                setLimit(PAGE)
-              }}
-              className={`rounded border px-4 py-2 text-[13.5px] font-medium transition-colors ${
-                cat === c ? 'border-ink bg-ink text-white' : 'border-line text-ink-muted hover:border-ink'
-              }`}
-            >
-              {c}
-            </button>
-          ))}
+            <option value="">Todos os artistas</option>
+            {artistas.map((a) => (
+              <option key={a.name} value={a.name}>
+                {a.name} ({a.total})
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
       <p className="figs mt-6 text-[14px] text-ink-muted" aria-live="polite">
-        {filtered.length} {filtered.length === 1 ? 'música encontrada' : 'músicas encontradas'} nesta
-        amostra pública do acervo.
+        {filtered.length} {filtered.length === 1 ? 'música' : 'músicas'} no acervo
+        {artist ? ` de ${artist}` : ''}.
       </p>
 
       {shown.length === 0 ? (
         <div className="mt-10 rounded-lg bg-mist px-6 py-16 text-center">
           <p className="text-[19px] font-bold text-ink">Nada encontrado com esse termo.</p>
           <p className="mx-auto mt-2 max-w-md text-[14.5px] text-ink-muted">
-            A amostra pública mostra parte do acervo. O pacote completo tem mais de 1.000 multitracks.
+            Tente só uma palavra do título, ou procure pelo nome do artista. O acervo continua
+            crescendo, e novas trilhas entram no mesmo pacote.
           </p>
         </div>
       ) : (

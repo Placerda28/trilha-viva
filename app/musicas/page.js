@@ -1,14 +1,15 @@
 import Link from 'next/link'
 import CatalogBrowser from '@/components/CatalogBrowser'
 import { Breadcrumbs } from '@/components/ui'
-import { songs, categorias } from '@/lib/catalog'
+import { songs } from '@/lib/catalog'
+import { artistList } from '@/lib/artists'
 import { site, priceBRL } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 
 export const metadata = {
   title: 'Acervo de Multitracks Gospel — todas as músicas (VS)',
   description:
-    'Navegue pela amostra do acervo Trilha Viva: multitracks gospel com clique, guia e canais separados. Mais de 1.000 VS no pacote único por R$ 89,90.',
+    'Navegue pelo acervo Trilha Viva: multitracks gospel com clique, guia e canais separados, de dezenas de artistas e ministérios. Pacote único por R$ 89,90.',
   alternates: { canonical: '/musicas' },
   openGraph: {
     title: 'Acervo de Multitracks Gospel — Trilha Viva',
@@ -19,8 +20,11 @@ export const metadata = {
 
 export default async function MusicasPage({ searchParams }) {
   const sp = await searchParams
-  const cat = typeof sp?.cat === 'string' ? sp.cat : ''
+  const artista = typeof sp?.artista === 'string' ? sp.artista : ''
   const q = typeof sp?.q === 'string' ? sp.q : ''
+  const artistas = artistList
+    .map((a) => ({ name: a.name, total: a.songs.length }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
 
   const ld = {
     '@context': 'https://schema.org',
@@ -53,9 +57,9 @@ export default async function MusicasPage({ searchParams }) {
               Acervo de multitracks gospel
             </h1>
             <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
-              Esta é uma amostra pública do que está dentro do pacote. Cada música vem com clique,
-              guia e os instrumentos em canais separados — e o pacote completo tem mais de{' '}
-              {site.totalTracks.toLocaleString('pt-BR')} multitracks.
+              {songs.length.toLocaleString('pt-BR')} músicas de {artistas.length} artistas e
+              ministérios, todas com clique, guia e os instrumentos em canais separados. O acervo
+              continua crescendo, e o que entra depois vem no mesmo pacote.
             </p>
           </div>
           <Link href="/assinar" className="btn-signal shrink-0">
@@ -63,7 +67,12 @@ export default async function MusicasPage({ searchParams }) {
           </Link>
         </div>
 
-        <CatalogBrowser songs={songs} categorias={categorias} initialCat={cat} initialQuery={q} />
+        <CatalogBrowser
+          songs={songs}
+          artistas={artistas}
+          initialArtist={artista}
+          initialQuery={q}
+        />
       </div>
     </>
   )

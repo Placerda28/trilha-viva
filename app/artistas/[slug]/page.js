@@ -60,8 +60,8 @@ export default async function ArtistPage({ params }) {
             </h1>
             <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
               {artist.songs.length}{' '}
-              {artist.songs.length === 1 ? 'louvor listado' : 'louvores listados'} na amostra
-              pública, com clique, guia e canais separados. Todos fazem parte do pacote único.
+              {artist.songs.length === 1 ? 'louvor' : 'louvores'} no acervo, com clique, guia e
+              canais separados. Todos fazem parte do pacote único.
             </p>
           </div>
           <Link href="/assinar" className="btn-signal shrink-0">
