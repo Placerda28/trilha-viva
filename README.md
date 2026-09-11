@@ -1,6 +1,6 @@
 # Trilha Viva — Multitracks Gospel
 
-Site de venda do pacote único com mais de 4.000 multitracks (VS) gospel.
+Site de venda do pacote único com mais de 1.000 multitracks (VS) gospel.
 Next.js 15 (App Router) + Tailwind CSS + Stripe. Publicado na Cloudflare Workers
 com o adapter OpenNext, com deploy automático a cada push na `main`.
 
@@ -32,7 +32,7 @@ Para publicar direto da sua máquina, sem passar pelo GitHub: `npm run deploy`.
 | `NEXT_PUBLIC_SITE_URL` | A URL pública do site | Sim (em *build*) |
 | `STRIPE_SECRET_KEY` | Stripe → Desenvolvedores → Chaves de API | Sim |
 | `STRIPE_WEBHOOK_SECRET` | Stripe → Webhooks → endpoint `/api/webhook` | Sim |
-| `DRIVE_URL` | Link do Google Drive com as 4.000 VS | Sim |
+| `DRIVE_URL` | Link do Google Drive com as 1.000 VS | Sim |
 | `RESEND_API_KEY` | resend.com → API Keys (grátis) | Recomendada |
 | `EMAIL_FROM` | Remetente verificado no Resend | Recomendada |
 | `NEXT_PUBLIC_PAYMENT_LINK` | Payment Link da Stripe (plano B) | Não |
@@ -52,7 +52,7 @@ Na Cloudflare há **dois lugares** e a diferença importa:
 O link do Drive **nunca** aparece no código do site nem no HTML público.
 
 1. O visitante preenche nome e e-mail em `/assinar`.
-2. `POST /api/checkout` cria uma sessão de pagamento na Stripe (Pix ou cartão).
+2. `POST /api/checkout` cria uma sessão de pagamento na Stripe (cartão).
 3. A Stripe devolve o cliente para `/sucesso?session_id=cs_...`.
 4. `POST /api/acesso` consulta a Stripe **no servidor**. Só se
    `payment_status === "paid"` a rota devolve o valor de `DRIVE_URL`.
