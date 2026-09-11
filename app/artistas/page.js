@@ -48,7 +48,7 @@ export default function ArtistasPage() {
                 </h2>
                 <p className="figs mt-0.5 text-[13px] text-ink-muted">
                   {a.songs.length}{' '}
-                  {a.songs.length === 1 ? 'multitrack na amostra' : 'multitracks na amostra'}
+                  {a.songs.length === 1 ? 'multitrack no acervo' : 'multitracks no acervo'}
                 </p>
               </div>
             </Link>
