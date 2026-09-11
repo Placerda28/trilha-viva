@@ -28,7 +28,7 @@ export async function generateMetadata({ params }) {
   const song = getSong(slug)
   if (!song) return {}
   const title = `Multitrack ${song.title} — ${song.artist} (VS com clique e guia)`
-  const description = `Multitrack de ${song.title}, de ${song.artist}, com clique, guia e canais separados em todos os tons. Incluída no pacote Trilha Viva com mais de 4.000 VS gospel por ${priceBRL(site.price)}.`
+  const description = `Multitrack de ${song.title}, de ${song.artist}, com clique, guia e canais separados em todos os tons. Incluída no pacote Trilha Viva com mais de 1.000 VS gospel por ${priceBRL(site.price)}.`
   return {
     title,
     description,
@@ -54,7 +54,7 @@ export default async function SongPage({ params }) {
     description: `Multitrack (VS) de ${song.title}, de ${song.artist}, com clique, guia e canais separados.`,
     isPartOf: {
       '@type': 'Product',
-      name: 'Trilha Viva — Pacote Completo com 4.000 Multitracks Gospel',
+      name: 'Trilha Viva — Pacote Completo com 1.000 Multitracks Gospel',
       offers: {
         '@type': 'Offer',
         price: site.price.toFixed(2),
@@ -161,7 +161,7 @@ export default async function SongPage({ params }) {
                 Não vendemos por música
               </p>
               <h2 className="text-d3 mt-6 text-white">
-                Esta música vem no pacote com mais de 4.000 multitracks.
+                Esta música vem no pacote com mais de 1.000 multitracks.
               </h2>
               <p className="mt-4 max-w-lg text-[15.5px] leading-[1.7] text-white/60">
                 Em vez de pagar dezenas de reais por faixa, você leva o acervo inteiro de uma vez —
