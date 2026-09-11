@@ -8,7 +8,7 @@ import { site } from '@/lib/site'
 export const metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: 'Trilha Viva — Multitracks Gospel | 4.000 VS com clique e guia',
+    default: 'Trilha Viva — Multitracks Gospel | 1.000 VS com clique e guia',
     template: '%s | Trilha Viva — Multitracks Gospel',
   },
   description: site.description,
@@ -39,7 +39,7 @@ export const metadata = {
     locale: 'pt_BR',
     url: site.url,
     siteName: 'Trilha Viva — Multitracks Gospel',
-    title: 'Trilha Viva — Multitracks Gospel | 4.000 VS com clique e guia',
+    title: 'Trilha Viva — Multitracks Gospel | 1.000 VS com clique e guia',
     description: site.description,
   },
   twitter: {
