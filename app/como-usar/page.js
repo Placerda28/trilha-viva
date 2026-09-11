@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { SessionPanel } from '@/components/Track'
-import { songs } from '@/lib/catalog'
+import { destaques } from '@/lib/catalog'
 import { Breadcrumbs, SectionHead, Faq, Check } from '@/components/ui'
 import { tools, steps, usos } from '@/lib/tools'
 import { faq } from '@/lib/faq'
@@ -118,7 +118,7 @@ export default function ComoUsarPage() {
             </p>
           </div>
 
-          <SessionPanel song={songs[0]} />
+          <SessionPanel song={destaques[0]} />
         </div>
       </section>
 
