@@ -14,7 +14,7 @@ export async function generateMetadata({ params }) {
   const artist = getArtist(slug)
   if (!artist) return {}
   const title = `Multitracks de ${artist.name} — VS gospel com clique e guia`
-  const description = `Multitracks (VS) de ${artist.name} com clique, guia e canais separados, em todos os tons. Inclusos no pacote Trilha Viva com mais de 4.000 multitracks gospel.`
+  const description = `Multitracks (VS) de ${artist.name} com clique, guia e canais separados, em todos os tons. Inclusos no pacote Trilha Viva com mais de 1.000 multitracks gospel.`
   return {
     title,
     description,

@@ -8,11 +8,11 @@ import { ldJson } from '@/lib/safe'
 export const metadata = {
   title: 'Acervo de Multitracks Gospel — todas as músicas (VS)',
   description:
-    'Navegue pela amostra do acervo Trilha Viva: multitracks gospel com clique, guia e canais separados. Mais de 4.000 VS no pacote único por R$ 89,90.',
+    'Navegue pela amostra do acervo Trilha Viva: multitracks gospel com clique, guia e canais separados. Mais de 1.000 VS no pacote único por R$ 89,90.',
   alternates: { canonical: '/musicas' },
   openGraph: {
     title: 'Acervo de Multitracks Gospel — Trilha Viva',
-    description: 'Multitracks gospel com clique, guia e canais separados. Mais de 4.000 VS.',
+    description: 'Multitracks gospel com clique, guia e canais separados. Mais de 1.000 VS.',
     url: `${site.url}/musicas`,
   },
 }

@@ -69,14 +69,14 @@ export async function POST(req) {
             product_data: {
               name: PRODUCT_NAME,
               description:
-                'Acesso vitalício ao acervo com mais de 4.000 multitracks gospel (VS) com clique, guia e canais separados.',
+                'Acesso vitalício ao acervo com mais de 1.000 multitracks gospel (VS) com clique, guia e canais separados.',
             },
           },
         },
       ],
       metadata: { nome, produto: 'pacote-4000-vs' },
       payment_intent_data: {
-        description: 'Trilha Viva — Pacote 4.000 Multitracks Gospel',
+        description: 'Trilha Viva — Pacote 1.000 Multitracks Gospel',
         metadata: { nome, email },
       },
       success_url: `${origin}/sucesso?session_id={CHECKOUT_SESSION_ID}`,
