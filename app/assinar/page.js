@@ -4,19 +4,19 @@ import { Breadcrumbs, Check } from '@/components/ui'
 import { site, priceBRL, discountPct } from '@/lib/site'
 
 export const metadata = {
-  title: 'Liberar acesso ao pacote de 4.000 Multitracks Gospel',
+  title: 'Liberar acesso ao pacote de 1.000 Multitracks Gospel',
   description:
-    'Pagamento único de R$ 89,90 (de R$ 899,00) no cartão. Acesso vitalício a mais de 4.000 multitracks gospel com clique, guia e canais separados. Liberação imediata.',
+    'Pagamento único de R$ 89,90 (de R$ 899,00) no cartão. Acesso vitalício a mais de 1.000 multitracks gospel com clique, guia e canais separados. Liberação imediata.',
   alternates: { canonical: '/assinar' },
   openGraph: {
-    title: 'Pacote único — 4.000 Multitracks Gospel | Trilha Viva',
+    title: 'Pacote único — 1.000 Multitracks Gospel | Trilha Viva',
     description: 'R$ 89,90 no cartão. Acesso vitalício e liberação imediata.',
     url: `${site.url}/assinar`,
   },
 }
 
 const inclui = [
-  'Mais de 4.000 multitracks gospel (VS)',
+  'Mais de 1.000 multitracks gospel (VS)',
   'Clique e guia em canais separados',
   'Bateria, baixo, teclado, guitarra, pads e vocais isolados',
   'Arquivos WAV e MP3 organizados por música',

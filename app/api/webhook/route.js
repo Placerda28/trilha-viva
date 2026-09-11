@@ -18,7 +18,7 @@ function emailHtml({ nome, url }) {
         <tr><td style="padding:32px 32px 8px">
           <p style="margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8a8a8a;font-weight:700">Trilha Viva · Multitracks Gospel</p>
           <h1 style="margin:14px 0 0;font-size:26px;line-height:1.2;letter-spacing:-.03em">Seu acesso está liberado${nomeSeguro ? `, ${nomeSeguro}` : ''}!</h1>
-          <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#5c5c5c">Pagamento confirmado. O acervo completo com mais de 4.000 multitracks gospel já está disponível no link abaixo — clique, guia e canais separados, prontos para o próximo culto.</p>
+          <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#5c5c5c">Pagamento confirmado. O acervo completo com mais de 1.000 multitracks gospel já está disponível no link abaixo — clique, guia e canais separados, prontos para o próximo culto.</p>
         </td></tr>
         <tr><td style="padding:24px 32px 8px">
           <a href="${urlSegura}" style="display:inline-block;background:#c40f24;color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:14px 26px;border-radius:999px">Abrir o acervo completo</a>
