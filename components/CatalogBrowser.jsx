@@ -98,7 +98,7 @@ export default function CatalogBrowser({ songs, categorias, initialCat = '', ini
         <div className="mt-10 rounded-lg bg-mist px-6 py-16 text-center">
           <p className="text-[19px] font-bold text-ink">Nada encontrado com esse termo.</p>
           <p className="mx-auto mt-2 max-w-md text-[14.5px] text-ink-muted">
-            A amostra pública mostra parte do acervo. O pacote completo tem mais de 4.000 multitracks.
+            A amostra pública mostra parte do acervo. O pacote completo tem mais de 1.000 multitracks.
           </p>
         </div>
       ) : (
