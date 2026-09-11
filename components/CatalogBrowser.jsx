@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { SongGrid } from './ui'
 
 const PAGE = 40
@@ -12,10 +12,22 @@ function norm(s) {
     .toLowerCase()
 }
 
-export default function CatalogBrowser({ songs, artistas = [], initialArtist = '', initialQuery = '' }) {
-  const [q, setQ] = useState(initialQuery)
-  const [artist, setArtist] = useState(initialArtist)
+export default function CatalogBrowser({ songs, artistas = [] }) {
+  const [q, setQ] = useState('')
+  const [artist, setArtist] = useState('')
   const [limit, setLimit] = useState(PAGE)
+
+  // ?artista= e ?q= sao lidos aqui, no navegador, e nao no servidor: assim a
+  // pagina do acervo continua sendo montada uma vez so, na publicacao. Roda
+  // depois que a lista ja apareceu na tela, entao um link com filtro abre o
+  // acervo inteiro por um instante e em seguida filtra.
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search)
+    const a = sp.get('artista')
+    const busca = sp.get('q')
+    if (a) setArtist(a)
+    if (busca) setQ(busca)
+  }, [])
 
   const filtered = useMemo(() => {
     const nq = norm(q.trim())

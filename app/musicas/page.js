@@ -18,33 +18,48 @@ export const metadata = {
   },
 }
 
-export default async function MusicasPage({ searchParams }) {
-  const sp = await searchParams
-  const artista = typeof sp?.artista === 'string' ? sp.artista : ''
-  const q = typeof sp?.q === 'string' ? sp.q : ''
-  const artistas = artistList
-    .map((a) => ({ name: a.name, total: a.songs.length }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+// Esta pagina lia ?artista= e ?q= no servidor. Ler a barra de endereco no
+// servidor obriga o Cloudflare a montar a pagina inteira a cada visita - com
+// 720 musicas isso estourou o limite do Worker e derrubou o acervo (erro
+// 1102). Sem isso a pagina e montada uma vez, na publicacao, e servida pronta.
+// Quem le os dois parametros agora e o CatalogBrowser, no navegador.
 
-  const ld = {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: 'Acervo de Multitracks Gospel',
-    url: `${site.url}/musicas`,
-    inLanguage: 'pt-BR',
-    isPartOf: { '@id': `${site.url}/#website` },
-    mainEntity: {
-      '@type': 'ItemList',
-      numberOfItems: songs.length,
-      itemListElement: songs.slice(0, 60).map((s, i) => ({
-        '@type': 'ListItem',
-        position: i + 1,
-        url: `${site.url}/musicas/${s.slug}`,
-        name: `${s.title} — ${s.artist}`,
-      })),
-    },
-  }
+// O CatalogBrowser roda no navegador, entao tudo que a gente entrega a ele
+// viaja dentro do HTML, musica por musica. Vai so o que a lista usa: o resto
+// (tom, BPM, versoes, cor) fica no servidor, e o acervo pesa metade.
+const lista = songs.map((s) => ({
+  slug: s.slug,
+  title: s.title,
+  artist: s.artist,
+  categoria: s.categoria,
+  seed: s.seed,
+  ...(s.tambem ? { tambem: s.tambem } : {}),
+}))
 
+const artistas = artistList
+  .map((a) => ({ name: a.name, total: a.songs.length }))
+  .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+
+const ld = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Acervo de Multitracks Gospel',
+  url: `${site.url}/musicas`,
+  inLanguage: 'pt-BR',
+  isPartOf: { '@id': `${site.url}/#website` },
+  mainEntity: {
+    '@type': 'ItemList',
+    numberOfItems: songs.length,
+    itemListElement: songs.slice(0, 60).map((s, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${site.url}/musicas/${s.slug}`,
+      name: `${s.title} — ${s.artist}`,
+    })),
+  },
+}
+
+export default function MusicasPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(ld) }} />
@@ -67,12 +82,7 @@ export default async function MusicasPage({ searchParams }) {
           </Link>
         </div>
 
-        <CatalogBrowser
-          songs={songs}
-          artistas={artistas}
-          initialArtist={artista}
-          initialQuery={q}
-        />
+        <CatalogBrowser songs={lista} artistas={artistas} />
       </div>
     </>
   )
