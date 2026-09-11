@@ -211,8 +211,8 @@ export default function Home() {
           </div>
 
           <p className="mt-6 text-[15px] text-ink-muted">
-            Esta é uma amostra. Toda música do pacote vem com os mesmos {CHANNELS.length} canais, e o
-            acervo continua crescendo.
+            Esta é uma amostra. Os multitracks do pacote vêm com os mesmos {CHANNELS.length} canais,
+            e o acervo continua crescendo.
           </p>
         </div>
       </section>
