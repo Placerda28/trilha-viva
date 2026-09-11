@@ -43,6 +43,25 @@ export default async function SongPage({ params }) {
   if (!song) notFound()
   const related = relatedSongs(song, 6)
 
+  // Tom e BPM saem do proprio arquivo do acervo. Quando o acervo nao traz,
+  // a ficha mostra o que vale para toda musica do pacote, sem inventar.
+  const tons = [...new Set(song.variantes.map((v) => v.tom).filter(Boolean))]
+  const bpms = [...new Set(song.variantes.map((v) => v.bpm).filter(Boolean))]
+  // So vale listar as versoes quando cada uma tem como ser identificada.
+  // Dois arquivos iguais sem tom, sem BPM e sem rotulo viram "versao 1 e 2",
+  // que nao diz nada a ninguem.
+  const rotulosDasVersoes = song.variantes
+    .map((v) =>
+      [v.versao, v.tom && `tom ${v.tom}`, v.bpm && `${v.bpm} BPM`].filter(Boolean).join(', ')
+    )
+    .filter(Boolean)
+  const ficha = [
+    ['Formato', song.tipo === 'VS MP3' ? 'MP3' : 'WAV + MP3'],
+    ['Tom original', tons.length ? tons.join(' · ') : 'Transponível'],
+    ['Andamento', bpms.length ? `${bpms.join(' · ')} BPM` : 'Do original'],
+    ['Clique e guia', song.tipo === 'VS MP3' ? 'Não' : 'Separados'],
+  ]
+
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'MusicRecording',
@@ -108,47 +127,85 @@ export default async function SongPage({ params }) {
           </div>
 
           <div>
-            <p className="text-[14px] font-semibold text-ink-muted">{song.categoria}</p>
-            <h1 className="text-d1 mt-3 text-ink [text-wrap:balance]">{song.title}</h1>
-            <p className="mt-4 text-[20px] text-ink-muted">{song.artist}</p>
-
-            <p className="mt-7 max-w-2xl text-[16.5px] leading-[1.75] text-ink-muted">
-              Multitrack de <strong className="font-semibold text-ink">{song.title}</strong> com o
-              clique e a guia em canais próprios e cada instrumento separado, para a sua banda tocar
-              por cima e o operador mandar só o que interessa para o PA. Preparada para transposição,
-              então você toca no tom em que o seu ministro canta melhor.
+            <p className="text-[14px] font-semibold text-ink-muted">
+              {song.tipo === 'VS MP3' ? 'VS — playback mixado' : 'Multitrack'}
             </p>
+            <h1 className="text-d1 mt-3 text-ink [text-wrap:balance]">{song.title}</h1>
+            <p className="mt-4 text-[20px] text-ink-muted">
+              {song.artist}
+              {song.part ? (
+                <span className="text-ink-faint"> (part. {song.part})</span>
+              ) : null}
+            </p>
+            {song.tambem && (
+              <p className="mt-2 text-[14.5px] text-ink-muted">
+                Também listada em{' '}
+                <Link href={`/artistas/${artistSlug(song.tambem)}`} className="link-quiet font-semibold">
+                  {song.tambem}
+                </Link>
+                .
+              </p>
+            )}
 
-            <h2 className="mt-12 text-[19px] font-bold tracking-[-0.015em] text-ink">
-              Canais inclusos
-            </h2>
-            {/* Os dois primeiros canais sao o clique e a guia: e o que separa
-                multitrack de playback, e o site destaca esses dois em todo
-                lugar. Aqui eles ganham o contorno vermelho; os outros sete
-                ficam com o fio cinza, para o vermelho continuar significando
-                alguma coisa. */}
-            <ul className="mt-5 flex max-w-2xl flex-wrap gap-2">
-              {CANAIS.map((c, i) => (
-                <li
-                  key={c}
-                  className={
-                    i < 2
-                      ? 'border border-signal px-3 py-1.5 text-[14.5px] font-semibold text-signal-deep'
-                      : 'border border-line px-3 py-1.5 text-[14.5px] text-ink-muted'
-                  }
-                >
-                  {c}
-                </li>
-              ))}
-            </ul>
+            {song.tipo === 'VS MP3' ? (
+              <p className="mt-7 max-w-2xl text-[16.5px] leading-[1.75] text-ink-muted">
+                <strong className="font-semibold text-ink">{song.title}</strong> entra no pacote como
+                VS: um MP3 já mixado, pronto para tocar. Este arquivo não traz os canais separados —
+                é playback, e não multitrack.
+              </p>
+            ) : (
+              <p className="mt-7 max-w-2xl text-[16.5px] leading-[1.75] text-ink-muted">
+                Multitrack de <strong className="font-semibold text-ink">{song.title}</strong> com o
+                clique e a guia em canais próprios e cada instrumento separado, para a sua banda
+                tocar por cima e o operador mandar só o que interessa para o PA. Preparada para
+                transposição, então você toca no tom em que o seu ministro canta melhor.
+              </p>
+            )}
+
+            {song.variantes.length > 1 && (
+              <p className="mt-5 max-w-2xl text-[15px] leading-[1.7] text-ink-muted">
+                O acervo traz{' '}
+                <strong className="font-semibold text-ink">
+                  {song.variantes.length} versões desta música
+                </strong>
+                {rotulosDasVersoes.length === song.variantes.length
+                  ? ` — ${rotulosDasVersoes.join('; ')}`
+                  : ''}
+                . Todas vêm no mesmo pacote.
+              </p>
+            )}
+
+            {/* A lista de canais so aparece em multitrack. Num VS MP3 ela
+                seria promessa falsa: o arquivo e uma mixagem so. */}
+            {song.tipo !== 'VS MP3' && (
+              <>
+                <h2 className="mt-12 text-[19px] font-bold tracking-[-0.015em] text-ink">
+                  Canais inclusos
+                </h2>
+                {/* Os dois primeiros canais sao o clique e a guia: e o que
+                    separa multitrack de playback, e o site destaca esses dois
+                    em todo lugar. Aqui eles ganham o contorno vermelho; os
+                    outros sete ficam com o fio cinza, para o vermelho
+                    continuar significando alguma coisa. */}
+                <ul className="mt-5 flex max-w-2xl flex-wrap gap-2">
+                  {CANAIS.map((c, i) => (
+                    <li
+                      key={c}
+                      className={
+                        i < 2
+                          ? 'border border-signal px-3 py-1.5 text-[14.5px] font-semibold text-signal-deep'
+                          : 'border border-line px-3 py-1.5 text-[14.5px] text-ink-muted'
+                      }
+                    >
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
 
             <dl className="mt-12 grid grid-cols-2 divide-line border-y border-line sm:grid-cols-4 sm:divide-x">
-              {[
-                ['Formato', 'WAV + MP3'],
-                ['Tons', 'Todos'],
-                ['Clique e guia', 'Separados'],
-                ['Uso', 'Ao vivo e ensaio'],
-              ].map(([k, v]) => (
+              {ficha.map(([k, v]) => (
                 <div key={k} className="py-5 sm:px-5 sm:first:pl-0">
                   <dt className="text-[13.5px] text-ink-muted">{k}</dt>
                   <dd className="mt-1.5 text-[17px] font-bold text-ink">{v}</dd>
