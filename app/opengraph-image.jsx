@@ -82,7 +82,7 @@ export default function OG() {
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ fontSize: 68, color: INK, lineHeight: 1.08, letterSpacing: -2 }}>
-            4.000 multitracks gospel
+            1.000 multitracks gospel
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 22, marginTop: 8 }}>
             <div style={{ fontSize: 40, color: MUTED, letterSpacing: -1 }}>por</div>
