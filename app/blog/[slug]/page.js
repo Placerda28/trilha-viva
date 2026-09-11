@@ -98,7 +98,7 @@ export default async function PostPage({ params }) {
 
         <aside className="mt-16 bg-ink p-9 text-white sm:p-12">
           <h2 className="font-bold text-[26px] leading-[1.18] sm:text-[32px]">
-            Mais de 4.000 multitracks gospel, em um pacote só
+            Mais de 1.000 multitracks gospel, em um pacote só
           </h2>
           <p className="mt-4 max-w-lg text-[15.5px] leading-[1.7] text-white/60">
             Clique, guia e canais separados, em todos os tons. Pagamento único, acesso vitalício.
