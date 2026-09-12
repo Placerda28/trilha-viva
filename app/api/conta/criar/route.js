@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { criarConta, senhasConfiguradas } from '@/lib/senhas'
-import { acharOuCriar, registrarCompra, usarToken } from '@/lib/clientes'
+import { acharOuCriar, registrarCompra, usarToken, salvarSupabaseId } from '@/lib/clientes'
 import { criarSessao, normalizarEmail } from '@/lib/sessao'
+import { mesmaOrigem } from '@/lib/origem'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -22,6 +23,10 @@ function sessaoValida(id) {
 // Em nenhum dos dois o visitante escolhe o e-mail: ele vem da compra. É isso
 // que impede alguém de criar conta com o endereço de outra pessoa.
 export async function POST(req) {
+  if (!mesmaOrigem(req)) {
+    return NextResponse.json({ ok: false, erro: 'Pedido recusado.' }, { status: 403, headers: semCache })
+  }
+
   if (!senhasConfiguradas()) {
     return erro('A criação de conta ainda não está ativa. Fale com o suporte.', 503)
   }
@@ -87,9 +92,16 @@ export async function POST(req) {
       )
     }
     console.error('criar conta', conta.erro)
-    return erro('Não consegui criar a conta agora. Tente de novo em instantes.', 502)
+    // O link de uso único já foi queimado antes desta linha, de propósito:
+    // queimar só no fim deixaria o mesmo link valer duas vezes. Por isso a
+    // mensagem manda para a recuperação, e não para "tente de novo".
+    return erro(
+      'Não consegui criar a conta agora. Use "Esqueci minha senha" na página de entrada para receber um novo link.',
+      502
+    )
   }
 
+  await salvarSupabaseId({ clienteId: cliente.id, supabaseId: conta.id })
   await criarSessao(cliente.id, req)
   return NextResponse.json({ ok: true, email }, { headers: semCache })
 }

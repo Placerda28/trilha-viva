@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { conferirSenha, senhasConfiguradas } from '@/lib/senhas'
 import { acharPorEmail, podeTentar, anotarTentativa } from '@/lib/clientes'
 import { criarSessao, normalizarEmail } from '@/lib/sessao'
+import { mesmaOrigem } from '@/lib/origem'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -9,6 +10,10 @@ export const dynamic = 'force-dynamic'
 const semCache = { 'Cache-Control': 'no-store, max-age=0' }
 
 export async function POST(req) {
+  if (!mesmaOrigem(req)) {
+    return NextResponse.json({ ok: false, erro: 'Pedido recusado.' }, { status: 403, headers: semCache })
+  }
+
   if (!senhasConfiguradas()) {
     return NextResponse.json(
       { ok: false, erro: 'A entrada ainda não está ativa. Fale com o suporte.' },
@@ -34,7 +39,7 @@ export async function POST(req) {
     )
   }
 
-  if (!(await podeTentar(email))) {
+  if (!(await podeTentar(email, ip))) {
     return NextResponse.json(
       { ok: false, erro: 'Muitas tentativas seguidas. Espere 15 minutos e tente de novo.' },
       { status: 429, headers: semCache }
