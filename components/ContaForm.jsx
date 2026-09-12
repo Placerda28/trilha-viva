@@ -92,6 +92,14 @@ export default function ContaForm({ modo }) {
       const dados = await res.json().catch(() => ({}))
 
       if (modo === 'recuperar') {
+        // Respeitar o erro do servidor aqui é essencial: sem isto, uma
+        // resposta "o envio de e-mail não está ativo" virava a mesma mensagem
+        // de sucesso, e a tela mentia para quem estava esperando o link.
+        if (!res.ok || !dados.ok) {
+          setErro(dados.erro || 'Não consegui enviar agora. Tente de novo em instantes.')
+          setEnviando(false)
+          return
+        }
         setPronto(dados.mensagem || 'Se existir uma conta com esse e-mail, o link chega em instantes.')
         setEnviando(false)
         return
@@ -114,9 +122,11 @@ export default function ContaForm({ modo }) {
     }
   }
 
+  // Sem moldura própria: quem chama esta peça já desenha o cartão em volta.
+  // Com moldura aqui virava cartão dentro de cartão, com duas bordas.
   if (pronto) {
     return (
-      <div className="card-cut bg-white px-6 py-7">
+      <div>
         <p className="text-[15px] leading-relaxed text-ink">{pronto}</p>
         <p className="mt-3 text-[13px] leading-relaxed text-ink-muted">
           Não chegou em alguns minutos? Confira a caixa de spam ou a aba Promoções.
