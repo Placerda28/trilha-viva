@@ -93,9 +93,16 @@ export default function CatalogBrowser({ songs, artistas = [] }) {
         </div>
       </div>
 
-      <p className="figs mt-6 text-[14px] text-ink-muted" aria-live="polite">
-        {filtered.length} {filtered.length === 1 ? 'música' : 'músicas'} no acervo
-        {artist ? ` de ${artist}` : ''}.
+      {/* A contagem so aparece quando ha filtro ou busca, que e quando ela diz
+          alguma coisa ("49 musicas de Fernandinho"). Sem filtro ela so anunciava
+          o tamanho do acervo, e o site nao fala em numero de musicas. O <p> fica
+          sempre no lugar para o leitor de tela anunciar a mudanca. */}
+      <p className="figs mt-6 min-h-[1.4em] text-[14px] text-ink-muted" aria-live="polite">
+        {artist || q.trim()
+          ? `${filtered.length} ${filtered.length === 1 ? 'música' : 'músicas'}${
+              artist ? ` de ${artist}` : ''
+            }.`
+          : ''}
       </p>
 
       {shown.length === 0 ? (

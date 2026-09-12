@@ -72,9 +72,9 @@ export default function MusicasPage() {
               Acervo de multitracks gospel
             </h1>
             <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
-              {songs.length.toLocaleString('pt-BR')} músicas de {artistas.length} artistas e
-              ministérios, todas com clique, guia e os instrumentos em canais separados. O acervo
-              continua crescendo, e o que entra depois vem no mesmo pacote.
+              Multitracks de {artistas.length} artistas e ministérios, todos com clique, guia e os
+              instrumentos em canais separados. O acervo continua crescendo, e o que entra depois
+              vem no mesmo pacote.
             </p>
           </div>
           <Link href="/assinar" className="btn-signal shrink-0">
