@@ -4,6 +4,12 @@ import { getStripe } from '@/lib/stripe'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+// Diz à página de sucesso se o pagamento saiu, e para qual e-mail.
+//
+// Antes esta rota devolvia o link de uma pasta do Drive. O acervo passou a ser
+// entregue numa conta com senha, então ela só confirma o pagamento — quem cria
+// a conta é /api/conta/criar, que confere esta mesma sessão da Stripe.
+
 const hits = new Map()
 function limited(ip) {
   const now = Date.now()
@@ -16,8 +22,12 @@ function limited(ip) {
 
 const noStore = { 'Cache-Control': 'no-store, max-age=0' }
 
+function sessaoValida(id) {
+  return (id.startsWith('cs_live_') || id.startsWith('cs_test_')) && id.length > 28 && id.length < 200
+}
+
 export async function POST(req) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anon'
+  const ip = req.headers.get('cf-connecting-ip') || 'anon'
   if (limited(ip)) {
     return NextResponse.json({ status: 'error', error: 'Muitas tentativas.' }, { status: 429, headers: noStore })
   }
@@ -26,11 +36,11 @@ export async function POST(req) {
   try {
     body = await req.json()
   } catch {
-    /* noop */
+    /* cai na validação abaixo */
   }
 
   const sessionId = String(body.session_id || '')
-  if (!/^cs_(test|live)_[A-Za-z0-9]{20,}$/.test(sessionId)) {
+  if (!sessaoValida(sessionId)) {
     return NextResponse.json(
       { status: 'invalid', error: 'Link de confirmação inválido.' },
       { status: 400, headers: noStore }
@@ -38,15 +48,9 @@ export async function POST(req) {
   }
 
   const stripe = getStripe()
-  const driveUrl = process.env.DRIVE_URL
-
   if (!stripe) {
     return NextResponse.json(
-      {
-        status: 'unconfigured',
-        error:
-          'A verificação automática ainda não está ativa. Seu acesso será enviado por e-mail em instantes.',
-      },
+      { status: 'unconfigured', error: 'A confirmação automática está fora do ar. Seu acesso será enviado por e-mail.' },
       { status: 503, headers: noStore }
     )
   }
@@ -59,19 +63,7 @@ export async function POST(req) {
         {
           status: 'pending',
           email: session.customer_details?.email || null,
-          message:
-            'Estamos aguardando a confirmação do pagamento. Costuma levar menos de um minuto.',
-        },
-        { headers: noStore }
-      )
-    }
-
-    if (!driveUrl) {
-      return NextResponse.json(
-        {
-          status: 'paid_no_link',
-          email: session.customer_details?.email || null,
-          error: 'Pagamento confirmado. O link do acervo será enviado ao seu e-mail.',
+          message: 'Estamos aguardando a confirmação do pagamento. Costuma levar menos de um minuto.',
         },
         { headers: noStore }
       )
@@ -80,12 +72,11 @@ export async function POST(req) {
     return NextResponse.json(
       {
         status: 'paid',
-        url: driveUrl,
-        // Diz a pagina se o e-mail automatico esta realmente ligado, para ela
-        // nao prometer "enviamos por e-mail" quando o envio nao esta configurado.
-        mailed: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
         email: session.customer_details?.email || null,
-        nome: session.metadata?.nome || null,
+        nome: session.metadata?.nome || session.customer_details?.name || null,
+        // Diz à tela se o e-mail de apoio realmente sai, para ela não prometer
+        // uma mensagem que nunca vai chegar.
+        mailed: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
       },
       { headers: noStore }
     )

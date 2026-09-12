@@ -1,57 +1,47 @@
 import { NextResponse } from 'next/server'
 import { getCryptoProvider, getStripe } from '@/lib/stripe'
-import { site } from '@/lib/site'
-import { escapeHtml, safeUrl } from '@/lib/safe'
+import { acharOuCriar, registrarCompra, criarToken } from '@/lib/clientes'
+import { enviarCriarSenha } from '@/lib/email'
+import { normalizarEmail } from '@/lib/sessao'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-function emailHtml({ nome, url }) {
-  // nome vem do checkout da Stripe e url vem de DRIVE_URL: os dois entram em
-  // markup, então passam por escape antes de virar HTML.
-  const nomeSeguro = escapeHtml(nome)
-  const urlSegura = safeUrl(url)
-  return `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f2f3f5;font-family:Inter,Segoe UI,Arial,sans-serif;color:#0d0d0d">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px">
-    <tr><td align="center">
-      <table role="presentation" width="100%" style="max-width:560px;background:#fff;border:1px solid #e0e2e6;border-radius:18px;overflow:hidden">
-        <tr><td style="padding:32px 32px 8px">
-          <p style="margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8a8a8a;font-weight:700">Trilha Viva · Multitracks Gospel</p>
-          <h1 style="margin:14px 0 0;font-size:26px;line-height:1.2;letter-spacing:-.03em">Seu acesso está liberado${nomeSeguro ? `, ${nomeSeguro}` : ''}!</h1>
-          <p style="margin:14px 0 0;font-size:15px;line-height:1.65;color:#5c5c5c">Pagamento confirmado. O acervo completo com mais de 1.000 multitracks gospel já está disponível no link abaixo — clique, guia e canais separados, prontos para o próximo culto.</p>
-        </td></tr>
-        <tr><td style="padding:24px 32px 8px">
-          <a href="${urlSegura}" style="display:inline-block;background:#c40f24;color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:14px 26px;border-radius:999px">Abrir o acervo completo</a>
-          <p style="margin:14px 0 0;font-size:12.5px;color:#8a8a8a;word-break:break-all">${urlSegura}</p>
-        </td></tr>
-        <tr><td style="padding:20px 32px 32px">
-          <p style="margin:0;font-size:14px;line-height:1.65;color:#5c5c5c"><strong>Primeiros passos:</strong> baixe a pasta da música, arraste os canais para o REAPER (ou o programa que preferir) e mande clique e guia para a saída do fone. O guia completo está em <a href="${site.url}/como-usar" style="color:#c40f24">${site.url.replace('https://', '')}/como-usar</a>.</p>
-          <p style="margin:18px 0 0;font-size:12.5px;line-height:1.6;color:#8a8a8a">Este acesso é pessoal, para o seu ministério. Guarde este e-mail: ele é o seu comprovante de acesso vitalício.</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table></body></html>`
-}
-
-async function sendEmail({ to, nome, url }) {
-  const key = process.env.RESEND_API_KEY
-  if (!key || !to || !url) return
-  const from = process.env.EMAIL_FROM || 'Trilha Viva <onboarding@resend.dev>'
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        subject: 'Seu acesso ao acervo Trilha Viva está liberado',
-        html: emailHtml({ nome, url }),
-      }),
-    })
-    if (!res.ok) console.error('resend error', await res.text())
-  } catch (err) {
-    console.error('email error', err?.message)
+// O aviso da Stripe é o caminho de quem FECHA A ABA depois de pagar.
+//
+// Quem fica na tela cria a senha ali mesmo, por /api/conta/criar. Quem sai
+// antes depende desta rota: é ela que grava a compra e manda o link para
+// criar a senha. Sem isso, a pessoa pagou e não tem como entrar.
+//
+// As duas rotas gravam a mesma compra, e isso é de propósito: o banco recusa
+// stripe_session_id repetido, então quem chegar primeiro grava e a segunda
+// passa sem estragar nada.
+async function liberarAcesso(session) {
+  const email = normalizarEmail(session.customer_details?.email)
+  if (!email) {
+    console.error('webhook sem e-mail', session.id)
+    return
   }
+  const nome = session.metadata?.nome || session.customer_details?.name || ''
+
+  const cliente = await acharOuCriar({ email, nome })
+  if (!cliente) {
+    console.error('webhook sem banco', session.id)
+    return
+  }
+
+  await registrarCompra({
+    clienteId: cliente.id,
+    sessionId: session.id,
+    paymentIntent: session.payment_intent,
+    valor: session.amount_total,
+    moeda: session.currency,
+  })
+
+  // Sete dias é folga de sobra para quem viajou ou só abre o e-mail no fim de
+  // semana. Vencido, o "esqueci minha senha" resolve sem falar com ninguém.
+  const token = await criarToken({ clienteId: cliente.id, tipo: 'criar_senha', horas: 24 * 7 })
+  if (token) await enviarCriarSenha({ para: email, nome, token })
 }
 
 export async function POST(req) {
@@ -68,13 +58,7 @@ export async function POST(req) {
   try {
     // constructEventAsync + SubtleCrypto: o constructEvent síncrono depende do
     // crypto do Node e não roda nos Cloudflare Workers.
-    event = await stripe.webhooks.constructEventAsync(
-      raw,
-      sig,
-      secret,
-      undefined,
-      getCryptoProvider()
-    )
+    event = await stripe.webhooks.constructEventAsync(raw, sig, secret, undefined, getCryptoProvider())
   } catch (err) {
     console.error('webhook signature error', err?.message)
     return NextResponse.json({ error: 'assinatura inválida' }, { status: 400 })
@@ -86,11 +70,14 @@ export async function POST(req) {
   ) {
     const session = event.data.object
     if (session.payment_status === 'paid') {
-      await sendEmail({
-        to: session.customer_details?.email,
-        nome: session.metadata?.nome || session.customer_details?.name,
-        url: process.env.DRIVE_URL,
-      })
+      try {
+        await liberarAcesso(session)
+      } catch (err) {
+        // Nunca devolver erro à Stripe por uma falha nossa de gravação: ela
+        // reenviaria o aviso várias vezes. O registro no log é o que permite
+        // achar e consertar o caso na mão.
+        console.error('liberar acesso', session.id, err?.message)
+      }
     }
   }
 

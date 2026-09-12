@@ -35,6 +35,14 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          {/* Quem ja comprou volta aqui toda semana. O link fica discreto para
+              nao competir com a compra, mas presente para nao virar suporte. */}
+          <Link
+            href="/entrar"
+            className="hidden text-[14.5px] text-white/70 transition-colors hover:text-white sm:inline"
+          >
+            Entrar
+          </Link>
           <Link
             href="/assinar"
             className="btn-signal hidden !px-5 !py-3 !text-[14.5px] sm:inline-flex"
@@ -72,6 +80,13 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
+            <Link
+              href="/entrar"
+              onClick={() => setOpen(false)}
+              className="py-4 text-[17px] font-medium text-white"
+            >
+              Entrar na minha conta
+            </Link>
             <div className="py-5">
               <Link href="/assinar" onClick={() => setOpen(false)} className="btn-signal w-full">
                 Liberar acesso por {priceBRL(site.price)}
