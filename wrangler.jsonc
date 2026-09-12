@@ -4,6 +4,8 @@
   // <nome>.<subdominio-da-conta>.workers.dev. A conta "Trilha Viva" tem o
   // subdominio trilha-viva, entao chamar o Worker de "www" da
   // www.trilha-viva.workers.dev, que le como site e nao como projeto de teste.
+  // Desde 12/09/2026 o site tambem responde em trilhaviva.org, ligado pelo
+  // painel como Custom Domain.
   "name": "www",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-09-23",
@@ -15,8 +17,17 @@
   "observability": {
     "enabled": true
   },
-  // As variaveis (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, DRIVE_URL, etc.)
-  // sao cadastradas no painel do Cloudflare, nao neste arquivo. Sem esta linha,
-  // cada "wrangler deploy" apagaria todas elas e o site quebraria.
+  // Banco de compradores, senhas e registro de downloads. Fica aqui, e nao
+  // no painel, para ser versionado junto com o codigo que o usa.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "trilha-viva",
+      "database_id": "2dac1356-eb0b-432b-a3d2-1c5cbbb9c29c"
+    }
+  ],
+  // As variaveis (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY,
+  // etc.) sao cadastradas no painel do Cloudflare, nao neste arquivo. Sem esta
+  // linha, cada "wrangler deploy" apagaria todas elas e o site quebraria.
   "keep_vars": true
 }
