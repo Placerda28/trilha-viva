@@ -3,7 +3,7 @@ import { clienteAtual, temCompra } from '@/lib/sessao'
 import { usoDeHoje, registrarDownload } from '@/lib/cota'
 import { arquivosDe } from '@/lib/arquivos'
 import { getSong } from '@/lib/catalog'
-import { abrirArquivo, b2Configurado } from '@/lib/b2'
+import { linkDeDownload, b2Configurado } from '@/lib/b2'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -45,19 +45,6 @@ export async function GET(req) {
   const uso = await usoDeHoje(cliente.id)
   if (uso.restam <= 0) return voltar('cota', BASE)
 
-  const resposta = await abrirArquivo(caminho, req.headers.get('range'))
-  if (!resposta || !resposta.ok) {
-    console.error('b2 download', slug, caminho, resposta?.status)
-    return voltar('falhou', BASE)
-  }
-
-  await registrarDownload({
-    clienteId: cliente.id,
-    arquivo: caminho,
-    slug,
-    ip: req.headers.get('cf-connecting-ip') || '',
-  })
-
   // O nome que o cliente vê na pasta dele. O do balde carrega a pasta do
   // artista e às vezes um nome de origem confuso; aqui vai "Banda - Música".
   const extensao = caminho.slice(caminho.lastIndexOf('.')) || '.zip'
@@ -70,17 +57,26 @@ export async function GET(req) {
   for (const c of PROIBIDOS) limpo = limpo.split(c).join('-')
   const nome = limpo + extensao
 
-  const cabecalhos = new Headers()
-  cabecalhos.set('Content-Type', 'application/octet-stream')
-  cabecalhos.set('Content-Disposition', 'attachment; filename*=UTF-8\'\'' + encodeURIComponent(nome))
-  cabecalhos.set('Cache-Control', 'private, no-store')
-  for (const h of ['content-length', 'content-range', 'accept-ranges']) {
-    const v = resposta.headers.get(h)
-    if (v) cabecalhos.set(h, v)
+  // O arquivo passa a vir DIRETO do Backblaze (link com validade de 5
+  // minutos, gerado só agora que login, compra e cota já foram conferidos).
+  // Antes o Worker lia e repassava os bytes em fluxo, o que estourava o
+  // limite de CPU do plano gratuito da Cloudflare em arquivos grandes e
+  // entregava um arquivo corrompido, de tamanho diferente a cada tentativa.
+  const link = await linkDeDownload(caminho, nome, 300)
+  if (!link) {
+    console.error('b2 link de download', slug, caminho)
+    return voltar('falhou', BASE)
   }
 
-  // O corpo é repassado em fluxo, sem ser lido: os bytes atravessam o site sem
-  // nunca entrar na memória. É o que permite entregar 400 MB dentro dos 10 ms
-  // de processamento que o plano gratuito dá por visita.
-  return new Response(resposta.body, { status: resposta.status, headers: cabecalhos })
+  await registrarDownload({
+    clienteId: cliente.id,
+    arquivo: caminho,
+    slug,
+    ip: req.headers.get('cf-connecting-ip') || '',
+  })
+
+  return NextResponse.redirect(link, {
+    status: 303,
+    headers: { 'Cache-Control': 'private, no-store' },
+  })
 }
