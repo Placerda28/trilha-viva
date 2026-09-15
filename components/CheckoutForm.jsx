@@ -73,7 +73,7 @@ export default function CheckoutForm() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded border-l-4 border-signal bg-signal-wash px-4 py-3 text-[14px] font-medium text-ink">
+        <p role="alert" className="rounded border border-signal/30 bg-signal-wash px-4 py-3 text-[14px] font-medium text-ink">
           {error}
         </p>
       )}

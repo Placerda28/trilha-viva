@@ -141,7 +141,7 @@ export default function ContaForm({ modo }) {
   return (
     <form onSubmit={enviar} className="space-y-4" noValidate>
       {aviso && (
-        <p className="rounded border-l-4 border-ink bg-mist px-4 py-3 text-[14px] text-ink">{aviso}</p>
+        <p className="rounded border border-line bg-mist px-4 py-3 text-[14px] text-ink">{aviso}</p>
       )}
 
       {cfg.pedeEmail && (
@@ -218,7 +218,7 @@ export default function ContaForm({ modo }) {
       {erro && (
         <p
           role="alert"
-          className="rounded border-l-4 border-signal bg-signal-wash px-4 py-3 text-[14px] font-medium text-ink"
+          className="rounded border border-signal/30 bg-signal-wash px-4 py-3 text-[14px] font-medium text-ink"
         >
           {erro}
         </p>

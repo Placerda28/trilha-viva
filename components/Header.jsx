@@ -1,12 +1,20 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Logo } from './Logo'
 import { nav, priceBRL, site } from '@/lib/site'
 
+// Rotas da conta: quem está aqui já comprou e já está logado, então "Entrar"
+// e "Liberar por R$ X" não fazem sentido — o primeiro é redundante e o
+// segundo tenta vender de novo para quem já pagou.
+const ROTAS_DE_CONTA = ['/acervo', '/entrar', '/criar-senha', '/recuperar', '/redefinir']
+
 export default function Header() {
   const [open, setOpen] = useState(false)
+  const pathname = usePathname()
+  const emConta = ROTAS_DE_CONTA.some((r) => pathname === r || pathname.startsWith(r + '/'))
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -17,8 +25,17 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-ink text-white">
-      <div className="flex h-[68px] w-full items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
-        <Link href="/" aria-label="Trilha Viva, página inicial" onClick={() => setOpen(false)}>
+      <div className="flex h-[68px] w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        {/* inline-flex items-center no proprio link: sem isso, o "a" vira uma
+            caixa de linha comum, que soma a entrelinha do texto por cima do
+            conteudo e empurra o conjunto (disco + "Trilha Viva") para cima
+            do centro do cabecalho — visivel so ao medir, mas visivel. */}
+        <Link
+          href="/"
+          aria-label="Trilha Viva, página inicial"
+          onClick={() => setOpen(false)}
+          className="inline-flex items-center"
+        >
           <Logo tone="light" />
         </Link>
 
@@ -35,20 +52,25 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          {/* Quem ja comprou volta aqui toda semana. O link fica discreto para
-              nao competir com a compra, mas presente para nao virar suporte. */}
-          <Link
-            href="/entrar"
-            className="hidden text-[14.5px] text-white/70 transition-colors hover:text-white sm:inline"
-          >
-            Entrar
-          </Link>
-          <Link
-            href="/assinar"
-            className="btn-signal hidden !px-5 !py-3 !text-[14.5px] sm:inline-flex"
-          >
-            Liberar por {priceBRL(site.price)}
-          </Link>
+          {!emConta && (
+            <>
+              {/* Quem ja comprou volta aqui toda semana. O link fica discreto
+                  para nao competir com a compra, mas presente para nao virar
+                  suporte. */}
+              <Link
+                href="/entrar"
+                className="hidden text-[14.5px] text-white/70 transition-colors hover:text-white sm:inline"
+              >
+                Entrar
+              </Link>
+              <Link
+                href="/assinar"
+                className="btn-signal hidden !px-5 !py-3 !text-[14.5px] sm:inline-flex"
+              >
+                Liberar por {priceBRL(site.price)}
+              </Link>
+            </>
+          )}
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -69,7 +91,7 @@ export default function Header() {
 
       {open && (
         <div className="border-t border-white/10 bg-ink lg:hidden">
-          <div className="flex flex-col divide-y divide-white/10 px-5 sm:px-8">
+          <div className="flex flex-col divide-y divide-white/10 px-4 sm:px-6">
             {nav.map((item) => (
               <Link
                 key={item.href}
@@ -80,18 +102,26 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/entrar"
-              onClick={() => setOpen(false)}
-              className="py-4 text-[17px] font-medium text-white"
-            >
-              Entrar na minha conta
-            </Link>
-            <div className="py-5">
-              <Link href="/assinar" onClick={() => setOpen(false)} className="btn-signal w-full">
-                Liberar acesso por {priceBRL(site.price)}
-              </Link>
-            </div>
+            {!emConta && (
+              <>
+                <Link
+                  href="/entrar"
+                  onClick={() => setOpen(false)}
+                  className="py-4 text-[17px] font-medium text-white"
+                >
+                  Entrar na minha conta
+                </Link>
+                <div className="py-5">
+                  <Link
+                    href="/assinar"
+                    onClick={() => setOpen(false)}
+                    className="btn-signal w-full"
+                  >
+                    Liberar acesso por {priceBRL(site.price)}
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

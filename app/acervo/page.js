@@ -5,6 +5,7 @@ import { b2Configurado } from '@/lib/b2'
 import { acervoPronto } from '@/lib/arquivos'
 import SairBotao from '@/components/SairBotao'
 import AcervoLista from '@/components/AcervoLista'
+import RelatarProblema from '@/components/RelatarProblema'
 
 export const runtime = 'nodejs'
 // Lê o cookie da sessão, então é montada a cada visita. Por isso o que ela
@@ -61,13 +62,16 @@ export default async function AcervoPage({ searchParams }) {
           </h1>
           <p className="mt-2 text-[14px] text-ink-muted">{cliente.email}</p>
         </div>
-        <SairBotao />
+        <div className="flex items-center gap-4">
+          <RelatarProblema nomeInicial={cliente.nome || ''} emailInicial={cliente.email || ''} />
+          <SairBotao />
+        </div>
       </div>
 
       {aviso && (
         <p
           role="alert"
-          className="mt-8 rounded border-l-4 border-signal bg-signal-wash px-4 py-3 text-[14.5px] text-ink"
+          className="mt-8 rounded border border-signal/30 bg-signal-wash px-4 py-3 text-[14.5px] text-ink"
         >
           {aviso}
         </p>
