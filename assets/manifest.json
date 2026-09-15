@@ -1,12 +1,12 @@
 {
   "louvor-congregacao.webp": {
-    "sha256": "c12cc52c255e63f8cb6bdc21bb5914d1269fcc1c929e72db3b84ca2628d838ad",
-    "bytes": 56568,
-    "parts": 10
+    "sha256": "85b3739f8e7bed787fcd971a721c20f9097396ad47027ba7a4d47f42875d3d82",
+    "bytes": 32888,
+    "parts": 6
   },
   "banda-palco.webp": {
-    "sha256": "863220b19b0f1b0a25c9cf6ffb5529a7bcbe12da1089cde6e9e2d0f76bbd9028",
-    "bytes": 66908,
-    "parts": 11
+    "sha256": "1f50c1f31c8d842c15a5fcd81bdc7c36a3595d02cb3995c46d8b5ad596af6194",
+    "bytes": 31366,
+    "parts": 6
   }
 }
