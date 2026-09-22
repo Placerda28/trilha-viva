@@ -9,7 +9,7 @@ import { faq } from '@/lib/faq'
 export const metadata = {
   title: 'Multitracks Gospel: 2.000 VS por R$ 89,90 vitalício | Trilha Viva',
   description:
-    'Pacote com 2.000 multitracks gospel (VS) com clique, guia e canais separados, em todos os tons. Pagamento único de R$ 89,90, sem mensalidade.',
+    'Pacote com 2.000 multitracks gospel (VS) com clique, guia e canais separados. Pagamento único de R$ 89,90, sem mensalidade.',
   alternates: { canonical: '/' },
 }
 
@@ -68,7 +68,7 @@ export default function Home() {
             </h1>
 
             <p className="mt-7 max-w-lg font-read text-[19px] leading-[1.6] text-ink-muted">
-              Clique, guia e cada instrumento em um canal separado, em todos os tons. Sua banda toca
+              Clique, guia e cada instrumento em um canal separado. Sua banda toca
               junto, e o que falta vem da trilha.
             </p>
 
