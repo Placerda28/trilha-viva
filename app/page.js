@@ -7,9 +7,9 @@ import { tools, usos, steps } from '@/lib/tools'
 import { faq } from '@/lib/faq'
 
 export const metadata = {
-  title: 'Multitracks Gospel: 2.000 VS com clique e guia | Trilha Viva',
+  title: 'Multitracks Gospel: 2.000 VS por R$ 89,90 vitalício | Trilha Viva',
   description:
-    'Pacote único com mais de 2.000 multitracks gospel (VS) — clique, guia e canais separados, em todos os tons. Acesso vitalício por R$ 89,90, sem mensalidade.',
+    'Pacote com 2.000 multitracks gospel (VS) com clique, guia e canais separados, em todos os tons. Pagamento único de R$ 89,90, sem mensalidade.',
   alternates: { canonical: '/' },
 }
 
