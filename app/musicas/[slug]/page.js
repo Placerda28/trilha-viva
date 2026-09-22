@@ -35,7 +35,7 @@ export async function generateMetadata({ params }) {
     : `Multitrack ${song.title} — ${song.artist} (VS com clique e guia)`
   const description = ehVs
     ? `VS de ${song.title}, de ${song.artist}: MP3 já mixado, pronto para tocar, sem canais separados. Incluído no pacote Trilha Viva com mais de 2.000 VS gospel por ${priceBRL(site.price)}.`
-    : `Multitrack de ${song.title}, de ${song.artist}, com clique, guia e canais separados em todos os tons. Incluída no pacote Trilha Viva com mais de 2.000 VS gospel por ${priceBRL(site.price)}.`
+    : `Multitrack de ${song.title}, de ${song.artist}, com clique, guia e canais separados. Incluída no pacote Trilha Viva com mais de 2.000 VS gospel por ${priceBRL(site.price)}.`
   return {
     title,
     description,
