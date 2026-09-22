@@ -13,7 +13,7 @@ export const metadata = {
   alternates: { canonical: '/musicas' },
   openGraph: {
     title: 'Acervo de Multitracks Gospel — Trilha Viva',
-    description: 'Multitracks gospel com clique, guia e canais separados. Mais de 1.000 VS.',
+    description: 'Multitracks gospel com clique, guia e canais separados. Mais de 2.000 VS.',
     url: `${site.url}/musicas`,
   },
 }
