@@ -101,7 +101,7 @@ export default async function PostPage({ params }) {
             Mais de 2.000 multitracks gospel, em um pacote só
           </h2>
           <p className="mt-4 max-w-lg text-[15.5px] leading-[1.7] text-white/60">
-            Clique, guia e canais separados, em todos os tons. Pagamento único, acesso vitalício.
+            Clique, guia e canais separados. Pagamento único, acesso vitalício.
           </p>
           <Link href="/assinar" className="btn-signal mt-8">
             Liberar acesso vitalício por {priceBRL(site.price)}
