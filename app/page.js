@@ -1,7 +1,10 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { SectionHead, SongGrid, Faq, Check, Figure } from '@/components/ui'
-import { SessionPanel, TrackList, CHANNELS } from '@/components/Track'
+import { SessionPanel, SessionMini, TrackList, CHANNELS } from '@/components/Track'
+import BarraCompra from '@/components/BarraCompra'
 import { destaques } from '@/lib/catalog'
+import { artistList } from '@/lib/artists'
 import { site, includes, priceBRL, discountPct } from '@/lib/site'
 import { tools, usos, steps } from '@/lib/tools'
 import { faq } from '@/lib/faq'
@@ -16,6 +19,32 @@ export const metadata = {
 const setlist = destaques.slice(0, 8)
 const amostra = destaques.slice(8, 24)
 const aberta = destaques[0]
+
+// Os artistas com mais músicas no acervo, lidos do catálogo (a lista já vem
+// ordenada por quantidade). Nada escrito à mão: se o acervo mudar, muda aqui.
+const topArtistas = artistList.slice(0, 12)
+
+// Confiança logo abaixo do botão. Só o que é verdade hoje: o pagamento é pelo
+// Mercado Pago (desde 23/09/2026), o acesso sai quando o pagamento é aprovado
+// e o download é arquivo por arquivo na área do acervo.
+const confianca = [
+  ['cadeado', 'Pagamento seguro pelo Mercado Pago'],
+  ['raio', 'Acesso liberado na hora'],
+  ['download', 'Download música por música'],
+]
+
+function Icone({ nome }) {
+  const d = {
+    cadeado: 'M6 10V7a6 6 0 0 1 12 0v3M5 10h14v11H5zM12 14v3',
+    raio: 'M13 2 4 14h7l-1 8 9-12h-7z',
+    download: 'M12 3v12m0 0-5-5m5 5 5-5M4 21h16',
+  }[nome]
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="text-signal-lite">
+      <path d={d} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
 
 const productLd = {
   '@context': 'https://schema.org',
@@ -55,65 +84,143 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify([productLd, faqLd]) }}
       />
 
-      {/* ABERTURA — o setlist é o produto, então ele abre a página */}
-      <section className="shell pt-14 sm:pt-20 lg:pt-24">
-        <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:gap-16">
-          <div>
-            <p className="chip">
-              {discountPct}% de desconto no lançamento
-            </p>
+      {/* ABERTURA
+          No celular (abaixo de lg) o topo e um painel preto com a foto da banda
+          atras, coberta por um degrade, e ja mostra o produto (os canais), o
+          preco e o botao. No computador continua o layout de antes: texto a
+          esquerda e o setlist a direita, sobre o fundo claro. */}
+      <section id="topo" className="relative isolate overflow-hidden bg-ink text-white lg:bg-transparent lg:text-ink">
+        <div className="absolute inset-x-0 top-0 -z-10 h-[520px] lg:hidden" aria-hidden="true">
+          <Image
+            src="/img/banda-palco.webp"
+            alt=""
+            fill
+            priority
+            unoptimized
+            sizes="100vw"
+            className="object-cover object-[50%_40%]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-ink/55 via-ink/75 to-ink/90" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-ink/0 to-ink" />
+        </div>
 
-            <h1 className="text-d1 mt-7 max-w-[13ch] text-ink [text-wrap:balance]">
-              2.000 multitracks gospel na sua igreja.
-            </h1>
+        <div className="shell pb-10 pt-6 sm:pt-10 lg:pb-0 lg:pt-24">
+          <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:gap-16">
+            <div className="min-w-0">
+              <p className="chip">{discountPct}% de desconto no lançamento</p>
 
-            <p className="mt-7 max-w-lg font-read text-[19px] leading-[1.6] text-ink-muted">
-              Clique, guia e cada instrumento em um canal separado. Sua banda toca
-              junto, e o que falta vem da trilha.
-            </p>
+              <h1 className="mt-4 max-w-[14ch] text-[clamp(2.4rem,10.5vw,2.8rem)] font-extrabold leading-[1.02] tracking-[-0.02em] text-white [text-wrap:balance] sm:mt-6 lg:mt-7 lg:max-w-[13ch] lg:text-d1 lg:text-ink">
+                2.000 multitracks gospel na sua igreja.
+              </h1>
 
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href="/assinar" className="btn-signal w-full sm:w-auto">
-                Liberar acesso vitalício por {priceBRL(site.price)}
-              </Link>
-              <Link href="/musicas" className="btn-quiet w-full sm:w-auto">
-                Ver o acervo
-              </Link>
+              <p className="mt-3 max-w-lg font-read text-[17px] leading-[1.5] text-white/80 sm:mt-5 lg:mt-7 lg:text-[19px] lg:leading-[1.6] lg:text-ink-muted">
+                Clique, guia e cada instrumento em um canal separado.
+              </p>
+
+              {/* Celular: produto, preco, botao e confianca, nesta ordem */}
+              <div className="lg:hidden">
+                <SessionMini song={aberta} className="mt-5" />
+
+                <div className="mt-6 text-center">
+                  <p className="figs text-[15px] text-white/60">
+                    de <span className="line-through">{priceBRL(site.fullPrice)}</span>
+                  </p>
+                  <p className="figs mt-0.5 text-[44px] font-extrabold leading-none tracking-[-0.03em] text-white">
+                    {priceBRL(site.price)}
+                  </p>
+                  <p className="mt-2 text-[14px] text-white/75">pagamento único, acesso vitalício</p>
+                </div>
+
+                <Link href="/assinar" className="btn-glow mt-5 w-full py-[18px] text-[16px]">
+                  Quero meu acesso
+                </Link>
+                <Link href="/musicas" className="btn-onink mt-3 w-full">
+                  Ver o acervo
+                </Link>
+
+                <ul className="mt-6 grid grid-cols-3 gap-3 text-center">
+                  {confianca.map(([icone, texto]) => (
+                    <li key={texto} className="flex flex-col items-center gap-2">
+                      <Icone nome={icone} />
+                      <span className="text-[12.5px] leading-[1.35] text-white/80">{texto}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Computador: como era */}
+              <div className="mt-9 hidden gap-3 lg:flex lg:items-center">
+                <Link href="/assinar" className="btn-signal">
+                  Liberar acesso vitalício por {priceBRL(site.price)}
+                </Link>
+                <Link href="/musicas" className="btn-quiet">
+                  Ver o acervo
+                </Link>
+              </div>
+
+              <p className="mt-6 hidden max-w-md text-[14.5px] leading-[1.6] text-ink-muted lg:block">
+                De <span className="line-through">{priceBRL(site.fullPrice)}</span> por{' '}
+                {priceBRL(site.price)} em pagamento único, no Pix ou no cartão. Sete dias de garantia.
+              </p>
             </div>
 
-            <p className="mt-6 max-w-md text-[14.5px] leading-[1.6] text-ink-muted">
-              De <span className="line-through">{priceBRL(site.fullPrice)}</span> por{' '}
-              {priceBRL(site.price)} em pagamento único, no Pix ou no cartão. Sete dias de garantia.
-            </p>
-          </div>
-
-          {/* O setlist: prova e navegação ao mesmo tempo */}
-          <div className="panel overflow-hidden">
-            <div className="flex items-baseline justify-between gap-4 px-4 py-4 sm:px-5">
-              <p className="text-[15px] font-bold">Domingo de manhã</p>
-              <p className="figs text-[13px] text-white/45">8 de mais de 2.000</p>
-            </div>
-            <TrackList songs={setlist} tone="light" />
-            <div className="border-t border-white/10 px-4 py-4 sm:px-5">
-              <Link
-                href="/musicas"
-                className="text-[14.5px] font-semibold text-mist underline decoration-mist/40 decoration-2 underline-offset-4 hover:decoration-mist"
-              >
-                Abrir o acervo inteiro
-              </Link>
+            {/* O setlist: prova e navegação ao mesmo tempo (no celular, o
+                painel de canais acima faz esse papel) */}
+            <div className="panel hidden overflow-hidden lg:block">
+              <div className="flex items-baseline justify-between gap-4 px-4 py-4 sm:px-5">
+                <p className="text-[15px] font-bold">Domingo de manhã</p>
+                <p className="figs text-[13px] text-white/55">8 de mais de 2.000</p>
+              </div>
+              <TrackList songs={setlist} tone="light" />
+              <div className="border-t border-white/10 px-4 py-4 sm:px-5">
+                <Link
+                  href="/musicas"
+                  className="text-[14.5px] font-semibold text-mist underline decoration-mist/40 decoration-2 underline-offset-4 hover:decoration-mist"
+                >
+                  Abrir o acervo inteiro
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* A FOTO — a igreja, em tamanho real */}
-      <section className="mt-20 sm:mt-28">
+      {/* ARTISTAS — nomes reais do acervo, os que têm mais músicas */}
+      <section aria-labelledby="artistas-titulo" className="border-b border-line bg-white lg:mt-14 lg:border-t">
+        <div className="shell flex flex-col gap-3 py-5 lg:flex-row lg:items-center lg:gap-8">
+          <h2 id="artistas-titulo" className="shrink-0 text-[14.5px] font-bold text-ink">
+            Artistas no acervo
+          </h2>
+          <ul className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:-mx-8 sm:px-8 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar]:hidden">
+            {topArtistas.map((a) => (
+              <li key={a.slug} className="shrink-0">
+                <Link
+                  href={`/artistas/${a.slug}`}
+                  className="inline-flex min-h-[40px] items-center whitespace-nowrap rounded-full border border-line bg-paper px-4 text-[14px] font-semibold text-ink transition-colors hover:border-signal hover:text-signal-deep"
+                >
+                  {a.name}
+                </Link>
+              </li>
+            ))}
+            <li className="shrink-0">
+              <Link
+                href="/artistas"
+                className="inline-flex min-h-[40px] items-center whitespace-nowrap px-2 text-[14px] font-semibold text-signal-deep underline decoration-transparent decoration-2 underline-offset-4 hover:decoration-signal"
+              >
+                Todos os artistas
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      {/* A FOTO — a igreja, em tamanho real (no celular ela já está no topo) */}
+      <section className="mt-20 hidden sm:mt-28 lg:block">
         <div className="relative h-[300px] overflow-hidden bg-ink sm:h-[420px] lg:h-[520px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/img/banda-palco.webp"
             alt="Equipe de louvor cantando no palco, com banda completa e luzes de show"
-            fetchPriority="high"
             className="h-full w-full object-cover object-center"
           />
         </div>
@@ -186,7 +293,7 @@ export default function Home() {
             </ul>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <SessionPanel song={aberta} />
             <p className="mt-3 text-[13px] text-ink-muted">
               Uma música do acervo aberta no programa: {CHANNELS.length} canais, com o clique e a
@@ -325,7 +432,7 @@ export default function Home() {
                 <span className="figs text-[52px] font-extrabold leading-none tracking-[-0.04em]">
                   {priceBRL(site.price)}
                 </span>
-                <span className="figs text-[16px] text-white/40 line-through">
+                <span className="figs text-[16px] text-white/55 line-through">
                   {priceBRL(site.fullPrice)}
                 </span>
               </div>
@@ -336,7 +443,7 @@ export default function Home() {
               <Link href="/assinar" className="btn-glow mt-8 w-full sm:w-auto">
                 Liberar meu acesso agora
               </Link>
-              <p className="mt-5 text-[13.5px] text-white/45">
+              <p className="mt-5 text-[13.5px] text-white/55">
                 Pagamento pelo Mercado Pago, com sete dias de garantia.
               </p>
             </div>
@@ -390,6 +497,8 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      <BarraCompra />
     </>
   )
 }
