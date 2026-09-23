@@ -1,13 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { priceBRL, site } from '@/lib/site'
 
-export default function CheckoutForm() {
+// Formulario que abre o pagamento: manda nome e e-mail para /api/checkout e
+// leva a pessoa para a URL que volta (o Mercado Pago). A logica do envio e a
+// mesma em todo lugar; as opcoes so mudam a aparencia:
+//   tom="escuro"   para dentro do card preto de /assinar (botao .btn-glow)
+//   rotulo         texto do botao
+//   pedirNome      o nome e opcional na API; o card do topo pede so o e-mail
+// Os ids dos campos vem do useId, porque /assinar tem dois cards de preco
+// (topo e fim) e dois campos com o mesmo id quebram o rotulo dos leitores de
+// tela.
+export default function CheckoutForm({ tom = 'claro', rotulo, pedirNome = true }) {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const id = useId()
+  const escuro = tom === 'escuro'
 
   async function onSubmit(e) {
     e.preventDefault()
@@ -32,30 +43,38 @@ export default function CheckoutForm() {
     }
   }
 
+  const rotuloCls = `block text-[13px] font-semibold ${escuro ? 'text-white' : 'text-ink'}`
+  const campoCls = escuro
+    ? 'relative mt-2 w-full rounded border border-white/25 bg-white px-4 py-3.5 text-[16px] text-ink placeholder:text-ink-muted focus:border-signal-lite focus:outline-none'
+    : 'mt-2 w-full rounded border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none'
+  const textoFraco = escuro ? 'text-white/70' : 'text-ink-muted'
+
   return (
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
-      <div>
-        <label htmlFor="nome" className="block text-[13px] font-semibold text-ink">
-          Seu nome
-        </label>
-        <input
-          id="nome"
-          name="nome"
-          type="text"
-          autoComplete="name"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          placeholder="Como devemos te chamar"
-          className="mt-2 w-full rounded border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
-        />
-      </div>
+      {pedirNome && (
+        <div>
+          <label htmlFor={`${id}-nome`} className={rotuloCls}>
+            Seu nome
+          </label>
+          <input
+            id={`${id}-nome`}
+            name="nome"
+            type="text"
+            autoComplete="name"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            placeholder="Como devemos te chamar"
+            className={campoCls}
+          />
+        </div>
+      )}
 
       <div>
-        <label htmlFor="email" className="block text-[13px] font-semibold text-ink">
-          E-mail para receber o acesso <span aria-hidden="true" className="text-ink-muted">*</span>
+        <label htmlFor={`${id}-email`} className={rotuloCls}>
+          E-mail para receber o acesso <span aria-hidden="true" className={textoFraco}>*</span>
         </label>
         <input
-          id="email"
+          id={`${id}-email`}
           name="email"
           type="email"
           inputMode="email"
@@ -64,29 +83,44 @@ export default function CheckoutForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="voce@email.com"
-          aria-describedby="email-help"
-          className="mt-2 w-full rounded border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
+          aria-describedby={`${id}-ajuda`}
+          className={campoCls}
         />
-        <p id="email-help" className="mt-2 text-[12.5px] text-ink-muted">
-          É para esse endereço que enviamos o link do acervo. Confira antes de continuar.
-        </p>
+        {!escuro && (
+          <p id={`${id}-ajuda`} className="mt-2 text-[12.5px] text-ink-muted">
+            É para esse endereço que enviamos o link do acervo. Confira antes de continuar.
+          </p>
+        )}
       </div>
 
       {error && (
-        <p role="alert" className="rounded border border-signal/30 bg-signal-wash px-4 py-3 text-[14px] font-medium text-ink">
+        <p
+          role="alert"
+          className="rounded border border-signal/30 bg-signal-wash px-4 py-3 text-[14px] font-medium text-ink"
+        >
           {error}
         </p>
       )}
 
-      <button type="submit" disabled={loading} className="btn-signal w-full disabled:opacity-60">
-        {loading ? 'Abrindo pagamento seguro…' : `Pagar ${priceBRL(site.price)} e liberar acesso`}
+      <button
+        type="submit"
+        disabled={loading}
+        className={`${escuro ? 'btn-glow py-[18px] text-[16px]' : 'btn-signal'} w-full disabled:opacity-60`}
+      >
+        {loading ? 'Abrindo pagamento seguro…' : rotulo || `Pagar ${priceBRL(site.price)} e liberar acesso`}
       </button>
 
-      <p className="text-center text-[12.5px] leading-relaxed text-ink-muted">
-        Você será levado ao ambiente seguro do Mercado Pago para pagar com{' '}
-        <strong className="font-semibold text-ink-muted">Pix ou cartão, à vista ou parcelado</strong>. Não
-        guardamos dados de pagamento.
-      </p>
+      {escuro ? (
+        <p id={`${id}-ajuda`} className="text-center text-[12.5px] leading-relaxed text-white/70">
+          O link do acervo vai para esse e-mail. O pagamento é feito no ambiente do Mercado Pago.
+        </p>
+      ) : (
+        <p className="text-center text-[12.5px] leading-relaxed text-ink-muted">
+          Você será levado ao ambiente seguro do Mercado Pago para pagar com{' '}
+          <strong className="font-semibold text-ink-muted">Pix ou cartão, à vista ou parcelado</strong>.
+          Não guardamos dados de pagamento.
+        </p>
+      )}
     </form>
   )
 }

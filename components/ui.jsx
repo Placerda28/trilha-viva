@@ -3,6 +3,23 @@ import { TrackList } from './Track'
 
 export { TrackList, TrackRow, ChannelStrip, SessionPanel, CHANNELS } from './Track'
 
+/** Icones de linha dos itens de confianca (home e /assinar). Vermelho claro:
+ *  so aparecem sobre painel preto. */
+const ICONES = {
+  cadeado: 'M6 10V7a6 6 0 0 1 12 0v3M5 10h14v11H5zM12 14v3',
+  raio: 'M13 2 4 14h7l-1 8 9-12h-7z',
+  download: 'M12 3v12m0 0-5-5m5 5 5-5M4 21h16',
+  cartao: 'M3 6h18v12H3zM3 10h18M7 15h4',
+}
+
+export function Icone({ nome }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="text-signal-lite">
+      <path d={ICONES[nome]} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 /**
  * Cabeça de seção. Sem rótulo em caixa alta em cima: quem separa as seções é a
  * troca de superfície (branco, névoa, tinta) e o tamanho do título.

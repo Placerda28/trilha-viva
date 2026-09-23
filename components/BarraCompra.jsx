@@ -6,24 +6,25 @@ import { priceBRL, site } from '@/lib/site'
 
 // Barra de compra fixa no pe da tela, so no celular (some a partir de lg).
 //
-// Aparece quando o topo da home (#topo) ja saiu da tela e some de novo quando
-// a secao de preco (#preco) ou o rodape entram nela: a de preco para nao
-// mostrar dois botoes de compra ao mesmo tempo, o rodape para a barra nunca
-// cobrir os links dele. Tudo roda no navegador com IntersectionObserver; o
-// servidor so entrega a pagina pronta, sem custo nenhum de processamento.
+// Aparece quando o bloco `inicio` ja saiu da tela e some de novo quando o
+// bloco `fim` ou o rodape entram nela: o `fim` e o outro lugar da pagina com
+// botao de compra (para nao mostrar dois ao mesmo tempo), o rodape para a
+// barra nunca cobrir os links dele. Na home: inicio = #topo, fim = #preco.
+// Em /assinar: inicio = #comprar (card de preco do topo), fim = #comprar-fim.
+// Tudo roda no navegador com IntersectionObserver; o servidor so entrega a
+// pagina pronta, sem custo nenhum de processamento.
 //
 // Sem animacao de entrada: pela regra de movimento do site, o unico movimento
 // e o ponto do clique no painel de sessao. A barra so aparece e some.
-export default function BarraCompra() {
+export default function BarraCompra({ inicio = 'topo', fim = 'preco', href = '/assinar' }) {
   const [visivel, setVisivel] = useState(false)
 
   useEffect(() => {
-    const alvos = [
-      document.getElementById('topo'),
-      document.getElementById('preco'),
-      document.querySelector('footer'),
-    ].filter(Boolean)
-    if (!alvos.length || typeof IntersectionObserver === 'undefined') return
+    const primeiro = document.getElementById(inicio)
+    if (!primeiro || typeof IntersectionObserver === 'undefined') return
+    const alvos = [primeiro, document.getElementById(fim), document.querySelector('footer')].filter(
+      Boolean
+    )
 
     const naTela = new Map()
     const obs = new IntersectionObserver((entradas) => {
@@ -34,7 +35,7 @@ export default function BarraCompra() {
     })
     alvos.forEach((a) => obs.observe(a))
     return () => obs.disconnect()
-  }, [])
+  }, [inicio, fim])
 
   return (
     <div
@@ -49,7 +50,7 @@ export default function BarraCompra() {
           </span>
           <span className="block text-[12.5px] text-white/70">acesso vitalício</span>
         </p>
-        <Link href="/assinar" className="btn-signal !px-6 !py-3">
+        <Link href={href} className="btn-signal !px-6 !py-3">
           Comprar
         </Link>
       </div>
