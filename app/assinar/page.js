@@ -6,11 +6,11 @@ import { site, priceBRL, discountPct } from '@/lib/site'
 export const metadata = {
   title: 'Liberar acesso ao pacote de 2.000 Multitracks Gospel',
   description:
-    'Pagamento único de R$ 89,90 (de R$ 899,00) no cartão. Acesso vitalício a mais de 2.000 multitracks gospel com clique, guia e canais separados. Liberação imediata.',
+    'Pagamento único de R$ 89,90 (de R$ 899,00) no Pix ou no cartão. Acesso vitalício a mais de 2.000 multitracks gospel com clique, guia e canais separados. Liberação imediata.',
   alternates: { canonical: '/assinar' },
   openGraph: {
     title: 'Pacote único — 2.000 Multitracks Gospel | Trilha Viva',
-    description: 'R$ 89,90 no cartão. Acesso vitalício e liberação imediata.',
+    description: 'R$ 89,90 no Pix ou no cartão. Acesso vitalício e liberação imediata.',
     url: `${site.url}/assinar`,
   },
 }
@@ -80,7 +80,7 @@ export default async function AssinarPage({ searchParams }) {
               },
               {
                 t: 'Pagamento seguro',
-                d: 'Processado pela Stripe. Não temos acesso aos dados do seu cartão.',
+                d: 'Processado pelo Mercado Pago. Não temos acesso aos dados do seu cartão.',
               },
             ].map((b) => (
               <div key={b.t}>
@@ -115,7 +115,7 @@ export default async function AssinarPage({ searchParams }) {
               {priceBRL(site.price)}
             </p>
             <p className="mt-3 text-[14px] text-ink-muted">
-              Pagamento único · acesso vitalício · cartão
+              Pagamento único · acesso vitalício · Pix ou cartão
             </p>
 
             <div className="my-8 h-px bg-line" />
@@ -124,7 +124,7 @@ export default async function AssinarPage({ searchParams }) {
           </div>
 
           <p className="mt-5 text-center text-[12.5px] text-ink-muted">
-            Conexão criptografada · Stripe · Garantia de 7 dias
+            Conexão criptografada · Mercado Pago · Garantia de 7 dias
           </p>
         </div>
       </div>
