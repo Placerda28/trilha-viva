@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getStripe, PRODUCT_NAME } from '@/lib/stripe'
 import { site } from '@/lib/site'
+import { criarPreferencia, provedorAtivo } from '@/lib/mercadopago'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+const DESCRICAO =
+  'Acesso vitalício ao acervo com mais de 2.000 multitracks gospel (VS) com clique, guia e canais separados.'
 
 const hits = new Map()
 function limited(ip) {
@@ -39,6 +43,28 @@ export async function POST(req) {
     req.headers.get('origin') ||
     (process.env.NEXT_PUBLIC_SITE_URL ? process.env.NEXT_PUBLIC_SITE_URL : site.url)
 
+  if (provedorAtivo() === 'mercadopago') {
+    try {
+      const url = await criarPreferencia({
+        email,
+        nome,
+        referencia: crypto.randomUUID(),
+        origem: origin,
+        titulo: PRODUCT_NAME,
+        descricao: DESCRICAO,
+        valor: site.price,
+      })
+      if (!url) throw new Error('preferência sem init_point')
+      return NextResponse.json({ url, mode: 'mercadopago' })
+    } catch (err) {
+      console.error('checkout mp error', err?.message)
+      return NextResponse.json(
+        { error: 'Não conseguimos abrir o pagamento agora. Tente novamente em instantes.' },
+        { status: 500 }
+      )
+    }
+  }
+
   const stripe = getStripe()
 
   if (!stripe) {
@@ -68,8 +94,7 @@ export async function POST(req) {
             unit_amount: Math.round(site.price * 100),
             product_data: {
               name: PRODUCT_NAME,
-              description:
-                'Acesso vitalício ao acervo com mais de 2.000 multitracks gospel (VS) com clique, guia e canais separados.',
+              description: DESCRICAO,
             },
           },
         },

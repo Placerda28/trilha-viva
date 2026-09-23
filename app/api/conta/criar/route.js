@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getStripe } from '@/lib/stripe'
+import { confirmarPagamento } from '@/lib/confirmar'
 import { criarConta, senhasConfiguradas } from '@/lib/senhas'
 import { acharOuCriar, registrarCompra, usarToken, salvarSupabaseId } from '@/lib/clientes'
 import { criarSessao, normalizarEmail } from '@/lib/sessao'
@@ -11,16 +11,14 @@ export const dynamic = 'force-dynamic'
 const semCache = { 'Cache-Control': 'no-store, max-age=0' }
 const erro = (msg, status) => NextResponse.json({ ok: false, erro: msg }, { status, headers: semCache })
 
-function sessaoValida(id) {
-  return (id.startsWith('cs_live_') || id.startsWith('cs_test_')) && id.length > 28 && id.length < 200
-}
-
 // Cria a senha do comprador. Dois caminhos chegam aqui:
 //
-//   session_id  quem acabou de pagar e está na página de sucesso
+//   session_id  quem acabou de pagar na Stripe e está na página de sucesso
+//   payment_id  o mesmo, pelo Mercado Pago (junto com ref, a referência
+//               aleatória da compra — ver lib/confirmar.js)
 //   token       quem fechou a aba e voltou pelo link do e-mail
 //
-// Em nenhum dos dois o visitante escolhe o e-mail: ele vem da compra. É isso
+// Em nenhum deles o visitante escolhe o e-mail: ele vem da compra. É isso
 // que impede alguém de criar conta com o endereço de outra pessoa.
 export async function POST(req) {
   if (!mesmaOrigem(req)) {
@@ -51,32 +49,24 @@ export async function POST(req) {
     email = linha.email
     nome = linha.nome || ''
   } else {
-    const sessionId = String(corpo.session_id || '')
-    if (!sessaoValida(sessionId)) return erro('Link de confirmação inválido.', 400)
+    const r = await confirmarPagamento(corpo)
+    if (r.status === 'invalid') return erro('Link de confirmação inválido.', 400)
+    if (r.status === 'unconfigured') return erro('Pagamento indisponível no momento.', 503)
+    if (r.status === 'error') return erro('Não localizamos esse pagamento.', 404)
+    if (r.status !== 'paid') return erro('O pagamento ainda não foi confirmado.', 409)
 
-    const stripe = getStripe()
-    if (!stripe) return erro('Pagamento indisponível no momento.', 503)
-
-    let sessao
-    try {
-      sessao = await stripe.checkout.sessions.retrieve(sessionId)
-    } catch {
-      return erro('Não localizamos esse pagamento.', 404)
-    }
-    if (sessao.payment_status !== 'paid') return erro('O pagamento ainda não foi confirmado.', 409)
-
-    email = normalizarEmail(sessao.customer_details?.email)
-    nome = sessao.metadata?.nome || sessao.customer_details?.name || ''
+    email = r.email
+    nome = r.nome || ''
     if (!email) return erro('O pagamento não trouxe e-mail. Fale com o suporte.', 422)
 
     const cliente = await acharOuCriar({ email, nome })
     if (!cliente) return erro('Banco indisponível no momento.', 503)
     await registrarCompra({
       clienteId: cliente.id,
-      sessionId,
-      paymentIntent: sessao.payment_intent,
-      valor: sessao.amount_total,
-      moeda: sessao.currency,
+      sessionId: r.compraId,
+      paymentIntent: r.pagamentoId,
+      valor: r.valorCentavos,
+      moeda: r.moeda,
     })
   }
 
