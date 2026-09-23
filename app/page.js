@@ -96,6 +96,7 @@ export default function Home() {
             alt=""
             fill
             priority
+            fetchPriority="high"
             unoptimized
             sizes="100vw"
             className="object-cover object-[50%_40%]"
