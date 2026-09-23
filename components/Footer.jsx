@@ -73,7 +73,7 @@ export default function Footer() {
           <p>
             © {new Date().getFullYear()} {site.name} — Multitracks Gospel
           </p>
-          <p>Pagamento no cartão, processado pela Stripe</p>
+          <p>Pix ou cartão, processado pelo Mercado Pago</p>
         </div>
       </div>
     </footer>

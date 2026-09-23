@@ -19,7 +19,7 @@ export default function PrivacidadePage() {
         <ul>
           <li>Nome e e-mail informados no checkout, para enviar o acesso e dar suporte.</li>
           <li>
-            Dados da transação (valor, data, status) fornecidos pela Stripe. Não recebemos nem
+            Dados da transação (valor, data, status) fornecidos pelo Mercado Pago. Não recebemos nem
             armazenamos números de cartão.
           </li>
         </ul>
@@ -31,8 +31,8 @@ export default function PrivacidadePage() {
         </p>
         <h2>Pagamentos</h2>
         <p>
-          O processamento é feito pela Stripe, em ambiente próprio e criptografado. A política de
-          privacidade da Stripe se aplica à etapa de pagamento.
+          O processamento é feito pelo Mercado Pago, em ambiente próprio e criptografado. A política
+          de privacidade do Mercado Pago se aplica à etapa de pagamento.
         </p>
         <h2>Seus direitos (LGPD)</h2>
         <p>

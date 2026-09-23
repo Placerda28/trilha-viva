@@ -83,8 +83,8 @@ export default function CheckoutForm() {
       </button>
 
       <p className="text-center text-[12.5px] leading-relaxed text-ink-muted">
-        Você será levado ao ambiente seguro da Stripe para pagar com{' '}
-        <strong className="font-semibold text-ink-muted">cartão de crédito ou débito</strong>. Não
+        Você será levado ao ambiente seguro do Mercado Pago para pagar com{' '}
+        <strong className="font-semibold text-ink-muted">Pix ou cartão, à vista ou parcelado</strong>. Não
         guardamos dados de pagamento.
       </p>
     </form>
