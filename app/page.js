@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { SectionHead, SongGrid, Faq, Check, Figure } from '@/components/ui'
+import { SectionHead, SongGrid, Faq, Check, Figure, Icone } from '@/components/ui'
 import { SessionPanel, SessionMini, TrackList, CHANNELS } from '@/components/Track'
 import BarraCompra from '@/components/BarraCompra'
 import { destaques } from '@/lib/catalog'
@@ -32,19 +32,6 @@ const confianca = [
   ['raio', 'Acesso liberado na hora'],
   ['download', 'Download música por música'],
 ]
-
-function Icone({ nome }) {
-  const d = {
-    cadeado: 'M6 10V7a6 6 0 0 1 12 0v3M5 10h14v11H5zM12 14v3',
-    raio: 'M13 2 4 14h7l-1 8 9-12h-7z',
-    download: 'M12 3v12m0 0-5-5m5 5 5-5M4 21h16',
-  }[nome]
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="text-signal-lite">
-      <path d={d} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
 
 const productLd = {
   '@context': 'https://schema.org',
@@ -459,7 +446,7 @@ export default function Home() {
                   'Arquivos em WAV e MP3, organizados por música',
                   'Preparado para transposição de tom',
                   'Compatível com REAPER, Ableton, Prime e tablet',
-                  'Acesso vitalício, sem limite de downloads',
+                  'Acesso vitalício, com até 30 downloads por dia',
                   'Novas trilhas somadas ao acervo',
                   'Suporte por e-mail para configurar o seu setup',
                 ].map((t) => (
