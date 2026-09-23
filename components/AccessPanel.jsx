@@ -10,17 +10,23 @@ import ContaForm from './ContaForm'
 // aqui é criar a senha — sem link alternativo, sem menu, sem distração.
 export default function AccessPanel() {
   const params = useSearchParams()
+  // Stripe volta com ?session_id=. O Mercado Pago volta com ?payment_id= e
+  // ?external_reference= (a referência aleatória que prova que a compra é
+  // desta pessoa).
   const sessionId = params.get('session_id')
-  const [state, setState] = useState({ status: sessionId ? 'loading' : 'missing' })
+  const paymentId = params.get('payment_id')
+  const ref = params.get('external_reference')
+  const temCompra = Boolean(sessionId || (paymentId && paymentId !== 'null' && ref))
+  const [state, setState] = useState({ status: temCompra ? 'loading' : 'missing' })
   const tries = useRef(0)
 
   const check = useCallback(async () => {
-    if (!sessionId) return
+    if (!temCompra) return
     try {
       const res = await fetch('/api/acesso', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId }),
+        body: JSON.stringify(sessionId ? { session_id: sessionId } : { payment_id: paymentId, ref }),
         cache: 'no-store',
       })
       const data = await res.json()
@@ -30,7 +36,7 @@ export default function AccessPanel() {
       setState({ status: 'error', error: 'Falha de conexão ao verificar o pagamento.' })
       return 'error'
     }
-  }, [sessionId])
+  }, [temCompra, sessionId, paymentId, ref])
 
   useEffect(() => {
     let stop = false

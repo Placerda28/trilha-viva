@@ -56,6 +56,8 @@ export default function ContaForm({ modo }) {
   const [pronto, setPronto] = useState('')
   const [token, setToken] = useState('')
   const [sessionId, setSessionId] = useState('')
+  const [paymentId, setPaymentId] = useState('')
+  const [ref, setRef] = useState('')
 
   // O endereço é lido no navegador, e não no servidor, de propósito: ler
   // parâmetro no servidor obrigaria a montar a página a cada visita, e essas
@@ -64,6 +66,8 @@ export default function ContaForm({ modo }) {
     const p = new URLSearchParams(window.location.search)
     setToken(p.get('t') || '')
     setSessionId(p.get('session_id') || p.get('s') || '')
+    setPaymentId(p.get('payment_id') || '')
+    setRef(p.get('external_reference') || '')
     if (p.get('criada')) setAviso('Senha criada. Entre com ela abaixo.')
     if (p.get('expirou')) setAviso('Sua sessão expirou. Entre de novo para continuar.')
   }, [])
@@ -87,7 +91,7 @@ export default function ContaForm({ modo }) {
       const res = await fetch(cfg.rota, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha, token, session_id: sessionId }),
+        body: JSON.stringify({ email, senha, token, session_id: sessionId, payment_id: paymentId, ref }),
       })
       const dados = await res.json().catch(() => ({}))
 
