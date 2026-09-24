@@ -66,22 +66,32 @@ Contrato: tasks/fase2-cupons.md. Commits dcdacab (backend, Codex) e 08fe0d0 (tel
 - [x] /codex:adversarial-review focada em dinheiro: 3 achados (vaga vencendo com cartão em análise; falha na limpeza da vaga barrando o e-mail de acesso; link passando da validade do cupom), corrigidos em f26fe32 com 3 testes novos (42). Limitação aceita: desativar não cancela links já abertos no MP (máx. 30 min).
 - [x] Segunda revisão do Codex: achou que o prazo de 30 min podia recusar o Pix (MP exige Pix ≥ 30 min a partir de quando é gerado), que 3 h não bastam para cartão em análise (até 2 dias úteis), que aviso atrasado reativava vaga vencida e que o link podia passar segundos da validade. Tudo corrigido (43 testes).
   - Achado anterior à gestão, NÃO corrigido aqui: se o e-mail de acesso falhar depois de a compra ser gravada, o aviso repetido do MP não tenta de novo. Quem pagou ainda entra pela tela de sucesso ou por "Esqueci minha senha". Vai para a Fase 4 (registrar se o e-mail saiu e reenviar).
-- [ ] Prova em produção: compra real no Pix com cupom (Paulo, outra conta do MP) → compra aparece com o cupom e o uso contado; desativado → checkout recusa
+- [x] Publicado em 24/09 (merge 4a4d35a, versão acfb3d7b). Sem login: rotas de cupom idênticas a endereço inexistente (0 diferenças).
+- [x] Prova em produção (24/09, 16h48 BRT): Paulo criou TESTE1REAL (R$ 88,90 de desconto, limite 1) e pagou R$ 1,00 no Pix com outra conta (trilhaviva.suporte@gmail.com). No D1: compra mp_179706542831, pix, cupom TESTE1REAL, usos 1/1, reserva limpa, senha criada. Depois disso, /api/cupom e /api/checkout recusam o cupom (esgotado).
+- [ ] Desativar → checkout recusa: provado no local; em produção é opcional (TESTE1REAL já está esgotado).
+- [ ] Paulo: apagar a variável CUPOM_TESTE no painel (o código já não lê).
+- [ ] Paulo: confirmar a compra de R$ 1,00 de kaylan.nasc2@gmail.com (24/09 10h35 BRT, mp_179645402809, antes da publicação dos cupons, sem cupom registrado): só o cupom de teste antigo permitia esse valor.
 
 ## Fase 3 — Equipe + registro de ações
-- [ ] (C) Tabelas `equipe` e `registro` (PARADA: SQL ao Paulo)
-- [ ] (C) Criar membro via Supabase Admin (`SUPABASE_SECRET_KEY`), troca de senha no 1º acesso, remover corta na hora, "liberar acervo" desligado por padrão
-- [ ] (C) Registro: cupom criado/desativado, cliente bloqueado, membro adicionado/removido
-- [ ] (F) Tela Equipe (só master) e tela Registro
-- [ ] Prova: membro entra, troca senha, vê gestão sem Equipe, é recusado nas rotas de Equipe; removido perde acesso na próxima requisição
+Paulo autorizou fazer direto (24/09). Contrato: tasks/fase3-equipe.md. Commits 737f3f3 (backend, Codex) e 0219298 (telas).
+- [x] (C) migrations/0003_equipe.sql: tabelas equipe e registro. APLICADA no D1 de produção em 24/09 (7 clientes, 7 compras, R$ 272,20, 1 cupom intactos).
+- [x] (C) Papel com membro na mesma consulta única; master só por ADMIN_MASTER; removido/bloqueado perde acesso na próxima requisição
+- [x] (C) Adicionar membro via Supabase Admin (SUPABASE_SECRET_KEY); conta existente mantém a senha; troca obrigatória no 1º acesso; remover; liberar/tirar acervo (desligado por padrão)
+- [x] (C) Registro: cupom criado/desativado, membro adicionado/removido, acervo liberado/retirado, senha trocada
+- [x] (C) temCompra aceita membro ativo com libera_acervo
+- [x] (F) Tela Equipe (só master), Registro (todos), "Crie a sua senha" para quem está com a provisória, aviso de gestão no acervo para membro sem compra
+- [x] Prova LOCAL (24/09): 59 testes; e-mail do master, e-mail inválido e senha curta recusados; repetido 409; membro vê Clientes/Cupons/Registro e recebe 404 na Equipe (rota e tela, sem aba no menu) e ao tentar adicionar; acervo desligado até liberar; com senha provisória só vê "Crie a sua senha" e as rotas de dados dão 404; removido perde tudo na hora; reativado volta com acervo desligado; registro anota cada ação e nenhuma senha; membro criando cupom aparece no registro; 48 comparações de quem é de fora nas rotas novas com 0 diferenças; fotos conferidas.
+- [ ] Não testável no local (sem Supabase): criar conta nova de membro e a troca de senha de verdade → prova em produção com o Paulo
+- [x] /codex:adversarial-review da Fase 3: sessões abertas com a senha provisória sobreviviam à troca; falha no meio do cadastro podia dispensar a troca; publicar antes da 0003 quebraria o acervo. Os dois primeiros corrigidos (60 testes; gravação única conferida no D1 local), o terceiro já estava resolvido (0003 aplicada antes).
+- [ ] Publicar e provar em produção: Paulo adiciona um membro com um e-mail dele, entra com a provisória, troca, vê a gestão sem Equipe; removido perde o acesso
 
-## Fase 4 — Visão geral, Downloads, ações no cliente, reembolso
+## Fase 4 — Visão geral, Downloads, ações no cliente (reembolso ADIADO)
 - [ ] (C) Visão geral (hoje/7d/30d/mês + gráfico), músicas mais baixadas, clientes que batem a cota
 - [ ] (C) Ações: reenviar e-mail de acesso, bloquear/liberar, zerar a cota do dia
 - [ ] (C) Entrega do acesso idempotente: gravar quando o e-mail de criar senha saiu (ex.: compras.acesso_enviado_em) e, se um aviso repetido do MP achar compra paga sem e-mail enviado, tentar de novo (achado da revisão da Fase 2)
-- [ ] (C) Webhook: refunded/charged_back → bloqueia e marca "reembolsada"
+- [ ] ADIADO por decisão do Paulo (24/09/2026): "não vamos mexer com reembolso por agora". Webhook refunded/charged_back → bloquear e marcar "reembolsada" fica fora até ele pedir. Hoje o aviso do MP só trata pagamento aprovado; reembolso feito no painel do MP NÃO bloqueia o acesso (bloqueio manual pela gestão, quando existir).
 - [ ] (F) Telas correspondentes
-- [ ] Prova: reembolso feito pelo Paulo no painel do MP bloqueia o acesso
+- [ ] (adiado junto com o reembolso)
 
 ---
 

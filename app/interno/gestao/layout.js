@@ -2,6 +2,7 @@ import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import { adminAtual } from '@/lib/gestao/permissao'
 import GestaoNav from '@/components/gestao/GestaoNav'
+import TrocarSenha from '@/components/gestao/TrocarSenha'
 
 export const runtime = 'nodejs'
 // Lê o cookie da sessão, então é montada a cada visita. A casca aqui é
@@ -29,6 +30,10 @@ export default async function GestaoLayout({ children }) {
   const admin = await quemEsta()
   if (!admin) notFound()
 
+  // Membro que ainda está com a senha provisória só vê o formulário de troca.
+  // As rotas de dados também recusam essa pessoa até ela trocar.
+  const trocando = admin.papel === 'membro' && admin.precisa_trocar_senha
+
   return (
     <div className="shell pb-24 pt-10 sm:pt-12">
       {/* Na gestão não faz sentido o cabeçalho oferecer "Entrar" e "Liberar
@@ -51,8 +56,14 @@ export default async function GestaoLayout({ children }) {
         </a>
       </div>
 
-      <GestaoNav />
-      {children}
+      {trocando ? (
+        <TrocarSenha email={admin.cliente.email} />
+      ) : (
+        <>
+          <GestaoNav papel={admin.papel} />
+          {children}
+        </>
+      )}
     </div>
   )
 }

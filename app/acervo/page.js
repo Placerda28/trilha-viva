@@ -86,7 +86,19 @@ export default async function AcervoPage({ searchParams }) {
         </p>
       )}
 
-      {!comprou ? (
+      {!comprou && admin ? (
+        // Quem é da equipe de gestão e não comprou (nem teve o acervo liberado)
+        // não está "sem compra": está no lugar errado. Leva direto à gestão.
+        <div className="card-cut mt-10 bg-white px-6 py-7">
+          <h2 className="text-[19px] font-bold text-ink">Sua conta é da equipe de gestão</h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-ink-muted">
+            O acervo não está liberado para esta conta. O que você precisa está na gestão.
+          </p>
+          <a href="/gestao" className="btn-ink mt-6 inline-block">
+            Abrir a gestão
+          </a>
+        </div>
+      ) : !comprou ? (
         <div className="card-cut mt-10 bg-white px-6 py-7">
           <h2 className="text-[19px] font-bold text-ink">Não encontramos uma compra nesta conta</h2>
           <p className="mt-3 text-[15px] leading-relaxed text-ink-muted">

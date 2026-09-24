@@ -13,6 +13,30 @@ test('reconhece exatamente o admin master', () => {
   assert.equal(decidirPapel({ cliente, adminMaster: 'paulo@example.com' }), 'master')
 })
 
+test('reconhece membro ativo sem permitir que a tabela crie outro master', () => {
+  assert.equal(
+    decidirPapel({
+      cliente: { ...cliente, email: 'membro@example.com', equipe_id: 9 },
+      adminMaster: cliente.email,
+    }),
+    'membro'
+  )
+  assert.equal(
+    decidirPapel({ cliente: { ...cliente, equipe_id: 9 }, adminMaster: cliente.email }),
+    'master'
+  )
+})
+
+test('membro removido não recebe papel na requisição seguinte', () => {
+  assert.equal(
+    decidirPapel({
+      cliente: { ...cliente, email: 'membro@example.com', equipe_id: null },
+      adminMaster: cliente.email,
+    }),
+    null
+  )
+})
+
 test('normaliza maiúsculas e espaços nos dois e-mails', () => {
   assert.equal(
     decidirPapel({
@@ -30,6 +54,13 @@ test('ADMIN_MASTER vazio não dá acesso a ninguém', () => {
 
 test('cliente bloqueado não é admin mesmo com o e-mail certo', () => {
   assert.equal(decidirPapel({ cliente: { ...cliente, bloqueado: 1 }, adminMaster: cliente.email }), null)
+  assert.equal(
+    decidirPapel({
+      cliente: { ...cliente, email: 'membro@example.com', bloqueado: 1, equipe_id: 9 },
+      adminMaster: cliente.email,
+    }),
+    null
+  )
 })
 
 test('e-mail apenas parecido não passa', () => {
