@@ -5,6 +5,8 @@ import { enviarCriarSenha } from '@/lib/email'
 import { normalizarEmail } from '@/lib/sessao'
 import { enviarEventoMeta } from '@/lib/meta'
 import { site } from '@/lib/site'
+import { getDB } from '@/lib/d1'
+import { cancelarReservaCupom, estenderReservaCupom } from '@/lib/gestao/cupons'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -34,6 +36,8 @@ async function liberarAcesso(r) {
     valor: r.valorCentavos,
     moeda: r.moeda,
     forma: r.forma,
+    cupom: r.cupom,
+    referencia: r.referencia,
   })
   if (!nova) return
 
@@ -90,6 +94,14 @@ export async function POST(req) {
         moeda: String(r.moeda || 'brl').toUpperCase(),
       })
       await liberarAcesso(r)
+    } else if (r.status === 'pending' && r.cupom && r.referencia) {
+      // Pix gerado ou cartão em análise: segura a vaga do cupom até a
+      // resposta final.
+      await estenderReservaCupom(getDB(), r.referencia)
+    } else if (r.status === 'failed' && r.cupom && r.referencia) {
+      // Pagamento recusado ou cancelado: devolve a vaga na hora, para outra
+      // pessoa poder usar o cupom sem esperar a reserva vencer.
+      await cancelarReservaCupom(getDB(), r.referencia)
     }
   } catch (err) {
     // Nunca devolver erro por uma falha nossa: o Mercado Pago reenviaria o

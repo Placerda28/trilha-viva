@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation'
 const ABAS = [
   { href: '/gestao/clientes', rotulo: 'Clientes' },
   { href: '/gestao/periodo', rotulo: 'Por período' },
+  { href: '/gestao/cupons', rotulo: 'Cupons' },
 ]
 
 export default function GestaoNav() {

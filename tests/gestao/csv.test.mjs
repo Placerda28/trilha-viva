@@ -40,11 +40,12 @@ test('linha de cliente mantém a ordem pedida', () => {
       compra_em: '2026-09-24 15:30:00',
       compra_valor_centavos: 19700,
       compra_forma: 'pix',
+      compra_cupom: 'LOUVOR20',
       supabase_id: 'abc',
       downloads: 2,
       compras: 3,
       bloqueado: 0,
     }),
-    ['Ana', 'ana@example.com', '24/09/2026 12:30', '197,00', 'Pix', '', 'Sim', 2, 3, 'Não']
+    ['Ana', 'ana@example.com', '24/09/2026 12:30', '197,00', 'Pix', 'LOUVOR20', 'Sim', 2, 3, 'Não']
   )
 })

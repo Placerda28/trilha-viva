@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { precoDoCupom } from '@/lib/cupom-teste'
+import { getDB } from '@/lib/d1'
+import { consultarCupomValido, ERRO_CUPOM_PUBLICO } from '@/lib/gestao/cupons'
 import { site } from '@/lib/site'
 
 export const runtime = 'nodejs'
@@ -35,10 +36,19 @@ export async function POST(req) {
     /* cai na validação abaixo */
   }
 
-  const cupom = String(corpo.cupom || '').trim().slice(0, 40)
-  const preco = cupom ? await precoDoCupom(cupom) : null
-  if (preco === null) {
-    return NextResponse.json({ ok: false, erro: 'Cupom inválido, vencido ou já usado.' }, { status: 400, headers: semCache })
+  const cupom = await consultarCupomValido(
+    getDB(),
+    String(corpo.cupom || ''),
+    Math.round(site.price * 100)
+  )
+  if (!cupom) {
+    return NextResponse.json(
+      { ok: false, erro: ERRO_CUPOM_PUBLICO },
+      { status: 400, headers: semCache }
+    )
   }
-  return NextResponse.json({ ok: true, cupom: cupom.toUpperCase(), preco, de: site.price }, { headers: semCache })
+  return NextResponse.json(
+    { ok: true, cupom: cupom.codigo, preco: cupom.preco_centavos / 100, de: site.price },
+    { headers: semCache }
+  )
 }
