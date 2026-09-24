@@ -45,10 +45,12 @@ Migração `migrations/0001_gestao_fase1.sql`: APLICADA no D1 de produção em 2
   - acesso direto ao endereço interno (/interno/gestao, /api/interno/gestao) sem permissão: 404, nenhum dado.
   - totais do período = SELECT direto (6 compras, 5 clientes, R$ 437,50; Pix 1, cartão 2, sem info 2); compra das 23h59 de Brasília no dia certo; busca por "100%" escapada; fórmula neutralizada na planilha.
   - fotos das telas em 1280 px e 390 px conferidas.
-- [ ] Prova em PRODUÇÃO depois do merge: Paulo vê o menu; curl sem cookie → 404; totais = SELECT no D1 remoto
+- [x] Prova em PRODUÇÃO (24/09, versão f9c188d9 publicada às 14h44 BRT): sem login, 12 comparações com endereço inexistente, 0 diferenças; home, /assinar, /musicas, /entrar normais; robots e sitemap sem /gestao. Paulo entrou, viu o menu e as duas telas ("está ótimo").
+- [x] Ajuste pedido pelo Paulo: compra de teste manual de paulohls28@gmail.com (id 2, cs_teste_manual_1, cupom 100%) passou de R$ 89,90 para R$ 0,00. Faturamento total: R$ 271,20.
 - [x] `npm run build` limpo (e `opennextjs-cloudflare build` limpo)
-- [ ] CPU das rotas novas medida em produção (wrangler tail / Observability) — só dá depois de publicar
-- [ ] PARADA: merge em main com OK do Paulo
+- [x] CPU em produção (GraphQL workersInvocationsAdaptive, o site todo, por hora): 0 erros antes e depois; mediana 9,6 ms na hora em que o Paulo usou a gestão (10,2 ms e 5,5 ms nas horas anteriores). Não deu para separar por rota: o wrangler tail não alcança tail.developers.workers.dev daqui (DNS) e o login do wrangler não tem permissão na API de Observability. Para ver por rota: painel → Workers → www → Observability, filtrar por caminho.
+  - Observação fora do escopo: o p99 do site já passava de 150 ms antes da gestão (inícios a frio).
+- [x] Merge em main com OK do Paulo (commit 83c863c, 24/09)
 
 ## Fase 2 — Cupons
 - [ ] (C) Tabela `cupons` + `compras.cupom` (PARADA: SQL ao Paulo)
