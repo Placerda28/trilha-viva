@@ -82,7 +82,7 @@ Paulo autorizou fazer direto (24/09). Contrato: tasks/fase3-equipe.md. Commits 7
 - [x] (F) Tela Equipe (só master), Registro (todos), "Crie a sua senha" para quem está com a provisória, aviso de gestão no acervo para membro sem compra
 - [x] Prova LOCAL (24/09): 59 testes; e-mail do master, e-mail inválido e senha curta recusados; repetido 409; membro vê Clientes/Cupons/Registro e recebe 404 na Equipe (rota e tela, sem aba no menu) e ao tentar adicionar; acervo desligado até liberar; com senha provisória só vê "Crie a sua senha" e as rotas de dados dão 404; removido perde tudo na hora; reativado volta com acervo desligado; registro anota cada ação e nenhuma senha; membro criando cupom aparece no registro; 48 comparações de quem é de fora nas rotas novas com 0 diferenças; fotos conferidas.
 - [ ] Não testável no local (sem Supabase): criar conta nova de membro e a troca de senha de verdade → prova em produção com o Paulo
-- [ ] /codex:adversarial-review da Fase 3
+- [x] /codex:adversarial-review da Fase 3: sessões abertas com a senha provisória sobreviviam à troca; falha no meio do cadastro podia dispensar a troca; publicar antes da 0003 quebraria o acervo. Os dois primeiros corrigidos (60 testes; gravação única conferida no D1 local), o terceiro já estava resolvido (0003 aplicada antes).
 - [ ] Publicar e provar em produção: Paulo adiciona um membro com um e-mail dele, entra com a provisória, troca, vê a gestão sem Equipe; removido perde o acesso
 
 ## Fase 4 — Visão geral, Downloads, ações no cliente (reembolso ADIADO)
