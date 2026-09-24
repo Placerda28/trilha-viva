@@ -34,6 +34,8 @@ async function liberarAcesso(r) {
     valor: r.valorCentavos,
     moeda: r.moeda,
     forma: r.forma,
+    cupom: r.cupom,
+    referencia: r.referencia,
   })
   if (!nova) return
 

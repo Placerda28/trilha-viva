@@ -45,6 +45,7 @@ function bancoComDados() {
   const banco = new DatabaseSync(':memory:')
   banco.exec(readFileSync('migrations/0000_esquema_atual.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0001_gestao_fase1.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0002_cupons.sql', 'utf8'))
   banco.exec(`
     INSERT INTO clientes (id, email, nome, bloqueado, supabase_id, criado_em) VALUES
       (1, 'master@example.com', 'Master 100%', 0, 'sup_1', '2026-09-20 12:00:00'),
@@ -63,6 +64,8 @@ function bancoComDados() {
       (1, 'a.zip', '2026-09-24 10:00:00'),
       (1, 'b.zip', '2026-09-24 11:00:00'),
       (2, 'c.zip', '2026-09-25 11:00:00');
+    UPDATE compras SET cupom = 'LOUVOR20'
+     WHERE stripe_session_id = 'cs_test_123456789012345678901234567890';
   `)
   return banco
 }
@@ -74,7 +77,10 @@ test('migração acrescenta forma e índice', () => {
     .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_compras_status_data'")
     .get()
   assert.ok(colunas.includes('forma_pagamento'))
+  assert.ok(colunas.includes('cupom'))
   assert.equal(indice.name, 'idx_compras_status_data')
+  assert.ok(banco.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'cupons'").get())
+  assert.ok(banco.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'cupom_reservas'").get())
 })
 
 test('parâmetros de clientes têm limites seguros', () => {
@@ -95,6 +101,7 @@ test('clientes usa uma consulta para a página e uma para o total', async () => 
   assert.equal(resultado.linhas[0].compra_valor_centavos, 3000)
   assert.equal(resultado.linhas[2].downloads, 2)
   assert.equal(clienteDaLinha(resultado.linhas[2]).compra.em, '2026-09-24T15:00:00Z')
+  assert.equal(clienteDaLinha(resultado.linhas[2]).compra.cupom, 'LOUVOR20')
 })
 
 test('busca trata porcentagem e sublinhado como texto literal', async () => {
@@ -109,6 +116,7 @@ test('CSV de clientes infere cartão legado sem consultar operadora', async () =
   const linhas = await consultarClientesCsv(new D1Local(bancoComDados()), '')
   const master = linhas.find((linha) => linha.id === 1)
   assert.equal(master.compra_forma, 'cartao')
+  assert.equal(master.compra_cupom, 'LOUVOR20')
   assert.equal(linhas.length, 3)
 })
 
@@ -152,5 +160,9 @@ test('busca no cache do período tem LIMIT e CSV traz no máximo as pagas', asyn
 
   const csv = await consultarPeriodoCsv(d1, periodo)
   assert.equal(csv.length, 4)
-  assert.equal(csv.find((linha) => linha.email === 'master@example.com' && linha.compra_valor_centavos === 9900).compra_forma, 'cartao')
+  const compraComCupom = csv.find(
+    (linha) => linha.email === 'master@example.com' && linha.compra_valor_centavos === 9900
+  )
+  assert.equal(compraComCupom.compra_forma, 'cartao')
+  assert.equal(compraComCupom.compra_cupom, 'LOUVOR20')
 })

@@ -68,6 +68,8 @@ export async function POST(req) {
       valor: r.valorCentavos,
       moeda: r.moeda,
       forma: r.forma,
+      cupom: r.cupom,
+      referencia: r.referencia,
     })
   }
 

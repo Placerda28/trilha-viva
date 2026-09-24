@@ -3,7 +3,14 @@ import { getStripe, PRODUCT_NAME } from '@/lib/stripe'
 import { site } from '@/lib/site'
 import { criarPreferencia, provedorAtivo } from '@/lib/mercadopago'
 import { enviarEventoMeta, ipDoPedido, lerCookiesMeta } from '@/lib/meta'
-import { precoDoCupom } from '@/lib/cupom-teste'
+import { getDB } from '@/lib/d1'
+import {
+  cancelarReservaCupom,
+  consultarCupomValido,
+  ERRO_CUPOM_PUBLICO,
+  normalizarCodigoCupom,
+  reservarCupom,
+} from '@/lib/gestao/cupons'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -65,36 +72,68 @@ export async function POST(req) {
       valor,
     })
 
-  if (provedorAtivo() === 'mercadopago') {
-    const cupom = String(body.cupom || '').trim().slice(0, 40)
-    const precoCupom = cupom ? await precoDoCupom(cupom) : null
-    if (cupom && precoCupom === null) {
-      return NextResponse.json({ error: 'Cupom inválido, vencido ou já usado.' }, { status: 400 })
+  const provedor = provedorAtivo()
+  const codigoInformado = normalizarCodigoCupom(body.cupom)
+
+  if (provedor === 'mercadopago') {
+    const precoBaseCentavos = Math.round(site.price * 100)
+    const cupom = codigoInformado
+      ? await consultarCupomValido(getDB(), codigoInformado, precoBaseCentavos)
+      : null
+    if (codigoInformado && !cupom) {
+      return NextResponse.json({ error: ERRO_CUPOM_PUBLICO }, { status: 400 })
     }
+
+    const referencia = crypto.randomUUID()
+    const db = getDB()
+    if (
+      cupom &&
+      !(await reservarCupom(db, {
+        cupomId: cupom.id,
+        referencia,
+        precoCentavos: cupom.preco_centavos,
+      }))
+    ) {
+      // A consulta informativa e a reserva são passos diferentes. Se outra
+      // pessoa pegou a última vaga entre eles, esta resposta continua segura.
+      return NextResponse.json({ error: ERRO_CUPOM_PUBLICO }, { status: 400 })
+    }
+
     try {
       const url = await criarPreferencia({
         email,
         nome,
-        referencia: crypto.randomUUID(),
+        referencia,
         origem: origin,
         titulo: PRODUCT_NAME,
         descricao: DESCRICAO,
-        valor: precoCupom ?? site.price,
+        valorCentavos: cupom?.preco_centavos ?? precoBaseCentavos,
+        cupom: cupom?.codigo || null,
         // Com cupom, o link de pagamento vence em 30 minutos: não fica um
         // carrinho de R$ 1,00 aberto esperando alguém.
-        expiraEmMin: precoCupom ? 30 : null,
+        expiraEmMin: cupom ? 30 : null,
         rastreio,
       })
       if (!url) throw new Error('preferência sem init_point')
-      await inicioCheckout(precoCupom ?? site.price)
+      await inicioCheckout((cupom?.preco_centavos ?? precoBaseCentavos) / 100)
       return NextResponse.json({ url, mode: 'mercadopago' })
     } catch (err) {
+      // Sem preferência não existe pagamento possível. Liberamos a vaga agora,
+      // em vez de obrigar outra pessoa a esperar os 35 minutos da reserva.
+      if (cupom) await cancelarReservaCupom(db, referencia)
       console.error('checkout mp error', err?.message)
       return NextResponse.json(
         { error: 'Não conseguimos abrir o pagamento agora. Tente novamente em instantes.' },
         { status: 500 }
       )
     }
+  }
+
+  if (codigoInformado) {
+    return NextResponse.json(
+      { error: 'Cupom indisponível no momento.' },
+      { status: 400 }
+    )
   }
 
   const stripe = getStripe()
