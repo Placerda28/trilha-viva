@@ -1,3 +1,68 @@
+# Menu de gestão — plano e andamento (início: 24/09/2026)
+
+Branch: `gestao`. Nada vai para `main` sem o OK do Paulo, fase por fase.
+Legenda: [ ] a fazer · [x] feito e provado · (C) Codex/backend · (F) Claude/frontend
+
+## Passo 0 — preparação
+- [x] Pasta local fora do Drive/OneDrive, remoto `Placerda28/trilha-viva`
+- [x] Branch `gestao` criada
+- [x] Leitura do código (checkout, webhooks, sessão, acervo, download, cupom de teste)
+- [x] Esquema real do D1 lido (só leitura)
+- [x] `CLAUDE.md` e `AGENTS.md` na raiz (regra do idioma)
+
+### O que a leitura mostrou (e muda o plano original)
+1. A sessão NÃO é da Supabase. É o cookie `tv_sessao`, conferido no D1 (`lib/sessao.js` → `clienteAtual()`). A Supabase só confere a senha. Então `papel()` parte de `clienteAtual()`: é validado no servidor e é o mesmo usado no acervo.
+2. A chave de servidor da Supabase já existe com o nome `SUPABASE_SECRET_KEY` (não `SUPABASE_SERVICE_ROLE_KEY`). A Equipe reaproveita essa.
+3. A conta do Paulo (paulohenrique_ls@hotmail.com) já existe: cliente id 3, com senha e com compra. Não precisa criar nada para a Fase 1.
+4. O D1 não guarda Pix/cartão nem cupom. Precisa de uma coluna nova (cache da forma de pagamento).
+5. Os webhooks (MP e Stripe) NÃO tratam reembolso/chargeback. Fica para a Fase 4.
+6. Já existe um cupom de teste por variável (`CUPOM_TESTE`, `lib/cupom-teste.js`) e o campo "Tenho um cupom" no `CheckoutForm`. A Fase 2 troca esse mecanismo pela tabela `cupons`.
+7. Não há ferramenta de testes no projeto. Os testes usam o `node --test` que já vem no Node, em funções puras (sem banco), sem instalar nada.
+8. Hoje o D1 tem 6 clientes, 6 compras pagas (R$ 361,10 no total) e 39 downloads.
+
+## Fase 1 — acesso + Clientes + Clientes por período
+Segredos/variáveis: `ADMIN_MASTER=paulohenrique_ls@hotmail.com` no painel + "Promote version".
+Migração (PARADA: mostrar ao Paulo antes): `migrations/0001_gestao_fase1.sql`.
+- [ ] (C) `lib/gestao/permissao.js` — `papel()` → 'master' | 'membro' | null; `naoEncontrado()` (404)
+- [ ] (C) Migração: `compras.forma_pagamento` + índice por data
+- [ ] (C) Forma de pagamento: gravar na compra nova (MP `payment_type_id`, Stripe = cartão) e preencher as antigas aos poucos, com cache
+- [ ] (C) `GET /api/gestao/clientes` (busca + paginação) e `GET /api/gestao/clientes/csv`
+- [ ] (C) `GET /api/gestao/periodo` (totais + série dia/semana/mês) e `GET /api/gestao/periodo/csv`
+- [ ] (C) Testes `node --test` das funções puras (datas de Brasília, agrupamento, CSV, decisão de papel)
+- [ ] (F) `app/gestao/layout.js` — chama `papel()`, `notFound()` para quem não é admin, noindex
+- [ ] (F) Tela Clientes (busca, paginação, CSV) — celular primeiro
+- [ ] (F) Tela Clientes por período (atalhos, totais, gráfico, CSV)
+- [ ] (F) Link "Gestão" na área logada, só renderizado para admin; `/gestao` nas rotas de conta do Header
+- [ ] Revisão do diff do Codex + `/codex:adversarial-review` (permissão)
+- [ ] Prova: master vê o menu; cliente comum não vê e recebe 404 em /gestao e em cada /api/gestao/* (curl com e sem cookie); totais = SELECT direto no D1
+- [ ] `npm run build` limpo + CPU das rotas novas medida
+- [ ] PARADA: merge em main com OK do Paulo
+
+## Fase 2 — Cupons
+- [ ] (C) Tabela `cupons` + `compras.cupom` (PARADA: SQL ao Paulo)
+- [ ] (C) Validação no servidor em `/api/checkout` e `/api/cupom`: validade, limite, ativo, sem diferenciar maiúscula, preço final ≥ R$ 1,00
+- [ ] (C) Uso contado só no webhook, pagamento aprovado, uma vez só (idempotente)
+- [ ] (C) Rotas de cupons (criar, listar com usos e faturamento, desativar)
+- [ ] (F) Tela Cupons; "Tenho um cupom" já existe, ajustar ao novo formato
+- [ ] Aposentar `lib/cupom-teste.js` / `CUPOM_TESTE`
+- [ ] Prova: inválido/vencido/esgotado recusado; nunca abaixo de R$ 1,00; aviso duplicado conta 1 uso; compra real no Pix (Paulo, outra conta); desativado → recusado
+
+## Fase 3 — Equipe + registro de ações
+- [ ] (C) Tabelas `equipe` e `registro` (PARADA: SQL ao Paulo)
+- [ ] (C) Criar membro via Supabase Admin (`SUPABASE_SECRET_KEY`), troca de senha no 1º acesso, remover corta na hora, "liberar acervo" desligado por padrão
+- [ ] (C) Registro: cupom criado/desativado, cliente bloqueado, membro adicionado/removido
+- [ ] (F) Tela Equipe (só master) e tela Registro
+- [ ] Prova: membro entra, troca senha, vê gestão sem Equipe, é recusado nas rotas de Equipe; removido perde acesso na próxima requisição
+
+## Fase 4 — Visão geral, Downloads, ações no cliente, reembolso
+- [ ] (C) Visão geral (hoje/7d/30d/mês + gráfico), músicas mais baixadas, clientes que batem a cota
+- [ ] (C) Ações: reenviar e-mail de acesso, bloquear/liberar, zerar a cota do dia
+- [ ] (C) Webhook: refunded/charged_back → bloqueia e marca "reembolsada"
+- [ ] (F) Telas correspondentes
+- [ ] Prova: reembolso feito pelo Paulo no painel do MP bloqueia o acesso
+
+---
+
 # Trilha Viva — ajustes de 05/09/2026
 
 Registro do que foi pedido, o que foi feito, o que foi provado e o que ficou
