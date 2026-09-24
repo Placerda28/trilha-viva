@@ -66,7 +66,11 @@ Contrato: tasks/fase2-cupons.md. Commits dcdacab (backend, Codex) e 08fe0d0 (tel
 - [x] /codex:adversarial-review focada em dinheiro: 3 achados (vaga vencendo com cartão em análise; falha na limpeza da vaga barrando o e-mail de acesso; link passando da validade do cupom), corrigidos em f26fe32 com 3 testes novos (42). Limitação aceita: desativar não cancela links já abertos no MP (máx. 30 min).
 - [x] Segunda revisão do Codex: achou que o prazo de 30 min podia recusar o Pix (MP exige Pix ≥ 30 min a partir de quando é gerado), que 3 h não bastam para cartão em análise (até 2 dias úteis), que aviso atrasado reativava vaga vencida e que o link podia passar segundos da validade. Tudo corrigido (43 testes).
   - Achado anterior à gestão, NÃO corrigido aqui: se o e-mail de acesso falhar depois de a compra ser gravada, o aviso repetido do MP não tenta de novo. Quem pagou ainda entra pela tela de sucesso ou por "Esqueci minha senha". Vai para a Fase 4 (registrar se o e-mail saiu e reenviar).
-- [ ] Prova em produção: compra real no Pix com cupom (Paulo, outra conta do MP) → compra aparece com o cupom e o uso contado; desativado → checkout recusa
+- [x] Publicado em 24/09 (merge 4a4d35a, versão acfb3d7b). Sem login: rotas de cupom idênticas a endereço inexistente (0 diferenças).
+- [x] Prova em produção (24/09, 16h48 BRT): Paulo criou TESTE1REAL (R$ 88,90 de desconto, limite 1) e pagou R$ 1,00 no Pix com outra conta (trilhaviva.suporte@gmail.com). No D1: compra mp_179706542831, pix, cupom TESTE1REAL, usos 1/1, reserva limpa, senha criada. Depois disso, /api/cupom e /api/checkout recusam o cupom (esgotado).
+- [ ] Desativar → checkout recusa: provado no local; em produção é opcional (TESTE1REAL já está esgotado).
+- [ ] Paulo: apagar a variável CUPOM_TESTE no painel (o código já não lê).
+- [ ] Paulo: confirmar a compra de R$ 1,00 de kaylan.nasc2@gmail.com (24/09 10h35 BRT, mp_179645402809, antes da publicação dos cupons, sem cupom registrado): só o cupom de teste antigo permitia esse valor.
 
 ## Fase 3 — Equipe + registro de ações
 - [ ] (C) Tabelas `equipe` e `registro` (PARADA: SQL ao Paulo)
