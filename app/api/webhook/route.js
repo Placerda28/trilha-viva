@@ -38,6 +38,7 @@ async function liberarAcesso(session) {
     paymentIntent: session.payment_intent,
     valor: session.amount_total,
     moeda: session.currency,
+    forma: 'cartao',
   })
 
   // Sete dias é folga de sobra para quem viajou ou só abre o e-mail no fim de
