@@ -6,6 +6,7 @@ import { acervoPronto } from '@/lib/arquivos'
 import SairBotao from '@/components/SairBotao'
 import AcervoLista from '@/components/AcervoLista'
 import RelatarProblema from '@/components/RelatarProblema'
+import { adminAtual } from '@/lib/gestao/permissao'
 
 export const runtime = 'nodejs'
 // Lê o cookie da sessão, então é montada a cada visita. Por isso o que ela
@@ -38,6 +39,9 @@ export default async function AcervoPage({ searchParams }) {
   const pronto = comprou && b2Configurado() ? await acervoPronto() : false
   const uso = await usoDeHoje(cliente.id)
   const primeiroNome = String(cliente.nome || '').split(' ')[0]
+  // O link da gestão só é desenhado para quem é da gestão. Como sai pronto
+  // do servidor, o endereço nem chega ao navegador de um cliente comum.
+  const admin = await adminAtual()
 
   const params = (await searchParams) || {}
   const chave = String(params.aviso || '')
@@ -63,6 +67,11 @@ export default async function AcervoPage({ searchParams }) {
           <p className="mt-2 text-[14px] text-ink-muted">{cliente.email}</p>
         </div>
         <div className="flex items-center gap-4">
+          {admin && (
+            <a href="/gestao" className="link-quiet text-[14.5px] font-semibold">
+              Gestão
+            </a>
+          )}
           <RelatarProblema nomeInicial={cliente.nome || ''} emailInicial={cliente.email || ''} />
           <SairBotao />
         </div>

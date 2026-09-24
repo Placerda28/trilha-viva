@@ -10,6 +10,9 @@ import { nav, priceBRL, site } from '@/lib/site'
 // e "Liberar por R$ X" não fazem sentido — o primeiro é redundante e o
 // segundo tenta vender de novo para quem já pagou.
 const ROTAS_DE_CONTA = ['/acervo', '/entrar', '/criar-senha', '/recuperar', '/redefinir']
+// Os elementos com data-cta-compra são esses mesmos botões. A gestão, que não
+// pode aparecer nesta lista (este arquivo vai para todo visitante), os esconde
+// por conta própria com um estilo que só ela entrega.
 
 export default function Header() {
   const [open, setOpen] = useState(false)
@@ -59,12 +62,14 @@ export default function Header() {
                   suporte. */}
               <Link
                 href="/entrar"
+                data-cta-compra=""
                 className="hidden text-[14.5px] text-white/70 transition-colors hover:text-white sm:inline"
               >
                 Entrar
               </Link>
               <Link
                 href="/assinar"
+                data-cta-compra=""
                 className="btn-signal hidden !px-5 !py-3 !text-[14.5px] sm:inline-flex"
               >
                 Liberar por {priceBRL(site.price)}
@@ -106,12 +111,13 @@ export default function Header() {
               <>
                 <Link
                   href="/entrar"
+                  data-cta-compra=""
                   onClick={() => setOpen(false)}
                   className="py-4 text-[17px] font-medium text-white"
                 >
                   Entrar na minha conta
                 </Link>
-                <div className="py-5">
+                <div className="py-5" data-cta-compra="">
                   <Link
                     href="/assinar"
                     onClick={() => setOpen(false)}
