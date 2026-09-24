@@ -9,6 +9,8 @@ import {
   validarNovaSenha,
 } from '@/lib/gestao/equipe'
 import { gravarRegistro } from '@/lib/gestao/registro'
+import { cookies } from 'next/headers'
+import { COOKIE, resumo } from '@/lib/sessao'
 import {
   cabecalhosPrivados,
   naoEncontrado,
@@ -55,6 +57,21 @@ const post = async (req, admin) => {
 
   const email = normalizarEmailEquipe(admin.cliente.email)
   if (!(await concluirTrocaSenha(db, email))) return naoEncontrado()
+
+  // Qualquer outra sessão aberta com a senha provisória (por exemplo, de
+  // alguém que a descobriu e entrou antes do dono) é encerrada agora. Fica
+  // só a sessão de quem acabou de trocar. Falhar aqui não pode deixar a
+  // pessoa presa: a senha já foi trocada, então o erro vai para o log.
+  try {
+    const token = (await cookies()).get(COOKIE)?.value
+    if (token) {
+      await db.prepare('DELETE FROM sessoes WHERE cliente_id = ? AND token_hash != ?')
+        .bind(admin.cliente.id, await resumo(token))
+        .run()
+    }
+  } catch (erro) {
+    console.error('senha: encerrar outras sessões', admin.cliente.id, erro?.message)
+  }
   await gravarRegistro(db, {
     quem: email,
     acao: 'senha_trocada',

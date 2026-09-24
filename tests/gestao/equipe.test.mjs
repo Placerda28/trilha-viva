@@ -187,7 +187,7 @@ test('cliente com conta Supabase existente mantém a senha que já usa', async (
   )
 })
 
-test('conta encontrada na Supabase é ligada ao cliente sem usar a senha provisória', async () => {
+test('conta encontrada na Supabase é ligada ao cliente sem usar a senha provisória, mas com troca obrigatória', async () => {
   const { banco, d1 } = bancoEquipe()
   banco.prepare("INSERT INTO clientes (email) VALUES ('antiga@example.com')").run()
   const resultado = await adicionarMembro(d1, {
@@ -198,7 +198,9 @@ test('conta encontrada na Supabase é ligada ao cliente sem usar a senha provis�
     acharPorEmail: async () => ({ id: 'sup_antiga' }),
   })
   assert.equal(resultado.conta_existente, true)
-  assert.equal(resultado.membro.precisa_trocar_senha, false)
+  // O nosso banco não conhecia a conta: pode ser sobra de cadastro que caiu no
+  // meio, criada com a senha provisória. Por segurança, a troca fica obrigatória.
+  assert.equal(resultado.membro.precisa_trocar_senha, true)
   assert.equal(
     banco.prepare("SELECT supabase_id FROM clientes WHERE email = 'antiga@example.com'").get().supabase_id,
     'sup_antiga'
@@ -271,4 +273,17 @@ test('registro grava JSON e sua falha nunca derruba a ação principal', async (
   } finally {
     console.error = erroOriginal
   }
+})
+
+test('conta da Supabase sem vínculo no nosso banco continua obrigada a trocar a senha', async () => {
+  const { d1 } = bancoEquipe()
+  const resultado = await adicionarMembro(d1, {
+    email: 'sobra@example.com',
+    senha: 'provisoria-123',
+    criadoPor: 'master@example.com',
+    criarConta: async () => ({ ok: false, jaExiste: true }),
+    acharPorEmail: async () => ({ id: 'sb-sobra' }),
+  })
+  assert.equal(resultado.ok, true)
+  assert.equal(resultado.membro.precisa_trocar_senha, true)
 })
