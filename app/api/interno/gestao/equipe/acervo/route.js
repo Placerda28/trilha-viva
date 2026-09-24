@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getDB } from '@/lib/d1'
 import { mesmaOrigem } from '@/lib/origem'
-import { desativarCupom } from '@/lib/gestao/cupons'
+import { alterarAcervoMembro, normalizarEmailEquipe } from '@/lib/gestao/equipe'
+import { gravarRegistro } from '@/lib/gestao/registro'
 import {
   cabecalhosPrivados,
   naoEncontrado,
-  soAdmin,
+  soMaster,
 } from '@/lib/gestao/permissao'
-import { gravarRegistro } from '@/lib/gestao/registro'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -19,10 +19,12 @@ const post = async (req, admin) => {
   try {
     corpo = await req.json()
   } catch {
-    /* id inválido termina no mesmo 404 de um cupom inexistente */
+    /* valores inválidos recebem 404 sem revelar a rota */
   }
   const id = Number(corpo.id)
-  if (!Number.isSafeInteger(id) || id < 1) return naoEncontrado()
+  if (!Number.isSafeInteger(id) || id < 1 || typeof corpo.libera !== 'boolean') {
+    return naoEncontrado()
+  }
 
   const db = getDB()
   if (!db) {
@@ -31,22 +33,20 @@ const post = async (req, admin) => {
       { status: 503, headers: cabecalhosPrivados }
     )
   }
-  const cupom = await desativarCupom(
-    db,
-    id,
-    String(admin.cliente.email || '').trim().toLowerCase()
-  )
-  if (!cupom) return naoEncontrado()
+  const membro = await alterarAcervoMembro(db, id, corpo.libera)
+  if (!membro) return naoEncontrado()
+
+  const quem = normalizarEmailEquipe(admin.cliente.email)
   await gravarRegistro(db, {
-    quem: String(admin.cliente.email || '').trim().toLowerCase(),
-    acao: 'cupom_desativado',
-    alvo: cupom.codigo,
+    quem,
+    acao: corpo.libera ? 'acervo_liberado' : 'acervo_retirado',
+    alvo: membro.email,
   })
-  return NextResponse.json({ ok: true, cupom }, { headers: cabecalhosPrivados })
+  return NextResponse.json({ ok: true, membro }, { headers: cabecalhosPrivados })
 }
 
 export const GET = naoEncontrado
-export const POST = soAdmin(post)
+export const POST = soMaster(post)
 export const PUT = naoEncontrado
 export const PATCH = naoEncontrado
 export const DELETE = naoEncontrado

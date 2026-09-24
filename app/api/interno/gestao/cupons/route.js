@@ -7,11 +7,11 @@ import {
   validarCriacaoCupom,
 } from '@/lib/gestao/cupons'
 import {
-  adminAtual,
   cabecalhosPrivados,
   naoEncontrado,
   soAdmin,
 } from '@/lib/gestao/permissao'
+import { gravarRegistro } from '@/lib/gestao/registro'
 import { site } from '@/lib/site'
 
 export const runtime = 'nodejs'
@@ -31,7 +31,7 @@ const get = async () => {
   )
 }
 
-const post = async (req) => {
+const post = async (req, admin) => {
   // A origem é conferida depois da sessão. Para quem está de fora, tanto uma
   // sessão ruim quanto um POST vindo de outro site parecem o mesmo 404 comum.
   if (!mesmaOrigem(req)) return naoEncontrado()
@@ -53,8 +53,6 @@ const post = async (req) => {
 
   const db = getDB()
   if (!db) return indisponivel()
-  const admin = await adminAtual()
-  if (!admin) return naoEncontrado()
 
   try {
     const cupom = await criarCupom(
@@ -63,6 +61,11 @@ const post = async (req) => {
       String(admin.cliente.email || '').trim().toLowerCase()
     )
     if (!cupom) return indisponivel()
+    await gravarRegistro(db, {
+      quem: String(admin.cliente.email || '').trim().toLowerCase(),
+      acao: 'cupom_criado',
+      alvo: cupom.codigo,
+    })
     return NextResponse.json(
       { ok: true, cupom },
       { status: 201, headers: cabecalhosPrivados }
