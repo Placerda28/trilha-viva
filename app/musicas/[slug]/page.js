@@ -6,6 +6,7 @@ import { songs, getSong, relatedSongs } from '@/lib/catalog'
 import { artistSlug } from '@/lib/artists'
 import { site, priceBRL, discountPct } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
+import { EventoAoAbrir } from '@/components/MetaPixel'
 
 const CANAIS = [
   'Clique (metrônomo)',
@@ -111,6 +112,10 @@ export default async function SongPage({ params }) {
 
   return (
     <>
+      <EventoAoAbrir
+        evento="ViewContent"
+        dados={{ content_name: song.title, content_category: song.artist, content_type: 'product' }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: ldJson([ld, crumbLd]) }}

@@ -1,4 +1,5 @@
 import CheckoutForm from '@/components/CheckoutForm'
+import { EventoAoAbrir } from '@/components/MetaPixel'
 import BarraCompra from '@/components/BarraCompra'
 import AvisoCancelado from '@/components/AvisoCancelado'
 import { SessionMini } from '@/components/Track'
@@ -134,6 +135,10 @@ function CardPreco({ id, pedirNome = false }) {
 export default function AssinarPage() {
   return (
     <div className="shell pb-12 pt-3 sm:pt-8">
+      <EventoAoAbrir
+        evento="ViewContent"
+        dados={{ content_name: 'Pacote Trilha Viva', content_type: 'product', value: site.price, currency: site.currency }}
+      />
       <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Liberar acesso' }]} />
       <AvisoCancelado />
 
