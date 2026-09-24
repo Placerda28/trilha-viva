@@ -73,11 +73,17 @@ Contrato: tasks/fase2-cupons.md. Commits dcdacab (backend, Codex) e 08fe0d0 (tel
 - [ ] Paulo: confirmar a compra de R$ 1,00 de kaylan.nasc2@gmail.com (24/09 10h35 BRT, mp_179645402809, antes da publicação dos cupons, sem cupom registrado): só o cupom de teste antigo permitia esse valor.
 
 ## Fase 3 — Equipe + registro de ações
-- [ ] (C) Tabelas `equipe` e `registro` (PARADA: SQL ao Paulo)
-- [ ] (C) Criar membro via Supabase Admin (`SUPABASE_SECRET_KEY`), troca de senha no 1º acesso, remover corta na hora, "liberar acervo" desligado por padrão
-- [ ] (C) Registro: cupom criado/desativado, cliente bloqueado, membro adicionado/removido
-- [ ] (F) Tela Equipe (só master) e tela Registro
-- [ ] Prova: membro entra, troca senha, vê gestão sem Equipe, é recusado nas rotas de Equipe; removido perde acesso na próxima requisição
+Paulo autorizou fazer direto (24/09). Contrato: tasks/fase3-equipe.md. Commits 737f3f3 (backend, Codex) e 0219298 (telas).
+- [x] (C) migrations/0003_equipe.sql: tabelas equipe e registro. APLICADA no D1 de produção em 24/09 (7 clientes, 7 compras, R$ 272,20, 1 cupom intactos).
+- [x] (C) Papel com membro na mesma consulta única; master só por ADMIN_MASTER; removido/bloqueado perde acesso na próxima requisição
+- [x] (C) Adicionar membro via Supabase Admin (SUPABASE_SECRET_KEY); conta existente mantém a senha; troca obrigatória no 1º acesso; remover; liberar/tirar acervo (desligado por padrão)
+- [x] (C) Registro: cupom criado/desativado, membro adicionado/removido, acervo liberado/retirado, senha trocada
+- [x] (C) temCompra aceita membro ativo com libera_acervo
+- [x] (F) Tela Equipe (só master), Registro (todos), "Crie a sua senha" para quem está com a provisória, aviso de gestão no acervo para membro sem compra
+- [x] Prova LOCAL (24/09): 59 testes; e-mail do master, e-mail inválido e senha curta recusados; repetido 409; membro vê Clientes/Cupons/Registro e recebe 404 na Equipe (rota e tela, sem aba no menu) e ao tentar adicionar; acervo desligado até liberar; com senha provisória só vê "Crie a sua senha" e as rotas de dados dão 404; removido perde tudo na hora; reativado volta com acervo desligado; registro anota cada ação e nenhuma senha; membro criando cupom aparece no registro; 48 comparações de quem é de fora nas rotas novas com 0 diferenças; fotos conferidas.
+- [ ] Não testável no local (sem Supabase): criar conta nova de membro e a troca de senha de verdade → prova em produção com o Paulo
+- [ ] /codex:adversarial-review da Fase 3
+- [ ] Publicar e provar em produção: Paulo adiciona um membro com um e-mail dele, entra com a provisória, troca, vê a gestão sem Equipe; removido perde o acesso
 
 ## Fase 4 — Visão geral, Downloads, ações no cliente (reembolso ADIADO)
 - [ ] (C) Visão geral (hoje/7d/30d/mês + gráfico), músicas mais baixadas, clientes que batem a cota
