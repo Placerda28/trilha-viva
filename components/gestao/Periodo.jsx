@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useGestao } from './useGestao'
 import Grafico from './Grafico'
+import Segmentos from './Segmentos'
 import ClientesTabela from './ClientesTabela'
 import { Aviso, Esqueleto, Vazio, Paginacao, BaixarPlanilha } from './Estados'
 import { ATALHOS, intervaloDoAtalho, diasEntre, diaPorExtenso, moeda, numero } from './formato'
@@ -14,33 +15,6 @@ const AGRUPAR = [
   { id: 'mes', rotulo: 'Mês' },
 ]
 const NOME_AGRUPAR = { dia: 'dia', semana: 'semana', mes: 'mês' }
-
-// Botões lado a lado em que um só fica marcado (atalhos de data, dia/semana/mês).
-function Segmentos({ opcoes, valor, onEscolher, rotulo }) {
-  return (
-    <div role="group" aria-label={rotulo} className="flex flex-wrap gap-2">
-      {opcoes.map((o) => {
-        const marcado = o.id === valor
-        return (
-          <button
-            key={o.id}
-            type="button"
-            aria-pressed={marcado}
-            onClick={() => onEscolher(o.id)}
-            className={
-              'rounded border px-3.5 py-2 text-[14px] font-semibold transition-colors duration-150 ' +
-              (marcado
-                ? 'border-ink bg-ink text-white'
-                : 'border-line bg-white text-ink hover:border-ink')
-            }
-          >
-            {o.rotulo}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
 
 function Total({ rotulo, valor, detalhe }) {
   return (
