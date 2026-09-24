@@ -55,7 +55,7 @@ Migração `migrations/0001_gestao_fase1.sql`: APLICADA no D1 de produção em 2
 ## Fase 2 — Cupons
 Contrato: tasks/fase2-cupons.md. Commits dcdacab (backend, Codex) e 08fe0d0 (telas).
 - [x] (C) migrations/0002_cupons.sql: tabelas cupons e cupom_reservas + compras.cupom
-- [ ] PARADA: aplicar a 0002 no D1 de produção com OK do Paulo (ANTES do merge: o INSERT de compras já usa a coluna cupom)
+- [x] 0002 APLICADA no D1 de produção em 24/09 pelo Paulo (depois de ver o SQL). Conferido: 2 tabelas, 2 índices, coluna compras.cupom; 6 clientes, 6 compras, R$ 271,20 intactos.
 - [x] (C) Validação no servidor em /api/checkout e /api/cupom: validade, limite, ativo, sem diferenciar maiúscula, preço final ≥ R$ 1,00
 - [x] (C) Limite à prova de corrida: reserva atômica (35 min) + preferência e Pix vencendo em 30 min
 - [x] (C) Uso contado só quando a compra é gravada (webhook aprovado ou /api/conta/criar), uma vez só
@@ -63,7 +63,8 @@ Contrato: tasks/fase2-cupons.md. Commits dcdacab (backend, Codex) e 08fe0d0 (tel
 - [x] (F) Tela Cupons (prévia do preço, estados, usos e "pagando agora", copiar link, desativar com confirmação); CheckoutForm sem mudança (contrato mantido)
 - [x] lib/cupom-teste.js aposentado. Depois da publicação: apagar a variável CUPOM_TESTE do painel.
 - [x] Prova LOCAL (24/09): 39 testes; criação 201, repetido 409, 6 inválidos 400 com o campo certo, outro site e cliente comum 404 sem gravar; /api/cupom: 30% → R$ 62,93, R$ 10 → R$ 79,90, 100% → R$ 1,00, minúsculas/espaços ok; inexistente, esgotado, vaga ocupada por quem está pagando, desativado e vencido recusados com a mesma mensagem; reservas vencidas liberam; checkout que falha devolve a vaga; esgotado recusado no checkout; 56 comparações de não admin nas rotas de cupom com 0 diferenças; fotos 1280/390 conferidas.
-- [ ] /codex:adversarial-review focada em dinheiro
+- [x] /codex:adversarial-review focada em dinheiro: 3 achados (vaga vencendo com cartão em análise; falha na limpeza da vaga barrando o e-mail de acesso; link passando da validade do cupom), corrigidos em f26fe32 com 3 testes novos (42). Limitação aceita: desativar não cancela links já abertos no MP (máx. 30 min).
+- [ ] Segunda revisão do Codex sobre as correções
 - [ ] Prova em produção: compra real no Pix com cupom (Paulo, outra conta do MP) → compra aparece com o cupom e o uso contado; desativado → checkout recusa
 
 ## Fase 3 — Equipe + registro de ações
