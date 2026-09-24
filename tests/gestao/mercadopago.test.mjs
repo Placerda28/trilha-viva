@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { montarCorpoPreferencia, resumirPagamento } from '../../lib/mercadopago.js'
 
-test('preferência usa preço em centavos, cupom no metadata e duas expirações', () => {
+test('preferência usa preço em centavos, cupom no metadata e só a validade da preferência', () => {
   const corpo = montarCorpoPreferencia({
     email: 'ana@example.com',
     nome: 'Ana',
@@ -19,7 +19,8 @@ test('preferência usa preço em centavos, cupom no metadata e duas expirações
   assert.equal(corpo.items[0].unit_price, 71.92)
   assert.equal(corpo.metadata.cupom, 'LOUVOR20')
   assert.equal(corpo.expiration_date_to, '2026-09-24T12:30:00.000-03:00')
-  assert.equal(corpo.date_of_expiration, '2026-09-24T12:30:00.000-03:00')
+  // Sem validade de Pix: o MP exige no mínimo 30 min a partir de quando o Pix é gerado.
+  assert.equal(corpo.date_of_expiration, undefined)
 })
 
 test('resumo aceita o cupom apenas do metadata e o normaliza', () => {

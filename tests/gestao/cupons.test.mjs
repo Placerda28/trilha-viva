@@ -8,7 +8,7 @@ import {
   fimDoDiaBrasiliaUtc,
   normalizarCodigoCupom,
   estenderReservaCupom,
-  minutosDoLinkComCupom,
+  vencimentoDoLinkComCupom,
   registrarCompraNoBanco,
   reservarCupom,
   validarCriacaoCupom,
@@ -173,7 +173,7 @@ test('pagamento repetido grava uma compra, um uso e encerra a reserva', async ()
   assert.equal(contagens.reservas, 0)
 })
 
-test('pagamento em análise segura a vaga por mais 3 horas', async () => {
+test('pagamento pendente segura a vaga por 4 dias', async () => {
   const { banco, d1 } = bancoCupons()
   const referencia = '33333333-3333-4333-8333-333333333333'
   await reservarCupom(d1, { cupomId: 1, referencia, precoCentavos: 100 })
@@ -181,7 +181,7 @@ test('pagamento em análise segura a vaga por mais 3 horas', async () => {
   const { minutos } = banco.prepare(`
     SELECT CAST((julianday(expira_em) - julianday('now')) * 1440 AS INTEGER) AS minutos
       FROM cupom_reservas WHERE referencia = ?`).get(referencia)
-  assert.ok(minutos >= 175 && minutos <= 180, 'vaga guardada por ~3 h, veio ' + minutos)
+  assert.ok(minutos >= 5755 && minutos <= 5760, 'vaga guardada por ~4 dias, veio ' + minutos)
   // Com a vaga estendida, ninguém mais consegue o último uso.
   assert.equal(await reservarCupom(d1, {
     cupomId: 1,
@@ -221,8 +221,28 @@ test('falha ao limpar a vaga não impede a compra de ser registrada como nova', 
 
 test('link de pagamento com cupom nunca passa da validade do cupom', () => {
   const agora = Date.parse('2026-09-24T12:00:00Z')
-  assert.equal(minutosDoLinkComCupom('2026-12-31T02:59:59Z', agora), 30)
-  assert.equal(minutosDoLinkComCupom('2026-09-24T12:10:30Z', agora), 10)
-  assert.equal(minutosDoLinkComCupom('2026-09-24T12:00:20Z', agora), 1)
-  assert.equal(minutosDoLinkComCupom(null, agora), 30)
+  const trinta = agora + 30 * 60000
+  assert.equal(vencimentoDoLinkComCupom('2026-12-31T02:59:59Z', agora), trinta)
+  const fim = Date.parse('2026-09-24T12:10:30Z')
+  assert.equal(vencimentoDoLinkComCupom('2026-09-24T12:10:30Z', agora), fim)
+  // Faltando menos de 2 minutos: recusa.
+  assert.equal(vencimentoDoLinkComCupom('2026-09-24T12:01:59Z', agora), null)
+  assert.equal(vencimentoDoLinkComCupom(null, agora), trinta)
+})
+
+test('aviso pendente atrasado não reativa vaga já vencida', async () => {
+  const { banco, d1 } = bancoCupons()
+  const referencia = '77777777-7777-4777-8777-777777777777'
+  await reservarCupom(d1, { cupomId: 1, referencia, precoCentavos: 100 })
+  banco.prepare("UPDATE cupom_reservas SET expira_em = datetime('now', '-1 minutes')").run()
+  // Outra pessoa ocupa o lugar que ficou livre.
+  assert.equal(await reservarCupom(d1, {
+    cupomId: 1,
+    referencia: '88888888-8888-4888-8888-888888888888',
+    precoCentavos: 100,
+  }), true)
+  // O aviso atrasado da primeira não pode trazer a vaga dela de volta.
+  assert.equal(await estenderReservaCupom(d1, referencia), false)
+  const vivas = banco.prepare("SELECT COUNT(*) AS n FROM cupom_reservas WHERE expira_em > datetime('now')").get().n
+  assert.equal(vivas, 1)
 })

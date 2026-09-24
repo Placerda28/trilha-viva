@@ -8,7 +8,7 @@ import {
   cancelarReservaCupom,
   consultarCupomValido,
   ERRO_CUPOM_PUBLICO,
-  minutosDoLinkComCupom,
+  vencimentoDoLinkComCupom,
   normalizarCodigoCupom,
   reservarCupom,
 } from '@/lib/gestao/cupons'
@@ -85,6 +85,12 @@ export async function POST(req) {
       return NextResponse.json({ error: ERRO_CUPOM_PUBLICO }, { status: 400 })
     }
 
+    // Faltando menos de 2 minutos para o cupom vencer, ele é recusado aqui.
+    const venceLink = cupom ? vencimentoDoLinkComCupom(cupom.valido_ate) : null
+    if (cupom && !venceLink) {
+      return NextResponse.json({ error: ERRO_CUPOM_PUBLICO }, { status: 400 })
+    }
+
     const referencia = crypto.randomUUID()
     const db = getDB()
     if (
@@ -113,7 +119,7 @@ export async function POST(req) {
         // Com cupom, o link de pagamento vence em 30 minutos (ou antes, se o
         // cupom vencer antes): não fica um carrinho com desconto aberto
         // esperando alguém.
-        expiraEmMin: cupom ? minutosDoLinkComCupom(cupom.valido_ate) : null,
+        venceEmMs: venceLink,
         rastreio,
       })
       if (!url) throw new Error('preferência sem init_point')
