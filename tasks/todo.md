@@ -38,7 +38,7 @@ Migração `migrations/0001_gestao_fase1.sql`: APLICADA no D1 de produção em 2
 - [x] (F) Tela Clientes por período (atalhos, totais, gráfico, CSV)
 - [x] (F) Link "Gestão" no acervo, só renderizado para admin; Header esconde os botões de compra via `data-cta-compra` (sem citar /gestao)
 - [x] Revisão do diff do Codex (feita linha a linha)
-- [ ] `/codex:adversarial-review` (permissão) — adiado: a máquina ficou sem memória com o Codex rodando
+- [x] `/codex:adversarial-review --base main` (24/09, 14h08): APROVADO, sem achado material. Antes dele, o teste de ataque manual achou o 200 com cabeçalho RSC nos endereços internos (corrigido no commit ca8e0b5).
 - [x] Prova LOCAL (wrangler dev + D1 local com dados inventados), 24/09:
   - 92 comparações (sem cookie, cliente comum, bloqueado, sessão falsa × GET/POST/PUT/DELETE × 4 rotas + /api/gestao + 3 telas): 0 diferenças em relação a um endereço inexistente (status, cabeçalhos e corpo; só o ETag muda, como muda entre dois endereços inexistentes quaisquer).
   - master: telas 200, JSON 200, CSVs 200 text/csv; cliente comum não recebe nenhuma menção a "gestao" no /acervo, master recebe o link.
