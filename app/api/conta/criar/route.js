@@ -67,6 +67,7 @@ export async function POST(req) {
       paymentIntent: r.pagamentoId,
       valor: r.valorCentavos,
       moeda: r.moeda,
+      forma: r.forma,
     })
   }
 

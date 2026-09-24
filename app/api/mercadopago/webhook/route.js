@@ -33,6 +33,7 @@ async function liberarAcesso(r) {
     paymentIntent: r.pagamentoId,
     valor: r.valorCentavos,
     moeda: r.moeda,
+    forma: r.forma,
   })
   if (!nova) return
 
