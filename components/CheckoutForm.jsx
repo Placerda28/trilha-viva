@@ -32,7 +32,14 @@ export default function CheckoutForm({ tom = 'claro', rotulo, pedirNome = true }
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, email, eventoId }),
+        // O cupom chega pelo endereço (/assinar?cupom=CODIGO). Não há campo
+        // visível: por enquanto o único cupom é o de teste, de uso único.
+        body: JSON.stringify({
+          nome,
+          email,
+          eventoId,
+          cupom: new URLSearchParams(window.location.search).get('cupom') || '',
+        }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {

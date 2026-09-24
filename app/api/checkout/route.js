@@ -3,6 +3,7 @@ import { getStripe, PRODUCT_NAME } from '@/lib/stripe'
 import { site } from '@/lib/site'
 import { criarPreferencia, provedorAtivo } from '@/lib/mercadopago'
 import { enviarEventoMeta, ipDoPedido, lerCookiesMeta } from '@/lib/meta'
+import { precoDoCupom } from '@/lib/cupom-teste'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -54,17 +55,22 @@ export async function POST(req) {
     ua: (req.headers.get('user-agent') || '').slice(0, 400),
   }
   const eventoId = String(body.eventoId || '').slice(0, 64) || crypto.randomUUID()
-  const inicioCheckout = () =>
+  const inicioCheckout = (valor = site.price) =>
     enviarEventoMeta({
       nome: 'InitiateCheckout',
       id: eventoId,
       email,
       ...rastreio,
       url: `${site.url}/assinar`,
-      valor: site.price,
+      valor,
     })
 
   if (provedorAtivo() === 'mercadopago') {
+    const cupom = String(body.cupom || '').trim().slice(0, 40)
+    const precoCupom = cupom ? await precoDoCupom(cupom) : null
+    if (cupom && precoCupom === null) {
+      return NextResponse.json({ error: 'Cupom inválido, vencido ou já usado.' }, { status: 400 })
+    }
     try {
       const url = await criarPreferencia({
         email,
@@ -73,11 +79,14 @@ export async function POST(req) {
         origem: origin,
         titulo: PRODUCT_NAME,
         descricao: DESCRICAO,
-        valor: site.price,
+        valor: precoCupom ?? site.price,
+        // Com cupom, o link de pagamento vence em 30 minutos: não fica um
+        // carrinho de R$ 1,00 aberto esperando alguém.
+        expiraEmMin: precoCupom ? 30 : null,
         rastreio,
       })
       if (!url) throw new Error('preferência sem init_point')
-      await inicioCheckout()
+      await inicioCheckout(precoCupom ?? site.price)
       return NextResponse.json({ url, mode: 'mercadopago' })
     } catch (err) {
       console.error('checkout mp error', err?.message)
