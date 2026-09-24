@@ -7,6 +7,8 @@ import {
   codigoCupomValido,
   fimDoDiaBrasiliaUtc,
   normalizarCodigoCupom,
+  estenderReservaCupom,
+  minutosDoLinkComCupom,
   registrarCompraNoBanco,
   reservarCupom,
   validarCriacaoCupom,
@@ -169,4 +171,58 @@ test('pagamento repetido grava uma compra, um uso e encerra a reserva', async ()
   assert.equal(contagens.compras, 1)
   assert.equal(contagens.usos, 1)
   assert.equal(contagens.reservas, 0)
+})
+
+test('pagamento em análise segura a vaga por mais 3 horas', async () => {
+  const { banco, d1 } = bancoCupons()
+  const referencia = '33333333-3333-4333-8333-333333333333'
+  await reservarCupom(d1, { cupomId: 1, referencia, precoCentavos: 100 })
+  assert.equal(await estenderReservaCupom(d1, referencia), true)
+  const { minutos } = banco.prepare(`
+    SELECT CAST((julianday(expira_em) - julianday('now')) * 1440 AS INTEGER) AS minutos
+      FROM cupom_reservas WHERE referencia = ?`).get(referencia)
+  assert.ok(minutos >= 175 && minutos <= 180, 'vaga guardada por ~3 h, veio ' + minutos)
+  // Com a vaga estendida, ninguém mais consegue o último uso.
+  assert.equal(await reservarCupom(d1, {
+    cupomId: 1,
+    referencia: '44444444-4444-4444-8444-444444444444',
+    precoCentavos: 100,
+  }), false)
+  // Reserva que já virou compra (ou nunca existiu) não é recriada.
+  assert.equal(await estenderReservaCupom(d1, '55555555-5555-4555-8555-555555555555'), false)
+})
+
+test('falha ao limpar a vaga não impede a compra de ser registrada como nova', async () => {
+  const { d1 } = bancoCupons()
+  const comDeleteQuebrado = {
+    prepare(sql) {
+      if (/DELETE FROM cupom_reservas/.test(sql)) {
+        return { bind() { return this }, async run() { throw new Error('D1 fora do ar') } }
+      }
+      return d1.prepare(sql)
+    },
+  }
+  const erroOriginal = console.error
+  console.error = () => {}
+  try {
+    const nova = await registrarCompraNoBanco(comDeleteQuebrado, {
+      clienteId: 1,
+      sessionId: 'mp_111222333',
+      valor: 100,
+      cupom: 'ULTIMA1',
+      referencia: '66666666-6666-4666-8666-666666666666',
+    })
+    // true = o aviso segue e manda o e-mail de acesso.
+    assert.equal(nova, true)
+  } finally {
+    console.error = erroOriginal
+  }
+})
+
+test('link de pagamento com cupom nunca passa da validade do cupom', () => {
+  const agora = Date.parse('2026-09-24T12:00:00Z')
+  assert.equal(minutosDoLinkComCupom('2026-12-31T02:59:59Z', agora), 30)
+  assert.equal(minutosDoLinkComCupom('2026-09-24T12:10:30Z', agora), 10)
+  assert.equal(minutosDoLinkComCupom('2026-09-24T12:00:20Z', agora), 1)
+  assert.equal(minutosDoLinkComCupom(null, agora), 30)
 })

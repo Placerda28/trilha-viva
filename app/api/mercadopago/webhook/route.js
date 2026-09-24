@@ -5,6 +5,8 @@ import { enviarCriarSenha } from '@/lib/email'
 import { normalizarEmail } from '@/lib/sessao'
 import { enviarEventoMeta } from '@/lib/meta'
 import { site } from '@/lib/site'
+import { getDB } from '@/lib/d1'
+import { estenderReservaCupom } from '@/lib/gestao/cupons'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -92,6 +94,9 @@ export async function POST(req) {
         moeda: String(r.moeda || 'brl').toUpperCase(),
       })
       await liberarAcesso(r)
+    } else if (r.status === 'pending' && r.cupom && r.referencia) {
+      // Cartão em análise: segura a vaga do cupom até a resposta final.
+      await estenderReservaCupom(getDB(), r.referencia)
     }
   } catch (err) {
     // Nunca devolver erro por uma falha nossa: o Mercado Pago reenviaria o

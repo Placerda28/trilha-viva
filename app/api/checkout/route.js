@@ -8,6 +8,7 @@ import {
   cancelarReservaCupom,
   consultarCupomValido,
   ERRO_CUPOM_PUBLICO,
+  minutosDoLinkComCupom,
   normalizarCodigoCupom,
   reservarCupom,
 } from '@/lib/gestao/cupons'
@@ -109,9 +110,10 @@ export async function POST(req) {
         descricao: DESCRICAO,
         valorCentavos: cupom?.preco_centavos ?? precoBaseCentavos,
         cupom: cupom?.codigo || null,
-        // Com cupom, o link de pagamento vence em 30 minutos: não fica um
-        // carrinho de R$ 1,00 aberto esperando alguém.
-        expiraEmMin: cupom ? 30 : null,
+        // Com cupom, o link de pagamento vence em 30 minutos (ou antes, se o
+        // cupom vencer antes): não fica um carrinho com desconto aberto
+        // esperando alguém.
+        expiraEmMin: cupom ? minutosDoLinkComCupom(cupom.valido_ate) : null,
         rastreio,
       })
       if (!url) throw new Error('preferência sem init_point')
