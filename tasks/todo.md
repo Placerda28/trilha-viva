@@ -53,13 +53,18 @@ Migração `migrations/0001_gestao_fase1.sql`: APLICADA no D1 de produção em 2
 - [x] Merge em main com OK do Paulo (commit 83c863c, 24/09)
 
 ## Fase 2 — Cupons
-- [ ] (C) Tabela `cupons` + `compras.cupom` (PARADA: SQL ao Paulo)
-- [ ] (C) Validação no servidor em `/api/checkout` e `/api/cupom`: validade, limite, ativo, sem diferenciar maiúscula, preço final ≥ R$ 1,00
-- [ ] (C) Uso contado só no webhook, pagamento aprovado, uma vez só (idempotente)
-- [ ] (C) Rotas de cupons (criar, listar com usos e faturamento, desativar)
-- [ ] (F) Tela Cupons; "Tenho um cupom" já existe, ajustar ao novo formato
-- [ ] Aposentar `lib/cupom-teste.js` / `CUPOM_TESTE`
-- [ ] Prova: inválido/vencido/esgotado recusado; nunca abaixo de R$ 1,00; aviso duplicado conta 1 uso; compra real no Pix (Paulo, outra conta); desativado → recusado
+Contrato: tasks/fase2-cupons.md. Commits dcdacab (backend, Codex) e 08fe0d0 (telas).
+- [x] (C) migrations/0002_cupons.sql: tabelas cupons e cupom_reservas + compras.cupom
+- [ ] PARADA: aplicar a 0002 no D1 de produção com OK do Paulo (ANTES do merge: o INSERT de compras já usa a coluna cupom)
+- [x] (C) Validação no servidor em /api/checkout e /api/cupom: validade, limite, ativo, sem diferenciar maiúscula, preço final ≥ R$ 1,00
+- [x] (C) Limite à prova de corrida: reserva atômica (35 min) + preferência e Pix vencendo em 30 min
+- [x] (C) Uso contado só quando a compra é gravada (webhook aprovado ou /api/conta/criar), uma vez só
+- [x] (C) Rotas da gestão: listar, criar (mesma origem), desativar
+- [x] (F) Tela Cupons (prévia do preço, estados, usos e "pagando agora", copiar link, desativar com confirmação); CheckoutForm sem mudança (contrato mantido)
+- [x] lib/cupom-teste.js aposentado. Depois da publicação: apagar a variável CUPOM_TESTE do painel.
+- [x] Prova LOCAL (24/09): 39 testes; criação 201, repetido 409, 6 inválidos 400 com o campo certo, outro site e cliente comum 404 sem gravar; /api/cupom: 30% → R$ 62,93, R$ 10 → R$ 79,90, 100% → R$ 1,00, minúsculas/espaços ok; inexistente, esgotado, vaga ocupada por quem está pagando, desativado e vencido recusados com a mesma mensagem; reservas vencidas liberam; checkout que falha devolve a vaga; esgotado recusado no checkout; 56 comparações de não admin nas rotas de cupom com 0 diferenças; fotos 1280/390 conferidas.
+- [ ] /codex:adversarial-review focada em dinheiro
+- [ ] Prova em produção: compra real no Pix com cupom (Paulo, outra conta do MP) → compra aparece com o cupom e o uso contado; desativado → checkout recusa
 
 ## Fase 3 — Equipe + registro de ações
 - [ ] (C) Tabelas `equipe` e `registro` (PARADA: SQL ao Paulo)
