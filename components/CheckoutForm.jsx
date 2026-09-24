@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { priceBRL, site } from '@/lib/site'
 import { rastrear } from '@/components/MetaPixel'
 
@@ -21,25 +21,64 @@ export default function CheckoutForm({ tom = 'claro', rotulo, pedirNome = true }
   const id = useId()
   const escuro = tom === 'escuro'
 
+  // Cupom: fica escondido atrás de "Tenho um cupom" para não distrair quem não
+  // tem. Aplicar confere no servidor (/api/cupom) e mostra o preço novo; o
+  // /api/checkout confere de novo na hora de cobrar, então o valor mostrado
+  // aqui nunca é o que decide.
+  const [abrirCupom, setAbrirCupom] = useState(false)
+  const [cupom, setCupom] = useState('')
+  const [aplicado, setAplicado] = useState(null) // { cupom, preco, de }
+  const [checando, setChecando] = useState(false)
+  const [erroCupom, setErroCupom] = useState('')
+
+  async function aplicarCupom(codigo) {
+    const limpo = String(codigo || '').trim()
+    if (!limpo) return
+    setErroCupom('')
+    setChecando(true)
+    try {
+      const res = await fetch('/api/cupom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cupom: limpo }),
+      })
+      const dados = await res.json().catch(() => ({}))
+      if (!res.ok || !dados.ok) {
+        setAplicado(null)
+        setErroCupom(dados.erro || 'Não consegui conferir o cupom agora.')
+      } else {
+        setAplicado(dados)
+      }
+    } catch {
+      setErroCupom('Falha de conexão ao conferir o cupom.')
+    }
+    setChecando(false)
+  }
+
+  // Quem chega por /assinar?cupom=CODIGO já vê o cupom aplicado.
+  useEffect(() => {
+    const doEndereco = new URLSearchParams(window.location.search).get('cupom')
+    if (doEndereco) {
+      setAbrirCupom(true)
+      setCupom(doEndereco)
+      aplicarCupom(doEndereco)
+    }
+  }, [])
+
+  const precoFinal = aplicado ? aplicado.preco : site.price
+
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
     setLoading(true)
     // Mesmo id no Pixel e no servidor: a Meta conta um evento só.
     const eventoId = crypto.randomUUID()
-    rastrear('InitiateCheckout', { value: site.price, currency: site.currency }, eventoId)
+    rastrear('InitiateCheckout', { value: precoFinal, currency: site.currency }, eventoId)
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // O cupom chega pelo endereço (/assinar?cupom=CODIGO). Não há campo
-        // visível: por enquanto o único cupom é o de teste, de uso único.
-        body: JSON.stringify({
-          nome,
-          email,
-          eventoId,
-          cupom: new URLSearchParams(window.location.search).get('cupom') || '',
-        }),
+        body: JSON.stringify({ nome, email, eventoId, cupom: aplicado ? aplicado.cupom : '' }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {
@@ -62,6 +101,76 @@ export default function CheckoutForm({ tom = 'claro', rotulo, pedirNome = true }
 
   return (
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
+      <div>
+        {!abrirCupom ? (
+          <button
+            type="button"
+            onClick={() => setAbrirCupom(true)}
+            className={`text-[13.5px] font-semibold underline underline-offset-4 ${escuro ? 'text-white/80 hover:text-white' : 'text-ink-muted hover:text-ink'}`}
+          >
+            Tenho um cupom
+          </button>
+        ) : aplicado ? (
+          <div
+            className={`flex items-center justify-between gap-3 rounded border px-4 py-3 text-[14px] ${escuro ? 'border-white/25 text-white' : 'border-line text-ink'}`}
+          >
+            <span>
+              Cupom <strong className="font-semibold">{aplicado.cupom}</strong> aplicado:{' '}
+              <span className="line-through opacity-60">{priceBRL(aplicado.de)}</span>{' '}
+              <strong className="font-semibold">{priceBRL(aplicado.preco)}</strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setAplicado(null)
+                setCupom('')
+              }}
+              className="shrink-0 text-[13px] font-semibold underline underline-offset-4 opacity-80 hover:opacity-100"
+            >
+              Remover
+            </button>
+          </div>
+        ) : (
+          <>
+            <label htmlFor={`${id}-cupom`} className={rotuloCls}>
+              Cupom de desconto
+            </label>
+            <div className="flex gap-2">
+              <input
+                id={`${id}-cupom`}
+                name="cupom"
+                type="text"
+                autoComplete="off"
+                autoCapitalize="characters"
+                value={cupom}
+                onChange={(e) => setCupom(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    aplicarCupom(cupom)
+                  }
+                }}
+                placeholder="Digite o código"
+                className={`${campoCls} uppercase`}
+              />
+              <button
+                type="button"
+                onClick={() => aplicarCupom(cupom)}
+                disabled={checando || !cupom.trim()}
+                className={`mt-2 shrink-0 rounded border px-4 py-3.5 text-[14px] font-semibold disabled:opacity-50 ${escuro ? 'border-white/40 text-white hover:bg-white/10' : 'border-ink text-ink hover:bg-mist'}`}
+              >
+                {checando ? 'Conferindo…' : 'Aplicar'}
+              </button>
+            </div>
+            {erroCupom && (
+              <p role="alert" className={`mt-2 text-[13px] font-medium ${escuro ? 'text-signal-lite' : 'text-signal-deep'}`}>
+                {erroCupom}
+              </p>
+            )}
+          </>
+        )}
+      </div>
+
       {pedirNome && (
         <div>
           <label htmlFor={`${id}-nome`} className={rotuloCls}>
@@ -118,7 +227,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo, pedirNome = true }
         disabled={loading}
         className={`${escuro ? 'btn-glow py-[18px] text-[16px]' : 'btn-signal'} w-full disabled:opacity-60`}
       >
-        {loading ? 'Abrindo pagamento seguro…' : rotulo || `Pagar ${priceBRL(site.price)} e liberar acesso`}
+        {loading ? 'Abrindo pagamento seguro…' : aplicado ? `Pagar ${priceBRL(precoFinal)} e liberar acesso` : rotulo || `Pagar ${priceBRL(site.price)} e liberar acesso`}
       </button>
 
       {escuro ? (
