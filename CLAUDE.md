@@ -25,4 +25,4 @@ Site https://trilhaviva.org, vende um pacote de multitracks gospel. Dono: Paulo.
 - Dado de fora dentro de `<script>` passa por `ldJson()` de `lib/safe.js`. Nome de cliente em e-mail passa por `escapeHtml`.
 - Segredos nunca entram no git: `npx wrangler secret put NOME` ou painel.
 - Evitar sequências de escape com barra invertida e caracteres invisíveis em literais: já se corromperam no caminho até o repositório (ver `lib/safe.js` e `app/api/baixar/route.js`).
-- A pasta local do projeto tem um caractere especial no nome ("C:dev"): a ferramenta Write/Edit pode falhar; nesse caso, grave pelo terminal.
+- A pasta local do projeto tem um caractere especial no nome ("C:dev", o ":" é o U+F03A). As ferramentas Write/Edit/Read do Claude Code não acham a pasta e chegaram a criar uma cópia errada em `Cdev`: grave e edite pelo terminal (heredoc, sed).

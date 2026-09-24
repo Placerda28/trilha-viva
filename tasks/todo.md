@@ -21,21 +21,33 @@ Legenda: [ ] a fazer · [x] feito e provado · (C) Codex/backend · (F) Claude/f
 8. Hoje o D1 tem 6 clientes, 6 compras pagas (R$ 361,10 no total) e 39 downloads.
 
 ## Fase 1 — acesso + Clientes + Clientes por período
+
+Decisão de arquitetura (24/09): /gestao e /api/gestao NÃO têm rota no sistema de arquivos. O middleware.js confere o papel e só para admin reescreve para /interno/gestao e /api/interno/gestao (que conferem de novo). Assim, para qualquer outro visitante, é literalmente um endereço inexistente. Motivo: notFound() dentro da rota gerava um 404 diferente do normal (corpo vazio / documento de erro).
+Risco conhecido e pequeno: o Next grava os endereços do middleware (/gestao, /api/gestao) num script do sistema antigo de páginas (main-*.js) que nenhuma página carrega; só é baixável sabendo o nome do arquivo. A segurança não depende disso.
+Para a Fase 3: a consulta à tabela equipe entra em lib/gestao/sessao.js (adminPeloToken), para valer no middleware e nas rotas ao mesmo tempo.
 Segredos/variáveis: `ADMIN_MASTER=paulohenrique_ls@hotmail.com` no painel + "Promote version".
 Migração (PARADA: mostrar ao Paulo antes): `migrations/0001_gestao_fase1.sql`.
-- [ ] (C) `lib/gestao/permissao.js` — `papel()` → 'master' | 'membro' | null; `naoEncontrado()` (404)
-- [ ] (C) Migração: `compras.forma_pagamento` + índice por data
-- [ ] (C) Forma de pagamento: gravar na compra nova (MP `payment_type_id`, Stripe = cartão) e preencher as antigas aos poucos, com cache
-- [ ] (C) `GET /api/gestao/clientes` (busca + paginação) e `GET /api/gestao/clientes/csv`
-- [ ] (C) `GET /api/gestao/periodo` (totais + série dia/semana/mês) e `GET /api/gestao/periodo/csv`
-- [ ] (C) Testes `node --test` das funções puras (datas de Brasília, agrupamento, CSV, decisão de papel)
-- [ ] (F) `app/gestao/layout.js` — chama `papel()`, `notFound()` para quem não é admin, noindex
-- [ ] (F) Tela Clientes (busca, paginação, CSV) — celular primeiro
-- [ ] (F) Tela Clientes por período (atalhos, totais, gráfico, CSV)
-- [ ] (F) Link "Gestão" na área logada, só renderizado para admin; `/gestao` nas rotas de conta do Header
-- [ ] Revisão do diff do Codex + `/codex:adversarial-review` (permissão)
-- [ ] Prova: master vê o menu; cliente comum não vê e recebe 404 em /gestao e em cada /api/gestao/* (curl com e sem cookie); totais = SELECT direto no D1
-- [ ] `npm run build` limpo + CPU das rotas novas medida
+- [x] (C) `lib/gestao/permissao.js` — `papel()` → 'master' | 'membro' | null; `naoEncontrado()` (404)
+- [x] (C) Migração: `compras.forma_pagamento` + índice por data
+- [x] (C) Forma de pagamento: gravar na compra nova (MP `payment_type_id`, Stripe = cartão) e preencher as antigas aos poucos, com cache
+- [x] (C) `GET /api/gestao/clientes` (busca + paginação) e `GET /api/gestao/clientes/csv`
+- [x] (C) `GET /api/gestao/periodo` (totais + série dia/semana/mês) e `GET /api/gestao/periodo/csv`
+- [x] (C) Testes `node --test` das funções puras (datas de Brasília, agrupamento, CSV, decisão de papel)
+- [x] (F) `app/interno/gestao/layout.js` — confere o papel de novo (`notFound()`), noindex
+- [x] (F) Tela Clientes (busca, paginação, CSV) — celular primeiro
+- [x] (F) Tela Clientes por período (atalhos, totais, gráfico, CSV)
+- [x] (F) Link "Gestão" no acervo, só renderizado para admin; Header esconde os botões de compra via `data-cta-compra` (sem citar /gestao)
+- [x] Revisão do diff do Codex (feita linha a linha)
+- [ ] `/codex:adversarial-review` (permissão) — adiado: a máquina ficou sem memória com o Codex rodando
+- [x] Prova LOCAL (wrangler dev + D1 local com dados inventados), 24/09:
+  - 92 comparações (sem cookie, cliente comum, bloqueado, sessão falsa × GET/POST/PUT/DELETE × 4 rotas + /api/gestao + 3 telas): 0 diferenças em relação a um endereço inexistente (status, cabeçalhos e corpo; só o ETag muda, como muda entre dois endereços inexistentes quaisquer).
+  - master: telas 200, JSON 200, CSVs 200 text/csv; cliente comum não recebe nenhuma menção a "gestao" no /acervo, master recebe o link.
+  - acesso direto ao endereço interno (/interno/gestao, /api/interno/gestao) sem permissão: 404, nenhum dado.
+  - totais do período = SELECT direto (6 compras, 5 clientes, R$ 437,50; Pix 1, cartão 2, sem info 2); compra das 23h59 de Brasília no dia certo; busca por "100%" escapada; fórmula neutralizada na planilha.
+  - fotos das telas em 1280 px e 390 px conferidas.
+- [ ] Prova em PRODUÇÃO depois do merge: Paulo vê o menu; curl sem cookie → 404; totais = SELECT no D1 remoto
+- [x] `npm run build` limpo (e `opennextjs-cloudflare build` limpo)
+- [ ] CPU das rotas novas medida em produção (wrangler tail / Observability) — só dá depois de publicar
 - [ ] PARADA: merge em main com OK do Paulo
 
 ## Fase 2 — Cupons
