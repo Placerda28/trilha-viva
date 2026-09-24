@@ -26,7 +26,7 @@ Decisão de arquitetura (24/09): /gestao e /api/gestao NÃO têm rota no sistema
 Risco conhecido e pequeno: o Next grava os endereços do middleware (/gestao, /api/gestao) num script do sistema antigo de páginas (main-*.js) que nenhuma página carrega; só é baixável sabendo o nome do arquivo. A segurança não depende disso.
 Para a Fase 3: a consulta à tabela equipe entra em lib/gestao/sessao.js (adminPeloToken), para valer no middleware e nas rotas ao mesmo tempo.
 Segredos/variáveis: `ADMIN_MASTER=paulohenrique_ls@hotmail.com` no painel + "Promote version".
-Migração (PARADA: mostrar ao Paulo antes): `migrations/0001_gestao_fase1.sql`.
+Migração `migrations/0001_gestao_fase1.sql`: APLICADA no D1 de produção em 24/09 pelo Paulo (depois de ver o SQL). Conferido: coluna e índice existem; 6 clientes, 6 compras, R$ 361,10 intactos.
 - [x] (C) `lib/gestao/permissao.js` — `papel()` → 'master' | 'membro' | null; `naoEncontrado()` (404)
 - [x] (C) Migração: `compras.forma_pagamento` + índice por data
 - [x] (C) Forma de pagamento: gravar na compra nova (MP `payment_type_id`, Stripe = cartão) e preencher as antigas aos poucos, com cache
