@@ -75,13 +75,13 @@ Contrato: tasks/fase2-cupons.md. Commits dcdacab (backend, Codex) e 08fe0d0 (tel
 - [ ] (F) Tela Equipe (só master) e tela Registro
 - [ ] Prova: membro entra, troca senha, vê gestão sem Equipe, é recusado nas rotas de Equipe; removido perde acesso na próxima requisição
 
-## Fase 4 — Visão geral, Downloads, ações no cliente, reembolso
+## Fase 4 — Visão geral, Downloads, ações no cliente (reembolso ADIADO)
 - [ ] (C) Visão geral (hoje/7d/30d/mês + gráfico), músicas mais baixadas, clientes que batem a cota
 - [ ] (C) Ações: reenviar e-mail de acesso, bloquear/liberar, zerar a cota do dia
 - [ ] (C) Entrega do acesso idempotente: gravar quando o e-mail de criar senha saiu (ex.: compras.acesso_enviado_em) e, se um aviso repetido do MP achar compra paga sem e-mail enviado, tentar de novo (achado da revisão da Fase 2)
-- [ ] (C) Webhook: refunded/charged_back → bloqueia e marca "reembolsada"
+- [ ] ADIADO por decisão do Paulo (24/09/2026): "não vamos mexer com reembolso por agora". Webhook refunded/charged_back → bloquear e marcar "reembolsada" fica fora até ele pedir. Hoje o aviso do MP só trata pagamento aprovado; reembolso feito no painel do MP NÃO bloqueia o acesso (bloqueio manual pela gestão, quando existir).
 - [ ] (F) Telas correspondentes
-- [ ] Prova: reembolso feito pelo Paulo no painel do MP bloqueia o acesso
+- [ ] (adiado junto com o reembolso)
 
 ---
 
