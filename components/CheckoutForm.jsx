@@ -2,6 +2,7 @@
 
 import { useId, useState } from 'react'
 import { priceBRL, site } from '@/lib/site'
+import { rastrear } from '@/components/MetaPixel'
 
 // Formulario que abre o pagamento: manda nome e e-mail para /api/checkout e
 // leva a pessoa para a URL que volta (o Mercado Pago). A logica do envio e a
@@ -24,13 +25,21 @@ export default function CheckoutForm({ tom = 'claro', rotulo, pedirNome = true }
     e.preventDefault()
     setError('')
     setLoading(true)
+    // Mesmo id no Pixel e no servidor: a Meta conta um evento só.
+    const eventoId = crypto.randomUUID()
+    rastrear('InitiateCheckout', { value: site.price, currency: site.currency }, eventoId)
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // O cupom chega pelo endereço (/assinar?cupom=CODIGO). Não há campo
         // visível: por enquanto o único cupom é o de teste, de uso único.
-        body: JSON.stringify({ nome, email, cupom: new URLSearchParams(window.location.search).get('cupom') || '' }),
+        body: JSON.stringify({
+          nome,
+          email,
+          eventoId,
+          cupom: new URLSearchParams(window.location.search).get('cupom') || '',
+        }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {

@@ -3,6 +3,8 @@ import { getCryptoProvider, getStripe } from '@/lib/stripe'
 import { acharOuCriar, registrarCompra, criarToken } from '@/lib/clientes'
 import { enviarCriarSenha } from '@/lib/email'
 import { normalizarEmail } from '@/lib/sessao'
+import { enviarEventoMeta } from '@/lib/meta'
+import { site } from '@/lib/site'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -70,6 +72,21 @@ export async function POST(req) {
   ) {
     const session = event.data.object
     if (session.payment_status === 'paid') {
+      // Compra para a Meta pelo servidor, com o id da sessão da Stripe — o
+      // mesmo que a tela /sucesso usa no Pixel.
+      const m = session.metadata || {}
+      await enviarEventoMeta({
+        nome: 'Purchase',
+        id: session.id,
+        email: session.customer_details?.email,
+        ip: m.ip,
+        ua: m.ua,
+        fbp: m.fbp,
+        fbc: m.fbc,
+        url: `${site.url}/sucesso`,
+        valor: (session.amount_total || 0) / 100,
+        moeda: String(session.currency || 'brl').toUpperCase(),
+      })
       try {
         await liberarAcesso(session)
       } catch (err) {

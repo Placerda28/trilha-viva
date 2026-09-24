@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import ContaForm from './ContaForm'
+import { rastrear } from './MetaPixel'
+import { site } from '@/lib/site'
 
 // A tela depois do pagamento. O trabalho dela é um só: transformar quem
 // acabou de pagar em quem já tem acesso. Por isso o único caminho visível
@@ -55,6 +57,22 @@ export default function AccessPanel() {
       clearTimeout(timer)
     }
   }, [check])
+
+  // Compra no Pixel, uma vez por pagamento (recarregar a página não conta de
+  // novo). O id é o mesmo que o aviso da operadora manda pelo servidor: a
+  // sessão na Stripe, a referência no Mercado Pago.
+  const compraId = sessionId || ref
+  useEffect(() => {
+    if (state.status !== 'paid' || !compraId) return
+    const chave = `tv-compra-${compraId}`
+    try {
+      if (sessionStorage.getItem(chave)) return
+      sessionStorage.setItem(chave, '1')
+    } catch {
+      /* sem sessionStorage: a Meta ainda deduplica pelo id */
+    }
+    rastrear('Purchase', { value: site.price, currency: site.currency }, compraId)
+  }, [state.status, compraId])
 
   if (state.status === 'missing') {
     return (

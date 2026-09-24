@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getStripe, PRODUCT_NAME } from '@/lib/stripe'
 import { site } from '@/lib/site'
 import { criarPreferencia, provedorAtivo } from '@/lib/mercadopago'
+import { enviarEventoMeta, ipDoPedido, lerCookiesMeta } from '@/lib/meta'
 import { precoDoCupom } from '@/lib/cupom-teste'
 
 export const runtime = 'nodejs'
@@ -44,6 +45,26 @@ export async function POST(req) {
     req.headers.get('origin') ||
     (process.env.NEXT_PUBLIC_SITE_URL ? process.env.NEXT_PUBLIC_SITE_URL : site.url)
 
+  // Dados que a Conversions API usa para reconhecer a pessoa. Vão também
+  // gravados no pagamento, para o aviso da operadora mandar a compra com eles.
+  const { fbp, fbc } = lerCookiesMeta(req)
+  const rastreio = {
+    fbp,
+    fbc,
+    ip: ipDoPedido(req),
+    ua: (req.headers.get('user-agent') || '').slice(0, 400),
+  }
+  const eventoId = String(body.eventoId || '').slice(0, 64) || crypto.randomUUID()
+  const inicioCheckout = (valor = site.price) =>
+    enviarEventoMeta({
+      nome: 'InitiateCheckout',
+      id: eventoId,
+      email,
+      ...rastreio,
+      url: `${site.url}/assinar`,
+      valor,
+    })
+
   if (provedorAtivo() === 'mercadopago') {
     const cupom = String(body.cupom || '').trim().slice(0, 40)
     const precoCupom = cupom ? await precoDoCupom(cupom) : null
@@ -62,8 +83,10 @@ export async function POST(req) {
         // Com cupom, o link de pagamento vence em 30 minutos: não fica um
         // carrinho de R$ 1,00 aberto esperando alguém.
         expiraEmMin: precoCupom ? 30 : null,
+        rastreio,
       })
       if (!url) throw new Error('preferência sem init_point')
+      await inicioCheckout(precoCupom ?? site.price)
       return NextResponse.json({ url, mode: 'mercadopago' })
     } catch (err) {
       console.error('checkout mp error', err?.message)
@@ -108,7 +131,7 @@ export async function POST(req) {
           },
         },
       ],
-      metadata: { nome, produto: 'pacote-4000-vs' },
+      metadata: { nome, produto: 'pacote-4000-vs', ...rastreio },
       payment_intent_data: {
         description: 'Trilha Viva — Pacote 2.000 Multitracks Gospel',
         metadata: { nome, email },
@@ -118,6 +141,7 @@ export async function POST(req) {
       allow_promotion_codes: true,
     })
 
+    await inicioCheckout()
     return NextResponse.json({ url: session.url, mode: 'checkout' })
   } catch (err) {
     console.error('checkout error', err?.message)
