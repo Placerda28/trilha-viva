@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getStripe, PRODUCT_NAME } from '@/lib/stripe'
 import { site } from '@/lib/site'
 import { criarPreferencia, provedorAtivo } from '@/lib/mercadopago'
+import { enviarEventoMeta, ipDoPedido, lerCookiesMeta } from '@/lib/meta'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -43,6 +44,26 @@ export async function POST(req) {
     req.headers.get('origin') ||
     (process.env.NEXT_PUBLIC_SITE_URL ? process.env.NEXT_PUBLIC_SITE_URL : site.url)
 
+  // Dados que a Conversions API usa para reconhecer a pessoa. Vão também
+  // gravados no pagamento, para o aviso da operadora mandar a compra com eles.
+  const { fbp, fbc } = lerCookiesMeta(req)
+  const rastreio = {
+    fbp,
+    fbc,
+    ip: ipDoPedido(req),
+    ua: (req.headers.get('user-agent') || '').slice(0, 400),
+  }
+  const eventoId = String(body.eventoId || '').slice(0, 64) || crypto.randomUUID()
+  const inicioCheckout = () =>
+    enviarEventoMeta({
+      nome: 'InitiateCheckout',
+      id: eventoId,
+      email,
+      ...rastreio,
+      url: `${site.url}/assinar`,
+      valor: site.price,
+    })
+
   if (provedorAtivo() === 'mercadopago') {
     try {
       const url = await criarPreferencia({
@@ -53,8 +74,10 @@ export async function POST(req) {
         titulo: PRODUCT_NAME,
         descricao: DESCRICAO,
         valor: site.price,
+        rastreio,
       })
       if (!url) throw new Error('preferência sem init_point')
+      await inicioCheckout()
       return NextResponse.json({ url, mode: 'mercadopago' })
     } catch (err) {
       console.error('checkout mp error', err?.message)
@@ -99,7 +122,7 @@ export async function POST(req) {
           },
         },
       ],
-      metadata: { nome, produto: 'pacote-4000-vs' },
+      metadata: { nome, produto: 'pacote-4000-vs', ...rastreio },
       payment_intent_data: {
         description: 'Trilha Viva — Pacote 2.000 Multitracks Gospel',
         metadata: { nome, email },
@@ -109,6 +132,7 @@ export async function POST(req) {
       allow_promotion_codes: true,
     })
 
+    await inicioCheckout()
     return NextResponse.json({ url: session.url, mode: 'checkout' })
   } catch (err) {
     console.error('checkout error', err?.message)

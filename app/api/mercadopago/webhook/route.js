@@ -3,6 +3,8 @@ import { assinaturaValida, buscarPagamento, idPagamentoValido, mpConfigurado, re
 import { acharOuCriar, registrarCompra, criarToken } from '@/lib/clientes'
 import { enviarCriarSenha } from '@/lib/email'
 import { normalizarEmail } from '@/lib/sessao'
+import { enviarEventoMeta } from '@/lib/meta'
+import { site } from '@/lib/site'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -73,7 +75,21 @@ export async function POST(req) {
     // O aviso só diz "o pagamento X mudou". O estado verdadeiro é consultado
     // direto no Mercado Pago, com a nossa chave.
     const r = resumirPagamento(await buscarPagamento(dataId))
-    if (r.status === 'paid') await liberarAcesso(r)
+    if (r.status === 'paid') {
+      // Compra para a Meta pelo servidor. O id é a referência do pagamento, a
+      // mesma que volta em /sucesso e que a tela usa no Pixel. O Mercado Pago
+      // avisa o mesmo pagamento várias vezes; a Meta descarta as repetições.
+      await enviarEventoMeta({
+        nome: 'Purchase',
+        id: r.referencia || r.compraId,
+        email: r.email,
+        ...r.rastreio,
+        url: `${site.url}/sucesso`,
+        valor: r.valorCentavos / 100,
+        moeda: String(r.moeda || 'brl').toUpperCase(),
+      })
+      await liberarAcesso(r)
+    }
   } catch (err) {
     // Nunca devolver erro por uma falha nossa: o Mercado Pago reenviaria o
     // aviso sem parar. O log é o que permite achar o caso e resolver na mão.
