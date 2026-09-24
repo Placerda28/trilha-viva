@@ -64,7 +64,8 @@ Contrato: tasks/fase2-cupons.md. Commits dcdacab (backend, Codex) e 08fe0d0 (tel
 - [x] lib/cupom-teste.js aposentado. Depois da publicação: apagar a variável CUPOM_TESTE do painel.
 - [x] Prova LOCAL (24/09): 39 testes; criação 201, repetido 409, 6 inválidos 400 com o campo certo, outro site e cliente comum 404 sem gravar; /api/cupom: 30% → R$ 62,93, R$ 10 → R$ 79,90, 100% → R$ 1,00, minúsculas/espaços ok; inexistente, esgotado, vaga ocupada por quem está pagando, desativado e vencido recusados com a mesma mensagem; reservas vencidas liberam; checkout que falha devolve a vaga; esgotado recusado no checkout; 56 comparações de não admin nas rotas de cupom com 0 diferenças; fotos 1280/390 conferidas.
 - [x] /codex:adversarial-review focada em dinheiro: 3 achados (vaga vencendo com cartão em análise; falha na limpeza da vaga barrando o e-mail de acesso; link passando da validade do cupom), corrigidos em f26fe32 com 3 testes novos (42). Limitação aceita: desativar não cancela links já abertos no MP (máx. 30 min).
-- [ ] Segunda revisão do Codex sobre as correções
+- [x] Segunda revisão do Codex: achou que o prazo de 30 min podia recusar o Pix (MP exige Pix ≥ 30 min a partir de quando é gerado), que 3 h não bastam para cartão em análise (até 2 dias úteis), que aviso atrasado reativava vaga vencida e que o link podia passar segundos da validade. Tudo corrigido (43 testes).
+  - Achado anterior à gestão, NÃO corrigido aqui: se o e-mail de acesso falhar depois de a compra ser gravada, o aviso repetido do MP não tenta de novo. Quem pagou ainda entra pela tela de sucesso ou por "Esqueci minha senha". Vai para a Fase 4 (registrar se o e-mail saiu e reenviar).
 - [ ] Prova em produção: compra real no Pix com cupom (Paulo, outra conta do MP) → compra aparece com o cupom e o uso contado; desativado → checkout recusa
 
 ## Fase 3 — Equipe + registro de ações
@@ -77,6 +78,7 @@ Contrato: tasks/fase2-cupons.md. Commits dcdacab (backend, Codex) e 08fe0d0 (tel
 ## Fase 4 — Visão geral, Downloads, ações no cliente, reembolso
 - [ ] (C) Visão geral (hoje/7d/30d/mês + gráfico), músicas mais baixadas, clientes que batem a cota
 - [ ] (C) Ações: reenviar e-mail de acesso, bloquear/liberar, zerar a cota do dia
+- [ ] (C) Entrega do acesso idempotente: gravar quando o e-mail de criar senha saiu (ex.: compras.acesso_enviado_em) e, se um aviso repetido do MP achar compra paga sem e-mail enviado, tentar de novo (achado da revisão da Fase 2)
 - [ ] (C) Webhook: refunded/charged_back → bloqueia e marca "reembolsada"
 - [ ] (F) Telas correspondentes
 - [ ] Prova: reembolso feito pelo Paulo no painel do MP bloqueia o acesso
