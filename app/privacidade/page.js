@@ -25,9 +25,18 @@ export default function PrivacidadePage() {
         </ul>
         <h2>Para que usamos</h2>
         <p>
-          Exclusivamente para entregar o acervo comprado, prestar suporte e comunicar novidades do
-          próprio acervo. Não vendemos e não compartilhamos seus dados com terceiros para fins
-          publicitários.
+          Para entregar o acervo comprado, prestar suporte, comunicar novidades do próprio acervo e
+          medir o resultado dos nossos anúncios. Não vendemos seus dados.
+        </p>
+        <h2>Anúncios e medição (Meta)</h2>
+        <p>
+          Usamos o Pixel da Meta e a API de Conversões da Meta (Facebook e Instagram) para saber
+          quais anúncios trazem visitas e compras. Eles registram páginas visitadas, o início do
+          pagamento e a compra concluída, junto com cookies da Meta, endereço IP e navegador. O
+          e-mail da compra só é enviado criptografado (hash SHA-256), nunca em texto aberto. O
+          tratamento pela Meta segue a política de privacidade dela. Você pode limitar anúncios
+          personalizados nas configurações de anúncios da sua conta Meta ou bloqueando cookies de
+          terceiros no navegador.
         </p>
         <h2>Pagamentos</h2>
         <p>
@@ -41,8 +50,8 @@ export default function PrivacidadePage() {
         </p>
         <h2>Cookies</h2>
         <p>
-          O site usa apenas o essencial para funcionar. Não utilizamos cookies de publicidade
-          direcionada.
+          O site usa cookies essenciais para funcionar (como o da sua sessão na conta) e os cookies
+          da Meta descritos acima, para medir os anúncios.
         </p>
       </div>
     </div>
