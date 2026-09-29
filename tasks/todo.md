@@ -584,8 +584,8 @@ Legenda: [ ] a fazer · [x] feito e provado · (C) Codex/backend · (F) Claude/f
 - [ ] PARADA 1: Paulo aprovou o SQL (29/09); aplicação no D1 de produção é feita pelo Paulo (o modo automático do Claude Code bloqueia o Claude). Depois: conferir tabelas e totais
 - [x] (C) checkout (nome obrigatório, grava carrinho), GET /api/carrinho, webhook marca pago (89bd534). Revisado pelo Claude; ajuste: nome longo é cortado em 80, não recusado (b242ca6). 63 testes
 - [x] (F) formulário (nome + e-mail nos dois cards, aviso, ?r=, utm) e /privacidade (23715bd). Build limpo, /assinar segue estático
-- [ ] (C) robô recuperacao-carrinho, e-mail, /api/descadastrar → PARADA 2: segredos
-  - 29/09: duas tentativas do Codex falharam antes de começar (terminal do Windows: SetTokenInformation(TokenDefaultDacl) failed: 1344). Nada foi alterado. Paulo escolheu reiniciar a sessão e o Codex (/codex:setup) e reenviar as tarefas B e C (texto da especificação: o mesmo do contrato, seções Robô, E-mail, Descadastro e Gestão)
-- [ ] (C) GET /api/gestao/carrinhos · (F) aba Carrinhos
+- [x] (C) robô recuperacao-carrinho, e-mail, /api/descadastrar (a2db9f2). Codex rodou depois do /codex:setup; revisado pelo Claude. 76 testes, build e dry-run do robô limpos. → PARADA 2: segredos
+  - Atenção para as provas: TESTE_PARA (conta do Paulo) já tem compra paga, então no modo teste o carrinho dele vira 'ignorado' pela regra (a). Decidir: outro e-mail de teste sem compra, ou exceção só no modo teste
+- [x] (C) GET /api/gestao/carrinhos (a2db9f2) · [ ] (F) aba Carrinhos
 - [ ] Provas 1 a 7 do pedido
 - [ ] PARADA 3: merge em main · PARADA 4: MODO=ativo
