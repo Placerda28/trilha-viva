@@ -580,10 +580,12 @@ Legenda: [ ] a fazer · [x] feito e provado · (C) Codex/backend · (F) Claude/f
 - [x] Paulo aprovou (29/09): acesso@ com reply_to contato@; link com ?r= (e-mail fora da URL por causa do Pixel); tetos 40/1.100; datas em texto
 
 ## Tarefas
-- [ ] (C) migrations/0004_carrinhos.sql → PARADA 1: Paulo vê o SQL e aplica
-- [ ] (C) checkout (nome obrigatório, grava carrinho), GET /api/carrinho, webhook marca pago
-- [ ] (F) formulário (nome + e-mail, aviso, ?r=, utm) e /privacidade
+- [x] (C) migrations/0004_carrinhos.sql (commit 89bd534), aplicada e conferida só no D1 LOCAL
+- [ ] PARADA 1: Paulo aprovou o SQL (29/09); aplicação no D1 de produção é feita pelo Paulo (o modo automático do Claude Code bloqueia o Claude). Depois: conferir tabelas e totais
+- [x] (C) checkout (nome obrigatório, grava carrinho), GET /api/carrinho, webhook marca pago (89bd534). Revisado pelo Claude; ajuste: nome longo é cortado em 80, não recusado (b242ca6). 63 testes
+- [x] (F) formulário (nome + e-mail nos dois cards, aviso, ?r=, utm) e /privacidade (23715bd). Build limpo, /assinar segue estático
 - [ ] (C) robô recuperacao-carrinho, e-mail, /api/descadastrar → PARADA 2: segredos
+  - 29/09: duas tentativas do Codex falharam antes de começar (terminal do Windows: SetTokenInformation(TokenDefaultDacl) failed: 1344). Nada foi alterado. Paulo escolheu reiniciar a sessão e o Codex (/codex:setup) e reenviar as tarefas B e C (texto da especificação: o mesmo do contrato, seções Robô, E-mail, Descadastro e Gestão)
 - [ ] (C) GET /api/gestao/carrinhos · (F) aba Carrinhos
 - [ ] Provas 1 a 7 do pedido
 - [ ] PARADA 3: merge em main · PARADA 4: MODO=ativo
