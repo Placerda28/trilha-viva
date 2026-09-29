@@ -1,0 +1,29 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "recuperacao-carrinho",
+  "main": "index.js",
+  "compatibility_date": "2025-09-23",
+  "triggers": {
+    "crons": ["*/10 * * * *"]
+  },
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "trilha-viva",
+      "database_id": "2dac1356-eb0b-432b-a3d2-1c5cbbb9c29c"
+    }
+  ],
+  "vars": {
+    "MODO": "teste",
+    "TESTE_PARA": "paulohenrique_ls@hotmail.com",
+    "LEMBRETE_BCC": "trilhaviva.suporte@gmail.com",
+    "EMAIL_FROM": "Trilha Viva <acesso@trilhaviva.org>",
+    "EMAIL_REPLY_TO": "contato@trilhaviva.org",
+    "SITE_URL": "https://trilhaviva.org",
+    "TETO_DIA": "40",
+    "TETO_MES": "1100"
+  }
+}
