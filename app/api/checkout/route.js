@@ -4,6 +4,7 @@ import { site } from '@/lib/site'
 import { criarPreferencia, provedorAtivo } from '@/lib/mercadopago'
 import { enviarEventoMeta, ipDoPedido, lerCookiesMeta } from '@/lib/meta'
 import { getDB } from '@/lib/d1'
+import { gravarCarrinho, limparUtm, nomeValido, origemDoCarrinho } from '@/lib/carrinhos'
 import {
   cancelarReservaCupom,
   consultarCupomValido,
@@ -43,7 +44,12 @@ export async function POST(req) {
   }
 
   const email = String(body.email || '').trim().toLowerCase()
-  const nome = String(body.nome || '').trim().slice(0, 80)
+  const nome = String(body.nome || '').trim()
+  const utm = limparUtm(body.utm)
+
+  if (!nomeValido(nome)) {
+    return NextResponse.json({ error: 'Informe seu nome.' }, { status: 400 })
+  }
 
   if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) {
     return NextResponse.json({ error: 'Informe um e-mail válido para receber o acesso.' }, { status: 400 })
@@ -104,6 +110,18 @@ export async function POST(req) {
       // A consulta informativa e a reserva são passos diferentes. Se outra
       // pessoa pegou a última vaga entre eles, esta resposta continua segura.
       return NextResponse.json({ error: ERRO_CUPOM_PUBLICO }, { status: 400 })
+    }
+
+    try {
+      await gravarCarrinho(db, {
+        id: referencia,
+        email,
+        nome,
+        origem: origemDoCarrinho({ utm, cupom: cupom?.codigo }),
+      })
+    } catch (err) {
+      // A recuperação é acessória: uma falha nela nunca bloqueia uma venda.
+      console.error('checkout gravar carrinho', err?.message)
     }
 
     try {

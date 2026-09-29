@@ -7,6 +7,7 @@ import { enviarEventoMeta } from '@/lib/meta'
 import { site } from '@/lib/site'
 import { getDB } from '@/lib/d1'
 import { cancelarReservaCupom, estenderReservaCupom } from '@/lib/gestao/cupons'
+import { marcarCarrinhosPagos } from '@/lib/carrinhos'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -94,6 +95,13 @@ export async function POST(req) {
         moeda: String(r.moeda || 'brl').toUpperCase(),
       })
       await liberarAcesso(r)
+      try {
+        await marcarCarrinhosPagos(getDB(), { referencia: r.referencia, email: r.email })
+      } catch (err) {
+        // O carrinho é acompanhamento: a compra já foi liberada e não pode ser
+        // prejudicada por uma falha nesta atualização.
+        console.error('mp marcar carrinhos pagos', r.pagamentoId, err?.message)
+      }
     } else if (r.status === 'pending' && r.cupom && r.referencia) {
       // Pix gerado ou cartão em análise: segura a vaga do cupom até a
       // resposta final.
