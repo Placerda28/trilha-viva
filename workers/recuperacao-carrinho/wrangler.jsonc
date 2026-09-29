@@ -17,7 +17,7 @@
     }
   ],
   "vars": {
-    "MODO": "teste",
+    "MODO": "ativo",
     "TESTE_PARA": "paulohenrique_ls@hotmail.com",
     "LEMBRETE_BCC": "trilhaviva.suporte@gmail.com",
     "EMAIL_FROM": "Trilha Viva <acesso@trilhaviva.org>",
