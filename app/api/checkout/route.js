@@ -44,7 +44,8 @@ export async function POST(req) {
   }
 
   const email = String(body.email || '').trim().toLowerCase()
-  const nome = String(body.nome || '').trim()
+  // Nome longo demais é cortado, como sempre foi; só o nome vazio é recusado.
+  const nome = String(body.nome || '').trim().slice(0, 80)
   const utm = limparUtm(body.utm)
 
   if (!nomeValido(nome)) {
