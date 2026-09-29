@@ -28,6 +28,14 @@ export default function PrivacidadePage() {
           Para entregar o acervo comprado, prestar suporte, comunicar novidades do próprio acervo e
           medir o resultado dos nossos anúncios. Não vendemos seus dados.
         </p>
+        <h2>Lembrete de compra não concluída</h2>
+        <p>
+          Se você informar seu e-mail no checkout e a compra não for concluída, podemos enviar{' '}
+          <strong>um único</strong> lembrete para esse endereço, cerca de uma hora depois, com o
+          link para terminar a compra. Não enviamos outros lembretes depois desse. Para não
+          receber, use o link &quot;Cancelar lembretes&quot; no próprio e-mail ou escreva para{' '}
+          {site.email}.
+        </p>
         <h2>Anúncios e medição (Meta)</h2>
         <p>
           Usamos o Pixel da Meta e a API de Conversões da Meta (Facebook e Instagram) para saber

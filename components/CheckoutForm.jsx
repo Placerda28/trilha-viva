@@ -9,13 +9,17 @@ import { rastrear } from '@/components/MetaPixel'
 // mesma em todo lugar; as opcoes so mudam a aparencia:
 //   tom="escuro"   para dentro do card preto de /assinar (botao .btn-glow)
 //   rotulo         texto do botao
-//   pedirNome      o nome e opcional na API; o card do topo pede so o e-mail
+// Nome e e-mail sao obrigatorios (a API recusa sem nome). Quem chega pelo
+// e-mail de lembrete traz ?r=<codigo do carrinho>: o formulario busca nome e
+// e-mail em /api/carrinho e preenche sozinho. O e-mail nunca vai no endereco
+// porque o Pixel da Meta manda o endereco da pagina para a Meta.
 // Os ids dos campos vem do useId, porque /assinar tem dois cards de preco
 // (topo e fim) e dois campos com o mesmo id quebram o rotulo dos leitores de
 // tela.
-export default function CheckoutForm({ tom = 'claro', rotulo, pedirNome = true }) {
+export default function CheckoutForm({ tom = 'claro', rotulo }) {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
+  const [utm, setUtm] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const id = useId()
@@ -57,11 +61,32 @@ export default function CheckoutForm({ tom = 'claro', rotulo, pedirNome = true }
 
   // Quem chega por /assinar?cupom=CODIGO já vê o cupom aplicado.
   useEffect(() => {
-    const doEndereco = new URLSearchParams(window.location.search).get('cupom')
+    const busca = new URLSearchParams(window.location.search)
+    const doEndereco = busca.get('cupom')
     if (doEndereco) {
       setAbrirCupom(true)
       setCupom(doEndereco)
       aplicarCupom(doEndereco)
+    }
+
+    // A origem da visita (ex.: o e-mail de lembrete) vai junto no checkout.
+    const source = busca.get('utm_source')
+    const medium = busca.get('utm_medium')
+    const campaign = busca.get('utm_campaign')
+    if (source || medium || campaign) setUtm({ source, medium, campaign })
+
+    // Veio do lembrete: preenche o que a pessoa já tinha digitado. Só completa
+    // campo vazio, para não apagar o que ela começou a escrever.
+    const carrinho = busca.get('r')
+    if (carrinho) {
+      fetch('/api/carrinho?r=' + encodeURIComponent(carrinho))
+        .then((res) => (res.ok ? res.json() : null))
+        .then((dados) => {
+          if (!dados?.ok) return
+          if (dados.nome) setNome((atual) => atual || dados.nome)
+          if (dados.email) setEmail((atual) => atual || dados.email)
+        })
+        .catch(() => {})
     }
   }, [])
 
@@ -70,6 +95,10 @@ export default function CheckoutForm({ tom = 'claro', rotulo, pedirNome = true }
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
+    if (!nome.trim()) {
+      setError('Informe seu nome.')
+      return
+    }
     setLoading(true)
     // Mesmo id no Pixel e no servidor: a Meta conta um evento só.
     const eventoId = crypto.randomUUID()
@@ -78,7 +107,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo, pedirNome = true }
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, email, eventoId, cupom: aplicado ? aplicado.cupom : '' }),
+        body: JSON.stringify({ nome, email, eventoId, cupom: aplicado ? aplicado.cupom : '', utm }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {
@@ -171,23 +200,23 @@ export default function CheckoutForm({ tom = 'claro', rotulo, pedirNome = true }
         )}
       </div>
 
-      {pedirNome && (
-        <div>
-          <label htmlFor={`${id}-nome`} className={rotuloCls}>
-            Seu nome
-          </label>
-          <input
-            id={`${id}-nome`}
-            name="nome"
-            type="text"
-            autoComplete="name"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            placeholder="Como devemos te chamar"
-            className={campoCls}
-          />
-        </div>
-      )}
+      <div>
+        <label htmlFor={`${id}-nome`} className={rotuloCls}>
+          Seu nome <span aria-hidden="true" className={textoFraco}>*</span>
+        </label>
+        <input
+          id={`${id}-nome`}
+          name="nome"
+          type="text"
+          autoComplete="name"
+          required
+          maxLength={80}
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          placeholder="Como devemos te chamar"
+          className={campoCls}
+        />
+      </div>
 
       <div>
         <label htmlFor={`${id}-email`} className={rotuloCls}>
@@ -229,6 +258,11 @@ export default function CheckoutForm({ tom = 'claro', rotulo, pedirNome = true }
       >
         {loading ? 'Abrindo pagamento seguro…' : aplicado ? `Pagar ${priceBRL(precoFinal)} e liberar acesso` : rotulo || `Pagar ${priceBRL(site.price)} e liberar acesso`}
       </button>
+
+      <p className={`text-center text-[12px] leading-relaxed ${textoFraco}`}>
+        Usamos seu e-mail para enviar o acesso e, se a compra não for concluída, um lembrete.
+        Você pode cancelar a qualquer momento.
+      </p>
 
       {escuro ? (
         <p id={`${id}-ajuda`} className="text-center text-[12.5px] leading-relaxed text-white/70">

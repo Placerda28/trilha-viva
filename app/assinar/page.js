@@ -87,7 +87,7 @@ const perguntas = [
 ]
 
 /** O card de preço em painel preto. Aparece no topo e, no celular, de novo no fim. */
-function CardPreco({ id, pedirNome = false }) {
+function CardPreco({ id }) {
   return (
     <section id={id} aria-label="Preço e pagamento" className="panel scroll-mt-24 p-5 sm:p-7">
       <p className="chip">{discountPct}% de desconto no lançamento</p>
@@ -105,7 +105,7 @@ function CardPreco({ id, pedirNome = false }) {
       </p>
 
       <div className="mt-4">
-        <CheckoutForm tom="escuro" rotulo="Quero meu acesso" pedirNome={pedirNome} />
+        <CheckoutForm tom="escuro" rotulo="Quero meu acesso" />
       </div>
 
       <ul className="mt-6 grid grid-cols-3 gap-3 border-t border-white/10 pt-5 text-center">
