@@ -562,3 +562,28 @@ usada para os screenshots foi apagada antes do commit), screenshot dos
 componentes e do dialog aberto, os sete testes de teclado, os rácios de contraste
 e os alvos medidos no navegador, e as 10 páginas com JSON-LD respondendo 200 com
 todos os blocos parseando.
+
+---
+
+# Recuperação de carrinho por e-mail (início: 29/09/2026)
+
+Branch: `recuperacao`. Contrato: tasks/recuperacao.md.
+Legenda: [ ] a fazer · [x] feito e provado · (C) Codex/backend · (F) Claude/frontend
+
+## Passo 0
+- [x] main atualizada, branch `recuperacao` criada
+- [x] Leitura: checkout, CheckoutForm, mercadopago, webhook MP, clientes, email, origem, site, wrangler, gestão, privacidade, MetaPixel
+- [x] Esquema do D1 lido (só leitura): nenhuma tabela de carrinho; datas em TEXT UTC
+- [x] Remetente real: EMAIL_FROM = "Trilha Viva <acesso@trilhaviva.org>" (não contato@)
+- [x] Resend grátis: 100/dia (dia UTC) e 3.000/mês; Cc/Bcc CONTAM como e-mail a mais → teto 40 lembretes/dia e 1.100/mês
+- [x] batida-supabase: publicado na Cloudflare (scheduled + fetch), código fora do repositório
+- [x] Paulo aprovou (29/09): acesso@ com reply_to contato@; link com ?r= (e-mail fora da URL por causa do Pixel); tetos 40/1.100; datas em texto
+
+## Tarefas
+- [ ] (C) migrations/0004_carrinhos.sql → PARADA 1: Paulo vê o SQL e aplica
+- [ ] (C) checkout (nome obrigatório, grava carrinho), GET /api/carrinho, webhook marca pago
+- [ ] (F) formulário (nome + e-mail, aviso, ?r=, utm) e /privacidade
+- [ ] (C) robô recuperacao-carrinho, e-mail, /api/descadastrar → PARADA 2: segredos
+- [ ] (C) GET /api/gestao/carrinhos · (F) aba Carrinhos
+- [ ] Provas 1 a 7 do pedido
+- [ ] PARADA 3: merge em main · PARADA 4: MODO=ativo
