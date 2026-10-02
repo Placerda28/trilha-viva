@@ -6,7 +6,7 @@ não contratou o serviço (Z-API ou Evolution). Tudo o que tasks/whatsapp.md diz
 valendo, EXCETO o que este arquivo muda.
 
 ## Decisões do Paulo (02/10)
-- 1ª mensagem ~24 h depois do carrinho (como já está), depois UMA POR SEMANA, no máximo
+- 1ª mensagem ~1 HORA depois do carrinho (mudou em 02/10: antes era 24 h), depois UMA POR SEMANA, no máximo
   **8 mensagens** no total (~2 meses). Para antes se comprar, se responder SAIR ou se tocar
   no link de sair.
 - Toda mensagem termina com "responda SAIR" E um link de sair com um toque (o mesmo
@@ -43,7 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_carrinhos_proximo_whatsapp ON carrinhos (proximo_
 - `whatsapp_enviado_em` continua sendo a data da 1ª mensagem.
 
 ## Robô
-- **1ª mensagem:** igual a hoje (janela 24–72 h, bloqueios, reserva atômica de
+- **1ª mensagem:** janela **1–48 h** depois do carrinho (era 24–72 h; fora do horário 9h–20h espera o próximo horário permitido; o resto igual: bloqueios, reserva atômica de
   `lembretes_enviados` etapa 1). No sucesso, também: `whatsapp_etapa = 1`,
   `proximo_whatsapp_em = datetime('now', '+7 days')`.
 - **Seguimento** (novo): carrinhos com `whatsapp_etapa BETWEEN 1 AND 7`,
@@ -74,6 +74,7 @@ Rodapé de TODAS as mensagens: `\n\nPara não receber mais, responda SAIR ou toq
 - Sem nome: "Oi!" / "Olá!" / "Oi, tudo bem?" no lugar da saudação com nome.
 
 ## Gestão (lib/gestao/recuperacao.js)
+- `previsto_em` = criado_em + 1 hora; "no prazo" = criado_em > now − 48 h (era +24 h / 72 h).
 `whatsapp` de cada pessoa passa a ser:
 `{ situacao, enviados: [{ etapa, enviado_em }], proximo_em, proxima_etapa, previsto_em }`
 - `enviados`: lembretes_enviados canal 'whatsapp' do carrinho do protocolo (ou do carrinho que recebeu).
