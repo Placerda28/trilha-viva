@@ -371,9 +371,13 @@ test('WhatsApp desligado não consulta o banco e configuração ausente também 
   )
 })
 
-test('modo teste envia só ao número autorizado e mascara os demais', async () => {
+test('modo teste envia só ao número autorizado e nem busca os demais', async () => {
   const banco = bancoWhatsapp()
+  // Três carrinhos de clientes reais mais antigos ocupariam as 3 vagas da
+  // rodada se a busca não filtrasse o celular de teste.
   inserirCarrinho(banco, 'outro', 'outro@example.com', '11888880000', '-30 hours')
+  inserirCarrinho(banco, 'outro2', 'outro2@example.com', '11888881111', '-29 hours')
+  inserirCarrinho(banco, 'outro3', 'outro3@example.com', '11888882222', '-28 hours')
   inserirCarrinho(banco, 'teste', 'teste@example.com', '11999990000', '-25 hours')
   const logs = []
   let envios = 0
@@ -386,10 +390,9 @@ test('modo teste envia só ao número autorizado e mascara os demais', async () 
     }
   )
 
-  assert.deepEqual(resultado, { enviados: 1, ignorados: 0, apenasLog: 1 })
+  assert.deepEqual(resultado, { enviados: 1, ignorados: 0, apenasLog: 0 })
   assert.equal(envios, 1)
-  assert.match(logs[0], /11\*{5}0000/)
-  assert.doesNotMatch(logs[0], /11888880000/)
+  assert.equal(logs.some((linha) => linha.includes('11888880000')), false)
   assert.equal(
     banco.prepare("SELECT whatsapp_enviado_em IS NULL AS vazio FROM carrinhos WHERE id = 'outro'").get().vazio,
     1
@@ -422,7 +425,7 @@ test('modo teste envia só ao número autorizado e mascara os demais', async () 
     ambiente(new D1Local(bancoSeguimento), { MODO_WHATSAPP: 'teste' }),
     { agora: meioDoDia, logger: loggerMudo, fetchImpl: envioOk }
   )
-  assert.deepEqual(resultadoSeguimento, { enviados: 1, ignorados: 0, apenasLog: 1 })
+  assert.deepEqual(resultadoSeguimento, { enviados: 1, ignorados: 0, apenasLog: 0 })
   assert.equal(
     bancoSeguimento.prepare(`
       SELECT whatsapp_etapa FROM carrinhos WHERE id = 'seguimento-teste'
@@ -633,6 +636,35 @@ test('janela aceita somente carrinhos entre 1 e 48 horas', async () => {
       SELECT id FROM carrinhos WHERE whatsapp_enviado_em IS NOT NULL ORDER BY id
     `).all().map((linha) => linha.id),
     ['fim', 'inicio']
+  )
+})
+
+test('carrinho ignorado pelo e-mail ainda recebe o WhatsApp; cliente continua bloqueado', async () => {
+  // 'ignorado' é decisão do e-mail (falha no envio, carrinho repetido). O
+  // WhatsApp tem as próprias checagens de compra, descadastro e envio anterior.
+  const banco = bancoWhatsapp()
+  inserirCarrinho(banco, 'email-falhou', 'falhou@example.com', '11777770000', '-3 hours', {
+    status: 'ignorado',
+  })
+  inserirCarrinho(banco, 'cliente', 'cliente@example.com', '11777771111', '-3 hours', {
+    status: 'ignorado',
+  })
+  banco.exec(`
+    INSERT INTO clientes (email) VALUES ('cliente@example.com');
+    INSERT INTO compras (cliente_id, stripe_session_id, status)
+      SELECT id, 'mp_cliente', 'pago' FROM clientes WHERE email = 'cliente@example.com';
+  `)
+  const resultado = await executarWhatsapp(
+    ambiente(new D1Local(banco)),
+    { agora: meioDoDia, logger: loggerMudo, fetchImpl: envioOk }
+  )
+  assert.equal(resultado.enviados, 1)
+  assert.equal(resultado.ignorados, 1)
+  assert.deepEqual(
+    banco.prepare(`
+      SELECT id FROM carrinhos WHERE whatsapp_enviado_em IS NOT NULL ORDER BY id
+    `).all().map((linha) => linha.id),
+    ['email-falhou']
   )
 })
 

@@ -389,32 +389,34 @@ async function contarEnviosWhatsapp(db) {
   return Number(linha?.total || 0)
 }
 
-async function buscarSeguimentosWhatsapp(db) {
+async function buscarSeguimentosWhatsapp(db, soTelefone) {
   const resultado = await db.prepare(`
     SELECT id, email, nome, telefone, whatsapp_etapa
       FROM carrinhos
      WHERE whatsapp_etapa BETWEEN 1 AND 7
        AND proximo_whatsapp_em <= datetime('now')
-       AND status IN ('aberto', 'lembrado')
+       AND status IN ('aberto', 'lembrado', 'ignorado')
        AND telefone IS NOT NULL
+       AND (? IS NULL OR telefone = ?)
      ORDER BY proximo_whatsapp_em ASC, criado_em ASC, id ASC
-     LIMIT 3`).all()
+     LIMIT 3`).bind(soTelefone, soTelefone).all()
   return linhas(resultado)
 }
 
-async function buscarPrimeirosWhatsapp(db) {
+async function buscarPrimeirosWhatsapp(db, soTelefone) {
   const resultado = await db.prepare(`
     SELECT id, email, nome, telefone
       FROM carrinhos
      WHERE telefone IS NOT NULL
        AND whatsapp_enviado_em IS NULL
        AND whatsapp_falhou_em IS NULL
-       AND status IN ('aberto', 'lembrado')
+       AND status IN ('aberto', 'lembrado', 'ignorado')
        AND finalizado_em IS NULL
        AND criado_em <= datetime('now', '-1 hour')
        AND criado_em >= datetime('now', '-48 hours')
+       AND (? IS NULL OR telefone = ?)
      ORDER BY criado_em ASC, id ASC
-     LIMIT 3`).all()
+     LIMIT 3`).bind(soTelefone, soTelefone).all()
   return linhas(resultado)
 }
 
@@ -513,7 +515,7 @@ async function reservarPrimeiroWhatsapp(db, carrinho, tetoDia) {
      WHERE candidato.id = ?
        AND candidato.whatsapp_enviado_em IS NULL
        AND candidato.whatsapp_falhou_em IS NULL
-       AND candidato.status IN ('aberto', 'lembrado')
+       AND candidato.status IN ('aberto', 'lembrado', 'ignorado')
        AND candidato.finalizado_em IS NULL
        AND NOT EXISTS (
          SELECT 1
@@ -562,7 +564,7 @@ async function reservarSeguimentoWhatsapp(db, carrinho, etapa, tetoDia) {
      WHERE id = ?
        AND whatsapp_etapa = ?
        AND proximo_whatsapp_em <= datetime('now')
-       AND status IN ('aberto', 'lembrado')
+       AND status IN ('aberto', 'lembrado', 'ignorado')
        AND telefone IS NOT NULL
        AND (
          SELECT COUNT(*)
@@ -629,7 +631,9 @@ export async function executarWhatsapp(env, opcoes = {}) {
   if (enviadosHoje >= tetoDia) return resultado
 
   let tentativasNaRodada = 0
-  const seguimentos = await buscarSeguimentosWhatsapp(db)
+  // No modo teste só o celular de teste entra na busca.
+  const soTelefone = modo === 'teste' ? String(env.WHATSAPP_TESTE_PARA || '') || '-' : null
+  const seguimentos = await buscarSeguimentosWhatsapp(db, soTelefone)
   for (const carrinho of seguimentos) {
     if (enviadosHoje >= tetoDia || tentativasNaRodada >= 3) break
 
@@ -688,7 +692,7 @@ export async function executarWhatsapp(env, opcoes = {}) {
 
   if (enviadosHoje >= tetoDia || tentativasNaRodada >= 3) return resultado
 
-  const candidatos = await buscarPrimeirosWhatsapp(db)
+  const candidatos = await buscarPrimeirosWhatsapp(db, soTelefone)
   for (const carrinho of candidatos) {
     if (enviadosHoje >= tetoDia || tentativasNaRodada >= 3) break
 
