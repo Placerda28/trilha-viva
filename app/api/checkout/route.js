@@ -53,7 +53,9 @@ export async function POST(req) {
   const email = String(body.email || '').trim().toLowerCase()
   // Nome longo demais é cortado, como sempre foi; só o nome vazio é recusado.
   const nome = String(body.nome || '').trim().slice(0, 80)
-  const telefone = limparTelefone(body.telefone)
+  // WhatsApp é opcional: vazio ou inválido fica sem telefone e a compra segue.
+  const telefoneInformado = limparTelefone(body.telefone)
+  const telefone = telefoneValido(telefoneInformado) ? telefoneInformado : ''
   const utm = limparUtm(body.utm)
 
   if (!nomeValido(nome)) {
@@ -62,13 +64,6 @@ export async function POST(req) {
 
   if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) {
     return NextResponse.json({ error: 'Informe um e-mail válido para receber o acesso.' }, { status: 400 })
-  }
-
-  // O formulário exige o celular. Aqui só recusamos celular inválido: vazio
-  // passa, para quem abriu a página antes da publicação (sem o campo) não
-  // ficar sem conseguir pagar.
-  if (telefone && !telefoneValido(telefone)) {
-    return NextResponse.json({ error: 'Informe seu celular com DDD.' }, { status: 400 })
   }
 
   const origin =

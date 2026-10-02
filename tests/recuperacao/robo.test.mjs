@@ -93,7 +93,9 @@ function diferencaDias(banco, id) {
 }
 
 test('Worker expõe somente 404 e mantém cron, D1 e variáveis do contrato', async () => {
-  assert.equal((await worker.fetch()).status, 404)
+  // O robô só atende o webhook do WhatsApp (/whatsapp); o resto é 404.
+  assert.equal((await worker.fetch(new Request('https://robo.example/'), {})).status, 404)
+  assert.equal((await worker.fetch(new Request('https://robo.example/whatsapp'), {})).status, 404)
 
   const configuracao = JSON.parse(
     readFileSync('workers/recuperacao-carrinho/wrangler.jsonc', 'utf8')
@@ -103,10 +105,10 @@ test('Worker expõe somente 404 e mantém cron, D1 e variáveis do contrato', as
   assert.equal(configuracao.d1_databases[0].binding, 'DB')
   assert.equal(configuracao.vars.TETO_DIA, '40')
   assert.equal(configuracao.vars.TETO_MES, '1100')
-  assert.equal(configuracao.vars.MODO_WHATSAPP, 'desligado')
-  assert.equal(configuracao.vars.WHATSAPP_PROVEDOR, 'zapi')
-  assert.equal(configuracao.vars.WHATSAPP_TESTE_PARA, '')
-  assert.equal(configuracao.vars.WHATSAPP_TETO_DIA, '20')
+  assert.equal(configuracao.vars.WA_MODO, 'teste')
+  assert.equal(configuracao.vars.WA_TETO_DIA, '30')
+  assert.equal(configuracao.vars.WA_TEMPLATE, 'carrinho_lembrete')
+  assert.equal(configuracao.vars.WA_PHONE_NUMBER_ID, '')
 })
 
 test('e-mail 1 mantém conteúdo, bloqueios e dados do envio atual', async () => {
@@ -136,7 +138,7 @@ test('e-mail 1 mantém conteúdo, bloqueios e dados do envio atual', async () =>
     enviados: 1,
     ignorados: 3,
     apenasLog: 0,
-    whatsapp: { enviados: 0, ignorados: 0, apenasLog: 0 },
+    whatsapp: { enviados: 0, ignorados: 0, falhas: 0 },
   })
   assert.equal(pedidos.length, 1)
   assert.equal(pedidos[0].url, 'https://api.resend.com/emails')
@@ -279,7 +281,7 @@ test('modo teste não altera protocolos de outros e-mails', async () => {
     enviados: 0,
     ignorados: 0,
     apenasLog: 1,
-    whatsapp: { enviados: 0, ignorados: 0, apenasLog: 0 },
+    whatsapp: { enviados: 0, ignorados: 0, falhas: 0 },
   })
   assert.match(logs[0], /c\*\*\*@e\*\*\*\.com/)
   assert.doesNotMatch(logs[0], /cliente\.secreto@example\.com/)

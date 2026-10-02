@@ -2,20 +2,26 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { readFileSync } from 'node:fs'
+import { createHmac } from 'node:crypto'
 import {
-  compararSegredoEmTempoConstante,
-  lerMensagemRecebida,
+  assinaturaValida,
   pedidoDeSaida,
-} from '../../lib/whatsapp-saida.js'
+  pedidoModelo,
+  primeiroNome,
+  telefoneSemPais,
+} from '../../lib/whatsapp-meta.js'
 import {
+  atenderWebhook,
   dentroDoHorario,
-  enviarWhatsapp,
-  montarWhatsapp,
-} from '../../workers/recuperacao-carrinho/whatsapp.js'
-import {
-  executarRodada,
   executarWhatsapp,
-} from '../../workers/recuperacao-carrinho/index.js'
+} from '../../workers/recuperacao-carrinho/whatsapp.js'
+import { executarRodada } from '../../workers/recuperacao-carrinho/index.js'
+import {
+  consultarConversas,
+  responderConversa,
+  totaisWhatsapp,
+  validarResposta,
+} from '../../lib/gestao/whatsapp.js'
 
 class D1Local {
   constructor(banco) {
@@ -26,8 +32,8 @@ class D1Local {
     const preparada = this.banco.prepare(sql)
     let valores = []
     return {
-      bind(...novosValores) {
-        valores = novosValores
+      bind(...novos) {
+        valores = novos
         return this
       },
       async all() {
@@ -37,720 +43,398 @@ class D1Local {
         return preparada.get(...valores) || null
       },
       async run() {
-        const resultado = preparada.run(...valores)
-        return { meta: { changes: resultado.changes } }
+        return { meta: { changes: preparada.run(...valores).changes } }
       },
     }
   }
 }
 
-function bancoWhatsapp() {
-  const banco = new DatabaseSync(':memory:')
-  banco.exec(readFileSync('migrations/0000_esquema_atual.sql', 'utf8'))
-  banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
-  banco.exec(readFileSync('migrations/0005_recuperacao_v2.sql', 'utf8'))
-  banco.exec(readFileSync('migrations/0006_whatsapp.sql', 'utf8'))
-  banco.exec(readFileSync('migrations/0007_whatsapp_semanal.sql', 'utf8'))
-  return banco
+function banco() {
+  const b = new DatabaseSync(':memory:')
+  for (const arquivo of [
+    '0000_esquema_atual',
+    '0004_carrinhos',
+    '0005_recuperacao_v2',
+    '0006_whatsapp',
+    '0007_whatsapp_semanal',
+    '0008_whatsapp_meta',
+  ]) {
+    b.exec(readFileSync(`migrations/${arquivo}.sql`, 'utf8'))
+  }
+  return b
 }
 
-function inserirCarrinho(
-  banco,
-  id,
-  email,
-  telefone,
-  modificador = '-25 hours',
-  extras = {}
-) {
-  banco.prepare(`
-    INSERT INTO carrinhos
-      (id, email, nome, telefone, criado_em, status, finalizado_em,
-       whatsapp_enviado_em, whatsapp_falhou_em, whatsapp_etapa,
-       proximo_whatsapp_em)
-    VALUES (?, ?, ?, ?, datetime('now', ?), ?, ?, ?, ?, ?, ?)
-  `).run(
+function carrinho(b, id, email, telefone, idade = '-4 hours', extras = {}) {
+  b.prepare(`
+    INSERT INTO carrinhos (id, email, nome, telefone, criado_em, status, whatsapp_enviado_em)
+    VALUES (?, ?, ?, ?, datetime('now', ?), ?, ?)`).run(
     id,
     email,
-    extras.nome || null,
+    extras.nome ?? 'Maria Clara',
     telefone,
-    modificador,
+    idade,
     extras.status || 'aberto',
-    extras.finalizado_em || null,
-    extras.whatsapp_enviado_em || null,
-    extras.whatsapp_falhou_em || null,
-    extras.whatsapp_etapa || 0,
-    extras.proximo_whatsapp_em || null
+    extras.whatsapp_enviado_em || null
   )
-}
-
-function inserirSequenciaWhatsapp(banco, id, email, telefone, etapa, proximo = "datetime('now', '-1 minute')") {
-  banco.exec(`
-    INSERT INTO carrinhos
-      (id, email, telefone, criado_em, status, whatsapp_enviado_em,
-       whatsapp_etapa, proximo_whatsapp_em)
-    VALUES (
-      '${id}', '${email}', '${telefone}', datetime('now', '-30 days'), 'aberto',
-      datetime('now', '-20 days'), ${etapa}, ${proximo}
-    )
-  `)
-  const inserir = banco.prepare(`
-    INSERT INTO lembretes_enviados (carrinho_id, canal, etapa, enviado_em)
-    VALUES (?, 'whatsapp', ?, datetime('now', ?))
-  `)
-  for (let numero = 1; numero <= etapa; numero += 1) {
-    inserir.run(id, numero, `-${21 - numero * 2} days`)
-  }
 }
 
 function ambiente(db, extras = {}) {
   return {
     DB: db,
-    MODO: 'ativo',
-    TESTE_PARA: 'email-teste@example.com',
-    LEMBRETE_BCC: 'bcc@example.com',
+    WA_MODO: 'ativo',
+    WA_TESTE_PARA: '27999990000',
+    WA_TETO_DIA: '30',
+    WA_PHONE_NUMBER_ID: '123456',
+    WA_GRAPH_VERSION: 'v23.0',
+    WA_TEMPLATE: 'carrinho_lembrete',
+    WA_TOKEN: 'token-teste',
+    WA_APP_SECRET: 'segredo-do-app',
+    WA_VERIFY_TOKEN: 'frase-de-verificacao',
+    WA_ENCAMINHAR_PARA: 'suporte@example.com',
+    RESEND_API_KEY: 'resend-teste',
     EMAIL_FROM: 'Trilha Viva <acesso@trilhaviva.org>',
-    EMAIL_REPLY_TO: 'contato@trilhaviva.org',
-    SITE_URL: 'https://trilhaviva.org',
-    TETO_DIA: '40',
-    TETO_MES: '1100',
-    RESEND_API_KEY: 'resend_teste',
-    LEMBRETE_SEGREDO: 'segredo_teste',
-    MODO_WHATSAPP: 'ativo',
-    WHATSAPP_PROVEDOR: 'zapi',
-    WHATSAPP_TESTE_PARA: '11999990000',
-    WHATSAPP_TETO_DIA: '20',
-    ZAPI_INSTANCIA: 'instancia',
-    ZAPI_TOKEN: 'token',
-    ZAPI_CLIENT_TOKEN: 'cliente',
     ...extras,
   }
 }
 
-const meioDoDia = new Date('2026-01-15T15:00:00Z')
-const loggerMudo = { log() {}, error() {} }
-const envioOk = async () => new Response('{}', { status: 200 })
+const meioDoDia = new Date('2026-01-15T15:00:00Z') // 12h em Brasília
+const mudo = { log() {}, error() {} }
 
-test('migração 0006 contém exatamente a alteração aditiva especificada', () => {
-  assert.equal(
-    readFileSync('migrations/0006_whatsapp.sql', 'utf8')
-      .split(String.fromCharCode(13)).join('').trim(),
-    `ALTER TABLE carrinhos ADD COLUMN whatsapp_falhou_em TEXT;   -- tentativa que falhou (não tenta de novo)
-CREATE INDEX IF NOT EXISTS idx_carrinhos_telefone ON carrinhos (telefone);`
-  )
-})
-
-test('migração 0007 preserva dados, aceita etapa 8 e recusa etapa 9', () => {
-  const banco = new DatabaseSync(':memory:')
-  banco.exec(readFileSync('migrations/0000_esquema_atual.sql', 'utf8'))
-  banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
-  banco.exec(readFileSync('migrations/0005_recuperacao_v2.sql', 'utf8'))
-  banco.exec(readFileSync('migrations/0006_whatsapp.sql', 'utf8'))
-  banco.exec(`
-    INSERT INTO carrinhos (id, email, telefone, criado_em, status)
-    VALUES ('preservado', 'preservado@example.com', '11999990000', datetime('now'), 'aberto');
-    INSERT INTO lembretes_enviados (carrinho_id, canal, etapa, enviado_em)
-    VALUES ('preservado', 'email', 4, '2026-01-01 10:00:00')
-  `)
-
-  banco.exec(readFileSync('migrations/0007_whatsapp_semanal.sql', 'utf8'))
-  assert.deepEqual(
-    { ...banco.prepare(`
-      SELECT carrinho_id, canal, etapa, enviado_em FROM lembretes_enviados
-    `).get() },
-    {
-      carrinho_id: 'preservado',
-      canal: 'email',
-      etapa: 4,
-      enviado_em: '2026-01-01 10:00:00',
-    }
-  )
-  banco.exec(`
-    INSERT INTO lembretes_enviados (carrinho_id, canal, etapa)
-    VALUES ('preservado', 'whatsapp', 8)
-  `)
-  assert.throws(
-    () => banco.exec(`
-      INSERT INTO lembretes_enviados (carrinho_id, canal, etapa)
-      VALUES ('preservado', 'whatsapp', 9)
-    `),
-    /constraint failed/i
-  )
-})
-
-test('montarWhatsapp cobre todas as etapas, variações, nomes, links e saída', async () => {
-  const env = {
-    SITE_URL: 'https://trilhaviva.org/',
-    LEMBRETE_SEGREDO: 'segredo_teste',
-  }
-  const casos = [
-    ['c', 'Oi, Ana!', 'Vi que você começou'],
-    ['a', 'Olá, Ana, tudo bem?', 'Seu acesso ao acervo'],
-    ['b', 'Oi, Ana! Passando', 'pagamento único'],
-  ]
-  for (const [id, saudacao, trecho] of casos) {
-    const carrinho = {
-      id,
-      email: 'ana@example.com',
-      nome: `Ana${String.fromCharCode(9)}Maria`,
-    }
-    const primeira = await montarWhatsapp(carrinho, env, 1)
-    assert.equal(await montarWhatsapp(carrinho, env, 1), primeira)
-    assert.ok(primeira.includes(saudacao))
-    assert.ok(primeira.includes(trecho))
-    assert.ok(primeira.includes(`utm_campaign=carrinho-wa-1`))
-    assert.ok(primeira.includes('responda SAIR ou toque aqui:'))
-    assert.match(primeira, new RegExp('api/descadastrar[?]e=ana%40example.com&t=[0-9a-f]{64}$'))
-    assert.equal(primeira.includes('Maria'), false)
-  }
-
-  const seguimentos = [
-    'Aqui é da Trilha Viva de novo.',
-    'Uma dica rápida da Trilha Viva:',
-    'Passando para saber se ficou alguma dúvida',
-    'Aqui é da Trilha Viva de novo.',
-    'Uma dica rápida da Trilha Viva:',
-    'Passando para saber se ficou alguma dúvida',
-  ]
-  for (let etapa = 2; etapa <= 7; etapa += 1) {
-    const texto = await montarWhatsapp(
-      { id: 'seguimento', email: 'pessoa@example.com', nome: 'Paulo' },
-      env,
-      etapa
-    )
-    assert.ok(texto.includes(seguimentos[etapa - 2]))
-    assert.ok(texto.includes(`utm_campaign=carrinho-wa-${etapa}`))
-    assert.ok(texto.includes('responda SAIR ou toque aqui:'))
-  }
-
-  const ultima = await montarWhatsapp(
-    { id: 'ultima', email: 'pessoa@example.com', nome: 'Paulo' },
-    env,
-    8
-  )
-  assert.ok(ultima.startsWith('Oi, Paulo! Esta é a última mensagem'))
-  assert.ok(ultima.includes('utm_campaign=carrinho-wa-8'))
-  assert.ok(ultima.includes('responda SAIR ou toque aqui:'))
-
-  assert.ok((await montarWhatsapp({ id: 'c', email: 'a@b.com' }, env, 1)).startsWith('Oi! Aqui'))
-  assert.ok((await montarWhatsapp({ id: 'x', email: 'a@b.com' }, env, 2)).startsWith('Oi! Aqui'))
-  assert.ok((await montarWhatsapp({ id: 'x', email: 'a@b.com' }, env, 3)).startsWith('Olá! Uma'))
-  assert.ok((await montarWhatsapp({ id: 'x', email: 'a@b.com' }, env, 4)).startsWith('Oi, tudo bem?'))
-})
-
-test('enviarWhatsapp monta URL, cabeçalhos e corpo para Z-API e Evolution', async () => {
+// Finge a Meta e o Resend: guarda cada pedido e responde como eles.
+function falsoServidor({ metaFalha = false } = {}) {
   const pedidos = []
+  let numero = 0
   const fetchImpl = async (url, opcoes) => {
-    pedidos.push({ url, opcoes })
-    return new Response('{}', { status: 200 })
-  }
-
-  await enviarWhatsapp(
-    { telefone: '11999990000', texto: 'Mensagem' },
-    {
-      WHATSAPP_PROVEDOR: 'zapi',
-      ZAPI_INSTANCIA: 'abc',
-      ZAPI_TOKEN: 'tok',
-      ZAPI_CLIENT_TOKEN: 'cliente',
-    },
-    fetchImpl
-  )
-  await enviarWhatsapp(
-    { telefone: '11888880000', texto: 'Outra' },
-    {
-      WHATSAPP_PROVEDOR: 'evolution',
-      EVOLUTION_URL: 'https://evolution.example.com/',
-      EVOLUTION_INSTANCIA: 'Minha Instância',
-      EVOLUTION_APIKEY: 'chave',
-    },
-    fetchImpl
-  )
-
-  assert.equal(pedidos[0].url, 'https://api.z-api.io/instances/abc/token/tok/send-text')
-  assert.deepEqual(pedidos[0].opcoes.headers, {
-    'Client-Token': 'cliente',
-    'Content-Type': 'application/json',
-  })
-  assert.deepEqual(JSON.parse(pedidos[0].opcoes.body), {
-    phone: '5511999990000',
-    message: 'Mensagem',
-  })
-  assert.equal(
-    pedidos[1].url,
-    'https://evolution.example.com/message/sendText/Minha%20Inst%C3%A2ncia'
-  )
-  assert.deepEqual(pedidos[1].opcoes.headers, {
-    apikey: 'chave',
-    'Content-Type': 'application/json',
-  })
-  assert.deepEqual(JSON.parse(pedidos[1].opcoes.body), {
-    number: '5511888880000',
-    text: 'Outra',
-  })
-
-  await assert.rejects(
-    enviarWhatsapp(
-      { telefone: '11999990000', texto: 'Falha' },
-      {
-        WHATSAPP_PROVEDOR: 'zapi',
-        ZAPI_INSTANCIA: 'abc',
-        ZAPI_TOKEN: 'tok',
-        ZAPI_CLIENT_TOKEN: 'cliente',
-      },
-      async () => new Response('{}', { status: 503 })
-    ),
-    /HTTP 503/
-  )
-})
-
-test('dentroDoHorario respeita os quatro limites de Brasília', () => {
-  assert.equal(dentroDoHorario(new Date('2026-01-15T11:59:00Z')), false)
-  assert.equal(dentroDoHorario(new Date('2026-01-15T12:00:00Z')), true)
-  assert.equal(dentroDoHorario(new Date('2026-01-15T22:59:00Z')), true)
-  assert.equal(dentroDoHorario(new Date('2026-01-15T23:00:00Z')), false)
-})
-
-test('saída interpreta Z-API e Evolution e ignora grupo, fromMe e texto vazio', () => {
-  assert.deepEqual(
-    lerMensagemRecebida({
-      phone: '5511999990000',
-      fromMe: false,
-      isGroup: false,
-      text: { message: 'SAIR' },
-    }),
-    { telefone: '11999990000', texto: 'SAIR' }
-  )
-  assert.deepEqual(
-    lerMensagemRecebida({
-      event: 'messages.upsert',
-      data: {
-        key: { remoteJid: '5511888880000@s.whatsapp.net', fromMe: false },
-        message: { extendedTextMessage: { text: 'pare!' } },
-      },
-    }),
-    { telefone: '11888880000', texto: 'pare!' }
-  )
-  assert.equal(
-    lerMensagemRecebida({
-      event: 'messages.upsert',
-      data: {
-        key: { remoteJid: '5511999990000@g.us', fromMe: false },
-        message: { conversation: 'sair' },
-      },
-    }),
-    null
-  )
-  assert.equal(
-    lerMensagemRecebida({ phone: '5511999990000', fromMe: true, text: { message: 'sair' } }),
-    null
-  )
-  assert.equal(lerMensagemRecebida({ phone: '5511999990000', text: { message: '' } }), null)
-})
-
-test('pedidoDeSaida aceita somente os pedidos definidos e segredo é comparado por resumo', async () => {
-  for (const texto of [' SAIR! ', 'parar.', 'PARE', 'stop', 'cancelar', 'descadastrar', 'remover']) {
-    assert.equal(pedidoDeSaida(texto), true)
-  }
-  assert.equal(pedidoDeSaida('quero sair agora'), false)
-  assert.equal(pedidoDeSaida('saída'), false)
-  assert.equal(await compararSegredoEmTempoConstante('segredo', 'segredo'), true)
-  assert.equal(await compararSegredoEmTempoConstante('segredo', 'outro'), false)
-})
-
-test('WhatsApp desligado não consulta o banco e configuração ausente também não consulta', async () => {
-  const dbProibido = { prepare() { throw new Error('não deveria consultar') } }
-  assert.deepEqual(
-    await executarWhatsapp({ DB: dbProibido, MODO_WHATSAPP: 'desligado' }),
-    { enviados: 0, ignorados: 0, apenasLog: 0 }
-  )
-  assert.deepEqual(
-    await executarWhatsapp(
-      { DB: dbProibido, MODO_WHATSAPP: 'ativo', WHATSAPP_PROVEDOR: 'zapi' },
-      { agora: meioDoDia, logger: loggerMudo }
-    ),
-    { enviados: 0, ignorados: 0, apenasLog: 0 }
-  )
-})
-
-test('modo teste envia só ao número autorizado e nem busca os demais', async () => {
-  const banco = bancoWhatsapp()
-  // Três carrinhos de clientes reais mais antigos ocupariam as 3 vagas da
-  // rodada se a busca não filtrasse o celular de teste.
-  inserirCarrinho(banco, 'outro', 'outro@example.com', '11888880000', '-30 hours')
-  inserirCarrinho(banco, 'outro2', 'outro2@example.com', '11888881111', '-29 hours')
-  inserirCarrinho(banco, 'outro3', 'outro3@example.com', '11888882222', '-28 hours')
-  inserirCarrinho(banco, 'teste', 'teste@example.com', '11999990000', '-25 hours')
-  const logs = []
-  let envios = 0
-  const resultado = await executarWhatsapp(
-    ambiente(new D1Local(banco), { MODO_WHATSAPP: 'teste' }),
-    {
-      agora: meioDoDia,
-      logger: { log: (mensagem) => logs.push(mensagem), error() {} },
-      fetchImpl: async () => { envios += 1; return envioOk() },
-    }
-  )
-
-  assert.deepEqual(resultado, { enviados: 1, ignorados: 0, apenasLog: 0 })
-  assert.equal(envios, 1)
-  assert.equal(logs.some((linha) => linha.includes('11888880000')), false)
-  assert.equal(
-    banco.prepare("SELECT whatsapp_enviado_em IS NULL AS vazio FROM carrinhos WHERE id = 'outro'").get().vazio,
-    1
-  )
-  assert.deepEqual(
-    { ...banco.prepare(`
-      SELECT whatsapp_etapa,
-             proximo_whatsapp_em IS NOT NULL AS tem_proximo
-        FROM carrinhos WHERE id = 'teste'
-    `).get() },
-    { whatsapp_etapa: 1, tem_proximo: 1 }
-  )
-
-  const bancoSeguimento = bancoWhatsapp()
-  inserirSequenciaWhatsapp(
-    bancoSeguimento,
-    'seguimento-teste',
-    'seguimento@example.com',
-    '11999990000',
-    2
-  )
-  inserirSequenciaWhatsapp(
-    bancoSeguimento,
-    'seguimento-outro',
-    'outro-seguimento@example.com',
-    '11888880000',
-    2
-  )
-  const resultadoSeguimento = await executarWhatsapp(
-    ambiente(new D1Local(bancoSeguimento), { MODO_WHATSAPP: 'teste' }),
-    { agora: meioDoDia, logger: loggerMudo, fetchImpl: envioOk }
-  )
-  assert.deepEqual(resultadoSeguimento, { enviados: 1, ignorados: 0, apenasLog: 0 })
-  assert.equal(
-    bancoSeguimento.prepare(`
-      SELECT whatsapp_etapa FROM carrinhos WHERE id = 'seguimento-teste'
-    `).get().whatsapp_etapa,
-    3
-  )
-  assert.equal(
-    bancoSeguimento.prepare(`
-      SELECT whatsapp_etapa FROM carrinhos WHERE id = 'seguimento-outro'
-    `).get().whatsapp_etapa,
-    2
-  )
-})
-
-test('sequência avança semanalmente da etapa 1 até a 8 e para no final', async () => {
-  const banco = bancoWhatsapp()
-  inserirCarrinho(banco, 'sequencia', 'sequencia@example.com', '11999990000')
-  const db = new D1Local(banco)
-  let chamadas = 0
-  const opcoes = {
-    agora: meioDoDia,
-    logger: loggerMudo,
-    fetchImpl: async () => {
-      chamadas += 1
-      return envioOk()
-    },
-  }
-
-  for (let etapa = 1; etapa <= 8; etapa += 1) {
-    if (etapa > 1) {
-      banco.exec(`
-        UPDATE carrinhos SET proximo_whatsapp_em = datetime('now', '-1 minute')
-         WHERE id = 'sequencia'
-      `)
-    }
-    const resultado = await executarWhatsapp(ambiente(db), opcoes)
-    assert.equal(resultado.enviados, 1)
-    const linha = banco.prepare(`
-      SELECT whatsapp_etapa, proximo_whatsapp_em,
-             ROUND(julianday(proximo_whatsapp_em) - julianday('now'), 3) AS dias
-        FROM carrinhos WHERE id = 'sequencia'
-    `).get()
-    assert.equal(linha.whatsapp_etapa, etapa)
-    if (etapa < 8) assert.equal(linha.dias, 7)
-    else assert.equal(linha.proximo_whatsapp_em, null)
-  }
-
-  assert.equal(chamadas, 8)
-  assert.equal(
-    banco.prepare(`
-      SELECT COUNT(*) AS total FROM lembretes_enviados
-       WHERE carrinho_id = 'sequencia' AND canal = 'whatsapp'
-    `).get().total,
-    8
-  )
-  assert.equal((await executarWhatsapp(ambiente(db), opcoes)).enviados, 0)
-  assert.equal(chamadas, 8)
-})
-
-test('compra ou descadastro no meio para a sequência sem enviar', async () => {
-  const banco = bancoWhatsapp()
-  inserirSequenciaWhatsapp(banco, 'comprou-meio', 'comprou-meio@example.com', '11111110000', 3)
-  inserirSequenciaWhatsapp(banco, 'saiu-meio', 'saiu-meio@example.com', '11222220000', 4)
-  banco.exec(`
-    INSERT INTO clientes (email) VALUES ('comprou-meio@example.com');
-    INSERT INTO compras (cliente_id, stripe_session_id, status)
-      VALUES (last_insert_rowid(), 'mp_comprou_meio', 'pago');
-    INSERT INTO descadastros (email, canal)
-      VALUES ('saiu-meio@example.com', 'whatsapp');
-  `)
-  let chamadas = 0
-  const resultado = await executarWhatsapp(ambiente(new D1Local(banco)), {
-    agora: meioDoDia,
-    logger: loggerMudo,
-    fetchImpl: async () => {
-      chamadas += 1
-      return envioOk()
-    },
-  })
-
-  assert.deepEqual(resultado, { enviados: 0, ignorados: 2, apenasLog: 0 })
-  assert.equal(chamadas, 0)
-  assert.equal(
-    banco.prepare(`
-      SELECT COUNT(*) AS total FROM carrinhos
-       WHERE id IN ('comprou-meio', 'saiu-meio') AND proximo_whatsapp_em IS NULL
-    `).get().total,
-    2
-  )
-})
-
-test('falha em seguimento para sem repetir e mantém as etapas anteriores', async () => {
-  const banco = bancoWhatsapp()
-  inserirSequenciaWhatsapp(banco, 'falha-meio', 'falha-meio@example.com', '11999990000', 3)
-  let chamadas = 0
-  const opcoes = {
-    agora: meioDoDia,
-    logger: loggerMudo,
-    fetchImpl: async () => {
-      chamadas += 1
-      return new Response('{}', { status: 500 })
-    },
-  }
-  const db = new D1Local(banco)
-  await executarWhatsapp(ambiente(db), opcoes)
-  await executarWhatsapp(ambiente(db), opcoes)
-
-  assert.equal(chamadas, 1)
-  assert.deepEqual(
-    { ...banco.prepare(`
-      SELECT whatsapp_etapa, proximo_whatsapp_em,
-             whatsapp_falhou_em IS NOT NULL AS falhou
-        FROM carrinhos WHERE id = 'falha-meio'
-    `).get() },
-    { whatsapp_etapa: 3, proximo_whatsapp_em: null, falhou: 1 }
-  )
-  assert.equal(
-    banco.prepare(`
-      SELECT COUNT(*) AS total FROM lembretes_enviados
-       WHERE carrinho_id = 'falha-meio' AND canal = 'whatsapp'
-    `).get().total,
-    3
-  )
-})
-
-test('teto diário impede envio e cada rodada envia no máximo três', async () => {
-  const bancoTeto = bancoWhatsapp()
-  inserirCarrinho(bancoTeto, 'anterior', 'anterior@example.com', '11777770000', '-80 hours', {
-    status: 'ignorado',
-    whatsapp_enviado_em: '2026-01-01 10:00:00',
-  })
-  bancoTeto.exec(`
-    INSERT INTO lembretes_enviados (carrinho_id, canal, etapa, enviado_em)
-    VALUES ('anterior', 'whatsapp', 1, datetime('now'))
-  `)
-  inserirCarrinho(bancoTeto, 'espera', 'espera@example.com', '11666660000')
-  let chamadas = 0
-  const noTeto = await executarWhatsapp(
-    ambiente(new D1Local(bancoTeto), { WHATSAPP_TETO_DIA: '1' }),
-    { agora: meioDoDia, logger: loggerMudo, fetchImpl: async () => { chamadas += 1; return envioOk() } }
-  )
-  assert.equal(noTeto.enviados, 0)
-  assert.equal(chamadas, 0)
-
-  const bancoTres = bancoWhatsapp()
-  for (let indice = 0; indice < 4; indice += 1) {
-    inserirCarrinho(
-      bancoTres,
-      `c${indice}`,
-      `c${indice}@example.com`,
-      `1199999000${indice}`
-    )
-  }
-  const tres = await executarWhatsapp(
-    ambiente(new D1Local(bancoTres)),
-    { agora: meioDoDia, logger: loggerMudo, fetchImpl: envioOk }
-  )
-  assert.equal(tres.enviados, 3)
-  assert.equal(
-    bancoTres.prepare('SELECT COUNT(*) AS total FROM carrinhos WHERE whatsapp_enviado_em IS NOT NULL').get().total,
-    3
-  )
-})
-
-test('limite de três soma seguimentos primeiro e primeiras mensagens depois', async () => {
-  const banco = bancoWhatsapp()
-  inserirSequenciaWhatsapp(banco, 's1', 's1@example.com', '11111110000', 2)
-  inserirSequenciaWhatsapp(banco, 's2', 's2@example.com', '11222220000', 3)
-  inserirCarrinho(banco, 'p1', 'p1@example.com', '11333330000')
-  inserirCarrinho(banco, 'p2', 'p2@example.com', '11444440000')
-  const ordem = []
-  const resultado = await executarWhatsapp(ambiente(new D1Local(banco)), {
-    agora: meioDoDia,
-    logger: loggerMudo,
-    fetchImpl: async (_url, opcoes) => {
-      ordem.push(JSON.parse(opcoes.body).message)
-      return envioOk()
-    },
-  })
-
-  assert.equal(resultado.enviados, 3)
-  assert.equal(ordem.length, 3)
-  assert.ok(ordem[0].includes('carrinho-wa-3'))
-  assert.ok(ordem[1].includes('carrinho-wa-4'))
-  assert.ok(ordem[2].includes('carrinho-wa-1'))
-  assert.equal(
-    banco.prepare(`
-      SELECT COUNT(*) AS total FROM carrinhos
-       WHERE id IN ('p1', 'p2') AND whatsapp_etapa = 1
-    `).get().total,
-    1
-  )
-})
-
-test('janela aceita somente carrinhos entre 1 e 48 horas', async () => {
-  const banco = bancoWhatsapp()
-  inserirCarrinho(banco, 'novo', 'novo@example.com', '11111110000', '-59 minutes')
-  inserirCarrinho(banco, 'inicio', 'inicio@example.com', '11222220000', '-61 minutes')
-  inserirCarrinho(banco, 'fim', 'fim@example.com', '11333330000', '-47 hours')
-  inserirCarrinho(banco, 'antigo', 'antigo@example.com', '11444440000', '-49 hours')
-  const resultado = await executarWhatsapp(
-    ambiente(new D1Local(banco)),
-    { agora: meioDoDia, logger: loggerMudo, fetchImpl: envioOk }
-  )
-  assert.equal(resultado.enviados, 2)
-  assert.deepEqual(
-    banco.prepare(`
-      SELECT id FROM carrinhos WHERE whatsapp_enviado_em IS NOT NULL ORDER BY id
-    `).all().map((linha) => linha.id),
-    ['fim', 'inicio']
-  )
-})
-
-test('carrinho ignorado pelo e-mail ainda recebe o WhatsApp; cliente continua bloqueado', async () => {
-  // 'ignorado' é decisão do e-mail (falha no envio, carrinho repetido). O
-  // WhatsApp tem as próprias checagens de compra, descadastro e envio anterior.
-  const banco = bancoWhatsapp()
-  inserirCarrinho(banco, 'email-falhou', 'falhou@example.com', '11777770000', '-3 hours', {
-    status: 'ignorado',
-  })
-  inserirCarrinho(banco, 'cliente', 'cliente@example.com', '11777771111', '-3 hours', {
-    status: 'ignorado',
-  })
-  banco.exec(`
-    INSERT INTO clientes (email) VALUES ('cliente@example.com');
-    INSERT INTO compras (cliente_id, stripe_session_id, status)
-      SELECT id, 'mp_cliente', 'pago' FROM clientes WHERE email = 'cliente@example.com';
-  `)
-  const resultado = await executarWhatsapp(
-    ambiente(new D1Local(banco)),
-    { agora: meioDoDia, logger: loggerMudo, fetchImpl: envioOk }
-  )
-  assert.equal(resultado.enviados, 1)
-  assert.equal(resultado.ignorados, 1)
-  assert.deepEqual(
-    banco.prepare(`
-      SELECT id FROM carrinhos WHERE whatsapp_enviado_em IS NOT NULL ORDER BY id
-    `).all().map((linha) => linha.id),
-    ['email-falhou']
-  )
-})
-
-test('compra, descadastro e envio anterior bloqueiam e marcam a tentativa', async () => {
-  const banco = bancoWhatsapp()
-  inserirCarrinho(banco, 'comprou', 'comprou@example.com', '11111110000')
-  inserirCarrinho(banco, 'saiu', 'saiu@example.com', '11222220000')
-  inserirCarrinho(banco, 'anterior', 'anterior@example.com', '11333330000', '-80 hours', {
-    status: 'ignorado',
-    whatsapp_enviado_em: '2026-01-01 10:00:00',
-  })
-  inserirCarrinho(banco, 'repetido', 'outro@example.com', '11333330000')
-  banco.exec(`
-    INSERT INTO clientes (email) VALUES ('comprou@example.com');
-    INSERT INTO compras (cliente_id, stripe_session_id, status)
-      VALUES (last_insert_rowid(), 'mp_whatsapp', 'pago');
-    INSERT INTO descadastros (email, canal) VALUES ('saiu@example.com', 'email');
-    INSERT INTO lembretes_enviados (carrinho_id, canal, etapa, enviado_em)
-      VALUES ('anterior', 'whatsapp', 1, '2026-01-01 10:00:00');
-  `)
-  let chamadas = 0
-  const resultado = await executarWhatsapp(
-    ambiente(new D1Local(banco)),
-    { agora: meioDoDia, logger: loggerMudo, fetchImpl: async () => { chamadas += 1; return envioOk() } }
-  )
-  assert.deepEqual(resultado, { enviados: 0, ignorados: 3, apenasLog: 0 })
-  assert.equal(chamadas, 0)
-  assert.equal(
-    banco.prepare(`
-      SELECT COUNT(*) AS total
-        FROM carrinhos
-       WHERE id IN ('comprou', 'saiu', 'repetido')
-         AND whatsapp_falhou_em IS NOT NULL
-    `).get().total,
-    3
-  )
-})
-
-test('falha de envio é marcada e nunca tentada novamente', async () => {
-  const banco = bancoWhatsapp()
-  inserirCarrinho(banco, 'falha', 'falha@example.com', '11999990000')
-  let chamadas = 0
-  const opcoes = {
-    agora: meioDoDia,
-    logger: loggerMudo,
-    fetchImpl: async () => { chamadas += 1; return new Response('{}', { status: 500 }) },
-  }
-  await executarWhatsapp(ambiente(new D1Local(banco)), opcoes)
-  await executarWhatsapp(ambiente(new D1Local(banco)), opcoes)
-
-  assert.equal(chamadas, 1)
-  assert.equal(
-    banco.prepare("SELECT whatsapp_falhou_em IS NOT NULL AS falhou FROM carrinhos WHERE id = 'falha'").get().falhou,
-    1
-  )
-  assert.equal(
-    banco.prepare("SELECT COUNT(*) AS total FROM lembretes_enviados WHERE canal = 'whatsapp'").get().total,
-    0
-  )
-})
-
-test('erro no WhatsApp não altera o resultado nem o registro do e-mail', async () => {
-  const banco = bancoWhatsapp()
-  inserirCarrinho(banco, 'dois-canais', 'dois@example.com', '11999990000', '-25 hours')
-  let emails = 0
-  const resultado = await executarRodada(ambiente(new D1Local(banco)), {
-    agora: meioDoDia,
-    logger: loggerMudo,
-    fetchImpl: async (url) => {
-      if (url === 'https://api.resend.com/emails') {
-        emails += 1
-        return envioOk()
+    const corpo = JSON.parse(opcoes.body)
+    pedidos.push({ url, corpo, headers: opcoes.headers })
+    if (String(url).includes('graph.facebook.com')) {
+      if (metaFalha) {
+        return new Response(JSON.stringify({ error: { code: 131026, message: 'Message undeliverable' } }), { status: 400 })
       }
-      return new Response('{}', { status: 500 })
+      numero += 1
+      return new Response(JSON.stringify({ messages: [{ id: `wamid.${numero}` }] }), { status: 200 })
+    }
+    return new Response('{"id":"email"}', { status: 200 })
+  }
+  return {
+    fetchImpl,
+    pedidos,
+    meta: () => pedidos.filter((p) => String(p.url).includes('graph.facebook.com')),
+    emails: () => pedidos.filter((p) => String(p.url).includes('resend.com')),
+  }
+}
+
+// ------------------------------------------------------------ peças ----
+
+test('telefone: tira o 55 só quando sobra DDD + número (DDD 55 preservado)', () => {
+  assert.equal(telefoneSemPais('5527999998888'), '27999998888')
+  assert.equal(telefoneSemPais('552733334444'), '2733334444')
+  assert.equal(telefoneSemPais('55999887766'), '55999887766')
+  assert.equal(telefoneSemPais('+55 (27) 99999-8888'), '27999998888')
+})
+
+test('pedido do modelo: número com 55, primeiro nome, botão só com o código do carrinho', () => {
+  const corpo = pedidoModelo(
+    { telefone: '27999998888', nome: 'Maria Clara Souza', carrinhoId: 'abc-123' },
+    { WA_TEMPLATE: 'carrinho_lembrete' }
+  )
+  assert.deepEqual(corpo, {
+    messaging_product: 'whatsapp',
+    to: '5527999998888',
+    type: 'template',
+    template: {
+      name: 'carrinho_lembrete',
+      language: { code: 'pt_BR' },
+      components: [
+        { type: 'body', parameters: [{ type: 'text', text: 'Maria' }] },
+        {
+          type: 'button',
+          sub_type: 'url',
+          index: '0',
+          parameters: [
+            { type: 'text', text: 'r=abc-123&utm_source=whatsapp&utm_medium=lembrete&utm_campaign=carrinho' },
+          ],
+        },
+      ],
     },
   })
+  const semNome = pedidoModelo({ telefone: '27999998888', nome: '', carrinhoId: 'x' }, {})
+  assert.equal(semNome.template.components[0].parameters[0].text, 'tudo bem')
+  assert.equal(JSON.stringify(corpo).includes('@'), false)
+  assert.equal(primeiroNome('Ana\tPaula'), 'Ana')
+})
 
-  assert.equal(emails, 1)
-  assert.equal(resultado.enviados, 1)
-  assert.deepEqual(resultado.whatsapp, { enviados: 0, ignorados: 0, apenasLog: 0 })
-  assert.deepEqual(
-    { ...banco.prepare(`
-      SELECT status, email_enviado_em IS NOT NULL AS email_ok,
-             whatsapp_falhou_em IS NOT NULL AS whatsapp_falhou
-        FROM carrinhos WHERE id = 'dois-canais'
-    `).get() },
-    { status: 'lembrado', email_ok: 1, whatsapp_falhou: 1 }
-  )
+test('pedido de saída: SAIR, Sair!, PARAR e o botão contam; frase comum não', () => {
+  for (const t of ['SAIR', ' Sair! ', 'PARAR', 'cancelar', 'Não quero receber']) assert.equal(pedidoDeSaida(t), true, t)
+  for (const t of ['quero sair da dúvida', 'oi', 'comprar']) assert.equal(pedidoDeSaida(t), false, t)
+})
+
+test('assinatura do webhook: válida passa; falsa, ausente e sem segredo não', async () => {
+  const corpo = '{"a":1}'
+  const certa = 'sha256=' + createHmac('sha256', 'segredo').update(corpo).digest('hex')
+  assert.equal(await assinaturaValida(corpo, certa, 'segredo'), true)
+  assert.equal(await assinaturaValida(corpo + ' ', certa, 'segredo'), false)
+  assert.equal(await assinaturaValida(corpo, 'sha256=00', 'segredo'), false)
+  assert.equal(await assinaturaValida(corpo, '', 'segredo'), false)
+  assert.equal(await assinaturaValida(corpo, certa, ''), false)
+})
+
+test('horário: só das 9h às 19h59 de Brasília', () => {
+  assert.equal(dentroDoHorario(new Date('2026-01-15T11:59:00Z')), false) // 8h59
+  assert.equal(dentroDoHorario(new Date('2026-01-15T12:00:00Z')), true) // 9h00
+  assert.equal(dentroDoHorario(new Date('2026-01-15T22:59:00Z')), true) // 19h59
+  assert.equal(dentroDoHorario(new Date('2026-01-15T23:00:00Z')), false) // 20h00
+})
+
+// ------------------------------------------------------------ envio ----
+
+test('janela de 3 h a 48 h: envia uma vez, grava o id e o status', async () => {
+  const b = banco()
+  carrinho(b, 'cedo', 'cedo@example.com', '27911110000', '-2 hours')
+  carrinho(b, 'certo', 'certo@example.com', '27922220000', '-4 hours')
+  carrinho(b, 'velho', 'velho@example.com', '27933330000', '-49 hours')
+  const s = falsoServidor()
+  const r = await executarWhatsapp(ambiente(new D1Local(b)), { agora: meioDoDia, logger: mudo, fetchImpl: s.fetchImpl })
+  assert.deepEqual(r, { enviados: 1, ignorados: 0, falhas: 0 })
+  assert.equal(s.meta().length, 1)
+  assert.equal(s.meta()[0].url, 'https://graph.facebook.com/v23.0/123456/messages')
+  assert.equal(s.meta()[0].headers.Authorization, 'Bearer token-teste')
+  assert.equal(s.meta()[0].corpo.to, '5527922220000')
+  const linha = b.prepare(`SELECT whatsapp_msg_id, whatsapp_status, whatsapp_enviado_em IS NOT NULL AS enviado FROM carrinhos WHERE id = 'certo'`).get()
+  assert.deepEqual({ ...linha }, { whatsapp_msg_id: 'wamid.1', whatsapp_status: 'sent', enviado: 1 })
+
+  const r2 = await executarWhatsapp(ambiente(new D1Local(b)), { agora: meioDoDia, logger: mudo, fetchImpl: s.fetchImpl })
+  assert.equal(r2.enviados, 0)
+  assert.equal(s.meta().length, 1)
+})
+
+test('fora do horário, sem configuração ou modo inválido não envia nem consulta', async () => {
+  const b = banco()
+  carrinho(b, 'c1', 'c1@example.com', '27911110000')
+  const s = falsoServidor()
+  const db = new D1Local(b)
+  await executarWhatsapp(ambiente(db), { agora: new Date('2026-01-15T05:00:00Z'), logger: mudo, fetchImpl: s.fetchImpl })
+  await executarWhatsapp(ambiente(db, { WA_PHONE_NUMBER_ID: '' }), { agora: meioDoDia, logger: mudo, fetchImpl: s.fetchImpl })
+  await executarWhatsapp(ambiente(db, { WA_TOKEN: '' }), { agora: meioDoDia, logger: mudo, fetchImpl: s.fetchImpl })
+  await executarWhatsapp(ambiente(db, { WA_MODO: 'desligado' }), { agora: meioDoDia, logger: mudo, fetchImpl: s.fetchImpl })
+  assert.equal(s.pedidos.length, 0)
+})
+
+test('modo teste: só o celular de teste, mesmo com carrinhos reais mais antigos', async () => {
+  const b = banco()
+  for (let i = 0; i < 25; i += 1) carrinho(b, `real${i}`, `real${i}@example.com`, `2791111${String(i).padStart(4, '0')}`, '-10 hours')
+  carrinho(b, 'teste', 'paulo@example.com', '27999990000', '-4 hours')
+  const s = falsoServidor()
+  const r = await executarWhatsapp(ambiente(new D1Local(b), { WA_MODO: 'teste' }), { agora: meioDoDia, logger: mudo, fetchImpl: s.fetchImpl })
+  assert.equal(r.enviados, 1)
+  assert.deepEqual(s.meta().map((p) => p.corpo.to), ['5527999990000'])
+  const sem = falsoServidor()
+  await executarWhatsapp(ambiente(new D1Local(banco()), { WA_MODO: 'teste', WA_TESTE_PARA: '' }), { agora: meioDoDia, logger: mudo, fetchImpl: sem.fetchImpl })
+  assert.equal(sem.pedidos.length, 0)
+})
+
+test('uma por telefone para sempre; compra e descadastro bloqueiam; ignorado pelo e-mail recebe', async () => {
+  const b = banco()
+  carrinho(b, 'antigo', 'a@example.com', '27911110000', '-30 days', { whatsapp_enviado_em: '2026-01-01 10:00:00', status: 'lembrado' })
+  carrinho(b, 'mesmo-tel', 'b@example.com', '27911110000')
+  carrinho(b, 'comprou', 'comprou@example.com', '27922220000')
+  carrinho(b, 'saiu', 'saiu@example.com', '27933330000')
+  carrinho(b, 'email-falhou', 'ok@example.com', '27944440000', '-4 hours', { status: 'ignorado' })
+  carrinho(b, 'pago', 'pago@example.com', '27955550000', '-4 hours', { status: 'pago' })
+  b.exec(`
+    INSERT INTO clientes (email) VALUES ('comprou@example.com');
+    INSERT INTO compras (cliente_id, stripe_session_id, status) SELECT id, 'mp_1', 'pago' FROM clientes;
+    INSERT INTO descadastros (email, canal) VALUES ('saiu@example.com', 'email');
+  `)
+  const s = falsoServidor()
+  const r = await executarWhatsapp(ambiente(new D1Local(b)), { agora: meioDoDia, logger: mudo, fetchImpl: s.fetchImpl })
+  assert.deepEqual(r, { enviados: 1, ignorados: 3, falhas: 0 })
+  assert.deepEqual(s.meta().map((p) => p.corpo.to), ['5527944440000'])
+  const bloqueados = b.prepare(`SELECT id FROM carrinhos WHERE whatsapp_falhou_em IS NOT NULL ORDER BY id`).all().map((l) => l.id)
+  assert.deepEqual(bloqueados, ['comprou', 'mesmo-tel', 'saiu'])
+})
+
+test('erro da Meta: marca, loga o código e não tenta de novo', async () => {
+  const b = banco()
+  carrinho(b, 'c1', 'c1@example.com', '27911110000')
+  const erros = []
+  const s = falsoServidor({ metaFalha: true })
+  const db = new D1Local(b)
+  const r = await executarWhatsapp(ambiente(db), { agora: meioDoDia, logger: { log() {}, error: (...a) => erros.push(a.join(' ')) }, fetchImpl: s.fetchImpl })
+  assert.deepEqual(r, { enviados: 0, ignorados: 0, falhas: 1 })
+  assert.match(erros[0], /131026/)
+  assert.doesNotMatch(erros[0], /27911110000/)
+  const linha = b.prepare(`SELECT whatsapp_enviado_em, whatsapp_falhou_em IS NOT NULL AS falhou, whatsapp_status FROM carrinhos`).get()
+  assert.deepEqual({ ...linha }, { whatsapp_enviado_em: null, falhou: 1, whatsapp_status: 'failed' })
+  assert.equal(b.prepare(`SELECT COUNT(*) AS n FROM lembretes_enviados WHERE canal = 'whatsapp'`).get().n, 0)
+  await executarWhatsapp(ambiente(db), { agora: meioDoDia, logger: mudo, fetchImpl: s.fetchImpl })
+  assert.equal(s.meta().length, 1)
+})
+
+test('teto do dia', async () => {
+  const b = banco()
+  for (let i = 0; i < 5; i += 1) carrinho(b, `c${i}`, `c${i}@example.com`, `2791111000${i}`)
+  const s = falsoServidor()
+  const r = await executarWhatsapp(ambiente(new D1Local(b), { WA_TETO_DIA: '2' }), { agora: meioDoDia, logger: mudo, fetchImpl: s.fetchImpl })
+  assert.equal(r.enviados, 2)
+  assert.equal(s.meta().length, 2)
+})
+
+test('rodada: erro no e-mail não impede o WhatsApp', async () => {
+  const b = banco()
+  carrinho(b, 'c1', 'c1@example.com', '27911110000')
+  const s = falsoServidor()
+  // Sem RESEND_API_KEY / LEMBRETE_SEGREDO o e-mail recusa a rodada.
+  const env = ambiente(new D1Local(b), { RESEND_API_KEY: '', LEMBRETE_SEGREDO: '' })
+  await assert.rejects(executarRodada(env, { agora: meioDoDia, logger: mudo, fetchImpl: s.fetchImpl }))
+  assert.equal(s.meta().length, 1)
+})
+
+// ---------------------------------------------------------- webhook ----
+
+function assinado(corpo, segredo = 'segredo-do-app') {
+  const texto = JSON.stringify(corpo)
+  return new Request('https://robo.example/whatsapp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Hub-Signature-256': 'sha256=' + createHmac('sha256', segredo).update(texto).digest('hex') },
+    body: texto,
+  })
+}
+
+function aviso({ mensagens = [], status = [], nome = 'Maria' } = {}) {
+  return {
+    object: 'whatsapp_business_account',
+    entry: [{
+      id: 'waba',
+      changes: [{
+        field: 'messages',
+        value: {
+          messaging_product: 'whatsapp',
+          contacts: [{ wa_id: '5527911110000', profile: { name: nome } }],
+          messages: mensagens,
+          statuses: status,
+        },
+      }],
+    }],
+  }
+}
+
+test('webhook GET: verificação da Meta com a frase certa; errada ou outro caminho = 404', async () => {
+  const env = ambiente(new D1Local(banco()))
+  const ok = await atenderWebhook(new Request('https://robo.example/whatsapp?hub.mode=subscribe&hub.verify_token=frase-de-verificacao&hub.challenge=987'), env)
+  assert.equal(ok.status, 200)
+  assert.equal(await ok.text(), '987')
+  const errada = await atenderWebhook(new Request('https://robo.example/whatsapp?hub.mode=subscribe&hub.verify_token=outra&hub.challenge=987'), env)
+  assert.equal(errada.status, 404)
+  assert.equal((await atenderWebhook(new Request('https://robo.example/'), env)).status, 404)
+  assert.equal((await atenderWebhook(new Request('https://robo.example/whatsapp'), ambiente(null, { WA_VERIFY_TOKEN: '' }))).status, 404)
+})
+
+test('webhook POST: assinatura falsa = 401 e nada gravado', async () => {
+  const b = banco()
+  const s = falsoServidor()
+  const corpo = aviso({ mensagens: [{ from: '5527911110000', id: 'wamid.in1', type: 'text', text: { body: 'oi' } }] })
+  const r = await atenderWebhook(assinado(corpo, 'segredo-errado'), ambiente(new D1Local(b)), { fetchImpl: s.fetchImpl, logger: mudo })
+  assert.equal(r.status, 401)
+  assert.equal(b.prepare('SELECT COUNT(*) AS n FROM whatsapp_mensagens').get().n, 0)
+  assert.equal(s.pedidos.length, 0)
+})
+
+test('mensagem comum: grava, encaminha por e-mail uma vez só (aviso repetido não duplica)', async () => {
+  const b = banco()
+  carrinho(b, 'c1', 'maria@example.com', '27911110000')
+  const s = falsoServidor()
+  const env = ambiente(new D1Local(b))
+  const corpo = aviso({ mensagens: [{ from: '5527911110000', id: 'wamid.in1', type: 'text', text: { body: 'Tem desconto? <b>' } }] })
+  assert.equal((await atenderWebhook(assinado(corpo), env, { fetchImpl: s.fetchImpl, logger: mudo })).status, 200)
+  assert.equal((await atenderWebhook(assinado(corpo), env, { fetchImpl: s.fetchImpl, logger: mudo })).status, 200)
+  const linhas = b.prepare('SELECT telefone, nome_perfil, direcao, texto FROM whatsapp_mensagens').all().map((l) => ({ ...l }))
+  assert.deepEqual(linhas, [{ telefone: '27911110000', nome_perfil: 'Maria', direcao: 'entrada', texto: 'Tem desconto? <b>' }])
+  assert.equal(s.emails().length, 1)
+  assert.equal(s.emails()[0].corpo.to[0], 'suporte@example.com')
+  assert.equal(s.emails()[0].corpo.subject, 'WhatsApp de Maria (27911110000)')
+  assert.equal(s.emails()[0].corpo.html.includes('<b>'), false)
+  assert.equal(s.meta().length, 0)
+})
+
+test('SAIR e o botão "Não quero receber": descadastram o e-mail do telefone e confirmam', async () => {
+  for (const mensagem of [
+    { from: '5527911110000', id: 'wamid.s1', type: 'text', text: { body: 'SAIR' } },
+    { from: '5527911110000', id: 'wamid.s2', type: 'button', button: { text: 'Não quero receber', payload: 'Não quero receber' } },
+  ]) {
+    const b = banco()
+    carrinho(b, 'c1', 'maria@example.com', '27911110000')
+    const s = falsoServidor()
+    const env = ambiente(new D1Local(b))
+    await atenderWebhook(assinado(aviso({ mensagens: [mensagem] })), env, { fetchImpl: s.fetchImpl, logger: mudo })
+    await atenderWebhook(assinado(aviso({ mensagens: [mensagem] })), env, { fetchImpl: s.fetchImpl, logger: mudo })
+    assert.deepEqual({ ...b.prepare('SELECT email, canal FROM descadastros').get() }, { email: 'maria@example.com', canal: 'whatsapp' })
+    assert.equal(s.meta().length, 1, 'uma confirmação só')
+    assert.equal(s.meta()[0].corpo.text.body, 'Pronto, você não vai mais receber lembretes.')
+    assert.equal(s.emails().length, 0)
+  }
+})
+
+test('status: sent → delivered → read, sem regredir; failed só antes de entregar', async () => {
+  const b = banco()
+  carrinho(b, 'c1', 'maria@example.com', '27911110000')
+  b.exec(`UPDATE carrinhos SET whatsapp_msg_id = 'wamid.x', whatsapp_status = 'sent', whatsapp_enviado_em = datetime('now')`)
+  const env = ambiente(new D1Local(b))
+  const status = (s) => atenderWebhook(assinado(aviso({ status: [{ id: 'wamid.x', status: s }] })), env, { logger: mudo })
+  const atual = () => b.prepare('SELECT whatsapp_status AS s FROM carrinhos').get().s
+  await status('delivered')
+  assert.equal(atual(), 'delivered')
+  await status('read')
+  assert.equal(atual(), 'read')
+  await status('delivered')
+  assert.equal(atual(), 'read')
+  await status('failed')
+  assert.equal(atual(), 'read')
+})
+
+// ----------------------------------------------------------- gestão ----
+
+test('gestão: conversas com janela de 24 h, totais e custo estimado', async () => {
+  const b = banco()
+  carrinho(b, 'c1', 'maria@example.com', '27911110000', '-4 hours', { nome: 'Maria Clara' })
+  b.exec(`
+    UPDATE carrinhos SET whatsapp_enviado_em = datetime('now', '-1 hour'), whatsapp_status = 'read';
+    INSERT INTO whatsapp_mensagens (wa_msg_id, telefone, nome_perfil, direcao, texto, criado_em)
+      VALUES ('a', '27911110000', 'Maria', 'entrada', 'oi', datetime('now', '-2 hours')),
+             ('b', '27922220000', 'João', 'entrada', 'antiga', datetime('now', '-30 hours'));
+  `)
+  const db = new D1Local(b)
+  const conversas = await consultarConversas(db)
+  assert.deepEqual(conversas.map((c) => [c.telefone, c.janela_aberta, c.nome]), [
+    ['27911110000', true, 'Maria Clara'],
+    ['27922220000', false, 'João'],
+  ])
+  assert.equal(conversas[0].mensagens[0].texto, 'oi')
+  const t = await totaisWhatsapp(db)
+  assert.deepEqual(t, { enviados: 1, entregues: 1, lidos: 1, falharam: 0, recuperados: 0, custo_estimado_centavos: 32 })
+})
+
+test('gestão: responder só dentro da janela; fora dela recusa sem chamar a Meta', async () => {
+  const b = banco()
+  b.exec(`
+    INSERT INTO whatsapp_mensagens (wa_msg_id, telefone, direcao, texto, criado_em)
+      VALUES ('a', '27911110000', 'entrada', 'oi', datetime('now', '-2 hours')),
+             ('b', '27922220000', 'entrada', 'oi', datetime('now', '-25 hours'));
+  `)
+  const db = new D1Local(b)
+  const s = falsoServidor()
+  const env = { WA_TOKEN: 't', WA_PHONE_NUMBER_ID: '123456' }
+  const fechada = await responderConversa(db, env, { telefone: '27922220000', texto: 'olá', quem: 'p@example.com' }, s.fetchImpl)
+  assert.equal(fechada.ok, false)
+  assert.equal(fechada.status, 409)
+  assert.equal(s.meta().length, 0)
+  const aberta = await responderConversa(db, env, { telefone: '27911110000', texto: 'olá', quem: 'p@example.com' }, s.fetchImpl)
+  assert.equal(aberta.ok, true)
+  assert.equal(s.meta()[0].corpo.to, '5527911110000')
+  assert.equal(s.meta()[0].corpo.text.body, 'olá')
+  const saida = b.prepare(`SELECT direcao, texto, enviado_por FROM whatsapp_mensagens WHERE direcao = 'saida'`).get()
+  assert.deepEqual({ ...saida }, { direcao: 'saida', texto: 'olá', enviado_por: 'p@example.com' })
+  assert.equal(validarResposta({ telefone: '27911110000', texto: '  ' }).ok, false)
+  assert.equal(validarResposta({ telefone: '123', texto: 'oi' }).ok, false)
+  assert.equal(validarResposta({ telefone: '27911110000', texto: 'x'.repeat(1001) }).ok, false)
 })

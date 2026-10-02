@@ -41,6 +41,7 @@ function bancoGestao() {
   banco.exec(readFileSync('migrations/0005_recuperacao_v2.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0006_whatsapp.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0007_whatsapp_semanal.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0008_whatsapp_meta.sql', 'utf8'))
   return banco
 }
 
@@ -167,9 +168,7 @@ test('gestão respeita prioridade, escolhe uma linha por pessoa e calcula totais
   assert.equal(recuperado.proximo_email_em, null)
   assert.deepEqual(recuperado.whatsapp, {
     situacao: 'comprou',
-    enviados: [],
-    proximo_em: null,
-    proxima_etapa: null,
+    enviado_em: null,
     previsto_em: null,
   })
 
@@ -216,128 +215,61 @@ test('CSV usa os mesmos dados, horário de Brasília e neutraliza fórmulas', as
     '08/01/2026 08:00',
     '',
     '',
-    '0 de 8 enviadas — Comprou antes',
-    '',
+    'Comprou antes',
     '10/01/2026 07:00',
     2,
     'email',
   ])
-  assert.equal(CABECALHO_RECUPERACAO[10], 'Próximo WhatsApp em')
+  assert.equal(CABECALHO_RECUPERACAO[10], 'Pago em')
   assert.match(gerarCsv(['Nome'], [[linhaCsv[0]]]), /'\=Recuperado/)
 })
 
-test('gestão mostra situações do WhatsApp, desligado e recuperação pelo canal', async () => {
+test('gestão mostra a mensagem única do WhatsApp: status da Meta, previsto em 3 h, desligado e recuperação', async () => {
   const banco = bancoGestao()
   const data = (modificador) =>
     banco.prepare("SELECT datetime('now', ?) AS valor").get(modificador).valor
 
   inserirCarrinho(banco, {
-    id: 'protocolo-wa', email: 'wa@example.com', telefone: '11999990000',
-    criado_em: data('-50 hours'), status: 'pago', email_enviado_em: data('-49 hours'),
-    pago_em: data('-10 hours'), etapa_email: 2,
+    id: 'lido', email: 'lido@example.com', telefone: '11999990000',
+    criado_em: data('-10 hours'), status: 'pago', pago_em: data('-1 hour'),
+    whatsapp_enviado_em: data('-6 hours'),
   })
-  lembrar(banco, 'protocolo-wa', 1, data('-49 hours'))
+  lembrar(banco, 'lido', 1, data('-6 hours'), 'whatsapp')
+  banco.exec("UPDATE carrinhos SET whatsapp_status = 'read' WHERE id = 'lido'")
   inserirCarrinho(banco, {
-    id: 'envio-wa', email: 'wa@example.com', telefone: '11999990000',
-    criado_em: data('-40 hours'), status: 'ignorado',
-    whatsapp_enviado_em: data('-30 hours'), whatsapp_etapa: 1,
-    proximo_whatsapp_em: data('+7 days'),
+    id: 'entregue', email: 'entregue@example.com', telefone: '11888880000',
+    criado_em: data('-10 hours'), status: 'aberto', whatsapp_enviado_em: data('-6 hours'),
   })
-  lembrar(banco, 'envio-wa', 1, data('-30 hours'), 'whatsapp')
+  banco.exec("UPDATE carrinhos SET whatsapp_status = 'delivered' WHERE id = 'entregue'")
+  inserirCarrinho(banco, { id: 'sem-celular', email: 'semcel@example.com', criado_em: data('-2 hours'), status: 'aberto' })
+  inserirCarrinho(banco, {
+    id: 'falhou', email: 'falhou@example.com', telefone: '11777770000',
+    criado_em: data('-5 hours'), status: 'aberto', whatsapp_falhou_em: data('-1 hour'),
+  })
+  inserirCarrinho(banco, { id: 'previsto', email: 'previsto@example.com', telefone: '11666660000', criado_em: data('-1 hour'), status: 'aberto' })
+  inserirCarrinho(banco, { id: 'fora', email: 'fora@example.com', telefone: '11555550000', criado_em: data('-80 hours'), status: 'aberto' })
 
-  inserirCarrinho(banco, {
-    id: 'concluido-wa', email: 'concluidowa@example.com', telefone: '11444440000',
-    criado_em: data('-70 days'), status: 'ignorado',
-    whatsapp_enviado_em: data('-69 days'), whatsapp_etapa: 8,
+  const ativo = await consultarRecuperacao(new D1Local(banco), { filtro: 'todos', whatsappAtivo: true })
+  const w = new Map(ativo.itens.map((item) => [item.email, item]))
+  assert.equal(w.get('lido@example.com').whatsapp.situacao, 'lido')
+  assert.equal(w.get('lido@example.com').situacao, 'recuperado')
+  assert.equal(w.get('lido@example.com').recuperado_pelo_canal, 'whatsapp')
+  assert.equal(w.get('entregue@example.com').whatsapp.situacao, 'entregue')
+  assert.equal(w.get('entregue@example.com').whatsapp.enviado_em, `${data('-6 hours').replace(' ', 'T')}Z`)
+  assert.equal(w.get('semcel@example.com').whatsapp.situacao, 'sem_celular')
+  assert.equal(w.get('falhou@example.com').whatsapp.situacao, 'falhou')
+  assert.deepEqual(w.get('previsto@example.com').whatsapp, {
+    situacao: 'previsto',
+    enviado_em: null,
+    previsto_em: `${data('+2 hours').replace(' ', 'T')}Z`,
   })
-  for (let etapa = 1; etapa <= 8; etapa += 1) {
-    lembrar(banco, 'concluido-wa', etapa, data(`-${70 - etapa * 7} days`), 'whatsapp')
-  }
-  inserirCarrinho(banco, {
-    id: 'parado-wa', email: 'paradowa@example.com', telefone: '11333330000',
-    criado_em: data('-30 days'), status: 'ignorado',
-    whatsapp_enviado_em: data('-29 days'), whatsapp_etapa: 3,
-    whatsapp_falhou_em: data('-10 days'),
-  })
-  for (let etapa = 1; etapa <= 3; etapa += 1) {
-    lembrar(banco, 'parado-wa', etapa, data(`-${31 - etapa * 7} days`), 'whatsapp')
-  }
+  assert.equal(w.get('fora@example.com').whatsapp.situacao, 'nao_enviado')
 
-  inserirCarrinho(banco, {
-    id: 'sem-celular', email: 'semcelular@example.com', criado_em: data('-25 hours'),
-    status: 'aberto',
-  })
-  inserirCarrinho(banco, {
-    id: 'falhou-wa', email: 'falhouwa@example.com', telefone: '11888880000',
-    criado_em: data('-25 hours'), status: 'aberto', whatsapp_falhou_em: data('-1 hour'),
-  })
-  inserirCarrinho(banco, {
-    id: 'previsto-wa', email: 'previstowa@example.com', telefone: '11777770000',
-    criado_em: data('-25 hours'), status: 'aberto',
-  })
-  inserirCarrinho(banco, {
-    id: 'fora-wa', email: 'forawa@example.com', telefone: '11666660000',
-    criado_em: data('-80 hours'), status: 'aberto',
-  })
-  inserirCarrinho(banco, {
-    id: 'saiu-wa', email: 'saiuwa@example.com', telefone: '11555550000',
-    criado_em: data('-25 hours'), status: 'aberto', whatsapp_falhou_em: data('-1 hour'),
-  })
-  banco.exec(`
-    INSERT INTO descadastros (email, canal) VALUES ('saiuwa@example.com', 'whatsapp');
-    INSERT INTO clientes (email) VALUES ('wa@example.com');
-    INSERT INTO compras (cliente_id, stripe_session_id, valor_centavos, status, criado_em)
-      VALUES (last_insert_rowid(), 'mp_wa', 8990, 'pago', datetime('now', '-10 hours'));
-  `)
-
-  const ativo = await consultarRecuperacao(new D1Local(banco), {
-    filtro: 'todos',
-    whatsappAtivo: true,
-  })
-  const porEmail = new Map(ativo.itens.map((item) => [item.email, item]))
-  assert.deepEqual(porEmail.get('wa@example.com').whatsapp, {
-    situacao: 'andamento',
-    enviados: [{ etapa: 1, enviado_em: `${data('-30 hours').replace(' ', 'T')}Z` }],
-    proximo_em: `${data('+7 days').replace(' ', 'T')}Z`,
-    proxima_etapa: 2,
-    previsto_em: null,
-  })
-  assert.equal(porEmail.get('concluidowa@example.com').whatsapp.situacao, 'concluido')
-  assert.equal(porEmail.get('concluidowa@example.com').whatsapp.enviados.length, 8)
-  assert.equal(porEmail.get('concluidowa@example.com').whatsapp.proximo_em, null)
-  assert.equal(porEmail.get('paradowa@example.com').whatsapp.situacao, 'parado')
-  assert.equal(porEmail.get('paradowa@example.com').whatsapp.enviados.length, 3)
-  assert.equal(porEmail.get('paradowa@example.com').whatsapp.proxima_etapa, null)
-  assert.equal(porEmail.get('wa@example.com').recuperado_pelo_canal, 'whatsapp')
-  assert.equal(porEmail.get('wa@example.com').recuperado_pela_etapa, 1)
-  assert.equal(porEmail.get('semcelular@example.com').whatsapp.situacao, 'sem_celular')
-  assert.equal(porEmail.get('falhouwa@example.com').whatsapp.situacao, 'falhou')
-  assert.equal(porEmail.get('previstowa@example.com').whatsapp.situacao, 'previsto')
-  assert.ok(porEmail.get('previstowa@example.com').whatsapp.previsto_em)
-  assert.equal(porEmail.get('forawa@example.com').whatsapp.situacao, 'nao_enviado')
-  assert.equal(porEmail.get('saiuwa@example.com').whatsapp.situacao, 'nao_enviado')
-  assert.equal(ativo.totais.whatsapp_enviados, 12)
-  assert.equal(ativo.totais.whatsapp_ativo, true)
-  assert.equal(ativo.totais.taxa, 1 / 3)
-
-  const desligado = await consultarRecuperacao(new D1Local(banco), {
-    filtro: 'todos',
-    whatsappAtivo: false,
-  })
-  const desligadoPorEmail = new Map(desligado.itens.map((item) => [item.email, item]))
-  assert.equal(desligadoPorEmail.get('previstowa@example.com').whatsapp.situacao, 'desligado')
-  assert.equal(desligadoPorEmail.get('forawa@example.com').whatsapp.situacao, 'desligado')
-  assert.equal(desligadoPorEmail.get('saiuwa@example.com').whatsapp.situacao, 'desligado')
-  assert.equal(desligadoPorEmail.get('falhouwa@example.com').whatsapp.situacao, 'falhou')
-
-  const csv = await consultarRecuperacaoCsv(new D1Local(banco), {
-    filtro: 'recuperados',
-    whatsappAtivo: true,
-  })
-  const linha = linhaRecuperacaoCsv(csv[0])
-  assert.equal(linha[9], '1 de 8 enviadas — Em andamento')
-  assert.ok(linha[10])
-  assert.equal(linha[13], 'whatsapp')
+  const desligado = await consultarRecuperacao(new D1Local(banco), { filtro: 'todos', whatsappAtivo: false })
+  const d = new Map(desligado.itens.map((item) => [item.email, item]))
+  assert.equal(d.get('previsto@example.com').whatsapp.situacao, 'desligado')
+  assert.equal(d.get('fora@example.com').whatsapp.situacao, 'desligado')
+  assert.equal(d.get('entregue@example.com').whatsapp.situacao, 'entregue')
 })
 
 test('rotas novas ficam protegidas por soAdmin e devolvem cabeçalhos privados', () => {

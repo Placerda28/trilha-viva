@@ -18,6 +18,7 @@ const ACOES = {
   senha_trocada: 'trocou a própria senha',
   cliente_bloqueado: 'bloqueou o cliente',
   cliente_liberado: 'liberou o cliente',
+  whatsapp_respondido: 'respondeu no WhatsApp',
 }
 
 function Linha({ r }) {

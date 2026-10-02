@@ -25,9 +25,13 @@
     "SITE_URL": "https://trilhaviva.org",
     "TETO_DIA": "40",
     "TETO_MES": "1100",
-    "MODO_WHATSAPP": "desligado",
-    "WHATSAPP_PROVEDOR": "zapi",
-    "WHATSAPP_TESTE_PARA": "",
-    "WHATSAPP_TETO_DIA": "20"
+    "WA_MODO": "teste",
+    "WA_TESTE_PARA": "",
+    "WA_TETO_DIA": "30",
+    "WA_PHONE_NUMBER_ID": "",
+    "WA_WABA_ID": "",
+    "WA_GRAPH_VERSION": "v23.0",
+    "WA_TEMPLATE": "carrinho_lembrete",
+    "WA_ENCAMINHAR_PARA": "trilhaviva.suporte@gmail.com"
   }
 }

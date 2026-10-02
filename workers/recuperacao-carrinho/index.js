@@ -3,12 +3,7 @@ import {
   assinarDescadastro,
   normalizarEmailLembrete,
 } from '../../lib/lembrete-assinatura.js'
-import {
-  configuracaoWhatsappValida,
-  dentroDoHorario,
-  enviarWhatsapp,
-  montarWhatsapp,
-} from './whatsapp.js'
+import { atenderWebhook, executarWhatsapp } from './whatsapp.js'
 
 const EMAILS = {
   1: {
@@ -374,379 +369,6 @@ async function enviarPeloResend(carrinho, etapa, env, fetchImpl) {
   if (!resposta.ok) throw new Error(`Resend respondeu com HTTP ${resposta.status}`)
 }
 
-function mascararTelefone(telefone) {
-  const numero = String(telefone || '')
-  return `${numero.slice(0, 2)}*****${numero.slice(-4)}`
-}
-
-async function contarEnviosWhatsapp(db) {
-  const linha = await db.prepare(`
-    SELECT COUNT(*) AS total
-      FROM lembretes_enviados
-     WHERE canal = 'whatsapp'
-       AND enviado_em >= datetime('now', 'start of day')
-     LIMIT 1`).first()
-  return Number(linha?.total || 0)
-}
-
-async function buscarSeguimentosWhatsapp(db, soTelefone) {
-  const resultado = await db.prepare(`
-    SELECT id, email, nome, telefone, whatsapp_etapa
-      FROM carrinhos
-     WHERE whatsapp_etapa BETWEEN 1 AND 7
-       AND proximo_whatsapp_em <= datetime('now')
-       AND status IN ('aberto', 'lembrado', 'ignorado')
-       AND telefone IS NOT NULL
-       AND (? IS NULL OR telefone = ?)
-     ORDER BY proximo_whatsapp_em ASC, criado_em ASC, id ASC
-     LIMIT 3`).bind(soTelefone, soTelefone).all()
-  return linhas(resultado)
-}
-
-async function buscarPrimeirosWhatsapp(db, soTelefone) {
-  const resultado = await db.prepare(`
-    SELECT id, email, nome, telefone
-      FROM carrinhos
-     WHERE telefone IS NOT NULL
-       AND whatsapp_enviado_em IS NULL
-       AND whatsapp_falhou_em IS NULL
-       AND status IN ('aberto', 'lembrado', 'ignorado')
-       AND finalizado_em IS NULL
-       AND criado_em <= datetime('now', '-1 hour')
-       AND criado_em >= datetime('now', '-48 hours')
-       AND (? IS NULL OR telefone = ?)
-     ORDER BY criado_em ASC, id ASC
-     LIMIT 3`).bind(soTelefone, soTelefone).all()
-  return linhas(resultado)
-}
-
-async function impedimentosWhatsapp(db, email, telefone) {
-  const linha = await db.prepare(`
-    SELECT
-      EXISTS(
-        SELECT 1
-          FROM compras p
-          JOIN clientes c ON c.id = p.cliente_id
-         WHERE p.status = 'pago' AND c.email = ?
-         LIMIT 1
-      ) AS tem_compra,
-      EXISTS(
-        SELECT 1
-          FROM descadastros d
-         WHERE d.email = ?
-         LIMIT 1
-      ) AS descadastrado,
-      (
-        EXISTS(
-          SELECT 1
-            FROM carrinhos outro
-           WHERE (outro.email = ? OR outro.telefone = ?)
-             AND outro.whatsapp_enviado_em IS NOT NULL
-           LIMIT 1
-        )
-        OR EXISTS(
-          SELECT 1
-            FROM lembretes_enviados l
-            JOIN carrinhos outro ON outro.id = l.carrinho_id
-           WHERE l.canal = 'whatsapp'
-             AND (outro.email = ? OR outro.telefone = ?)
-           LIMIT 1
-        )
-      ) AS ja_enviado
-    LIMIT 1`).bind(email, email, email, telefone, email, telefone).first()
-  return {
-    temCompra: Boolean(Number(linha?.tem_compra || 0)),
-    descadastrado: Boolean(Number(linha?.descadastrado || 0)),
-    jaEnviado: Boolean(Number(linha?.ja_enviado || 0)),
-  }
-}
-
-async function impedimentosSeguimentoWhatsapp(db, email) {
-  const linha = await db.prepare(`
-    SELECT
-      EXISTS(
-        SELECT 1
-          FROM compras p
-          JOIN clientes c ON c.id = p.cliente_id
-         WHERE p.status = 'pago' AND c.email = ?
-         LIMIT 1
-      ) AS tem_compra,
-      EXISTS(
-        SELECT 1
-          FROM descadastros d
-         WHERE d.email = ?
-         LIMIT 1
-      ) AS descadastrado
-    LIMIT 1`).bind(email, email).first()
-  return {
-    temCompra: Boolean(Number(linha?.tem_compra || 0)),
-    descadastrado: Boolean(Number(linha?.descadastrado || 0)),
-  }
-}
-
-async function marcarFalhaWhatsapp(db, id) {
-  await db.prepare(`
-    UPDATE carrinhos
-       SET whatsapp_falhou_em = COALESCE(whatsapp_falhou_em, datetime('now'))
-     WHERE id = ? AND whatsapp_enviado_em IS NULL`).bind(id).run()
-}
-
-async function pararSeguimentoWhatsapp(db, id, etapaAnterior) {
-  await db.prepare(`
-    UPDATE carrinhos
-       SET proximo_whatsapp_em = NULL
-     WHERE id = ? AND whatsapp_etapa = ?`).bind(id, etapaAnterior).run()
-}
-
-async function apagarReservaWhatsapp(db, id, etapa) {
-  await db.prepare(`
-    DELETE FROM lembretes_enviados
-     WHERE carrinho_id = ? AND canal = 'whatsapp' AND etapa = ?`).bind(id, etapa).run()
-}
-
-async function reservarPrimeiroWhatsapp(db, carrinho, tetoDia) {
-  // A reserva também olha as reservas dos outros carrinhos. Assim duas
-  // rodadas simultâneas não enviam para o mesmo e-mail ou celular.
-  const reserva = await db.prepare(`
-    INSERT OR IGNORE INTO lembretes_enviados
-      (carrinho_id, canal, etapa, enviado_em)
-    SELECT candidato.id, 'whatsapp', 1, datetime('now')
-      FROM carrinhos candidato
-     WHERE candidato.id = ?
-       AND candidato.whatsapp_enviado_em IS NULL
-       AND candidato.whatsapp_falhou_em IS NULL
-       AND candidato.status IN ('aberto', 'lembrado', 'ignorado')
-       AND candidato.finalizado_em IS NULL
-       AND NOT EXISTS (
-         SELECT 1
-           FROM lembretes_enviados anterior
-           JOIN carrinhos outro ON outro.id = anterior.carrinho_id
-          WHERE anterior.canal = 'whatsapp'
-            AND (outro.email = ? OR outro.telefone = ?)
-          LIMIT 1
-       )
-       AND (
-         SELECT COUNT(*)
-           FROM lembretes_enviados
-          WHERE canal = 'whatsapp'
-            AND enviado_em >= datetime('now', 'start of day')
-       ) < ?`).bind(carrinho.id, carrinho.email, carrinho.telefone, tetoDia).run()
-  if (mudancas(reserva) !== 1) return false
-
-  const atualizacao = await db.prepare(`
-    UPDATE carrinhos
-       SET whatsapp_enviado_em = datetime('now')
-     WHERE id = ?
-       AND whatsapp_enviado_em IS NULL
-       AND whatsapp_falhou_em IS NULL`).bind(carrinho.id).run()
-  if (mudancas(atualizacao) === 1) return true
-
-  await apagarReservaWhatsapp(db, carrinho.id, 1)
-  return false
-}
-
-async function concluirPrimeiroWhatsapp(db, id) {
-  await db.prepare(`
-    UPDATE carrinhos
-       SET whatsapp_etapa = 1,
-           proximo_whatsapp_em = datetime('now', '+7 days')
-     WHERE id = ?
-       AND whatsapp_enviado_em IS NOT NULL
-       AND whatsapp_etapa = 0`).bind(id).run()
-}
-
-async function reservarSeguimentoWhatsapp(db, carrinho, etapa, tetoDia) {
-  const reserva = await db.prepare(`
-    INSERT OR IGNORE INTO lembretes_enviados
-      (carrinho_id, canal, etapa, enviado_em)
-    SELECT id, 'whatsapp', ?, datetime('now')
-      FROM carrinhos
-     WHERE id = ?
-       AND whatsapp_etapa = ?
-       AND proximo_whatsapp_em <= datetime('now')
-       AND status IN ('aberto', 'lembrado', 'ignorado')
-       AND telefone IS NOT NULL
-       AND (
-         SELECT COUNT(*)
-           FROM lembretes_enviados
-          WHERE canal = 'whatsapp'
-            AND enviado_em >= datetime('now', 'start of day')
-       ) < ?`).bind(etapa, carrinho.id, carrinho.whatsapp_etapa, tetoDia).run()
-  return mudancas(reserva) === 1
-}
-
-async function concluirSeguimentoWhatsapp(db, id, etapaAnterior, etapa) {
-  await db.prepare(`
-    UPDATE carrinhos
-       SET whatsapp_etapa = ?,
-           proximo_whatsapp_em = CASE
-             WHEN ? = 8 THEN NULL
-             ELSE datetime('now', '+7 days')
-           END
-     WHERE id = ? AND whatsapp_etapa = ?`).bind(
-    etapa,
-    etapa,
-    id,
-    etapaAnterior
-  ).run()
-}
-
-async function registrarFalhaPrimeiroWhatsapp(db, id) {
-  await apagarReservaWhatsapp(db, id, 1)
-  await db.prepare(`
-    UPDATE carrinhos
-       SET whatsapp_enviado_em = NULL,
-           whatsapp_falhou_em = COALESCE(whatsapp_falhou_em, datetime('now')),
-           whatsapp_etapa = 0,
-           proximo_whatsapp_em = NULL
-     WHERE id = ?`).bind(id).run()
-}
-
-async function registrarFalhaSeguimentoWhatsapp(db, id, etapa) {
-  await apagarReservaWhatsapp(db, id, etapa)
-  await db.prepare(`
-    UPDATE carrinhos
-       SET proximo_whatsapp_em = NULL,
-           whatsapp_falhou_em = COALESCE(whatsapp_falhou_em, datetime('now'))
-     WHERE id = ?`).bind(id).run()
-}
-
-export async function executarWhatsapp(env, opcoes = {}) {
-  const resultado = { enviados: 0, ignorados: 0, apenasLog: 0 }
-  const modo = String(env.MODO_WHATSAPP || 'desligado').toLowerCase()
-  if (modo !== 'teste' && modo !== 'ativo') return resultado
-  if (!dentroDoHorario(opcoes.agora || new Date())) return resultado
-
-  const logger = opcoes.logger || console
-  if (!configuracaoWhatsappValida(env) || !env.LEMBRETE_SEGREDO) {
-    logger.error('Configuração do provedor de WhatsApp incompleta; etapa ignorada.')
-    return resultado
-  }
-
-  const db = env.DB
-  if (!db) throw new Error('Binding DB não configurado.')
-  const fetchImpl = opcoes.fetchImpl || globalThis.fetch
-  const tetoDia = limite(env.WHATSAPP_TETO_DIA, 20)
-  let enviadosHoje = await contarEnviosWhatsapp(db)
-  if (enviadosHoje >= tetoDia) return resultado
-
-  let tentativasNaRodada = 0
-  // No modo teste só o celular de teste entra na busca.
-  const soTelefone = modo === 'teste' ? String(env.WHATSAPP_TESTE_PARA || '') || '-' : null
-  const seguimentos = await buscarSeguimentosWhatsapp(db, soTelefone)
-  for (const carrinho of seguimentos) {
-    if (enviadosHoje >= tetoDia || tentativasNaRodada >= 3) break
-
-    if (modo === 'teste' && carrinho.telefone !== String(env.WHATSAPP_TESTE_PARA || '')) {
-      logger.log(
-        `Carrinho ${carrinho.id} não enviado no modo teste do WhatsApp: ${mascararTelefone(carrinho.telefone)}`
-      )
-      resultado.apenasLog += 1
-      continue
-    }
-
-    const bloqueios = await impedimentosSeguimentoWhatsapp(
-      db,
-      normalizarEmailLembrete(carrinho.email)
-    )
-    if (bloqueios.temCompra || bloqueios.descadastrado) {
-      await pararSeguimentoWhatsapp(db, carrinho.id, carrinho.whatsapp_etapa)
-      resultado.ignorados += 1
-      continue
-    }
-
-    const etapa = Number(carrinho.whatsapp_etapa) + 1
-    const reservado = await reservarSeguimentoWhatsapp(db, carrinho, etapa, tetoDia)
-    if (!reservado) {
-      enviadosHoje = await contarEnviosWhatsapp(db)
-      continue
-    }
-
-    tentativasNaRodada += 1
-    try {
-      await enviarWhatsapp(
-        { telefone: carrinho.telefone, texto: await montarWhatsapp(carrinho, env, etapa) },
-        env,
-        fetchImpl
-      )
-      await concluirSeguimentoWhatsapp(
-        db,
-        carrinho.id,
-        Number(carrinho.whatsapp_etapa),
-        etapa
-      )
-      enviadosHoje += 1
-      resultado.enviados += 1
-    } catch (erro) {
-      try {
-        await registrarFalhaSeguimentoWhatsapp(db, carrinho.id, etapa)
-      } catch (erroBanco) {
-        logger.error(
-          `Falha ao desfazer reserva do WhatsApp do carrinho ${carrinho.id}:`,
-          erroBanco
-        )
-      }
-      logger.error(`Falha no WhatsApp do carrinho ${carrinho.id}:`, erro)
-    }
-  }
-
-  if (enviadosHoje >= tetoDia || tentativasNaRodada >= 3) return resultado
-
-  const candidatos = await buscarPrimeirosWhatsapp(db, soTelefone)
-  for (const carrinho of candidatos) {
-    if (enviadosHoje >= tetoDia || tentativasNaRodada >= 3) break
-
-    if (modo === 'teste' && carrinho.telefone !== String(env.WHATSAPP_TESTE_PARA || '')) {
-      logger.log(
-        `Carrinho ${carrinho.id} não enviado no modo teste do WhatsApp: ${mascararTelefone(carrinho.telefone)}`
-      )
-      resultado.apenasLog += 1
-      continue
-    }
-
-    const bloqueios = await impedimentosWhatsapp(
-      db,
-      normalizarEmailLembrete(carrinho.email),
-      carrinho.telefone
-    )
-    if (bloqueios.temCompra || bloqueios.descadastrado || bloqueios.jaEnviado) {
-      await marcarFalhaWhatsapp(db, carrinho.id)
-      resultado.ignorados += 1
-      continue
-    }
-
-    const reservado = await reservarPrimeiroWhatsapp(db, carrinho, tetoDia)
-    if (!reservado) {
-      enviadosHoje = await contarEnviosWhatsapp(db)
-      continue
-    }
-
-    tentativasNaRodada += 1
-    try {
-      await enviarWhatsapp(
-        { telefone: carrinho.telefone, texto: await montarWhatsapp(carrinho, env, 1) },
-        env,
-        fetchImpl
-      )
-      await concluirPrimeiroWhatsapp(db, carrinho.id)
-      enviadosHoje += 1
-      resultado.enviados += 1
-    } catch (erro) {
-      try {
-        await registrarFalhaPrimeiroWhatsapp(db, carrinho.id)
-      } catch (erroBanco) {
-        logger.error(
-          `Falha ao desfazer reserva do WhatsApp do carrinho ${carrinho.id}:`,
-          erroBanco
-        )
-      }
-      logger.error(`Falha no WhatsApp do carrinho ${carrinho.id}:`, erro)
-    }
-  }
-
-  return resultado
-}
-
 async function executarRodadaEmail(env, opcoes = {}) {
   const db = env.DB
   const logger = opcoes.logger || console
@@ -877,23 +499,35 @@ async function executarRodadaEmail(env, opcoes = {}) {
   return resultado
 }
 
-export async function executarRodada(env, opcoes = {}) {
-  const resultado = await executarRodadaEmail(env, opcoes)
-  resultado.whatsapp = { enviados: 0, ignorados: 0, apenasLog: 0 }
+export { executarWhatsapp }
 
+// Os dois canais são independentes: um erro no e-mail não impede o WhatsApp,
+// e vice-versa.
+export async function executarRodada(env, opcoes = {}) {
+  const logger = opcoes.logger || console
+  let resultado = { enviados: 0, ignorados: 0, apenasLog: 0 }
+  let erroEmail = null
+  try {
+    resultado = await executarRodadaEmail(env, opcoes)
+  } catch (erro) {
+    erroEmail = erro
+  }
+
+  resultado.whatsapp = { enviados: 0, ignorados: 0, falhas: 0 }
   try {
     resultado.whatsapp = await executarWhatsapp(env, opcoes)
   } catch (erro) {
-    const logger = opcoes.logger || console
     logger.error('Falha na etapa de WhatsApp da rodada:', erro)
   }
 
+  if (erroEmail) throw erroEmail
   return resultado
 }
 
 export default {
-  fetch() {
-    return new Response(null, { status: 404 })
+  // Só o webhook do WhatsApp (/whatsapp). Qualquer outro endereço: 404.
+  fetch(request, env) {
+    return atenderWebhook(request, env)
   },
 
   scheduled(_controller, env, ctx) {
