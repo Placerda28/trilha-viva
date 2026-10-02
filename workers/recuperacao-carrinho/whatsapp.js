@@ -1,14 +1,18 @@
-const TEXTOS = [
-  ({ nome, link }) => `${nome ? `Oi, ${nome}!` : 'Oi!'} Aqui é da Trilha Viva. Vi que você começou a liberar o acesso às mais de 2.000 multitracks gospel e não concluiu. Ficou alguma dúvida? Se quiser terminar, é por aqui: ${link}
+import { assinarDescadastro, normalizarEmailLembrete } from '../../lib/lembrete-assinatura.js'
 
-Se não quiser mais mensagens, responda SAIR.`,
-  ({ nome, link }) => `${nome ? `Olá, ${nome}, tudo bem?` : 'Olá, tudo bem?'} É da Trilha Viva. Seu acesso ao acervo de multitracks ficou pela metade. Posso ajudar em alguma coisa? Para concluir com Pix ou cartão: ${link}
-
-Para não receber mais mensagens, responda SAIR.`,
-  ({ nome, link }) => `${nome ? `Oi, ${nome}! Passando` : 'Oi! Passando'} para lembrar do seu acesso à Trilha Viva: mais de 2.000 multitracks gospel por R$ 89,90, pagamento único. Se ainda fizer sentido para o seu ministério, é só concluir aqui: ${link}
-
-Não quer mais mensagens? Responda SAIR.`,
+const TEXTOS_INICIAIS = [
+  ({ nome, link }) => `${nome ? `Oi, ${nome}!` : 'Oi!'} Aqui é da Trilha Viva. Vi que você começou a liberar o acesso às mais de 2.000 multitracks gospel e não concluiu. Ficou alguma dúvida? Se quiser terminar, é por aqui: ${link}`,
+  ({ nome, link }) => `${nome ? `Olá, ${nome}, tudo bem?` : 'Olá, tudo bem?'} É da Trilha Viva. Seu acesso ao acervo de multitracks ficou pela metade. Posso ajudar em alguma coisa? Para concluir com Pix ou cartão: ${link}`,
+  ({ nome, link }) => `${nome ? `Oi, ${nome}! Passando` : 'Oi! Passando'} para lembrar do seu acesso à Trilha Viva: mais de 2.000 multitracks gospel por R$ 89,90, pagamento único. Se ainda fizer sentido para o seu ministério, é só concluir aqui: ${link}`,
 ]
+
+const TEXTOS_SEGUIMENTO = [
+  ({ nome, link }) => `${nome ? `Oi, ${nome}!` : 'Oi!'} Aqui é da Trilha Viva de novo. Seu acesso às mais de 2.000 multitracks gospel continua esperando: clique, guia e cada instrumento no seu canal, para o ensaio e para o culto. Para concluir: ${link}`,
+  ({ nome, link }) => `${nome ? `Olá, ${nome}!` : 'Olá!'} Uma dica rápida da Trilha Viva: com multitrack, a banda ensaia com a mesma referência e o culto fica mais seguro. O acervo completo sai por R$ 89,90, pagamento único. Para garantir o seu: ${link}`,
+  ({ nome, link }) => `${nome ? `Oi, ${nome}, tudo bem?` : 'Oi, tudo bem?'} Passando para saber se ficou alguma dúvida sobre a Trilha Viva. É só responder esta mensagem. Se quiser concluir agora, com Pix ou cartão: ${link}`,
+]
+
+const TEXTO_FINAL = ({ nome, link }) => `${nome ? `Oi, ${nome}!` : 'Oi!'} Esta é a última mensagem da Trilha Viva sobre o seu acesso que ficou pela metade. Se ainda fizer sentido para o seu ministério, o acervo continua por R$ 89,90: ${link}`
 
 function semBarraNoFim(valor) {
   let resultado = String(valor || '').trim()
@@ -28,16 +32,27 @@ function primeiroNome(valor) {
 function variacaoDoCarrinho(id) {
   let soma = 0
   for (const caractere of String(id || '')) soma += caractere.charCodeAt(0)
-  return soma % TEXTOS.length
+  return soma % TEXTOS_INICIAIS.length
 }
 
-export function montarWhatsapp(carrinho, env) {
+export async function montarWhatsapp(carrinho, env, numeroEtapa = 1) {
+  const etapa = Math.min(8, Math.max(1, Number(numeroEtapa) || 1))
   const site = semBarraNoFim(env.SITE_URL)
-  const link = `${site}/assinar?r=${encodeURIComponent(carrinho.id)}&utm_source=whatsapp&utm_medium=lembrete&utm_campaign=carrinho`
-  return TEXTOS[variacaoDoCarrinho(carrinho.id)]({
+  const email = normalizarEmailLembrete(carrinho.email)
+  const assinatura = await assinarDescadastro(email, env.LEMBRETE_SEGREDO)
+  const link = `${site}/assinar?r=${encodeURIComponent(carrinho.id)}&utm_source=whatsapp&utm_medium=lembrete&utm_campaign=carrinho-wa-${etapa}`
+  const sair = `${site}/api/descadastrar?e=${encodeURIComponent(email)}&t=${assinatura}`
+  const dados = {
     nome: primeiroNome(carrinho.nome),
     link,
-  })
+  }
+  let texto
+  if (etapa === 1) texto = TEXTOS_INICIAIS[variacaoDoCarrinho(carrinho.id)](dados)
+  else if (etapa === 8) texto = TEXTO_FINAL(dados)
+  else texto = TEXTOS_SEGUIMENTO[(etapa - 2) % TEXTOS_SEGUIMENTO.length](dados)
+  return `${texto}
+
+Para não receber mais, responda SAIR ou toque aqui: ${sair}`
 }
 
 export function dentroDoHorario(agora = new Date()) {

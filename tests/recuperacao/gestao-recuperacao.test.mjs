@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { readFileSync } from 'node:fs'
 import {
+  CABECALHO_RECUPERACAO,
   consultarRecuperacao,
   consultarRecuperacaoCsv,
   filtroRecuperacaoValido,
@@ -39,6 +40,7 @@ function bancoGestao() {
   banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0005_recuperacao_v2.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0006_whatsapp.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0007_whatsapp_semanal.sql', 'utf8'))
   return banco
 }
 
@@ -47,8 +49,9 @@ function inserirCarrinho(banco, dados) {
     INSERT INTO carrinhos
       (id, email, nome, telefone, criado_em, status, email_enviado_em,
        whatsapp_enviado_em, whatsapp_falhou_em, pago_em, etapa_email,
-       proximo_email_em, finalizado_em, finalizado_motivo)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       proximo_email_em, finalizado_em, finalizado_motivo, whatsapp_etapa,
+       proximo_whatsapp_em)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     dados.id,
     dados.email,
@@ -63,7 +66,9 @@ function inserirCarrinho(banco, dados) {
     dados.etapa_email || 0,
     dados.proximo_email_em || null,
     dados.finalizado_em || null,
-    dados.finalizado_motivo || null
+    dados.finalizado_motivo || null,
+    dados.whatsapp_etapa || 0,
+    dados.proximo_whatsapp_em || null
   )
 }
 
@@ -162,7 +167,9 @@ test('gestão respeita prioridade, escolhe uma linha por pessoa e calcula totais
   assert.equal(recuperado.proximo_email_em, null)
   assert.deepEqual(recuperado.whatsapp, {
     situacao: 'comprou',
-    enviado_em: null,
+    enviados: [],
+    proximo_em: null,
+    proxima_etapa: null,
     previsto_em: null,
   })
 
@@ -209,11 +216,13 @@ test('CSV usa os mesmos dados, horário de Brasília e neutraliza fórmulas', as
     '08/01/2026 08:00',
     '',
     '',
-    'Comprou antes',
+    '0 de 8 enviadas — Comprou antes',
+    '',
     '10/01/2026 07:00',
     2,
     'email',
   ])
+  assert.equal(CABECALHO_RECUPERACAO[10], 'Próximo WhatsApp em')
   assert.match(gerarCsv(['Nome'], [[linhaCsv[0]]]), /'\=Recuperado/)
 })
 
@@ -231,9 +240,28 @@ test('gestão mostra situações do WhatsApp, desligado e recuperação pelo can
   inserirCarrinho(banco, {
     id: 'envio-wa', email: 'wa@example.com', telefone: '11999990000',
     criado_em: data('-40 hours'), status: 'ignorado',
-    whatsapp_enviado_em: data('-30 hours'),
+    whatsapp_enviado_em: data('-30 hours'), whatsapp_etapa: 1,
+    proximo_whatsapp_em: data('+7 days'),
   })
   lembrar(banco, 'envio-wa', 1, data('-30 hours'), 'whatsapp')
+
+  inserirCarrinho(banco, {
+    id: 'concluido-wa', email: 'concluidowa@example.com', telefone: '11444440000',
+    criado_em: data('-70 days'), status: 'ignorado',
+    whatsapp_enviado_em: data('-69 days'), whatsapp_etapa: 8,
+  })
+  for (let etapa = 1; etapa <= 8; etapa += 1) {
+    lembrar(banco, 'concluido-wa', etapa, data(`-${70 - etapa * 7} days`), 'whatsapp')
+  }
+  inserirCarrinho(banco, {
+    id: 'parado-wa', email: 'paradowa@example.com', telefone: '11333330000',
+    criado_em: data('-30 days'), status: 'ignorado',
+    whatsapp_enviado_em: data('-29 days'), whatsapp_etapa: 3,
+    whatsapp_falhou_em: data('-10 days'),
+  })
+  for (let etapa = 1; etapa <= 3; etapa += 1) {
+    lembrar(banco, 'parado-wa', etapa, data(`-${31 - etapa * 7} days`), 'whatsapp')
+  }
 
   inserirCarrinho(banco, {
     id: 'sem-celular', email: 'semcelular@example.com', criado_em: data('-25 hours'),
@@ -267,8 +295,19 @@ test('gestão mostra situações do WhatsApp, desligado e recuperação pelo can
     whatsappAtivo: true,
   })
   const porEmail = new Map(ativo.itens.map((item) => [item.email, item]))
-  assert.equal(porEmail.get('wa@example.com').whatsapp.situacao, 'enviado')
-  assert.ok(porEmail.get('wa@example.com').whatsapp.enviado_em)
+  assert.deepEqual(porEmail.get('wa@example.com').whatsapp, {
+    situacao: 'andamento',
+    enviados: [{ etapa: 1, enviado_em: `${data('-30 hours').replace(' ', 'T')}Z` }],
+    proximo_em: `${data('+7 days').replace(' ', 'T')}Z`,
+    proxima_etapa: 2,
+    previsto_em: null,
+  })
+  assert.equal(porEmail.get('concluidowa@example.com').whatsapp.situacao, 'concluido')
+  assert.equal(porEmail.get('concluidowa@example.com').whatsapp.enviados.length, 8)
+  assert.equal(porEmail.get('concluidowa@example.com').whatsapp.proximo_em, null)
+  assert.equal(porEmail.get('paradowa@example.com').whatsapp.situacao, 'parado')
+  assert.equal(porEmail.get('paradowa@example.com').whatsapp.enviados.length, 3)
+  assert.equal(porEmail.get('paradowa@example.com').whatsapp.proxima_etapa, null)
   assert.equal(porEmail.get('wa@example.com').recuperado_pelo_canal, 'whatsapp')
   assert.equal(porEmail.get('wa@example.com').recuperado_pela_etapa, 1)
   assert.equal(porEmail.get('semcelular@example.com').whatsapp.situacao, 'sem_celular')
@@ -277,9 +316,9 @@ test('gestão mostra situações do WhatsApp, desligado e recuperação pelo can
   assert.ok(porEmail.get('previstowa@example.com').whatsapp.previsto_em)
   assert.equal(porEmail.get('forawa@example.com').whatsapp.situacao, 'nao_enviado')
   assert.equal(porEmail.get('saiuwa@example.com').whatsapp.situacao, 'nao_enviado')
-  assert.equal(ativo.totais.whatsapp_enviados, 1)
+  assert.equal(ativo.totais.whatsapp_enviados, 12)
   assert.equal(ativo.totais.whatsapp_ativo, true)
-  assert.equal(ativo.totais.taxa, 1)
+  assert.equal(ativo.totais.taxa, 1 / 3)
 
   const desligado = await consultarRecuperacao(new D1Local(banco), {
     filtro: 'todos',
@@ -296,8 +335,9 @@ test('gestão mostra situações do WhatsApp, desligado e recuperação pelo can
     whatsappAtivo: true,
   })
   const linha = linhaRecuperacaoCsv(csv[0])
-  assert.match(linha[9], /^Enviado /)
-  assert.equal(linha[12], 'whatsapp')
+  assert.equal(linha[9], '1 de 8 enviadas — Em andamento')
+  assert.ok(linha[10])
+  assert.equal(linha[13], 'whatsapp')
 })
 
 test('rotas novas ficam protegidas por soAdmin e devolvem cabeçalhos privados', () => {
