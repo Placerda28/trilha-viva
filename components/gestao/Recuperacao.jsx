@@ -8,9 +8,9 @@ import { dataHora, moeda, numero } from './formato'
 
 // Aba Recuperação: uma linha por pessoa que deixou nome, e-mail e celular no
 // checkout e não pagou na hora. Mostra em que ponto da sequência de e-mails
-// ela está (1 hora, 7 dias, 15 dias, 30 dias e o encerramento), a mensagem
-// de WhatsApp (uma só, cerca de 24 h depois; fica "desligado" até o número
-// existir) e quem comprou depois de um lembrete.
+// ela está (1 hora, 7 dias, 15 dias, 30 dias e o encerramento), as mensagens
+// de WhatsApp (a 1ª cerca de 24 h depois, depois uma por semana, até 8; fica
+// "desligado" até o serviço existir) e quem comprou depois de um lembrete.
 
 const POR_PAGINA = 50
 const TOTAL_EMAILS = 4
@@ -133,11 +133,29 @@ function Emails({ p }) {
   )
 }
 
-// Uma mensagem só, cerca de 24 h depois do carrinho. Enquanto o número não
-// existir, a rota devolve "desligado" no lugar de previsto / não enviado.
+const TOTAL_WHATSAPP = 8
+
+// A 1ª cerca de 24 h depois do carrinho, depois uma por semana, até 8.
+// Enquanto o serviço não existir, a rota devolve "desligado" no lugar de
+// previsto / não enviado.
 function Whatsapp({ p }) {
   const w = p.whatsapp || {}
-  if (w.situacao === 'enviado') return <span className="figs text-ink">Enviado {dataHora(w.enviado_em)}</span>
+  const enviados = w.enviados || []
+  if (enviados.length) {
+    const ultimo = enviados[enviados.length - 1]
+    return (
+      <span className="figs block text-[13.5px] leading-snug">
+        <span className="block text-ink">
+          {enviados.length} de {TOTAL_WHATSAPP} enviadas
+        </span>
+        <span className="block text-[12.5px] text-ink-muted">Última {dataHora(ultimo.enviado_em)}</span>
+        {w.situacao === 'andamento' && w.proximo_em && (
+          <span className="block text-[12.5px] text-ink">Próxima {dataHora(w.proximo_em)}</span>
+        )}
+        {w.situacao === 'parado' && <span className="block text-[12.5px] text-ink-muted">Parou</span>}
+      </span>
+    )
+  }
   if (w.situacao === 'previsto') {
     return <span className="figs text-ink">Previsto {dataHora(w.previsto_em)}</span>
   }
@@ -311,7 +329,8 @@ export default function Recuperacao() {
 
       <p className="mt-4 text-[13.5px] leading-relaxed text-ink-muted">
         Sequência por e-mail: 1º com 1 hora, 2º 7 dias depois, 3º 15 dias depois, 4º 30 dias depois. Sem compra em
-        mais 30 dias, o protocolo é finalizado. WhatsApp: uma mensagem cerca de 24 horas depois do carrinho
+        mais 30 dias, o protocolo é finalizado. WhatsApp: a 1ª cerca de 24 horas depois do carrinho e depois uma por
+        semana, até 8, parando se a pessoa comprar ou pedir para sair
         {t && !t.whatsapp_ativo ? ' (desligado até o número ser configurado)' : ''}.
       </p>
 

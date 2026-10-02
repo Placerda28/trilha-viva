@@ -36,9 +36,11 @@ export default function PrivacidadePage() {
           Se a compra não for concluída, podemos enviar até <strong>quatro</strong> lembretes por
           e-mail com o link para terminar a compra: cerca de uma hora depois, uma semana depois, 15
           dias depois e 30 dias depois. Depois do quarto, não enviamos mais nada sobre essa compra, e
-          paramos antes se você comprar. No futuro, o lembrete também poderá chegar pelo WhatsApp, no
-          celular informado. Para não receber, use o link &quot;Cancelar lembretes&quot; no próprio
-          e-mail ou escreva para {site.email}.
+          paramos antes se você comprar. Pelo WhatsApp, no celular informado, podemos enviar uma mensagem
+          cerca de um dia depois e, se a compra continuar pendente, uma por semana, até{' '}
+          <strong>oito</strong> no total. Para não receber, use o link &quot;Cancelar lembretes&quot; no próprio
+          e-mail, responda SAIR no WhatsApp, toque no link de sair da mensagem ou escreva para{' '}
+          {site.email}. Pedir para sair em um canal encerra os lembretes nos dois.
         </p>
         <h2>Anúncios e medição (Meta)</h2>
         <p>
