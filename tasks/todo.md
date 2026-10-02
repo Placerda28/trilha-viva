@@ -1,3 +1,22 @@
+# Recuperação v2 — 4 e-mails, celular, aba Recuperação (02/10/2026)
+
+Branch `recuperacao-v2`. Contrato: tasks/recuperacao-v2.md. Commits 145c6e9 (plano),
+9d253b0 (telas, Claude), 281689a (backend, Codex + ajustes da revisão).
+- [x] (C) migrations/0005_recuperacao_v2.sql (aditiva: tabela lembretes_enviados + 4 colunas em carrinhos; quem já recebeu o 1º e-mail entra na sequência com o 2º em +7 dias)
+- [x] (C) Robô: e-mails 1 (1 h), 2 (+7 d), 3 (+15 d), 4 (+30 d), encerramento (+30 d); para se comprou ou descadastrou; teto conta todos; falha adia 1 dia
+- [x] (C) Celular no checkout (só dígitos, sem 55); vazio é aceito no servidor de propósito (páginas antigas abertas na hora da publicação), o formulário exige
+- [x] (C) GET /api/gestao/recuperacao e /csv (uma linha por pessoa; quem pagou antes do lembrete fica fora de "Todos")
+- [x] (F) Aba Recuperação (totais, filtros, busca, planilha, 4 casas de e-mail, WhatsApp "em breve", link wa.me), campo Celular (WhatsApp) com máscara, privacidade com os 4 lembretes
+- [x] Revisão linha a linha do diff do Codex: 3 ajustes (celular vazio aceito, comprou-na-hora fora da lista, regex sem barra invertida)
+- [x] `npm test` 82/82; `npm run build` limpo
+- [x] Prova LOCAL (preview da Cloudflare + D1 local): 0005 roda sobre o banco local; 6 situações certas; filtros, busca por celular, filtro inválido 400; sem login 404 igual a endereço inexistente; CSV ok; checkout: celular inválido 400, válido grava 11987650000, sem campo grava NULL (a abertura do MP falha só no local: token de exemplo no .dev.vars); robô com chave falsa do Resend: falha desfaz a reserva e adia 1 dia; etapa 4 vencida → finalizado 'sequencia'; descadastrado → finalizado 'descadastro'; fotos 1280/390 conferidas, sem erro de página
+- [ ] Paulo: aplicar 0005 no D1 de produção (o modo automático do Claude bloqueou)
+- [ ] Paulo: merge em main + push + `npm run deploy` do site (com .env.local) + conferir login e /assinar
+- [ ] Paulo: publicar o robô (`npx wrangler deploy` em workers/recuperacao-carrinho)
+- [ ] Primeiros e-mails 2 de verdade: a partir de 06/10 (as 7 pessoas do 1º e-mail de 29/09 a 01/10)
+
+---
+
 # Menu de gestão — plano e andamento (início: 24/09/2026)
 
 Branch: `gestao`. Nada vai para `main` sem o OK do Paulo, fase por fase.
