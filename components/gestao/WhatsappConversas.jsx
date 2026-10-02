@@ -20,9 +20,9 @@ function celular(digitos) {
   return d
 }
 
-function Total({ rotulo, valor, detalhe }) {
+function Total({ rotulo, valor, detalhe, className = '' }) {
   return (
-    <div className="bg-white px-4 py-4 sm:px-5">
+    <div className={'bg-white px-4 py-4 sm:px-5 ' + className}>
       <dt className="text-[13px] text-ink-muted">{rotulo}</dt>
       <dd className="figs mt-1 text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink">{valor}</dd>
       {detalhe && <dd className="figs mt-0.5 text-[13px] text-ink-muted">{detalhe}</dd>}
@@ -181,7 +181,7 @@ export default function WhatsappConversas() {
           <Total rotulo="Entregues" valor={numero(t.entregues)} detalhe={porcentagem(t.entregues, t.enviados)} />
           <Total rotulo="Lidos" valor={numero(t.lidos)} detalhe={porcentagem(t.lidos, t.enviados)} />
           <Total rotulo="Compraram depois" valor={numero(t.recuperados)} detalhe={porcentagem(t.recuperados, t.enviados)} />
-          <Total rotulo="Custo estimado" valor={moeda(t.custo_estimado_centavos)} detalhe="R$ 0,32 por mensagem" />
+          <Total className="col-span-2 lg:col-span-1" rotulo="Custo estimado" valor={moeda(t.custo_estimado_centavos)} detalhe="R$ 0,32 por mensagem" />
         </dl>
       )}
 

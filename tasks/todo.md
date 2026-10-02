@@ -1,3 +1,25 @@
+# WhatsApp pela API oficial da Meta (02/10/2026)
+
+Branch `recuperacao-whatsapp`. Plano: tasks/recuperacao-whatsapp.md. Passo a passo do Paulo: tasks/whatsapp-passo-a-passo-paulo.md.
+Decisões do Paulo (02/10): API oficial da Meta (não Z-API), UMA mensagem 3 h depois do carrinho, celular opcional. Substitui a versão não oficial (desligada, nunca enviou nada).
+Codex indisponível (a conta do ChatGPT recusou gpt-6.1-sol, gpt-5.4 e spark; ~/.codex/config.toml aponta para gpt-6.1-sol): backend feito pelo Claude.
+- [x] 0008 escrita (whatsapp_msg_id, whatsapp_status, tabela whatsapp_mensagens) — NÃO aplicada em produção (ponto de parada 1)
+- [x] lib/whatsapp-meta.js (modelo, texto livre, assinatura X-Hub-Signature-256, telefone com DDD 55 preservado)
+- [x] Robô: envio 3–48 h, 9h–20h, teto 30/dia, WA_MODO=teste filtra o celular de teste, uma por telefone/e-mail, erro não repete; /whatsapp: verificação GET, POST assinado (401 se falso), SAIR/botão → descadastro + confirmação, outras → tabela + e-mail ao suporte, status sem regredir; e-mail e WhatsApp independentes na rodada
+- [x] Checkout com celular opcional (vazio/inválido → NULL); link do botão só com o código do carrinho
+- [x] Gestão: coluna WhatsApp com status da Meta; sub-aba WhatsApp (totais, custo estimado, conversas, resposta só na janela de 24 h conferida no servidor, registro "respondeu no WhatsApp")
+- [x] Privacidade: um lembrete pelo WhatsApp, "Não quero receber" ou SAIR
+- [x] `npm test` 102/102; build limpo
+- [x] Prova LOCAL: webhook GET certo 200 com o desafio, errado 404, raiz 404; assinatura falsa 401; mensagem comum gravada uma vez (repetida não duplica); botão "Não quero receber" descadastrou o e-mail certo; checkout com celular inválido seguiu para o pagamento e gravou telefone NULL; telas 1280/390 sem erro (sub-aba marcada, totais no celular)
+- [ ] Ponto de parada 1: Paulo aprovar a 0008 (regra própria no /permissions)
+- [ ] Ponto de parada 3: merge em main + deploy do site e do robô (WhatsApp sem número = não envia nada)
+- [ ] Paulo: Etapa A do passo a passo (app, número de teste, modelo, token, segredos)
+- [ ] Paulo: Etapa B (webhook no painel da Meta) → provas 3 a 6 com o número de teste
+- [ ] Prova 7: CPU do /api/checkout no painel Observability
+- [ ] Pontos de parada 4 e 5: migrar o número real e WA_MODO=ativo
+
+---
+
 # WhatsApp semanal — até 8 mensagens, publicado DESLIGADO (02/10/2026)
 
 Branch `whatsapp-semanal`. Contrato: tasks/whatsapp-semanal.md (muda tasks/whatsapp.md).

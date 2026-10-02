@@ -14,7 +14,10 @@ export default function SubAbasRecuperacao() {
   return (
     <nav aria-label="Recuperação" className="mb-6 flex gap-2">
       {SUBABAS.map((aba) => {
-        const ativa = pathname === aba.href
+        // O middleware reescreve /gestao para /interno/gestao: compara pelo fim
+        // do endereço, que é igual nos dois.
+        const naWhatsapp = String(pathname || '').endsWith('/recuperacao/whatsapp')
+        const ativa = aba.href.endsWith('/whatsapp') ? naWhatsapp : !naWhatsapp
         return (
           <Link
             key={aba.href}
