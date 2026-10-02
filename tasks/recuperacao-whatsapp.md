@@ -82,6 +82,7 @@ Bloco independente do e-mail (try/catch próprio), mesmo cron de 10 min.
   `WA_GRAPH_VERSION`, `WA_TEMPLATE = carrinho_lembrete`. Segredos: `WA_TOKEN`, `WA_APP_SECRET`, `WA_VERIFY_TOKEN`.
 
 ## Robô — webhook das respostas (Codex), no `fetch` do Worker `recuperacao-carrinho`
+- Endereço: `https://recuperacao-carrinho.trilha-viva.workers.dev/whatsapp` (caminho `/whatsapp`; qualquer outro caminho → 404, como hoje). Passo a passo do Paulo: tasks/whatsapp-passo-a-passo-paulo.md.
 - `GET` com `hub.mode=subscribe` e `hub.verify_token` igual a `WA_VERIFY_TOKEN` → devolve `hub.challenge`.
   Qualquer outra coisa → 404.
 - `POST` confere `X-Hub-Signature-256` (HMAC-SHA256 do corpo cru com `WA_APP_SECRET`, comparação
