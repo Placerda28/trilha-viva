@@ -269,9 +269,9 @@ export default function Recuperacao() {
       {t && (
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded border border-line bg-line lg:grid-cols-4">
           <Total
-            rotulo="Pessoas que não pagaram"
+            rotulo="Não pagaram na hora"
             valor={numero(t.pessoas)}
-            detalhe={numero(t.emails_enviados) + (t.emails_enviados === 1 ? ' e-mail enviado' : ' e-mails enviados')}
+            detalhe={numero(t.comprou_sem_lembrete) + ' pagaram antes do lembrete'}
           />
           <Total rotulo="Em recuperação" valor={numero(t.andamento)} detalhe={numero(t.finalizados) + ' finalizados'} />
           <Total
@@ -279,7 +279,11 @@ export default function Recuperacao() {
             valor={numero(t.recuperados)}
             detalhe={Math.round((t.taxa || 0) * 100) + '% de quem recebeu'}
           />
-          <Total rotulo="Valor recuperado" valor={moeda(t.valor_recuperado_centavos)} />
+          <Total
+            rotulo="Valor recuperado"
+            valor={moeda(t.valor_recuperado_centavos)}
+            detalhe={numero(t.emails_enviados) + (t.emails_enviados === 1 ? ' e-mail enviado' : ' e-mails enviados')}
+          />
         </dl>
       )}
 

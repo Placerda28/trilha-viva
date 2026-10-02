@@ -35,7 +35,12 @@ export async function GET(req) {
   }
 
   return NextResponse.json(
-    { ok: true, nome: carrinho.nome || '', email: carrinho.email },
+    {
+      ok: true,
+      nome: carrinho.nome || '',
+      email: carrinho.email,
+      telefone: carrinho.telefone || '',
+    },
     { headers: semCache }
   )
 }

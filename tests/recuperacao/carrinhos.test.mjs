@@ -1,6 +1,72 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { limparUtm, nomeValido, origemDoCarrinho } from '../../lib/carrinhos.js'
+import { DatabaseSync } from 'node:sqlite'
+import { readFileSync } from 'node:fs'
+import {
+  carrinhoParaPreencher,
+  gravarCarrinho,
+  limparTelefone,
+  limparUtm,
+  nomeValido,
+  origemDoCarrinho,
+  telefoneValido,
+} from '../../lib/carrinhos.js'
+
+class D1Local {
+  constructor(banco) {
+    this.banco = banco
+  }
+
+  prepare(sql) {
+    const preparada = this.banco.prepare(sql)
+    let valores = []
+    return {
+      bind(...novosValores) {
+        valores = novosValores
+        return this
+      },
+      async first() {
+        return preparada.get(...valores) || null
+      },
+      async run() {
+        const resultado = preparada.run(...valores)
+        return { meta: { changes: resultado.changes } }
+      },
+    }
+  }
+}
+
+test('celular guarda só dígitos, remove o 55 e exige DDD válido', () => {
+  assert.equal(limparTelefone('(11) 98765-4321'), '11987654321')
+  assert.equal(limparTelefone('+55 (11) 98765-4321'), '11987654321')
+  assert.equal(limparTelefone('55 11 3456-7890'), '1134567890')
+  assert.equal(limparTelefone('abc'), '')
+
+  assert.equal(telefoneValido('(11) 98765-4321'), true)
+  assert.equal(telefoneValido('1134567890'), true)
+  assert.equal(telefoneValido('01198765432'), false)
+  assert.equal(telefoneValido('119876543'), false)
+  assert.equal(telefoneValido('551198765432100'), false)
+  assert.equal(telefoneValido(''), false)
+})
+
+test('carrinho grava e devolve o celular limpo para preencher o checkout', async () => {
+  const banco = new DatabaseSync(':memory:')
+  banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
+  const db = new D1Local(banco)
+  await gravarCarrinho(db, {
+    id: 'referencia',
+    email: ' Pessoa@Example.com ',
+    nome: 'Pessoa',
+    telefone: '+55 (11) 98765-4321',
+    origem: 'utm=email/lembrete/carrinho',
+  })
+
+  assert.deepEqual(
+    { ...(await carrinhoParaPreencher(db, 'referencia')) },
+    { nome: 'Pessoa', email: 'pessoa@example.com', telefone: '11987654321' }
+  )
+})
 
 test('nome é obrigatório depois do trim e aceita até 80 caracteres', () => {
   assert.equal(nomeValido(' Ana '), true)

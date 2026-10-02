@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server'
 import { getDB } from '@/lib/d1'
-import { consultarCarrinhosGestao, periodoCarrinhos } from '@/lib/gestao/carrinhos'
+import {
+  consultarRecuperacao,
+  filtroRecuperacaoValido,
+} from '@/lib/gestao/recuperacao'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const get = async (req) => {
-  // Esta validação só acontece depois de soAdmin confirmar a sessão no D1.
   const url = new URL(req.url)
-  const periodo = url.searchParams.get('periodo') || '7d'
-  if (!periodoCarrinhos(periodo)) {
+  const filtro = url.searchParams.get('filtro') || 'todos'
+  if (!filtroRecuperacaoValido(filtro)) {
     return NextResponse.json(
-      { ok: false, erro: 'O período deve ser hoje, 7d ou 30d.' },
+      { ok: false, erro: 'Filtro de recuperação inválido.' },
       { status: 400, headers: cabecalhosPrivados }
     )
   }
@@ -25,8 +27,9 @@ const get = async (req) => {
     )
   }
 
-  const resultado = await consultarCarrinhosGestao(db, {
-    periodo,
+  const resultado = await consultarRecuperacao(db, {
+    filtro,
+    busca: url.searchParams.get('busca'),
     pagina: url.searchParams.get('pagina'),
   })
   return NextResponse.json({ ok: true, ...resultado }, { headers: cabecalhosPrivados })
