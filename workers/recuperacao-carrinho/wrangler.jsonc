@@ -24,6 +24,10 @@
     "EMAIL_REPLY_TO": "contato@trilhaviva.org",
     "SITE_URL": "https://trilhaviva.org",
     "TETO_DIA": "40",
-    "TETO_MES": "1100"
+    "TETO_MES": "1100",
+    "MODO_WHATSAPP": "desligado",
+    "WHATSAPP_PROVEDOR": "zapi",
+    "WHATSAPP_TESTE_PARA": "",
+    "WHATSAPP_TETO_DIA": "20"
   }
 }

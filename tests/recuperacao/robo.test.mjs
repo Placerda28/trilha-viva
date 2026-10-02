@@ -42,6 +42,7 @@ function bancoRobo() {
   banco.exec(readFileSync('migrations/0000_esquema_atual.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0005_recuperacao_v2.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0006_whatsapp.sql', 'utf8'))
   return banco
 }
 
@@ -102,6 +103,10 @@ test('Worker expõe somente 404 e mantém cron, D1 e variáveis do contrato', as
   assert.equal(configuracao.d1_databases[0].binding, 'DB')
   assert.equal(configuracao.vars.TETO_DIA, '40')
   assert.equal(configuracao.vars.TETO_MES, '1100')
+  assert.equal(configuracao.vars.MODO_WHATSAPP, 'desligado')
+  assert.equal(configuracao.vars.WHATSAPP_PROVEDOR, 'zapi')
+  assert.equal(configuracao.vars.WHATSAPP_TESTE_PARA, '')
+  assert.equal(configuracao.vars.WHATSAPP_TETO_DIA, '20')
 })
 
 test('e-mail 1 mantém conteúdo, bloqueios e dados do envio atual', async () => {
@@ -127,7 +132,12 @@ test('e-mail 1 mantém conteúdo, bloqueios e dados do envio atual', async () =>
     },
   })
 
-  assert.deepEqual(resultado, { enviados: 1, ignorados: 3, apenasLog: 0 })
+  assert.deepEqual(resultado, {
+    enviados: 1,
+    ignorados: 3,
+    apenasLog: 0,
+    whatsapp: { enviados: 0, ignorados: 0, apenasLog: 0 },
+  })
   assert.equal(pedidos.length, 1)
   assert.equal(pedidos[0].url, 'https://api.resend.com/emails')
   assert.equal(pedidos[0].opcoes.headers['Idempotency-Key'], 'elegivel:email:1')
@@ -265,7 +275,12 @@ test('modo teste não altera protocolos de outros e-mails', async () => {
   })
 
   assert.deepEqual({ ...banco.prepare("SELECT * FROM carrinhos WHERE id = 'outro'").get() }, antes)
-  assert.deepEqual(resultado, { enviados: 0, ignorados: 0, apenasLog: 1 })
+  assert.deepEqual(resultado, {
+    enviados: 0,
+    ignorados: 0,
+    apenasLog: 1,
+    whatsapp: { enviados: 0, ignorados: 0, apenasLog: 0 },
+  })
   assert.match(logs[0], /c\*\*\*@e\*\*\*\.com/)
   assert.doesNotMatch(logs[0], /cliente\.secreto@example\.com/)
   assert.equal(mascararEmail('Pessoa@Dominio.com'), 'p***@d***.com')

@@ -32,6 +32,7 @@ const get = async (req) => {
   const linhas = await consultarRecuperacaoCsv(db, {
     filtro,
     busca: url.searchParams.get('busca'),
+    whatsappAtivo: process.env.WHATSAPP_ATIVO === 'sim',
   })
   return new Response(gerarCsv(CABECALHO_RECUPERACAO, linhas.map(linhaRecuperacaoCsv)), {
     headers: {

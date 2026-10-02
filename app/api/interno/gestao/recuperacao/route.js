@@ -31,6 +31,7 @@ const get = async (req) => {
     filtro,
     busca: url.searchParams.get('busca'),
     pagina: url.searchParams.get('pagina'),
+    whatsappAtivo: process.env.WHATSAPP_ATIVO === 'sim',
   })
   return NextResponse.json({ ok: true, ...resultado }, { headers: cabecalhosPrivados })
 }
