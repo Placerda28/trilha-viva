@@ -4,13 +4,14 @@ import { useEffect, useId, useState } from 'react'
 import { priceBRL, site } from '@/lib/site'
 import { rastrear } from '@/components/MetaPixel'
 
-// Formulario que abre o pagamento: manda nome, e-mail e celular para /api/checkout e
+// Formulario que abre o pagamento: manda nome, e-mail e WhatsApp para /api/checkout e
 // leva a pessoa para a URL que volta (o Mercado Pago). A logica do envio e a
 // mesma em todo lugar; as opcoes so mudam a aparencia:
 //   tom="escuro"   para dentro do card preto de /assinar (botao .btn-glow)
 //   rotulo         texto do botao
-// Nome, e-mail e celular sao obrigatorios (a API recusa sem eles). O celular
-// e para a recuperacao de compra (e-mail agora, WhatsApp depois). Quem chega pelo
+// Nome e e-mail sao obrigatorios (a API recusa sem eles). O WhatsApp e
+// opcional: em branco ou invalido, a compra segue igual (vai vazio) e so
+// aparece um aviso discreto. Ele serve para o lembrete de compra. Quem chega pelo
 // e-mail de lembrete traz ?r=<codigo do carrinho>: o formulario busca nome e
 // e-mail em /api/carrinho e preenche sozinho. O e-mail nunca vai no endereco
 // porque o Pixel da Meta manda o endereco da pagina para a Meta.
@@ -27,6 +28,10 @@ function digitosCelular(valor) {
 
 // Mascara enquanto digita: (11) 98765-4321. So para ler melhor; o que vale e
 // digitosCelular.
+function celularValido(digitos) {
+  return /^[1-9][0-9]{9,10}$/.test(digitos)
+}
+
 function mascaraCelular(valor) {
   const d = digitosCelular(valor).slice(0, 11)
   if (d.length <= 2) return d.length ? '(' + d : ''
@@ -120,11 +125,9 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       setError('Informe seu nome.')
       return
     }
-    const celular = digitosCelular(telefone)
-    if (!/^[1-9][0-9]{9,10}$/.test(celular)) {
-      setError('Informe seu celular com DDD.')
-      return
-    }
+    // WhatsApp invalido nao trava a compra: vai vazio.
+    const digitos = digitosCelular(telefone)
+    const celular = celularValido(digitos) ? digitos : ''
     setLoading(true)
     // Mesmo id no Pixel e no servidor: a Meta conta um evento só.
     const eventoId = crypto.randomUUID()
@@ -153,6 +156,8 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
     ? 'relative mt-2 w-full rounded border border-white/25 bg-white px-4 py-3.5 text-[16px] text-ink placeholder:text-ink-muted focus:border-signal-lite focus:outline-none'
     : 'mt-2 w-full rounded border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none'
   const textoFraco = escuro ? 'text-white/70' : 'text-ink-muted'
+  // Aviso discreto só quando a pessoa digitou algo que não fecha um número.
+  const celularIncompleto = telefone.trim() !== '' && !celularValido(digitosCelular(telefone))
 
   return (
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
@@ -270,7 +275,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
 
       <div>
         <label htmlFor={`${id}-celular`} className={rotuloCls}>
-          Celular (WhatsApp) <span aria-hidden="true" className={textoFraco}>*</span>
+          WhatsApp <span className={`font-normal ${textoFraco}`}>(opcional)</span>
         </label>
         <input
           id={`${id}-celular`}
@@ -278,13 +283,18 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"
-          required
           maxLength={16}
           value={telefone}
           onChange={(e) => setTelefone(mascaraCelular(e.target.value))}
-          placeholder="(11) 98765-4321"
+          placeholder="(27) 99999-9999"
+          aria-describedby={celularIncompleto ? `${id}-celular-aviso` : undefined}
           className={campoCls}
         />
+        {celularIncompleto && (
+          <p id={`${id}-celular-aviso`} className={`mt-1.5 text-[12.5px] ${textoFraco}`}>
+            Confira o número com DDD. Se ficar assim, seguimos sem o WhatsApp.
+          </p>
+        )}
       </div>
 
       {error && (
@@ -305,7 +315,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       </button>
 
       <p className={`text-center text-[12px] leading-relaxed ${textoFraco}`}>
-        Usamos seu e-mail e celular para enviar o acesso e, se a compra não for concluída, alguns lembretes.
+        Usamos seu e-mail e WhatsApp para enviar o acesso e, se a compra não for concluída, um lembrete.
         Você pode cancelar a qualquer momento.
       </p>
 
