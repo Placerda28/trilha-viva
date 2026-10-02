@@ -8,8 +8,9 @@ import { dataHora, moeda, numero } from './formato'
 
 // Aba Recuperação: uma linha por pessoa que deixou nome, e-mail e celular no
 // checkout e não pagou na hora. Mostra em que ponto da sequência de e-mails
-// ela está (1 hora, 7 dias, 15 dias, 30 dias e o encerramento), o WhatsApp
-// (ainda não existe: fica "em breve") e quem comprou depois de um lembrete.
+// ela está (1 hora, 7 dias, 15 dias, 30 dias e o encerramento), a mensagem
+// de WhatsApp (uma só, cerca de 24 h depois; fica "desligado" até o número
+// existir) e quem comprou depois de um lembrete.
 
 const POR_PAGINA = 50
 const TOTAL_EMAILS = 4
@@ -54,7 +55,9 @@ function Situacao({ p }) {
   if (p.situacao === 'recuperado') {
     return (
       <span className={base + ' bg-signal-deep text-white'}>
-        Comprou após o {p.recuperado_pela_etapa || 1}º e-mail
+        {p.recuperado_pelo_canal === 'whatsapp'
+          ? 'Comprou após o WhatsApp'
+          : 'Comprou após o ' + (p.recuperado_pela_etapa || 1) + 'º e-mail'}
       </span>
     )
   }
@@ -130,9 +133,22 @@ function Emails({ p }) {
   )
 }
 
+// Uma mensagem só, cerca de 24 h depois do carrinho. Enquanto o número não
+// existir, a rota devolve "desligado" no lugar de previsto / não enviado.
 function Whatsapp({ p }) {
-  if (p.whatsapp?.enviado_em) return <span className="figs text-ink">Enviado {dataHora(p.whatsapp.enviado_em)}</span>
-  return <span className="text-ink-muted">Em breve</span>
+  const w = p.whatsapp || {}
+  if (w.situacao === 'enviado') return <span className="figs text-ink">Enviado {dataHora(w.enviado_em)}</span>
+  if (w.situacao === 'previsto') {
+    return <span className="figs text-ink">Previsto {dataHora(w.previsto_em)}</span>
+  }
+  const TEXTO = {
+    sem_celular: 'Sem celular',
+    comprou: 'Comprou antes',
+    falhou: 'Não foi possível enviar',
+    nao_enviado: 'Não enviado',
+    desligado: 'Desligado',
+  }
+  return <span className="text-ink-muted">{TEXTO[w.situacao] || 'Em breve'}</span>
 }
 
 function Pessoa({ p }) {
@@ -282,14 +298,21 @@ export default function Recuperacao() {
           <Total
             rotulo="Valor recuperado"
             valor={moeda(t.valor_recuperado_centavos)}
-            detalhe={numero(t.emails_enviados) + (t.emails_enviados === 1 ? ' e-mail enviado' : ' e-mails enviados')}
+            detalhe={
+              numero(t.emails_enviados) +
+              (t.emails_enviados === 1 ? ' e-mail' : ' e-mails') +
+              ' · ' +
+              numero(t.whatsapp_enviados || 0) +
+              ' WhatsApp'
+            }
           />
         </dl>
       )}
 
       <p className="mt-4 text-[13.5px] leading-relaxed text-ink-muted">
         Sequência por e-mail: 1º com 1 hora, 2º 7 dias depois, 3º 15 dias depois, 4º 30 dias depois. Sem compra em
-        mais 30 dias, o protocolo é finalizado. WhatsApp: em breve.
+        mais 30 dias, o protocolo é finalizado. WhatsApp: uma mensagem cerca de 24 horas depois do carrinho
+        {t && !t.whatsapp_ativo ? ' (desligado até o número ser configurado)' : ''}.
       </p>
 
       <div className="mt-6 space-y-4">
