@@ -17,7 +17,10 @@ export default function PrivacidadePage() {
       <div className="prose-tv pb-8">
         <h2>Quais dados coletamos</h2>
         <ul>
-          <li>Nome e e-mail informados no checkout, para enviar o acesso e dar suporte.</li>
+          <li>
+            Nome, e-mail e celular informados no checkout, para enviar o acesso, dar suporte e
+            lembrar de uma compra não concluída.
+          </li>
           <li>
             Dados da transação (valor, data, status) fornecidos pelo Mercado Pago. Não recebemos nem
             armazenamos números de cartão.
@@ -30,11 +33,12 @@ export default function PrivacidadePage() {
         </p>
         <h2>Lembrete de compra não concluída</h2>
         <p>
-          Se você informar seu e-mail no checkout e a compra não for concluída, podemos enviar{' '}
-          <strong>um único</strong> lembrete para esse endereço, cerca de uma hora depois, com o
-          link para terminar a compra. Não enviamos outros lembretes depois desse. Para não
-          receber, use o link &quot;Cancelar lembretes&quot; no próprio e-mail ou escreva para{' '}
-          {site.email}.
+          Se a compra não for concluída, podemos enviar até <strong>quatro</strong> lembretes por
+          e-mail com o link para terminar a compra: cerca de uma hora depois, uma semana depois, 15
+          dias depois e 30 dias depois. Depois do quarto, não enviamos mais nada sobre essa compra, e
+          paramos antes se você comprar. No futuro, o lembrete também poderá chegar pelo WhatsApp, no
+          celular informado. Para não receber, use o link &quot;Cancelar lembretes&quot; no próprio
+          e-mail ou escreva para {site.email}.
         </p>
         <h2>Anúncios e medição (Meta)</h2>
         <p>

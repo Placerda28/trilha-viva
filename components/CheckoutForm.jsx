@@ -4,21 +4,41 @@ import { useEffect, useId, useState } from 'react'
 import { priceBRL, site } from '@/lib/site'
 import { rastrear } from '@/components/MetaPixel'
 
-// Formulario que abre o pagamento: manda nome e e-mail para /api/checkout e
+// Formulario que abre o pagamento: manda nome, e-mail e celular para /api/checkout e
 // leva a pessoa para a URL que volta (o Mercado Pago). A logica do envio e a
 // mesma em todo lugar; as opcoes so mudam a aparencia:
 //   tom="escuro"   para dentro do card preto de /assinar (botao .btn-glow)
 //   rotulo         texto do botao
-// Nome e e-mail sao obrigatorios (a API recusa sem nome). Quem chega pelo
+// Nome, e-mail e celular sao obrigatorios (a API recusa sem eles). O celular
+// e para a recuperacao de compra (e-mail agora, WhatsApp depois). Quem chega pelo
 // e-mail de lembrete traz ?r=<codigo do carrinho>: o formulario busca nome e
 // e-mail em /api/carrinho e preenche sozinho. O e-mail nunca vai no endereco
 // porque o Pixel da Meta manda o endereco da pagina para a Meta.
 // Os ids dos campos vem do useId, porque /assinar tem dois cards de preco
 // (topo e fim) e dois campos com o mesmo id quebram o rotulo dos leitores de
 // tela.
+// So os digitos, sem o 55 do Brasil se a pessoa digitou. Valido = DDD + numero
+// (10 ou 11 digitos). O servidor confere de novo do mesmo jeito.
+function digitosCelular(valor) {
+  let d = String(valor || '').replace(/[^0-9]/g, '')
+  if ((d.length === 12 || d.length === 13) && d.startsWith('55')) d = d.slice(2)
+  return d
+}
+
+// Mascara enquanto digita: (11) 98765-4321. So para ler melhor; o que vale e
+// digitosCelular.
+function mascaraCelular(valor) {
+  const d = digitosCelular(valor).slice(0, 11)
+  if (d.length <= 2) return d.length ? '(' + d : ''
+  if (d.length <= 6) return '(' + d.slice(0, 2) + ') ' + d.slice(2)
+  if (d.length <= 10) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 6) + '-' + d.slice(6)
+  return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7)
+}
+
 export default function CheckoutForm({ tom = 'claro', rotulo }) {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
+  const [telefone, setTelefone] = useState('')
   const [utm, setUtm] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -85,6 +105,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
           if (!dados?.ok) return
           if (dados.nome) setNome((atual) => atual || dados.nome)
           if (dados.email) setEmail((atual) => atual || dados.email)
+          if (dados.telefone) setTelefone((atual) => atual || mascaraCelular(dados.telefone))
         })
         .catch(() => {})
     }
@@ -99,6 +120,11 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       setError('Informe seu nome.')
       return
     }
+    const celular = digitosCelular(telefone)
+    if (!/^[1-9][0-9]{9,10}$/.test(celular)) {
+      setError('Informe seu celular com DDD.')
+      return
+    }
     setLoading(true)
     // Mesmo id no Pixel e no servidor: a Meta conta um evento só.
     const eventoId = crypto.randomUUID()
@@ -107,7 +133,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, email, eventoId, cupom: aplicado ? aplicado.cupom : '', utm }),
+        body: JSON.stringify({ nome, email, telefone: celular, eventoId, cupom: aplicado ? aplicado.cupom : '', utm }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {
@@ -242,6 +268,25 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
         )}
       </div>
 
+      <div>
+        <label htmlFor={`${id}-celular`} className={rotuloCls}>
+          Celular (WhatsApp) <span aria-hidden="true" className={textoFraco}>*</span>
+        </label>
+        <input
+          id={`${id}-celular`}
+          name="telefone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel-national"
+          required
+          maxLength={16}
+          value={telefone}
+          onChange={(e) => setTelefone(mascaraCelular(e.target.value))}
+          placeholder="(11) 98765-4321"
+          className={campoCls}
+        />
+      </div>
+
       {error && (
         <p
           role="alert"
@@ -260,7 +305,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       </button>
 
       <p className={`text-center text-[12px] leading-relaxed ${textoFraco}`}>
-        Usamos seu e-mail para enviar o acesso e, se a compra não for concluída, um lembrete.
+        Usamos seu e-mail e celular para enviar o acesso e, se a compra não for concluída, alguns lembretes.
         Você pode cancelar a qualquer momento.
       </p>
 
