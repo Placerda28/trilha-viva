@@ -10,9 +10,10 @@ Branch `recuperacao-v2`. Contrato: tasks/recuperacao-v2.md. Commits 145c6e9 (pla
 - [x] Revisão linha a linha do diff do Codex: 3 ajustes (celular vazio aceito, comprou-na-hora fora da lista, regex sem barra invertida)
 - [x] `npm test` 82/82; `npm run build` limpo
 - [x] Prova LOCAL (preview da Cloudflare + D1 local): 0005 roda sobre o banco local; 6 situações certas; filtros, busca por celular, filtro inválido 400; sem login 404 igual a endereço inexistente; CSV ok; checkout: celular inválido 400, válido grava 11987650000, sem campo grava NULL (a abertura do MP falha só no local: token de exemplo no .dev.vars); robô com chave falsa do Resend: falha desfaz a reserva e adia 1 dia; etapa 4 vencida → finalizado 'sequencia'; descadastrado → finalizado 'descadastro'; fotos 1280/390 conferidas, sem erro de página
-- [ ] Paulo: aplicar 0005 no D1 de produção (o modo automático do Claude bloqueou)
-- [ ] Paulo: merge em main + push + `npm run deploy` do site (com .env.local) + conferir login e /assinar
-- [ ] Paulo: publicar o robô (`npx wrangler deploy` em workers/recuperacao-carrinho)
+- [x] 0005 APLICADA no D1 de produção em 02/10 (Paulo liberou a permissão). Conferido: 7 lembretes migrados; 11 clientes, 11 compras, R$ 631,80 pagos intactos.
+- [x] Merge em main (cbe4216), push, site publicado (versão 865067e9, build com .env.local). Conferido no ar: home e /assinar 200, login 400 "Informe o e-mail e a senha.", campo Celular no /assinar, checkout recusa celular inválido, /api/gestao/recuperacao sem login 404 igual a inexistente, privacidade nova.
+  - Tropeço: o build saía com código 127 sem mensagem porque servidores de teste locais (wrangler/workerd) seguiam abertos travando .open-next. Encerrar os processos de teste antes de publicar.
+- [x] Robô publicado (versão 94e58bc4, cron */10, MODO=ativo, segredos LEMBRETE_SEGREDO e RESEND_API_KEY presentes).
 - [ ] Primeiros e-mails 2 de verdade: a partir de 06/10 (as 7 pessoas do 1º e-mail de 29/09 a 01/10)
 
 ---
