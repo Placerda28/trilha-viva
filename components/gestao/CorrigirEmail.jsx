@@ -44,6 +44,7 @@ export default function CorrigirEmail({ c, onMudou }) {
   }
 
   async function reenviar() {
+    setErro('')
     setEnvio({ estado: 'enviando', texto: '' })
     const r = await postar('/api/gestao/clientes/acesso', { id: c.id })
     setEnvio(
@@ -131,6 +132,22 @@ export default function CorrigirEmail({ c, onMudou }) {
           Cancelar
         </button>
       </div>
+      {/* O e-mail já está certo e só falta o acesso chegar. */}
+      {envio.estado !== 'ok' && (
+        <button
+          type="button"
+          onClick={reenviar}
+          disabled={salvando || envio.estado === 'enviando'}
+          className="min-h-[32px] text-[13px] font-semibold text-ink-muted underline decoration-line underline-offset-2 hover:text-ink disabled:opacity-60"
+        >
+          {envio.estado === 'enviando' ? 'Enviando…' : 'Só reenviar o acesso para ' + c.email}
+        </button>
+      )}
+      {envio.texto && (
+        <p role={envio.estado === 'erro' ? 'alert' : undefined} aria-live="polite" className={'break-all text-[13.5px] ' + (envio.estado === 'erro' ? 'text-signal-deep' : 'text-ink')}>
+          {envio.texto}
+        </p>
+      )}
     </form>
   )
 }
