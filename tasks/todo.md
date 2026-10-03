@@ -21,7 +21,9 @@ Codex indisponível (a conta do ChatGPT recusou gpt-6.1-sol, gpt-5.4 e spark; ~/
 - [x] App da Meta publicado (03/10). Privacidade ganhou "WhatsApp" e "#exclusao-de-dados" para a Meta.
 - [x] WhatsApp OBRIGATÓRIO no checkout, como o e-mail (pedido do Paulo, 03/10; site 9ca826ce). No ar: vazio e inválido → 400 "Informe seu WhatsApp com DDD.", válido abre o Mercado Pago.
 - [ ] Modelo carrinho_lembrete aprovado → provas 4 a 6 com o celular do Paulo
-- [ ] Paulo: Etapa B (webhook no painel da Meta) → provas 3 a 6 com o número de teste
+- [x] Webhook provado em 03/10 09:42 pelo botão "Teste" do painel (gestão + e-mail do suporte OK); linha de teste apagada do D1.
+- [x] 03/10: webhook ignora outro phone_number_id e não grava número estrangeiro (f304706); robô 3122c099.
+- [ ] Prova 3 real: número de teste não recebe "oi" direto → mandar o hello_world pelo painel e responder nessa conversa
 - [ ] Prova 7: CPU do /api/checkout no painel Observability
 - [ ] Pontos de parada 4 e 5: migrar o número real e WA_MODO=ativo
 
