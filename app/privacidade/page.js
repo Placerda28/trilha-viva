@@ -18,7 +18,7 @@ export default function PrivacidadePage() {
         <h2>Quais dados coletamos</h2>
         <ul>
           <li>
-            Nome, e-mail e WhatsApp (opcional) informados no checkout, para enviar o acesso, dar suporte e
+            Nome, e-mail e WhatsApp informados no checkout, para enviar o acesso, dar suporte e
             lembrar de uma compra não concluída.
           </li>
           <li>
@@ -36,7 +36,7 @@ export default function PrivacidadePage() {
           Se a compra não for concluída, podemos enviar até <strong>quatro</strong> lembretes por
           e-mail com o link para terminar a compra: cerca de uma hora depois, uma semana depois, 15
           dias depois e 30 dias depois. Depois do quarto, não enviamos mais nada sobre essa compra, e
-          paramos antes se você comprar. Se você informar o WhatsApp, ele pode receber{' '}
+          paramos antes se você comprar. O WhatsApp informado pode receber{' '}
           <strong>um</strong> lembrete, cerca de três horas depois, pela conta oficial da Trilha Viva. Para não receber, use o link &quot;Cancelar lembretes&quot; no próprio
           e-mail, toque em &quot;Não quero receber&quot; ou responda SAIR no WhatsApp, ou escreva para{' '}
           {site.email}. Pedir para sair em um canal encerra os lembretes nos dois.

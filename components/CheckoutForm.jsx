@@ -9,9 +9,8 @@ import { rastrear } from '@/components/MetaPixel'
 // mesma em todo lugar; as opcoes so mudam a aparencia:
 //   tom="escuro"   para dentro do card preto de /assinar (botao .btn-glow)
 //   rotulo         texto do botao
-// Nome e e-mail sao obrigatorios (a API recusa sem eles). O WhatsApp e
-// opcional: em branco ou invalido, a compra segue igual (vai vazio) e so
-// aparece um aviso discreto. Ele serve para o lembrete de compra. Quem chega pelo
+// Nome, e-mail e WhatsApp sao obrigatorios (a API recusa sem eles). O
+// WhatsApp serve para o lembrete de compra. Quem chega pelo
 // e-mail de lembrete traz ?r=<codigo do carrinho>: o formulario busca nome e
 // e-mail em /api/carrinho e preenche sozinho. O e-mail nunca vai no endereco
 // porque o Pixel da Meta manda o endereco da pagina para a Meta.
@@ -125,9 +124,11 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       setError('Informe seu nome.')
       return
     }
-    // WhatsApp invalido nao trava a compra: vai vazio.
-    const digitos = digitosCelular(telefone)
-    const celular = celularValido(digitos) ? digitos : ''
+    const celular = digitosCelular(telefone)
+    if (!celularValido(celular)) {
+      setError('Informe seu WhatsApp com DDD.')
+      return
+    }
     setLoading(true)
     // Mesmo id no Pixel e no servidor: a Meta conta um evento só.
     const eventoId = crypto.randomUUID()
@@ -275,7 +276,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
 
       <div>
         <label htmlFor={`${id}-celular`} className={rotuloCls}>
-          WhatsApp <span className={`font-normal ${textoFraco}`}>(opcional)</span>
+          WhatsApp <span aria-hidden="true" className={textoFraco}>*</span>
         </label>
         <input
           id={`${id}-celular`}
@@ -283,6 +284,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"
+          required
           maxLength={16}
           value={telefone}
           onChange={(e) => setTelefone(mascaraCelular(e.target.value))}
@@ -292,7 +294,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
         />
         {celularIncompleto && (
           <p id={`${id}-celular-aviso`} className={`mt-1.5 text-[12.5px] ${textoFraco}`}>
-            Confira o número com DDD. Se ficar assim, seguimos sem o WhatsApp.
+            Confira o número com DDD.
           </p>
         )}
       </div>
