@@ -1,10 +1,10 @@
 import { getDB } from '@/lib/d1'
 import { consultarClientesCsv } from '@/lib/gestao/clientes'
 import {
-  CABECALHO_CLIENTES,
+  CABECALHO_CLIENTES_COM_WHATSAPP,
   gerarCsv,
   hojeBrasilia,
-  linhaClienteCsv,
+  linhaClienteComWhatsappCsv,
 } from '@/lib/gestao/csv'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
 
@@ -21,7 +21,7 @@ const get = async (req) => {
   }
   const url = new URL(req.url)
   const linhas = await consultarClientesCsv(db, url.searchParams.get('q'))
-  return new Response(gerarCsv(CABECALHO_CLIENTES, linhas.map(linhaClienteCsv)), {
+  return new Response(gerarCsv(CABECALHO_CLIENTES_COM_WHATSAPP, linhas.map(linhaClienteComWhatsappCsv)), {
     headers: {
       ...cabecalhosPrivados,
       'Content-Type': 'text/csv; charset=utf-8',

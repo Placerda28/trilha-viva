@@ -26,7 +26,13 @@ Codex indisponível (a conta do ChatGPT recusou gpt-6.1-sol, gpt-5.4 e spark; ~/
 - [x] 03/10: número de teste da Meta abandonado (hello_world para 5527996253839 voltou failed, erro 130497 "restricted from messaging users in this country"); conta de teste 1605027684651104 bateu no limite de números.
 - [x] 03/10: número real +55 27 99291-2872 ("Trilha Viva", Conectado) numa WABA nova 2270775880440864, phone_number_id 1463806263472529. Trilhavivarobo com controle total na WABA nova; webhooks assinados; carrinho_lembrete recriado (em análise), hello_world ativo (Cowork/Paulo pelo painel).
 - [x] 03/10: IDs novos no site e no robô (603e21b), WA_MODO segue teste. Site www 15792e58, robô 26728038. Smoke: home/privacidade 200, gestão 404 deslogado, webhook sem assinatura 401, segredos WA_* presentes.
-- [ ] Prova 3 com o número real: Cowork manda hello_world pelo painel → Paulo responde "oi" → conferir log, D1, gestão e e-mail → responder pela gestão → SAIR só com OK do Paulo
+- [x] Prova 3 com o número real (03/10): "oi" de 5527996253839 às 15:56 → webhook 200, D1 (whatsapp_mensagens id 2), gestão e e-mail do suporte OK; resposta pela gestão às 15:57 (id 3) chegou no celular; Meta mandou 3 avisos de status (15:57:04/05/12). Status de resposta manual não é guardado (só o do lembrete, em carrinhos); totais da gestão contam só lembretes — mantido.
+- [ ] Teste do SAIR — só com OK do Paulo (descadastra os e-mails ligados ao telefone)
+- [ ] Paulo: cartão na Meta (Etapa 2 → informações de pagamento) — sem isso o lembrete não sai
+- [ ] Teste completo do lembrete com cartão + modelo aprovado (recuar data do carrinho só com autorização): mensagem, botão Finalizar compra → /assinar preenchido, botão Não quero receber
+- [ ] Ligar de verdade (WA_MODO=ativo, WHATSAPP_ATIVO=sim) só depois do lembrete e do SAIR aprovados
+- [ ] Recomendado: verificação da empresa na Meta (evita 130497, aumenta limite)
+- [ ] Coluna WhatsApp em Clientes (branch clientes-whatsapp): telefone do carrinho mais recente do mesmo e-mail (pago primeiro), na mesma consulta; link wa.me; planilha com coluna WhatsApp; 106 testes, build limpo; 8 de 18 clientes têm número em produção. Falta: OK do Paulo → merge/deploy → conferir na tela e na planilha
 - [ ] carrinho_lembrete aprovado na WABA nova → teste completo do lembrete (recuar data do carrinho só com autorização)
 - [ ] Prova 7: CPU do /api/checkout no painel Observability
 - [ ] Pontos de parada 4 e 5: migrar o número real e WA_MODO=ativo

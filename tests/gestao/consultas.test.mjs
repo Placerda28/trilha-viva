@@ -10,6 +10,11 @@ import {
   paginaValida,
 } from '../../lib/gestao/clientes.js'
 import {
+  CABECALHO_CLIENTES_COM_WHATSAPP,
+  formatarCelular,
+  linhaClienteComWhatsappCsv,
+} from '../../lib/gestao/csv.js'
+import {
   comprasMpSemForma,
   consultarItensPeriodo,
   consultarPeriodoCsv,
@@ -46,6 +51,7 @@ function bancoComDados() {
   banco.exec(readFileSync('migrations/0000_esquema_atual.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0001_gestao_fase1.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0002_cupons.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
   banco.exec(`
     INSERT INTO clientes (id, email, nome, bloqueado, supabase_id, criado_em) VALUES
       (1, 'master@example.com', 'Master 100%', 0, 'sup_1', '2026-09-20 12:00:00'),
@@ -165,4 +171,35 @@ test('busca no cache do período tem LIMIT e CSV traz no máximo as pagas', asyn
   )
   assert.equal(compraComCupom.compra_forma, 'cartao')
   assert.equal(compraComCupom.compra_cupom, 'LOUVOR20')
+})
+
+test('clientes: WhatsApp do checkout (carrinho pago primeiro), ausente vira null e planilha leva a coluna', async () => {
+  const banco = bancoComDados()
+  banco.exec(`
+    INSERT INTO carrinhos (id, email, nome, telefone, status, criado_em) VALUES
+      ('k1', 'master@example.com', 'Master', '27999990001', 'pago', '2026-09-24 02:00:00'),
+      ('k2', 'master@example.com', 'Master', '27999990002', 'aberto', '2026-09-28 10:00:00'),
+      ('k3', 'comum_test@example.com', 'Comum', NULL, 'aberto', '2026-09-25 02:00:00'),
+      ('k4', 'bloqueado@example.com', 'Bloq', '', 'pago', '2026-09-26 02:00:00');
+  `)
+  const d1 = new D1Local(banco)
+  const resultado = await consultarClientes(d1, { q: '', pagina: 1 })
+  assert.equal(d1.consultas, 2)
+  const porId = Object.fromEntries(resultado.linhas.map((l) => [l.id, clienteDaLinha(l)]))
+  assert.equal(porId[1].telefone, '27999990001')
+  assert.equal(porId[2].telefone, null)
+  assert.equal(porId[3].telefone, null)
+
+  const csv = await consultarClientesCsv(new D1Local(banco), '')
+  assert.deepEqual(CABECALHO_CLIENTES_COM_WHATSAPP.slice(0, 4), ['Nome', 'E-mail', 'WhatsApp', 'Data da compra'])
+  const master = linhaClienteComWhatsappCsv(csv.find((l) => l.id === 1))
+  assert.deepEqual(master.slice(0, 3), ['Master 100%', 'master@example.com', '(27) 99999-0001'])
+  assert.equal(master.length, CABECALHO_CLIENTES_COM_WHATSAPP.length)
+  assert.equal(linhaClienteComWhatsappCsv(csv.find((l) => l.id === 2))[2], '')
+})
+
+test('formato do celular: 11 e 10 dígitos; vazio fica vazio', () => {
+  assert.equal(formatarCelular('27996253839'), '(27) 99625-3839')
+  assert.equal(formatarCelular('2733334444'), '(27) 3333-4444')
+  assert.equal(formatarCelular(null), '')
 })
