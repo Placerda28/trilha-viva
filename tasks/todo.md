@@ -34,6 +34,13 @@ Codex indisponível (a conta do ChatGPT recusou gpt-6.1-sol, gpt-5.4 e spark; ~/
 - [ ] Recomendado: verificação da empresa na Meta (evita 130497, aumenta limite)
 - [ ] Coluna WhatsApp em Clientes (branch clientes-whatsapp): telefone do carrinho mais recente do mesmo e-mail (pago primeiro), na mesma consulta; link wa.me; planilha com coluna WhatsApp; 106 testes, build limpo; 8 de 18 clientes têm número em produção. Falta: OK do Paulo → merge/deploy → conferir na tela e na planilha
 - [ ] carrinho_lembrete aprovado na WABA nova → teste completo do lembrete (recuar data do carrinho só com autorização)
+- [ ] Ligar sem deploy (branch whatsapp-ligar-automatico, abd2091) — substitui o "ligar de verdade" manual (WA_MODO/WHATSAPP_ATIVO):
+  - estado no banco (migração 0009: whatsapp_estado + carrinhos.whatsapp_erro): aguardando_modelo → teste_enviado → ativo | pausado. WA_MODO vira trava geral.
+  - robô confere o modelo a cada 30 min; recusado → e-mail com motivo (1 vez por motivo); aprovado → teste para o Paulo (9h–20h, no máx. 1 a cada 6 h; erro → e-mail explicando) → e-mail com LIGAR / NÃO LIGAR (HMAC WA_LINK_SEGREDO, uso único, 72 h; GET só mostra botão, POST muda).
+  - teste não entregue avisado pelo webhook (failed) → volta a aguardar + e-mail. Ligado: teto 10/dia nos 3 primeiros dias, resumo diário depois das 20h, carrinhos só dentro de 48 h.
+  - gestão → Recuperação → WhatsApp: estado + Ligar / Pausar / Retomar (só admin, registrado). "Desligado" da aba Pessoas vem do estado; WHATSAPP_ATIVO não é mais usado.
+  - provas: 117 testes (13 novos), build limpo, simulação no wrangler dev local (GET 200 / link falso 410 / POST liga / reuso 410).
+  - falta (OK do Paulo): migração 0009 em produção, segredo WA_LINK_SEGREDO, WA_MODO=ativo, deploy do robô e do site; conferir o estado na gestão.
 - [ ] Prova 7: CPU do /api/checkout no painel Observability
 - [ ] Pontos de parada 4 e 5: migrar o número real e WA_MODO=ativo
 

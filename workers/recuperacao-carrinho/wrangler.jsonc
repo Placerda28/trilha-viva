@@ -32,6 +32,7 @@
     "WA_WABA_ID": "2270775880440864",
     "WA_GRAPH_VERSION": "v26.0",
     "WA_TEMPLATE": "carrinho_lembrete",
-    "WA_ENCAMINHAR_PARA": "trilhaviva.suporte@gmail.com"
+    "WA_ENCAMINHAR_PARA": "trilhaviva.suporte@gmail.com",
+    "WA_LINK_BASE": "https://recuperacao-carrinho.trilha-viva.workers.dev"
   }
 }

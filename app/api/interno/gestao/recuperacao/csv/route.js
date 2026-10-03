@@ -1,4 +1,5 @@
 import { getDB } from '@/lib/d1'
+import { lerEstadoWhatsapp } from '@/lib/gestao/whatsapp'
 import {
   CABECALHO_RECUPERACAO,
   consultarRecuperacaoCsv,
@@ -32,7 +33,7 @@ const get = async (req) => {
   const linhas = await consultarRecuperacaoCsv(db, {
     filtro,
     busca: url.searchParams.get('busca'),
-    whatsappAtivo: process.env.WHATSAPP_ATIVO === 'sim',
+    whatsappAtivo: (await lerEstadoWhatsapp(db)).estado === 'ativo',
   })
   return new Response(gerarCsv(CABECALHO_RECUPERACAO, linhas.map(linhaRecuperacaoCsv)), {
     headers: {

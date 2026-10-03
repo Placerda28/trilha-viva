@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDB } from '@/lib/d1'
+import { lerEstadoWhatsapp } from '@/lib/gestao/whatsapp'
 import {
   consultarRecuperacao,
   filtroRecuperacaoValido,
@@ -31,7 +32,7 @@ const get = async (req) => {
     filtro,
     busca: url.searchParams.get('busca'),
     pagina: url.searchParams.get('pagina'),
-    whatsappAtivo: process.env.WHATSAPP_ATIVO === 'sim',
+    whatsappAtivo: (await lerEstadoWhatsapp(db)).estado === 'ativo',
   })
   return NextResponse.json({ ok: true, ...resultado }, { headers: cabecalhosPrivados })
 }
