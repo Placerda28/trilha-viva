@@ -11,9 +11,11 @@ Codex indisponível (a conta do ChatGPT recusou gpt-6.1-sol, gpt-5.4 e spark; ~/
 - [x] Privacidade: um lembrete pelo WhatsApp, "Não quero receber" ou SAIR
 - [x] `npm test` 102/102; build limpo
 - [x] Prova LOCAL: webhook GET certo 200 com o desafio, errado 404, raiz 404; assinatura falsa 401; mensagem comum gravada uma vez (repetida não duplica); botão "Não quero receber" descadastrou o e-mail certo; checkout com celular inválido seguiu para o pagamento e gravou telefone NULL; telas 1280/390 sem erro (sub-aba marcada, totais no celular)
-- [ ] Ponto de parada 1: Paulo aprovar a 0008 (regra própria no /permissions)
-- [ ] Ponto de parada 3: merge em main + deploy do site e do robô (WhatsApp sem número = não envia nada)
-- [ ] Paulo: Etapa A do passo a passo (app, número de teste, modelo, token, segredos)
+- [x] 0008 APLICADA em produção em 02/10 (Paulo liberou). 17 carrinhos, 13 compras, R$ 811,60 intactos.
+- [x] Merge em main (c00a07d), site 9c943d76 (com .env.local; vars WA_PHONE_NUMBER_ID e WA_GRAPH_VERSION no wrangler.jsonc, keep_vars mantido), robô bbe757e9 (WA_MODO=teste, número de teste 1361467643717151, celular de teste 27996253839).
+  - Provas 1 e 2 NO AR: checkout abre o Mercado Pago sem telefone, com telefone inválido e com válido (e-mail do Paulo, que já tem compra: nenhum lembrete sai); só o válido gravou 27996253839. Gestão WhatsApp e responder sem login: 404. Webhook do robô 404 até os segredos existirem.
+- [x] Paulo: Etapa A (app, número de teste, conta 1605027684651104, modelo em análise, usuário do sistema Trilhavivarobo)
+- [ ] Paulo: colar WA_TOKEN, WA_APP_SECRET, WA_VERIFY_TOKEN no robô e WA_TOKEN no site (A6). O 1º token foi colado no chat em 02/10: revogar e gerar outro.
 - [ ] Paulo: Etapa B (webhook no painel da Meta) → provas 3 a 6 com o número de teste
 - [ ] Prova 7: CPU do /api/checkout no painel Observability
 - [ ] Pontos de parada 4 e 5: migrar o número real e WA_MODO=ativo
