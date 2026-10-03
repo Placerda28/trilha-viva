@@ -301,7 +301,7 @@ function assinado(corpo, segredo = 'segredo-do-app') {
   })
 }
 
-function aviso({ mensagens = [], status = [], nome = 'Maria' } = {}) {
+function aviso({ mensagens = [], status = [], nome = 'Maria', numeroId = '123456', waId = '5527911110000' } = {}) {
   return {
     object: 'whatsapp_business_account',
     entry: [{
@@ -310,7 +310,8 @@ function aviso({ mensagens = [], status = [], nome = 'Maria' } = {}) {
         field: 'messages',
         value: {
           messaging_product: 'whatsapp',
-          contacts: [{ wa_id: '5527911110000', profile: { name: nome } }],
+          metadata: { display_phone_number: '15550000000', phone_number_id: numeroId },
+          contacts: [{ wa_id: waId, profile: { name: nome } }],
           messages: mensagens,
           statuses: status,
         },
@@ -355,6 +356,29 @@ test('mensagem comum: grava, encaminha por e-mail uma vez só (aviso repetido n�
   assert.equal(s.emails()[0].corpo.subject, 'WhatsApp de Maria (27911110000)')
   assert.equal(s.emails()[0].corpo.html.includes('<b>'), false)
   assert.equal(s.meta().length, 0)
+})
+
+test('aviso de outro número da Meta (ex.: botão "Teste" do painel) é ignorado', async () => {
+  const b = banco()
+  const s = falsoServidor()
+  const corpo = aviso({ numeroId: '123456123', mensagens: [{ from: '5527911110000', id: 'wamid.x1', type: 'text', text: { body: 'oi' } }] })
+  const r = await atenderWebhook(assinado(corpo), ambiente(new D1Local(b)), { fetchImpl: s.fetchImpl, logger: mudo })
+  assert.equal(r.status, 200)
+  assert.equal(b.prepare('SELECT COUNT(*) AS n FROM whatsapp_mensagens').get().n, 0)
+  assert.equal(s.pedidos.length, 0)
+})
+
+test('número de fora do Brasil: só encaminha por e-mail com +DDI, sem gravar na gestão', async () => {
+  const b = banco()
+  const s = falsoServidor()
+  const corpo = aviso({ waId: '16315551181', nome: 'Fulano', mensagens: [{ from: '16315551181', id: 'wamid.us1', type: 'text', text: { body: 'hello' } }] })
+  const r = await atenderWebhook(assinado(corpo), ambiente(new D1Local(b)), { fetchImpl: s.fetchImpl, logger: mudo })
+  assert.equal(r.status, 200)
+  assert.equal(b.prepare('SELECT COUNT(*) AS n FROM whatsapp_mensagens').get().n, 0)
+  assert.equal(s.meta().length, 0)
+  assert.equal(s.emails().length, 1)
+  assert.equal(s.emails()[0].corpo.subject, 'WhatsApp de Fulano (+16315551181)')
+  assert.equal(s.emails()[0].corpo.text.includes('fora do Brasil'), true)
 })
 
 test('SAIR e o botão "Não quero receber": descadastram o e-mail do telefone e confirmam', async () => {

@@ -264,10 +264,13 @@ async function guardarMensagem(db, { waId, telefone, nome, direcao, texto, envia
   return mudancas(resultado) === 1
 }
 
-async function encaminharPorEmail(env, { nome, telefone, texto }, fetchImpl) {
+async function encaminharPorEmail(env, { nome, telefone, texto, estrangeiro = false }, fetchImpl) {
   const para = String(env.WA_ENCAMINHAR_PARA || env.LEMBRETE_BCC || '').trim()
   if (!para || !env.RESEND_API_KEY) return
   const quem = nome ? `${nome} (${telefone})` : telefone
+  const comoResponder = estrangeiro
+    ? 'Número de fora do Brasil: não entra na gestão do site. Responda direto pelo WhatsApp, se fizer sentido.'
+    : 'Para responder, use a gestão do site: Recuperação → WhatsApp (até 24 h depois da mensagem).'
   const resposta = await fetchImpl('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -275,8 +278,8 @@ async function encaminharPorEmail(env, { nome, telefone, texto }, fetchImpl) {
       from: env.EMAIL_FROM,
       to: [para],
       subject: `WhatsApp de ${quem}`.slice(0, 150),
-      text: `${quem} escreveu no WhatsApp:\n\n${texto}\n\nPara responder, use a gestão do site: Recuperação → WhatsApp (até 24 h depois da mensagem).`,
-      html: `<p><strong>${escapeHtml(quem)}</strong> escreveu no WhatsApp:</p><p style="white-space:pre-wrap">${escapeHtml(texto)}</p><p style="color:#5C5C5C">Para responder, use a gestão do site: Recuperação → WhatsApp (até 24 h depois da mensagem).</p>`,
+      text: `${quem} escreveu no WhatsApp:\n\n${texto}\n\n${comoResponder}`,
+      html: `<p><strong>${escapeHtml(quem)}</strong> escreveu no WhatsApp:</p><p style="white-space:pre-wrap">${escapeHtml(texto)}</p><p style="color:#5C5C5C">${escapeHtml(comoResponder)}</p>`,
     }),
   })
   if (!resposta.ok) throw new Error(`Resend respondeu com HTTP ${resposta.status}`)
@@ -287,6 +290,18 @@ async function tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger) {
   if (!telefone) return
   const nome = nomes.get(String(mensagem.from)) || null
   const texto = textoDaMensagem(mensagem)
+
+  // A gestão guarda o telefone sem o 55 e responde pondo o 55 de volta: um
+  // número de fora (ex.: +1 631...) viraria um celular brasileiro qualquer.
+  // Por isso ele só é encaminhado por e-mail, com o DDI.
+  if (telefone === String(mensagem.from).replace(/\D/g, '')) {
+    try {
+      await encaminharPorEmail(env, { nome, telefone: `+${telefone}`, texto, estrangeiro: true }, fetchImpl)
+    } catch (erro) {
+      logger.error('Encaminhamento por e-mail falhou (número de fora do Brasil):', erro?.message || erro)
+    }
+    return
+  }
 
   if (pedidoDeSaida(texto)) {
     // O descadastro vem ANTES de gravar a mensagem: se algo falhar no meio, a
@@ -323,6 +338,8 @@ async function processarAvisos(db, env, corpo, fetchImpl, logger) {
     for (const mudanca of Array.isArray(entrada?.changes) ? entrada.changes : []) {
       if (mudanca?.field !== 'messages') continue
       const valor = mudanca.value || {}
+      // Só avisos do nosso número (o botão "Teste" do painel manda outro id).
+      if (String(valor.metadata?.phone_number_id || '') !== String(env.WA_PHONE_NUMBER_ID || '')) continue
       const nomes = new Map(
         (Array.isArray(valor.contacts) ? valor.contacts : []).map((c) => [String(c?.wa_id || ''), c?.profile?.name || null])
       )
