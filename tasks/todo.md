@@ -34,6 +34,11 @@ Codex indisponível (a conta do ChatGPT recusou gpt-6.1-sol, gpt-5.4 e spark; ~/
 - [ ] Recomendado: verificação da empresa na Meta (evita 130497, aumenta limite)
 - [ ] Coluna WhatsApp em Clientes (branch clientes-whatsapp): telefone do carrinho mais recente do mesmo e-mail (pago primeiro), na mesma consulta; link wa.me; planilha com coluna WhatsApp; 106 testes, build limpo; 8 de 18 clientes têm número em produção. Falta: OK do Paulo → merge/deploy → conferir na tela e na planilha
 - [ ] carrinho_lembrete aprovado na WABA nova → teste completo do lembrete (recuar data do carrinho só com autorização)
+- [ ] SE as vendas caírem: tornar o WhatsApp OPCIONAL no checkout (decisão do Paulo em 03/10: fica obrigatório por enquanto).
+  - O que muda: desfazer o commit 0707985 ("WhatsApp obrigatorio no checkout") — 3 arquivos: a tela do checkout (components/CheckoutForm.jsx: tira a obrigatoriedade e o aviso "Informe seu WhatsApp com DDD."), a API (app/api/checkout/route.js: aceita sem telefone, mas recusa número inválido se for preenchido) e a frase da política de privacidade.
+  - Precisa de deploy do site (o robô não muda). Banco não muda.
+  - Tempo: cerca de 30 a 40 min com testes, build, deploy e conferência no ar.
+  - Efeito: quem não preencher o WhatsApp não recebe o lembrete por WhatsApp (o e-mail continua).
 - [ ] Ligar sem deploy (branch whatsapp-ligar-automatico, abd2091) — substitui o "ligar de verdade" manual (WA_MODO/WHATSAPP_ATIVO):
   - estado no banco (migração 0009: whatsapp_estado + carrinhos.whatsapp_erro): aguardando_modelo → teste_enviado → ativo | pausado. WA_MODO vira trava geral.
   - robô confere o modelo a cada 30 min; recusado → e-mail com motivo (1 vez por motivo); aprovado → teste para o Paulo (9h–20h, no máx. 1 a cada 6 h; erro → e-mail explicando) → e-mail com LIGAR / NÃO LIGAR (HMAC WA_LINK_SEGREDO, uso único, 72 h; GET só mostra botão, POST muda).
