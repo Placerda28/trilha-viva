@@ -10,6 +10,14 @@ import {
   telefoneSemPais,
   textoIgual,
 } from '../../lib/whatsapp-meta.js'
+import {
+  CAMINHO_LINK_WHATSAPP,
+  atenderLink,
+  prepararLigacao,
+  resumoDoDia,
+  testeNaoEntregue,
+  tetoDoDia,
+} from './whatsapp-estado.js'
 
 // WhatsApp da recuperação de carrinho pela API oficial da Meta.
 // Uma mensagem por telefone, para sempre, 3 h depois do carrinho, só se a
@@ -138,14 +146,15 @@ async function apagarReserva(db, id) {
     DELETE FROM lembretes_enviados WHERE carrinho_id = ? AND canal = 'whatsapp' AND etapa = 1`).bind(id).run()
 }
 
-async function registrarFalha(db, id) {
+async function registrarFalha(db, id, codigo) {
   await apagarReserva(db, id)
   await db.prepare(`
     UPDATE carrinhos
        SET whatsapp_enviado_em = NULL,
            whatsapp_falhou_em = datetime('now'),
-           whatsapp_status = 'failed'
-     WHERE id = ?`).bind(id).run()
+           whatsapp_status = 'failed',
+           whatsapp_erro = ?
+     WHERE id = ?`).bind(codigo == null ? null : String(codigo), id).run()
 }
 
 export async function executarWhatsapp(env, opcoes = {}) {
@@ -156,12 +165,21 @@ export async function executarWhatsapp(env, opcoes = {}) {
 
   // Sem número ou token, o WhatsApp simplesmente não roda (o e-mail segue).
   if (!configuracaoMeta(env).ok) return resultado
-  if (!dentroDoHorario(opcoes.agora || new Date())) return resultado
 
   const db = env.DB
   if (!db) throw new Error('Binding DB não configurado.')
   const fetchImpl = opcoes.fetchImpl || globalThis.fetch
-  const tetoDia = limite(env.WA_TETO_DIA, 30)
+  const agora = opcoes.agora || new Date()
+  const dentro = dentroDoHorario(agora)
+
+  // Até o Paulo tocar em LIGAR, nenhum cliente recebe: o robô só confere o
+  // modelo na Meta e, aprovado, manda o teste para o celular dele.
+  const estado = await prepararLigacao(db, env, { dentroDoHorario: dentro, fetchImpl, logger })
+  if (estado.estado !== 'ativo') return resultado
+  await resumoDoDia(db, env, agora, fetchImpl, logger)
+  if (!dentro) return resultado
+
+  const tetoDia = tetoDoDia(estado, limite(env.WA_TETO_DIA, 30))
   let enviadosHoje = await contarEnviosHoje(db)
   if (enviadosHoje >= tetoDia) return resultado
 
@@ -204,7 +222,7 @@ export async function executarWhatsapp(env, opcoes = {}) {
         erro?.message || erro
       )
       try {
-        await registrarFalha(db, carrinho.id)
+        await registrarFalha(db, carrinho.id, erro?.codigo)
       } catch (erroBanco) {
         logger.error(`Falha ao registrar o erro do WhatsApp do carrinho ${carrinho.id}:`, erroBanco)
       }
@@ -236,9 +254,10 @@ async function atualizarStatus(db, aviso) {
   const id = String(aviso?.id || '')
   if (!id) return
   if (status === 'failed') {
+    const codigo = Array.isArray(aviso?.errors) ? aviso.errors[0]?.code : null
     await db.prepare(`
-      UPDATE carrinhos SET whatsapp_status = 'failed'
-       WHERE whatsapp_msg_id = ? AND COALESCE(whatsapp_status, 'sent') = 'sent'`).bind(id).run()
+      UPDATE carrinhos SET whatsapp_status = 'failed', whatsapp_erro = ?
+       WHERE whatsapp_msg_id = ? AND COALESCE(whatsapp_status, 'sent') = 'sent'`).bind(codigo == null ? null : String(codigo), id).run()
     return
   }
   const ordem = ORDEM_STATUS[status]
@@ -345,6 +364,7 @@ async function processarAvisos(db, env, corpo, fetchImpl, logger) {
       )
       for (const aviso of Array.isArray(valor.statuses) ? valor.statuses : []) {
         await atualizarStatus(db, aviso)
+        if (aviso?.status === 'failed') await testeNaoEntregue(db, env, aviso, fetchImpl, logger)
       }
       for (const mensagem of Array.isArray(valor.messages) ? valor.messages : []) {
         await tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger)
@@ -358,6 +378,7 @@ const naoExiste = () => new Response(null, { status: 404 })
 // Atende só /whatsapp. GET = verificação da Meta; POST = avisos assinados.
 export async function atenderWebhook(request, env, opcoes = {}) {
   const url = new URL(request.url)
+  if (url.pathname === CAMINHO_LINK_WHATSAPP) return atenderLink(request, env)
   if (url.pathname !== '/whatsapp') return naoExiste()
   const logger = opcoes.logger || console
 

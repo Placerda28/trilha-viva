@@ -17,7 +17,10 @@ import {
 } from '../../workers/recuperacao-carrinho/whatsapp.js'
 import { executarRodada } from '../../workers/recuperacao-carrinho/index.js'
 import {
+  acaoDeEstadoValida,
   consultarConversas,
+  lerEstadoWhatsapp,
+  mudarEstadoWhatsapp,
   responderConversa,
   totaisWhatsapp,
   validarResposta,
@@ -58,9 +61,13 @@ function banco() {
     '0006_whatsapp',
     '0007_whatsapp_semanal',
     '0008_whatsapp_meta',
+    '0009_whatsapp_estado',
   ]) {
     b.exec(readFileSync(`migrations/${arquivo}.sql`, 'utf8'))
   }
+  // Os testes de envio partem do WhatsApp já ligado há tempo (sem o freio dos
+  // 3 primeiros dias). Os testes do fluxo de ligação mudam o estado.
+  b.exec(`UPDATE whatsapp_estado SET estado = 'ativo', ligado_em = datetime('now', '-30 days')`)
   return b
 }
 
@@ -461,4 +468,296 @@ test('gestão: responder só dentro da janela; fora dela recusa sem chamar a Met
   assert.equal(validarResposta({ telefone: '27911110000', texto: '  ' }).ok, false)
   assert.equal(validarResposta({ telefone: '123', texto: 'oi' }).ok, false)
   assert.equal(validarResposta({ telefone: '27911110000', texto: 'x'.repeat(1001) }).ok, false)
+})
+
+// ------------------------------------------------- ligar sem deploy ----
+
+const comLink = { WA_WABA_ID: '999', WA_LINK_SEGREDO: 'segredo-dos-links', WA_LINK_BASE: 'https://robo.example' }
+
+function aguardando(b) {
+  b.exec(`UPDATE whatsapp_estado SET estado = 'aguardando_modelo', ligado_em = NULL`)
+}
+
+const estadoAtual = (b) => ({ ...b.prepare('SELECT * FROM whatsapp_estado WHERE id = 1').get() })
+
+// Finge a Meta (modelo + envio) e o Resend.
+function metaFalsa({ status = 'PENDING', motivo = '', erroEnvio = null } = {}) {
+  const pedidos = []
+  let numero = 0
+  const fetchImpl = async (url, opcoes = {}) => {
+    const corpo = opcoes.body ? JSON.parse(opcoes.body) : null
+    pedidos.push({ url: String(url), corpo, metodo: opcoes.method || 'GET' })
+    if (String(url).includes('/message_templates')) {
+      return new Response(JSON.stringify({ data: [{ name: 'carrinho_lembrete', language: 'pt_BR', status, rejected_reason: motivo }] }), { status: 200 })
+    }
+    if (String(url).includes('graph.facebook.com')) {
+      if (erroEnvio) return new Response(JSON.stringify({ error: { code: erroEnvio, message: 'falhou' } }), { status: 400 })
+      numero += 1
+      return new Response(JSON.stringify({ messages: [{ id: `wamid.t${numero}` }] }), { status: 200 })
+    }
+    return new Response('{"id":"email"}', { status: 200 })
+  }
+  return {
+    fetchImpl,
+    pedidos,
+    consultas: () => pedidos.filter((p) => p.url.includes('/message_templates')),
+    envios: () => pedidos.filter((p) => p.url.endsWith('/messages')),
+    emails: () => pedidos.filter((p) => p.url.includes('resend.com')),
+  }
+}
+
+const rodada = (b, m, extras = {}, agora = meioDoDia) =>
+  executarWhatsapp(ambiente(new D1Local(b), { ...comLink, ...extras }), { agora, logger: mudo, fetchImpl: m.fetchImpl })
+
+test('ligação: modelo em análise → consulta no máx. a cada 30 min e não manda nada a ninguém', async () => {
+  const b = banco()
+  aguardando(b)
+  carrinho(b, 'cliente', 'cliente@example.com', '27911110000')
+  const m = metaFalsa({ status: 'PENDING' })
+  await rodada(b, m)
+  await rodada(b, m)
+  assert.equal(m.consultas().length, 1)
+  assert.equal(m.consultas()[0].url, 'https://graph.facebook.com/v23.0/999/message_templates?name=carrinho_lembrete&fields=name,status,language,rejected_reason')
+  assert.equal(m.envios().length, 0)
+  assert.equal(m.emails().length, 0)
+  assert.equal(estadoAtual(b).estado, 'aguardando_modelo')
+  assert.equal(estadoAtual(b).modelo_status, 'PENDING')
+  b.exec(`UPDATE whatsapp_estado SET modelo_conferido_em = datetime('now', '-31 minutes')`)
+  await rodada(b, m)
+  assert.equal(m.consultas().length, 2)
+})
+
+test('ligação: modelo recusado → e-mail com o motivo uma vez só e continua esperando', async () => {
+  const b = banco()
+  aguardando(b)
+  const m = metaFalsa({ status: 'REJECTED', motivo: 'INCORRECT_CATEGORY' })
+  await rodada(b, m)
+  b.exec(`UPDATE whatsapp_estado SET modelo_conferido_em = datetime('now', '-31 minutes')`)
+  await rodada(b, m)
+  assert.equal(m.consultas().length, 2)
+  assert.equal(m.emails().length, 1)
+  assert.equal(m.emails()[0].corpo.to[0], 'suporte@example.com')
+  assert.ok(m.emails()[0].corpo.text.startsWith('Modelo recusado: INCORRECT_CATEGORY'))
+  assert.equal(m.envios().length, 0)
+  assert.equal(estadoAtual(b).estado, 'aguardando_modelo')
+})
+
+test('ligação: aprovado → teste só para o Paulo, botão de teste sem dados pessoais, e-mail com LIGAR/PAUSAR', async () => {
+  const b = banco()
+  aguardando(b)
+  carrinho(b, 'cliente', 'cliente@example.com', '27911110000')
+  carrinho(b, 'do-paulo', 'paulo@example.com', '27999990000', '-1 hours')
+  const m = metaFalsa({ status: 'APPROVED' })
+  await rodada(b, m)
+  assert.equal(m.envios().length, 1)
+  const pedido = m.envios()[0].corpo
+  assert.equal(pedido.to, '5527999990000')
+  assert.equal(pedido.template.name, 'carrinho_lembrete')
+  assert.equal(pedido.template.components[0].parameters[0].text, 'Paulo')
+  assert.equal(pedido.template.components[1].parameters[0].text, 'r=do-paulo&utm_source=whatsapp&utm_medium=teste&utm_campaign=aprovacao')
+  const e = estadoAtual(b)
+  assert.equal(e.estado, 'teste_enviado')
+  assert.equal(e.teste_msg_id, 'wamid.t1')
+  assert.match(e.link_nonce, /^[0-9a-f]{32}$/)
+  assert.equal(m.emails().length, 1)
+  const texto = m.emails()[0].corpo.text
+  assert.ok(texto.startsWith('O lembrete do WhatsApp foi aprovado. Confira a mensagem no seu celular e toque em LIGAR se estiver tudo certo.'))
+  assert.match(texto, /LIGAR: https:\/\/robo\.example\/whatsapp\/ligar\?acao=ligar&n=[0-9a-f]{32}&t=[0-9a-f]{64}/)
+  assert.match(texto, /PAUSAR: https:\/\/robo\.example\/whatsapp\/ligar\?acao=pausar&n=/)
+  // Na rodada seguinte, ainda sem o LIGAR, nenhum cliente recebe.
+  await rodada(b, m)
+  assert.equal(m.envios().length, 1)
+  assert.equal(b.prepare(`SELECT whatsapp_enviado_em FROM carrinhos WHERE id = 'cliente'`).get().whatsapp_enviado_em, null)
+})
+
+test('ligação: aprovado fora do horário não manda o teste; falta de configuração não consulta', async () => {
+  const b = banco()
+  aguardando(b)
+  const m = metaFalsa({ status: 'APPROVED' })
+  await rodada(b, m, {}, new Date('2026-01-15T05:00:00Z'))
+  assert.equal(m.consultas().length, 1)
+  assert.equal(m.envios().length, 0)
+  const sem = metaFalsa({ status: 'APPROVED' })
+  await rodada(banco(), sem, { WA_LINK_SEGREDO: '' })
+  const b2 = banco()
+  aguardando(b2)
+  await rodada(b2, sem, { WA_LINK_SEGREDO: '' })
+  assert.equal(sem.pedidos.length, 0)
+})
+
+test('ligação: erro no envio do teste → e-mail explicando, continua esperando, tenta de novo só depois de 6 h', async () => {
+  const b = banco()
+  aguardando(b)
+  const m = metaFalsa({ status: 'APPROVED', erroEnvio: 131042 })
+  await rodada(b, m)
+  assert.equal(m.envios().length, 1)
+  assert.equal(estadoAtual(b).estado, 'aguardando_modelo')
+  assert.equal(m.emails().length, 1)
+  assert.ok(m.emails()[0].corpo.text.includes('Problema de pagamento'))
+  assert.ok(m.emails()[0].corpo.text.includes('código 131042'))
+  b.exec(`UPDATE whatsapp_estado SET modelo_conferido_em = datetime('now', '-31 minutes')`)
+  await rodada(b, m)
+  assert.equal(m.envios().length, 1, 'não tenta antes de 6 h')
+  b.exec(`UPDATE whatsapp_estado SET teste_tentado_em = datetime('now', '-7 hours')`)
+  await rodada(b, m)
+  assert.equal(m.envios().length, 2)
+})
+
+test('ligação: a Meta aceita o teste mas avisa depois que não entregou → volta a esperar e avisa', async () => {
+  const b = banco()
+  aguardando(b)
+  const m = metaFalsa({ status: 'APPROVED' })
+  await rodada(b, m)
+  assert.equal(estadoAtual(b).estado, 'teste_enviado')
+  const env = ambiente(new D1Local(b), comLink)
+  const r = await atenderWebhook(assinado(aviso({ status: [{ id: 'wamid.t1', status: 'failed', errors: [{ code: 130497, title: 'restricted' }] }] })), env, { fetchImpl: m.fetchImpl, logger: mudo })
+  assert.equal(r.status, 200)
+  const e = estadoAtual(b)
+  assert.equal(e.estado, 'aguardando_modelo')
+  assert.equal(e.link_nonce, null)
+  assert.equal(m.emails().length, 2)
+  assert.ok(m.emails()[1].corpo.text.includes('código 130497'))
+})
+
+async function linksDoEmail(b) {
+  aguardando(b)
+  const m = metaFalsa({ status: 'APPROVED' })
+  await rodada(b, m)
+  const texto = m.emails()[0].corpo.text
+  return {
+    ligar: texto.match(/LIGAR: (\S+)/)[1],
+    pausar: texto.match(/PAUSAR: (\S+)/)[1],
+  }
+}
+
+const abrir = (b, link) => atenderWebhook(new Request(link), ambiente(new D1Local(b), comLink), { logger: mudo })
+function confirmar(b, link) {
+  const u = new URL(link)
+  return atenderWebhook(
+    new Request(u.origin + u.pathname, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: u.searchParams.toString(),
+    }),
+    ambiente(new D1Local(b), comLink),
+    { logger: mudo }
+  )
+}
+
+test('link LIGAR: abrir só mostra o botão; confirmar liga; usar de novo é recusado', async () => {
+  const b = banco()
+  const { ligar, pausar } = await linksDoEmail(b)
+  const pagina = await abrir(b, ligar)
+  assert.equal(pagina.status, 200)
+  assert.ok((await pagina.text()).includes('<form method="post">'))
+  assert.equal(estadoAtual(b).estado, 'teste_enviado', 'abrir o link não muda nada')
+  const feito = await confirmar(b, ligar)
+  assert.equal(feito.status, 200)
+  assert.ok((await feito.text()).includes('WhatsApp ligado'))
+  const e = estadoAtual(b)
+  assert.equal(e.estado, 'ativo')
+  assert.ok(e.ligado_em)
+  assert.equal(e.atualizado_por, 'link do e-mail')
+  assert.equal((await confirmar(b, ligar)).status, 410)
+  assert.equal((await abrir(b, ligar)).status, 410)
+  assert.equal((await confirmar(b, pausar)).status, 410, 'o outro link morre junto')
+})
+
+test('link PAUSAR: confirmar pausa e ninguém recebe', async () => {
+  const b = banco()
+  const { pausar } = await linksDoEmail(b)
+  carrinho(b, 'cliente', 'cliente@example.com', '27911110000')
+  assert.equal((await confirmar(b, pausar)).status, 200)
+  assert.equal(estadoAtual(b).estado, 'pausado')
+  const m = metaFalsa({ status: 'APPROVED' })
+  await rodada(b, m)
+  assert.equal(m.pedidos.length, 0)
+})
+
+test('link falso, trocado ou vencido é recusado', async () => {
+  const b = banco()
+  const { ligar } = await linksDoEmail(b)
+  const u = new URL(ligar)
+  const t = u.searchParams.get('t')
+  const trocado = ligar.replace(t, (t[0] === 'a' ? 'b' : 'a') + t.slice(1))
+  assert.equal((await confirmar(b, trocado)).status, 410)
+  assert.equal((await confirmar(b, ligar.replace('acao=ligar', 'acao=pausar'))).status, 410, 'assinatura é da ação')
+  assert.equal((await abrir(b, 'https://robo.example/whatsapp/ligar?acao=ligar&n=x&t=y')).status, 410)
+  b.exec(`UPDATE whatsapp_estado SET link_expira_em = datetime('now', '-1 minute')`)
+  assert.equal((await confirmar(b, ligar)).status, 410)
+  assert.equal(estadoAtual(b).estado, 'teste_enviado')
+})
+
+test('ligado: no máximo 10 por dia nos 3 primeiros dias; depois volta ao teto normal', async () => {
+  const b = banco()
+  b.exec(`UPDATE whatsapp_estado SET ligado_em = datetime('now', '-1 hours')`)
+  for (let i = 0; i < 12; i += 1) carrinho(b, `c${i}`, `c${i}@example.com`, `2791111${String(i).padStart(4, '0')}`)
+  const m = metaFalsa()
+  const r = await rodada(b, m)
+  assert.equal(r.enviados, 10)
+  b.exec(`UPDATE whatsapp_estado SET ligado_em = datetime('now', '-4 days')`)
+  const r2 = await rodada(b, m)
+  assert.equal(r2.enviados, 2)
+})
+
+test('ligado: carrinho que esperou a aprovação só recebe se ainda estiver dentro das 48 h', async () => {
+  const b = banco()
+  carrinho(b, 'antigo', 'antigo@example.com', '27911110000', '-60 hours')
+  carrinho(b, 'recente', 'recente@example.com', '27922220000', '-5 hours')
+  const m = metaFalsa()
+  await rodada(b, m)
+  assert.deepEqual(m.envios().map((p) => p.corpo.to), ['5527922220000'])
+})
+
+test('resumo do dia: uma vez depois das 20h, com enviados, entregues, lidos, recusas e compras', async () => {
+  const b = banco()
+  b.exec(`
+    INSERT INTO carrinhos (id, email, telefone, status, criado_em, whatsapp_enviado_em, whatsapp_status) VALUES
+      ('a', 'a@example.com', '27911110001', 'aberto', '2026-01-15 10:00:00', '2026-01-15 14:00:00', 'read'),
+      ('b', 'b@example.com', '27911110002', 'aberto', '2026-01-15 10:00:00', '2026-01-15 15:00:00', 'delivered'),
+      ('c', 'c@example.com', '27911110003', 'aberto', '2026-01-15 10:00:00', '2026-01-14 15:00:00', 'read');
+    INSERT INTO carrinhos (id, email, telefone, status, criado_em, whatsapp_falhou_em, whatsapp_status, whatsapp_erro) VALUES
+      ('d', 'd@example.com', '27911110004', 'aberto', '2026-01-15 10:00:00', '2026-01-15 16:00:00', 'failed', '131026');
+    INSERT INTO carrinhos (id, email, status, criado_em, pago_em) VALUES
+      ('a2', 'a@example.com', 'pago', '2026-01-15 17:00:00', '2026-01-15 17:30:00');
+  `)
+  const db = new D1Local(b)
+  const m = metaFalsa()
+  const noite = new Date('2026-01-16T00:30:00Z') // 21h30 de 15/01 em Brasília
+  await executarWhatsapp(ambiente(db, comLink), { agora: new Date('2026-01-15T22:00:00Z'), logger: mudo, fetchImpl: m.fetchImpl }) // 19h
+  assert.equal(m.emails().length, 0)
+  await executarWhatsapp(ambiente(db, comLink), { agora: noite, logger: mudo, fetchImpl: m.fetchImpl })
+  await executarWhatsapp(ambiente(db, comLink), { agora: noite, logger: mudo, fetchImpl: m.fetchImpl })
+  assert.equal(m.emails().length, 1)
+  const { subject, text } = m.emails()[0].corpo
+  assert.equal(subject, 'WhatsApp: resumo de 15/01')
+  assert.ok(text.includes('Enviados: 2\nEntregues: 2\nLidos: 1\nRecusados: 1\nCompraram depois: 1'))
+  assert.ok(text.includes('1 × A mensagem não pôde ser entregue'))
+  assert.equal(m.envios().length, 0, 'fora do horário não envia lembrete')
+})
+
+test('gestão: pausar, retomar e ligar só a partir do estado certo; ação estranha é recusada', async () => {
+  const b = banco()
+  const db = new D1Local(b)
+  assert.equal(acaoDeEstadoValida('apagar'), null)
+  assert.equal(acaoDeEstadoValida('constructor'), null)
+  assert.equal((await mudarEstadoWhatsapp(db, 'apagar', 'p@example.com')).status, 400)
+
+  assert.equal((await lerEstadoWhatsapp(db)).estado, 'ativo')
+  const pausou = await mudarEstadoWhatsapp(db, 'pausar', 'p@example.com')
+  assert.equal(pausou.ok, true)
+  assert.equal(pausou.estado.estado, 'pausado')
+  assert.equal(pausou.estado.atualizado_por, 'p@example.com')
+  assert.equal((await mudarEstadoWhatsapp(db, 'pausar', 'p@example.com')).status, 409)
+  assert.equal((await mudarEstadoWhatsapp(db, 'ligar', 'p@example.com')).status, 409, 'ligar só depois do teste')
+  assert.equal((await mudarEstadoWhatsapp(db, 'retomar', 'p@example.com')).estado.estado, 'ativo')
+
+  b.exec(`UPDATE whatsapp_estado SET estado = 'aguardando_modelo', ligado_em = NULL`)
+  assert.equal((await mudarEstadoWhatsapp(db, 'pausar', 'p@example.com')).status, 409, 'nada a pausar antes do teste')
+  b.exec(`UPDATE whatsapp_estado SET estado = 'teste_enviado', link_nonce = 'abc'`)
+  const ligou = await mudarEstadoWhatsapp(db, 'ligar', 'p@example.com')
+  assert.equal(ligou.estado.estado, 'ativo')
+  assert.ok(ligou.estado.ligado_em)
+  const linha = b.prepare('SELECT link_nonce FROM whatsapp_estado').get()
+  assert.equal(linha.link_nonce, null, 'o link do e-mail morre quando liga pela gestão')
 })

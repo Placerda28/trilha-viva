@@ -19,6 +19,9 @@ const ACOES = {
   cliente_bloqueado: 'bloqueou o cliente',
   cliente_liberado: 'liberou o cliente',
   whatsapp_respondido: 'respondeu no WhatsApp',
+  whatsapp_pausar: 'pausou o WhatsApp',
+  whatsapp_retomar: 'retomou o WhatsApp',
+  whatsapp_ligar: 'ligou o WhatsApp',
 }
 
 function Linha({ r }) {

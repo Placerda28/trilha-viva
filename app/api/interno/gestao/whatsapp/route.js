@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDB, getEnv } from '@/lib/d1'
-import { consultarConversas, totaisWhatsapp } from '@/lib/gestao/whatsapp'
+import { consultarConversas, lerEstadoWhatsapp, totaisWhatsapp } from '@/lib/gestao/whatsapp'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
 
 export const runtime = 'nodejs'
@@ -15,12 +15,17 @@ const get = async () => {
     )
   }
   const env = getEnv()
-  const [conversas, totais] = await Promise.all([consultarConversas(db), totaisWhatsapp(db)])
+  const [conversas, totais, estado] = await Promise.all([
+    consultarConversas(db),
+    totaisWhatsapp(db),
+    lerEstadoWhatsapp(db),
+  ])
   return NextResponse.json(
     {
       ok: true,
       configurado: Boolean((env.WA_TOKEN || process.env.WA_TOKEN) && (env.WA_PHONE_NUMBER_ID || process.env.WA_PHONE_NUMBER_ID)),
       totais,
+      estado,
       conversas,
     },
     { headers: cabecalhosPrivados }
