@@ -17,7 +17,9 @@ Codex indisponível (a conta do ChatGPT recusou gpt-6.1-sol, gpt-5.4 e spark; ~/
 - [x] Paulo: Etapa A (app, número de teste, conta 1605027684651104, modelo em análise, usuário do sistema Trilhavivarobo)
 - [x] Segredos (03/10, 00h28–01h42 UTC): robô WA_TOKEN, WA_APP_SECRET, WA_VERIFY_TOKEN (Secret Change, valem na hora; webhook sem assinatura passou a dar 401); site WA_TOKEN pelo painel (o secret put do terminal não gravou), versão e9087870 a 100%, ADMIN_MASTER/EMAIL_FROM/WA_* preservados, site e checkout normais.
   - [ ] Paulo: confirmar que o 1º token (colado no chat em 02/10) foi revogado.
-- [ ] Paulo: Etapa B (webhook no painel da Meta)
+- [x] Etapa B (03/10): webhook verificado pela Meta, campo messages assinado (v26.0). Robô e site passaram para WA_GRAPH_VERSION=v26.0 (robô efe0dc48).
+- [x] App da Meta publicado (03/10). Privacidade ganhou "WhatsApp" e "#exclusao-de-dados" para a Meta.
+- [x] WhatsApp OBRIGATÓRIO no checkout, como o e-mail (pedido do Paulo, 03/10; site 9ca826ce). No ar: vazio e inválido → 400 "Informe seu WhatsApp com DDD.", válido abre o Mercado Pago.
 - [ ] Modelo carrinho_lembrete aprovado → provas 4 a 6 com o celular do Paulo
 - [ ] Paulo: Etapa B (webhook no painel da Meta) → provas 3 a 6 com o número de teste
 - [ ] Prova 7: CPU do /api/checkout no painel Observability
