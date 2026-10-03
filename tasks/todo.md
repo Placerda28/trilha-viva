@@ -45,7 +45,13 @@ Codex indisponível (a conta do ChatGPT recusou gpt-6.1-sol, gpt-5.4 e spark; ~/
   - teste não entregue avisado pelo webhook (failed) → volta a aguardar + e-mail. Ligado: teto 10/dia nos 3 primeiros dias, resumo diário depois das 20h, carrinhos só dentro de 48 h.
   - gestão → Recuperação → WhatsApp: estado + Ligar / Pausar / Retomar (só admin, registrado). "Desligado" da aba Pessoas vem do estado; WHATSAPP_ATIVO não é mais usado.
   - provas: 117 testes (13 novos), build limpo, simulação no wrangler dev local (GET 200 / link falso 410 / POST liga / reuso 410).
-  - falta (OK do Paulo): migração 0009 em produção, segredo WA_LINK_SEGREDO, WA_MODO=ativo, deploy do robô e do site; conferir o estado na gestão.
+  - [x] 03/10: migração 0009 em produção (SELECT: estado aguardando_modelo, coluna whatsapp_erro, 30 carrinhos intactos); WA_LINK_SEGREDO gerado e gravado direto no robô.
+  - [x] 03/10: publicado com a coluna WhatsApp em Clientes. Site www 7355a902; robô 2b71dcfb (WA_MODO=ativo). main 1b34eb1. 120 testes, build limpo.
+  - [x] Prova WA_MODO=ativo + aguardando_modelo: teste automático (só a consulta do modelo) + produção: consulta às 19:40 (modo teste) e 20:10 UTC (modo ativo) = PENDING; 0 enviados, 0 reservas, nenhuma saída nova.
+  - [x] Smoke: home/privacidade 200; gestão e rotas novas 404 sem login; webhook sem assinatura 401; link falso 410; checkout recusa sem/inválido e abre o Mercado Pago com número válido.
+  - [ ] Paulo/Cowork: conferir /gestao/clientes (coluna WhatsApp), a planilha e Recuperação → WhatsApp ("Aguardando aprovação da Meta").
+  - [ ] Quando a Meta aprovar: teste chega no celular do Paulo + e-mail com LIGAR → conferir e tocar em LIGAR.
+- [ ] Futuro: mensagens do Direct do Instagram e do Messenger da Página não chegam (são outros canais); só quem cai no WhatsApp aparece na gestão.
 - [ ] Prova 7: CPU do /api/checkout no painel Observability
 - [ ] Pontos de parada 4 e 5: migrar o número real e WA_MODO=ativo
 
