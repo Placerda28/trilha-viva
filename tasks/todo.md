@@ -23,7 +23,11 @@ Codex indisponível (a conta do ChatGPT recusou gpt-6.1-sol, gpt-5.4 e spark; ~/
 - [ ] Modelo carrinho_lembrete aprovado → provas 4 a 6 com o celular do Paulo
 - [x] Webhook provado em 03/10 09:42 pelo botão "Teste" do painel (gestão + e-mail do suporte OK); linha de teste apagada do D1.
 - [x] 03/10: webhook ignora outro phone_number_id e não grava número estrangeiro (f304706); robô 3122c099.
-- [ ] Prova 3 real: número de teste não recebe "oi" direto → mandar o hello_world pelo painel e responder nessa conversa
+- [x] 03/10: número de teste da Meta abandonado (hello_world para 5527996253839 voltou failed, erro 130497 "restricted from messaging users in this country"); conta de teste 1605027684651104 bateu no limite de números.
+- [x] 03/10: número real +55 27 99291-2872 ("Trilha Viva", Conectado) numa WABA nova 2270775880440864, phone_number_id 1463806263472529. Trilhavivarobo com controle total na WABA nova; webhooks assinados; carrinho_lembrete recriado (em análise), hello_world ativo (Cowork/Paulo pelo painel).
+- [x] 03/10: IDs novos no site e no robô (603e21b), WA_MODO segue teste. Site www 15792e58, robô 26728038. Smoke: home/privacidade 200, gestão 404 deslogado, webhook sem assinatura 401, segredos WA_* presentes.
+- [ ] Prova 3 com o número real: Cowork manda hello_world pelo painel → Paulo responde "oi" → conferir log, D1, gestão e e-mail → responder pela gestão → SAIR só com OK do Paulo
+- [ ] carrinho_lembrete aprovado na WABA nova → teste completo do lembrete (recuar data do carrinho só com autorização)
 - [ ] Prova 7: CPU do /api/checkout no painel Observability
 - [ ] Pontos de parada 4 e 5: migrar o número real e WA_MODO=ativo
 
