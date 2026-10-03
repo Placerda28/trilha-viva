@@ -1,5 +1,7 @@
 # WhatsApp da Trilha Viva — o que o Paulo precisa fazer (e o Claude não consegue)
 
+> **Andamento (02/10):** Etapa A feita pelo Paulo. Número de teste 1361467643717151, conta 1605027684651104, celular de teste 27 99625-3839 cadastrado, modelo carrinho_lembrete em análise, usuário do sistema "Trilhavivarobo" criado. Falta colar os segredos (A6). Na Etapa C, o número real entra na MESMA conta (1605027684651104).
+
 São coisas que exigem o seu login na Meta, o seu celular ou um segredo que não pode passar pelo chat.
 Faça na ordem. Em cada etapa está escrito **o que me mandar no chat** e **o que NUNCA mandar**.
 

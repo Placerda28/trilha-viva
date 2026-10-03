@@ -29,5 +29,12 @@
   // As variaveis (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY,
   // etc.) sao cadastradas no painel do Cloudflare, nao neste arquivo. Sem esta
   // linha, cada "wrangler deploy" apagaria todas elas e o site quebraria.
-  "keep_vars": true
+  "keep_vars": true,
+  // Sem segredo: o número do WhatsApp (API da Meta) usado para responder
+  // clientes pela gestão. O token (WA_TOKEN) é segredo: wrangler secret put.
+  // Na migração do número real, trocar aqui e no robô.
+  "vars": {
+    "WA_PHONE_NUMBER_ID": "1361467643717151",
+    "WA_GRAPH_VERSION": "v23.0"
+  }
 }

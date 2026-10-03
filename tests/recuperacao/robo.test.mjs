@@ -108,7 +108,7 @@ test('Worker expõe somente 404 e mantém cron, D1 e variáveis do contrato', as
   assert.equal(configuracao.vars.WA_MODO, 'teste')
   assert.equal(configuracao.vars.WA_TETO_DIA, '30')
   assert.equal(configuracao.vars.WA_TEMPLATE, 'carrinho_lembrete')
-  assert.equal(configuracao.vars.WA_PHONE_NUMBER_ID, '')
+  assert.equal(configuracao.vars.WA_PHONE_NUMBER_ID, '1361467643717151')
 })
 
 test('e-mail 1 mantém conteúdo, bloqueios e dados do envio atual', async () => {
