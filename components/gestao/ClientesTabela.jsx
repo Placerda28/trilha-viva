@@ -1,5 +1,6 @@
 import { dataHora, moeda, numero, FORMAS } from './formato'
 import { formatarCelular } from '@/lib/gestao/csv'
+import CorrigirEmail from './CorrigirEmail'
 
 // Uma linha por cliente (ou por compra, na tela de período). No computador é
 // uma tabela; no celular, uma lista em que cada cliente é um bloco — sete
@@ -43,7 +44,7 @@ function Whatsapp({ telefone }) {
   )
 }
 
-function Nome({ c, whatsapp }) {
+function Nome({ c, whatsapp, onMudou }) {
   return (
     <>
       <span className="flex flex-wrap items-center gap-2">
@@ -52,13 +53,15 @@ function Nome({ c, whatsapp }) {
       </span>
       <span className="block break-all text-[13.5px] text-ink-muted">{c.email}</span>
       {whatsapp && <Whatsapp telefone={c.telefone} />}
+      {onMudou && <CorrigirEmail c={c} onMudou={onMudou} />}
     </>
   )
 }
 
 const chave = (c, i) => (c.compra?.id || 'c') + '-' + c.id + '-' + i
 
-export default function ClientesTabela({ itens, whatsapp = false }) {
+// onMudou: só a aba Clientes passa (mostra "Corrigir e-mail").
+export default function ClientesTabela({ itens, whatsapp = false, onMudou }) {
   return (
     <>
       <div className="mt-6 hidden overflow-hidden rounded border border-line bg-white md:block">
@@ -78,7 +81,7 @@ export default function ClientesTabela({ itens, whatsapp = false }) {
             {itens.map((c, i) => (
               <tr key={chave(c, i)} className="align-top">
                 <td className="max-w-[320px] px-4 py-3.5">
-                  <Nome c={c} whatsapp={whatsapp} />
+                  <Nome c={c} whatsapp={whatsapp} onMudou={onMudou} />
                 </td>
                 <td className="figs whitespace-nowrap px-4 py-3.5 text-ink-muted">{dataHora(c.compra?.em)}</td>
                 <td className="figs whitespace-nowrap px-4 py-3.5 text-right text-ink">
@@ -107,7 +110,7 @@ export default function ClientesTabela({ itens, whatsapp = false }) {
       <ul className="mt-6 divide-y divide-line rounded border border-line bg-white md:hidden">
         {itens.map((c, i) => (
           <li key={chave(c, i)} className="px-4 py-4">
-            <Nome c={c} whatsapp={whatsapp} />
+            <Nome c={c} whatsapp={whatsapp} onMudou={onMudou} />
             <dl className="figs mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5 text-[13.5px]">
               <div>
                 <dt className="text-ink-muted">Compra</dt>

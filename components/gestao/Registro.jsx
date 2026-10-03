@@ -19,6 +19,8 @@ const ACOES = {
   cliente_bloqueado: 'bloqueou o cliente',
   cliente_liberado: 'liberou o cliente',
   whatsapp_respondido: 'respondeu no WhatsApp',
+  cliente_email_corrigido: 'corrigiu o e-mail do cliente para',
+  acesso_reenviado: 'reenviou o acesso para',
   whatsapp_pausar: 'pausou o WhatsApp',
   whatsapp_retomar: 'retomou o WhatsApp',
   whatsapp_ligar: 'ligou o WhatsApp',
@@ -37,6 +39,9 @@ function Linha({ r }) {
             {' '}
             <span className="break-words font-semibold">{r.alvo}</span>
           </>
+        )}
+        {r.acao === 'cliente_email_corrigido' && r.detalhe?.de && (
+          <span className="block break-all text-[13px] text-ink-muted">antes: {r.detalhe.de}</span>
         )}
         {r.acao === 'membro_adicionado' && r.detalhe?.conta_existente && (
           <span className="text-ink-muted"> (já tinha conta)</span>

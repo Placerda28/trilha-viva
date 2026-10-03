@@ -69,7 +69,7 @@ export default function ClientesLista() {
         )
       ) : (
         <div className={carregando ? 'opacity-60 transition-opacity duration-150' : 'transition-opacity duration-150'}>
-          <ClientesTabela itens={dados.itens} whatsapp />
+          <ClientesTabela itens={dados.itens} whatsapp onMudou={() => setTentativa((n) => n + 1)} />
           <Paginacao pagina={pagina} porPagina={POR_PAGINA} total={total} onIr={setPagina} />
         </div>
       )}
