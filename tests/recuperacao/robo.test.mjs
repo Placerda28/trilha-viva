@@ -105,7 +105,7 @@ test('Worker expõe somente 404 e mantém cron, D1 e variáveis do contrato', as
   assert.equal(configuracao.d1_databases[0].binding, 'DB')
   assert.equal(configuracao.vars.TETO_DIA, '40')
   assert.equal(configuracao.vars.TETO_MES, '1100')
-  assert.equal(configuracao.vars.WA_MODO, 'teste')
+  assert.equal(configuracao.vars.WA_MODO, 'ativo')
   assert.equal(configuracao.vars.WA_TETO_DIA, '30')
   assert.equal(configuracao.vars.WA_TEMPLATE, 'carrinho_lembrete')
   assert.equal(configuracao.vars.WA_PHONE_NUMBER_ID, '1463806263472529')
