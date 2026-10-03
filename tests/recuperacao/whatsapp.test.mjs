@@ -761,3 +761,20 @@ test('gestão: pausar, retomar e ligar só a partir do estado certo; ação estr
   const linha = b.prepare('SELECT link_nonce FROM whatsapp_estado').get()
   assert.equal(linha.link_nonce, null, 'o link do e-mail morre quando liga pela gestão')
 })
+
+test('WA_MODO=ativo + aguardando_modelo: com vários clientes prontos, a única chamada é a consulta do modelo', async () => {
+  const b = banco()
+  aguardando(b)
+  for (let i = 0; i < 5; i += 1) carrinho(b, `cli${i}`, `cli${i}@example.com`, `2793333${String(i).padStart(4, '0')}`, '-5 hours')
+  carrinho(b, 'do-paulo', 'paulo@example.com', '27999990000', '-5 hours')
+  for (const status of ['PENDING', 'REJECTED', 'NAO_ENCONTRADO']) {
+    b.exec(`UPDATE whatsapp_estado SET modelo_conferido_em = NULL, recusa_avisada = 'x'`)
+    const m = metaFalsa({ status, motivo: 'x' })
+    await rodada(b, m, { WA_MODO: 'ativo' })
+    assert.deepEqual(m.pedidos.map((p) => [p.metodo, p.url.includes('/message_templates')]), [['GET', true]], status)
+  }
+  const marcados = b.prepare(`SELECT COUNT(*) AS n FROM carrinhos WHERE whatsapp_enviado_em IS NOT NULL OR whatsapp_falhou_em IS NOT NULL`).get().n
+  assert.equal(marcados, 0)
+  assert.equal(b.prepare(`SELECT COUNT(*) AS n FROM lembretes_enviados WHERE canal = 'whatsapp'`).get().n, 0)
+  assert.equal(estadoAtual(b).estado, 'aguardando_modelo')
+})
