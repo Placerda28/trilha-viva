@@ -41,6 +41,13 @@ export default function PrivacidadePage() {
           e-mail, toque em &quot;Não quero receber&quot; ou responda SAIR no WhatsApp, ou escreva para{' '}
           {site.email}. Pedir para sair em um canal encerra os lembretes nos dois.
         </p>
+        <h2>WhatsApp</h2>
+        <p>
+          As mensagens de WhatsApp da Trilha Viva são enviadas e recebidas pela plataforma
+          WhatsApp Business, da Meta, que trata o número e o conteúdo das mensagens segundo a
+          política de privacidade dela. Guardamos as mensagens trocadas com você para dar suporte e
+          podemos apagá-las a pedido.
+        </p>
         <h2>Anúncios e medição (Meta)</h2>
         <p>
           Usamos o Pixel da Meta e a API de Conversões da Meta (Facebook e Instagram) para saber
@@ -60,6 +67,13 @@ export default function PrivacidadePage() {
         <p>
           Você pode solicitar acesso, correção ou exclusão dos seus dados a qualquer momento
           escrevendo para {site.email}. Atendemos em até 15 dias.
+        </p>
+        <h2 id="exclusao-de-dados">Como pedir a exclusão dos seus dados</h2>
+        <p>
+          Envie um e-mail para {site.email} com o assunto &quot;Excluir meus dados&quot;, a partir do
+          e-mail usado na compra (ou informando o número de WhatsApp). Apagamos nome, e-mail,
+          WhatsApp, carrinhos e mensagens em até 15 dias e confirmamos por e-mail. Os dados de
+          compras pagas que a lei obriga a guardar (registros fiscais) ficam só pelo prazo legal.
         </p>
         <h2>Cookies</h2>
         <p>
