@@ -34,7 +34,7 @@
   // clientes pela gestão. O token (WA_TOKEN) é segredo: wrangler secret put.
   // Na migração do número real, trocar aqui e no robô.
   "vars": {
-    "WA_PHONE_NUMBER_ID": "1361467643717151",
+    "WA_PHONE_NUMBER_ID": "1463806263472529",
     "WA_GRAPH_VERSION": "v26.0"
   }
 }
