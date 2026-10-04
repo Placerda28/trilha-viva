@@ -97,7 +97,8 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
     const source = busca.get('utm_source')
     const medium = busca.get('utm_medium')
     const campaign = busca.get('utm_campaign')
-    if (source || medium || campaign) setUtm({ source, medium, campaign })
+    const content = busca.get('utm_content')
+    if (source || medium || campaign) setUtm({ source, medium, campaign, content })
 
     // Veio do lembrete: preenche o que a pessoa já tinha digitado. Só completa
     // campo vazio, para não apagar o que ela começou a escrever.

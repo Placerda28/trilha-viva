@@ -42,6 +42,8 @@ function bancoGestao() {
   banco.exec(readFileSync('migrations/0006_whatsapp.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0007_whatsapp_semanal.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0008_whatsapp_meta.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0009_whatsapp_estado.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0010_whatsapp_sequencia.sql', 'utf8'))
   return banco
 }
 
@@ -170,6 +172,12 @@ test('gestão respeita prioridade, escolhe uma linha por pessoa e calcula totais
     situacao: 'comprou',
     enviado_em: null,
     previsto_em: null,
+    total: 9,
+    mensagens: [],
+    enviadas: 0,
+    proximo_numero: null,
+    proximo_em: null,
+    motivo: null,
   })
 
   const andamento = resultado.itens.find((item) => item.email === 'andamento@example.com')
@@ -235,12 +243,13 @@ test('gestão mostra a mensagem única do WhatsApp: status da Meta, previsto em 
     whatsapp_enviado_em: data('-6 hours'),
   })
   lembrar(banco, 'lido', 1, data('-6 hours'), 'whatsapp')
-  banco.exec("UPDATE carrinhos SET whatsapp_status = 'read' WHERE id = 'lido'")
+  banco.exec("UPDATE lembretes_enviados SET wa_status = 'read' WHERE carrinho_id = 'lido'")
   inserirCarrinho(banco, {
     id: 'entregue', email: 'entregue@example.com', telefone: '11888880000',
     criado_em: data('-10 hours'), status: 'aberto', whatsapp_enviado_em: data('-6 hours'),
   })
-  banco.exec("UPDATE carrinhos SET whatsapp_status = 'delivered' WHERE id = 'entregue'")
+  lembrar(banco, 'entregue', 1, data('-6 hours'), 'whatsapp')
+  banco.exec("UPDATE lembretes_enviados SET wa_status = 'delivered' WHERE carrinho_id = 'entregue'")
   inserirCarrinho(banco, { id: 'sem-celular', email: 'semcel@example.com', criado_em: data('-2 hours'), status: 'aberto' })
   inserirCarrinho(banco, {
     id: 'falhou', email: 'falhou@example.com', telefone: '11777770000',
@@ -258,11 +267,11 @@ test('gestão mostra a mensagem única do WhatsApp: status da Meta, previsto em 
   assert.equal(w.get('entregue@example.com').whatsapp.enviado_em, `${data('-6 hours').replace(' ', 'T')}Z`)
   assert.equal(w.get('semcel@example.com').whatsapp.situacao, 'sem_celular')
   assert.equal(w.get('falhou@example.com').whatsapp.situacao, 'falhou')
-  assert.deepEqual(w.get('previsto@example.com').whatsapp, {
-    situacao: 'previsto',
-    enviado_em: null,
-    previsto_em: `${data('+2 hours').replace(' ', 'T')}Z`,
-  })
+  const previsto = w.get('previsto@example.com').whatsapp
+  assert.equal(previsto.situacao, 'previsto')
+  assert.equal(previsto.enviado_em, null)
+  assert.equal(previsto.previsto_em, `${data('+2 hours').replace(' ', 'T')}Z`)
+  assert.equal(previsto.proximo_numero, 1)
   assert.equal(w.get('fora@example.com').whatsapp.situacao, 'nao_enviado')
 
   const desligado = await consultarRecuperacao(new D1Local(banco), { filtro: 'todos', whatsappAtivo: false })
@@ -270,6 +279,57 @@ test('gestão mostra a mensagem única do WhatsApp: status da Meta, previsto em 
   assert.equal(d.get('previsto@example.com').whatsapp.situacao, 'desligado')
   assert.equal(d.get('fora@example.com').whatsapp.situacao, 'desligado')
   assert.equal(d.get('entregue@example.com').whatsapp.situacao, 'entregue')
+})
+
+test('gestão mostra a sequência do WhatsApp: mensagem X de 9, lida a que horas, próxima fora do dia de e-mail, motivo', async () => {
+  const banco = bancoGestao()
+  // Guilherme (caso real de 04/10): e-mail 2º em 11/10 08:00 → WhatsApp 2º em 12/10 09:00.
+  inserirCarrinho(banco, {
+    id: 'gui', email: 'gui@example.com', nome: 'Guilherme Freire', telefone: '61911115908',
+    criado_em: '2026-10-04 09:51:02', status: 'lembrado', etapa_email: 1,
+    proximo_email_em: '2026-10-11 11:00:16', whatsapp_enviado_em: '2026-10-04 18:00:19',
+    whatsapp_etapa: 1, proximo_whatsapp_em: '2026-10-11 18:00:19',
+  })
+  lembrar(banco, 'gui', 1, '2026-10-04 10:51:02')
+  lembrar(banco, 'gui', 1, '2026-10-04 18:00:19', 'whatsapp')
+  banco.exec(`UPDATE lembretes_enviados SET wa_status = 'read', wa_status_em = '2026-10-04 18:02:00' WHERE carrinho_id = 'gui' AND canal = 'whatsapp'`)
+  // Respondeu: pausada, sem próxima.
+  inserirCarrinho(banco, {
+    id: 'resp', email: 'resp@example.com', telefone: '11911110000', criado_em: '2026-10-01 10:00:00',
+    status: 'lembrado', etapa_email: 1, whatsapp_enviado_em: '2026-10-01 13:00:00', whatsapp_etapa: 1,
+  })
+  lembrar(banco, 'resp', 1, '2026-10-01 13:00:00', 'whatsapp')
+  banco.exec(`UPDATE carrinhos SET whatsapp_motivo = 'respondeu', whatsapp_encerrado_em = '2026-10-01 14:00:00' WHERE id = 'resp'`)
+  // Duas falharam: a tela já mostra o motivo antes da rodada confirmar.
+  inserirCarrinho(banco, {
+    id: 'falha', email: 'falha@example.com', telefone: '11922220000', criado_em: '2026-09-20 10:00:00',
+    status: 'lembrado', etapa_email: 2, whatsapp_enviado_em: '2026-09-20 13:00:00', whatsapp_etapa: 2,
+    proximo_whatsapp_em: '2026-10-04 13:00:00',
+  })
+  lembrar(banco, 'falha', 1, '2026-09-20 13:00:00', 'whatsapp')
+  lembrar(banco, 'falha', 2, '2026-09-27 13:00:00', 'whatsapp')
+  banco.exec(`UPDATE lembretes_enviados SET wa_status = 'failed', wa_erro = '131026' WHERE carrinho_id = 'falha'`)
+
+  const agora = new Date('2026-10-04T21:00:00Z')
+  const r = await consultarRecuperacao(new D1Local(banco), { filtro: 'todos', whatsappAtivo: true, agora })
+  const w = new Map(r.itens.map((item) => [item.email, item.whatsapp]))
+  const gui = w.get('gui@example.com')
+  assert.equal(gui.situacao, 'lido')
+  assert.deepEqual(gui.mensagens, [
+    { numero: 1, enviado_em: '2026-10-04T18:00:19Z', situacao: 'lido', situacao_em: '2026-10-04T18:02:00Z', erro: null },
+  ])
+  assert.equal(gui.enviadas, 1)
+  assert.equal(gui.total, 9)
+  assert.equal(gui.proximo_numero, 2)
+  assert.equal(gui.proximo_em, '2026-10-12T12:00:00Z') // 09:00 de Brasília
+  assert.equal(gui.motivo, null)
+
+  assert.equal(w.get('resp@example.com').motivo, 'respondeu')
+  assert.equal(w.get('resp@example.com').proximo_em, null)
+  const falha = w.get('falha@example.com')
+  assert.equal(falha.motivo, 'nao_entregue')
+  assert.equal(falha.situacao, 'falhou')
+  assert.deepEqual(falha.mensagens.map((m) => [m.numero, m.situacao, m.erro]), [[1, 'falhou', '131026'], [2, 'falhou', '131026']])
 })
 
 test('rotas novas ficam protegidas por soAdmin e devolvem cabeçalhos privados', () => {
