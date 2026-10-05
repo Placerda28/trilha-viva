@@ -5,10 +5,11 @@ import { useGestao } from './useGestao'
 import SubAbasRecuperacao from './SubAbasRecuperacao'
 import { Aviso, Esqueleto, Vazio } from './Estados'
 import { dataHora, moeda, numero } from './formato'
+import SequenciaWhatsapp from './SequenciaWhatsapp'
 
-// Sub-aba WhatsApp da Recuperação: o resultado do lembrete (enviados,
-// entregues, lidos, recuperados, custo estimado) e as conversas com quem
-// respondeu. A Meta só deixa responder com texto livre até 24 h depois da
+// Sub-aba WhatsApp da Recuperação: o resultado da sequência (mensagens
+// enviadas, entregues, lidas, quem comprou, custo estimado), em que ponto
+// está cada pessoa (com "Parar sequência") e as conversas com quem respondeu. A Meta só deixa responder com texto livre até 24 h depois da
 // última mensagem do cliente; o servidor confere isso de novo.
 
 const LIMITE = 1000
@@ -24,7 +25,7 @@ const ESTADOS = {
   },
   ativo: {
     titulo: 'Ligado',
-    texto: 'Quem abandona o carrinho recebe um lembrete 3 h depois (das 9h às 20h). Um resumo chega por e-mail todo dia.',
+    texto: 'Quem abandona o carrinho recebe a 1ª mensagem 3 h depois e depois 1 por semana, até 9 (das 9h às 20h, nunca no dia de um e-mail). Um resumo chega por e-mail todo dia.',
   },
   pausado: {
     titulo: 'Pausado',
@@ -110,6 +111,66 @@ function Total({ rotulo, valor, detalhe, className = '' }) {
 
 function porcentagem(parte, todo) {
   return todo ? Math.round((parte / todo) * 100) + '%' : '—'
+}
+
+// Uma pessoa da sequência: em que mensagem está, a próxima ou por que parou,
+// e os botões Parar / Retomar.
+function Sequencia({ s, onMudou }) {
+  const [enviando, setEnviando] = useState(false)
+  const [erro, setErro] = useState('')
+  const quem = s.nome || celular(s.telefone)
+
+  async function mudar(acao) {
+    if (acao === 'parar' && !window.confirm('Parar a sequência de ' + quem + '? Ela não recebe mais nenhuma mensagem de lembrete.')) return
+    setErro('')
+    setEnviando(true)
+    try {
+      const res = await fetch('/api/gestao/whatsapp/sequencia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefone: s.telefone, acao }),
+      })
+      const dados = await res.json().catch(() => null)
+      if (res.status === 404) setErro('Sua sessão acabou. Entre de novo.')
+      else if (!res.ok || !dados?.ok) setErro(dados?.erro || 'Não consegui mudar agora. Tente de novo.')
+      else onMudou()
+    } catch {
+      setErro('Falha de conexão. Confira a internet e tente de novo.')
+    }
+    setEnviando(false)
+  }
+
+  return (
+    <li className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
+        <p className="font-semibold text-ink">{s.nome || 'Sem nome'}</p>
+        <p className="figs break-all text-[13.5px] text-ink-muted">
+          {celular(s.telefone)} · {s.email}
+        </p>
+        <p className="figs mt-1 text-[13px] font-semibold text-ink">
+          Mensagem {s.enviadas} de {s.total}
+        </p>
+      </div>
+      <div className="flex flex-col gap-2 sm:items-end">
+        <SequenciaWhatsapp w={s} />
+        {(s.pode_parar || s.pode_retomar) && (
+          <button
+            type="button"
+            onClick={() => mudar(s.pode_parar ? 'parar' : 'retomar')}
+            disabled={enviando}
+            className="btn-quiet !px-4 !py-2 !text-[13.5px] disabled:opacity-60 sm:self-end"
+          >
+            {enviando ? 'Aguarde…' : s.pode_parar ? 'Parar sequência' : 'Retomar sequência'}
+          </button>
+        )}
+        {erro && (
+          <p role="alert" className="text-[13px] text-signal-deep">
+            {erro}
+          </p>
+        )}
+      </div>
+    </li>
+  )
 }
 
 function Mensagem({ m }) {
@@ -257,13 +318,27 @@ export default function WhatsappConversas() {
 
       {t && (
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded border border-line bg-line lg:grid-cols-5">
-          <Total rotulo="Enviados" valor={numero(t.enviados)} detalhe={t.falharam ? numero(t.falharam) + ' não entregues' : null} />
+          <Total rotulo="Mensagens enviadas" valor={numero(t.enviados)} detalhe={numero(t.pessoas) + (t.pessoas === 1 ? ' pessoa' : ' pessoas') + (t.falharam ? ' · ' + numero(t.falharam) + ' não entregues' : '')} />
           <Total rotulo="Entregues" valor={numero(t.entregues)} detalhe={porcentagem(t.entregues, t.enviados)} />
-          <Total rotulo="Lidos" valor={numero(t.lidos)} detalhe={porcentagem(t.lidos, t.enviados)} />
-          <Total rotulo="Compraram depois" valor={numero(t.recuperados)} detalhe={porcentagem(t.recuperados, t.enviados)} />
+          <Total rotulo="Lidas" valor={numero(t.lidos)} detalhe={porcentagem(t.lidos, t.enviados)} />
+          <Total rotulo="Compraram depois" valor={numero(t.recuperados)} detalhe={porcentagem(t.recuperados, t.pessoas) + ' das pessoas'} />
           <Total className="col-span-2 lg:col-span-1" rotulo="Custo estimado" valor={moeda(t.custo_estimado_centavos)} detalhe="R$ 0,32 por mensagem" />
         </dl>
       )}
+
+      <h3 className="mt-10 text-[17px] font-bold text-ink">Sequências</h3>
+      <p className="mt-1 text-[13.5px] text-ink-muted">
+        Quem está recebendo os lembretes (até 9, um por semana) e quem já parou, com o motivo.
+      </p>
+      {dados && (dados.sequencias || []).length === 0 ? (
+        <Vazio titulo="Nenhuma sequência ainda" texto="Quando alguém receber a 1ª mensagem, aparece aqui." />
+      ) : dados ? (
+        <ul className={'mt-5 divide-y divide-line rounded border border-line bg-white ' + (carregando ? 'opacity-60 transition-opacity duration-150' : 'transition-opacity duration-150')}>
+          {dados.sequencias.map((s) => (
+            <Sequencia key={s.telefone + s.email} s={s} onMudou={() => setTentativa((n) => n + 1)} />
+          ))}
+        </ul>
+      ) : null}
 
       <h3 className="mt-10 text-[17px] font-bold text-ink">Conversas</h3>
       <p className="mt-1 text-[13.5px] text-ink-muted">

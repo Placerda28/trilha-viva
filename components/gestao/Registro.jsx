@@ -24,6 +24,8 @@ const ACOES = {
   whatsapp_pausar: 'pausou o WhatsApp',
   whatsapp_retomar: 'retomou o WhatsApp',
   whatsapp_ligar: 'ligou o WhatsApp',
+  whatsapp_sequencia_parar: 'parou a sequência de WhatsApp',
+  whatsapp_sequencia_retomar: 'retomou a sequência de WhatsApp',
 }
 
 function Linha({ r }) {

@@ -87,9 +87,10 @@ test('utm fica em minúsculas, usa somente o alfabeto permitido e limita cada ca
       source: 'e-mail',
       medium: 'lembretecarrinho',
       campaign: 'a'.repeat(40),
+      content: '',
     }
   )
-  assert.deepEqual(limparUtm(null), { source: '', medium: '', campaign: '' })
+  assert.deepEqual(limparUtm(null), { source: '', medium: '', campaign: '', content: '' })
 })
 
 test('origem reúne utm e cupom limpos sem ultrapassar 200 caracteres', () => {
@@ -101,6 +102,10 @@ test('origem reúne utm e cupom limpos sem ultrapassar 200 caracteres', () => {
     'utm=email/lembrete/carrinho;cupom=LOUVOR20'
   )
   assert.equal(origemDoCarrinho({}), '')
+  assert.equal(
+    origemDoCarrinho({ utm: { source: 'whatsapp', medium: 'lembrete', campaign: 'carrinho', content: 'semana2' } }),
+    'utm=whatsapp/lembrete/carrinho/semana2'
+  )
   assert.ok(
     origemDoCarrinho({
       utm: {

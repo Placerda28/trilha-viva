@@ -6,6 +6,7 @@ import {
   telefoneSemPais,
   textoIgual,
 } from '../../lib/whatsapp-meta.js'
+import { MODELOS, MOTIVOS } from '../../lib/whatsapp-sequencia.js'
 
 // Ligar o WhatsApp sem deploy. O estado fica no banco (tabela whatsapp_estado):
 //   aguardando_modelo → a Meta aprova o modelo → teste vai para o celular do
@@ -252,6 +253,50 @@ export async function prepararLigacao(db, env, { dentroDoHorario, fetchImpl, log
   return lerEstado(db)
 }
 
+// ------------------------------------------- modelos da sequência ----
+
+// Ligado: o status dos modelos da sequência na Meta, no máximo 1 consulta a
+// cada 30 min (uma chamada traz todos). Sem WA_WABA_ID, usa o último status
+// guardado. Devolve Map nome → { status, botaoUrl }.
+export async function modelosDaSequencia(db, env, fetchImpl, logger) {
+  if (env.WA_WABA_ID) {
+    const vez = await db.prepare(`
+      UPDATE whatsapp_estado SET modelo_conferido_em = datetime('now')
+       WHERE id = 1 AND estado = 'ativo'
+         AND (modelo_conferido_em IS NULL OR modelo_conferido_em <= datetime('now', '-${CONFERIR_MODELO_MIN} minutes'))`).run()
+    if (mudou(vez)) await atualizarModelos(db, env, fetchImpl, logger)
+  }
+  const guardados = linhas(await db.prepare(`SELECT nome, status, botao_url FROM whatsapp_modelos LIMIT 20`).all())
+  return new Map(guardados.map((m) => [m.nome, { status: m.status, botaoUrl: Number(m.botao_url || 0) }]))
+}
+
+async function atualizarModelos(db, env, fetchImpl, logger) {
+  const { versao, token } = configuracaoMeta(env)
+  const url = `https://graph.facebook.com/${versao}/${env.WA_WABA_ID}/message_templates?fields=name,status,language,components&limit=100`
+  let dados
+  try {
+    const resposta = await fetchImpl(url, { headers: { Authorization: `Bearer ${token}` } })
+    dados = await resposta.json().catch(() => null)
+    if (!resposta.ok) throw new Error(`HTTP ${resposta.status} (código ${dados?.error?.code ?? '-'})`)
+  } catch (erro) {
+    logger.error('Consulta dos modelos na Meta falhou:', erro?.message || erro)
+    return
+  }
+  const todos = Array.isArray(dados?.data) ? dados.data : []
+  for (const nome of MODELOS) {
+    const doNome = todos.filter((m) => m?.name === nome)
+    const modelo = doNome.find((m) => m.language === 'pt_BR') || doNome[0]
+    const status = String(modelo?.status || 'NAO_ENCONTRADO').toUpperCase()
+    const componentes = Array.isArray(modelo?.components) ? modelo.components : []
+    const botoes = componentes.find((c) => String(c?.type || '').toUpperCase() === 'BUTTONS')?.buttons || []
+    const botaoUrl = Math.max(0, botoes.findIndex((b) => String(b?.type || '').toUpperCase() === 'URL'))
+    await db.prepare(`
+      INSERT INTO whatsapp_modelos (nome, status, botao_url, conferido_em) VALUES (?, ?, ?, datetime('now'))
+      ON CONFLICT(nome) DO UPDATE SET status = excluded.status, botao_url = excluded.botao_url,
+                                      conferido_em = excluded.conferido_em`).bind(nome, status, botaoUrl).run()
+  }
+}
+
 // --------------------------------------------------- resumo do dia ----
 
 // Uma vez por dia, depois das 20h de Brasília (quando os envios acabam).
@@ -264,35 +309,28 @@ export async function resumoDoDia(db, env, agora, fetchImpl, logger) {
      WHERE id = 1 AND estado = 'ativo' AND COALESCE(resumo_enviado_em, '') <> ?`).bind(dia, dia).run()
   if (!mudou(vez)) return false
 
-  // Dia de Brasília = das 03:00 UTC às 03:00 UTC do dia seguinte.
-  const inicio = `${dia} 03:00:00`
-  const t = await db.prepare(`
-    SELECT
-      SUM(CASE WHEN whatsapp_enviado_em IS NOT NULL THEN 1 ELSE 0 END) AS enviados,
-      SUM(CASE WHEN whatsapp_status IN ('delivered', 'read') THEN 1 ELSE 0 END) AS entregues,
-      SUM(CASE WHEN whatsapp_status = 'read' THEN 1 ELSE 0 END) AS lidos,
-      SUM(CASE WHEN whatsapp_enviado_em IS NOT NULL AND EXISTS (
-            SELECT 1 FROM carrinhos pago
-             WHERE pago.email = c.email AND pago.pago_em > c.whatsapp_enviado_em LIMIT 1
-          ) THEN 1 ELSE 0 END) AS compraram
-      FROM carrinhos c
-     WHERE c.whatsapp_enviado_em >= ? AND c.whatsapp_enviado_em < datetime(?, '+1 day')
-     LIMIT 1`).bind(inicio, inicio).first()
-  const recusas = linhas(await db.prepare(`
-    SELECT COALESCE(whatsapp_erro, 'sem código') AS codigo, COUNT(*) AS total
-      FROM carrinhos
-     WHERE whatsapp_status = 'failed'
-       AND COALESCE(whatsapp_falhou_em, whatsapp_enviado_em) >= ?
-       AND COALESCE(whatsapp_falhou_em, whatsapp_enviado_em) < datetime(?, '+1 day')
-     GROUP BY 1 ORDER BY 2 DESC`).bind(inicio, inicio).all())
-
   const n = (v) => Number(v || 0)
   const [d, m, a] = [dia.slice(8, 10), dia.slice(5, 7), dia.slice(0, 4)]
-  const totalRecusas = recusas.reduce((s, r) => s + n(r.total), 0)
-  const detalheRecusas = recusas.map((r) => `- ${n(r.total)} × ${explicarErro(r.codigo)}`).join('\n')
+  const numeros = await numerosDoDia(db, dia)
+  const total = (campo) => numeros.porMensagem.reduce((s, r) => s + n(r[campo]), 0)
+  const totalRecusas = numeros.recusas.reduce((s, r) => s + n(r.total), 0)
+  const porMensagem = numeros.porMensagem
+    .map((r) => `- ${r.etapa}ª: ${n(r.enviadas)} enviadas, ${n(r.entregues)} entregues, ${n(r.lidas)} lidas`)
+    .join('\n')
+  const cliques = Object.entries(numeros.cliques)
+    .sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0))
+    .map(([conteudo, quantos]) => `${conteudo}: ${quantos}`)
+    .join(' · ')
+  const totalCliques = Object.values(numeros.cliques).reduce((s, v) => s + v, 0)
+  const encerradas = numeros.encerradas
+    .map((r) => `- ${MOTIVOS[r.motivo] || r.motivo}: ${n(r.total)}`)
+    .join('\n')
+  const detalheRecusas = numeros.recusas.map((r) => `- ${n(r.total)} × ${explicarErro(r.codigo)}`).join('\n')
   const texto = [
     `WhatsApp em ${d}/${m}/${a}:`,
-    `Enviados: ${n(t?.enviados)}\nEntregues: ${n(t?.entregues)}\nLidos: ${n(t?.lidos)}\nRecusados: ${totalRecusas}\nCompraram depois: ${n(t?.compraram)}`,
+    `Enviadas: ${total('enviadas')}\nEntregues: ${total('entregues')}\nLidas: ${total('lidas')}\nRecusadas: ${totalRecusas}\nVoltaram ao checkout pelo botão: ${totalCliques}${cliques ? ` (${cliques})` : ''}\nCompraram hoje depois de um WhatsApp: ${n(numeros.compraram)}`,
+    porMensagem ? `Por mensagem da sequência:\n${porMensagem}` : '',
+    encerradas ? `Sequências que pararam hoje:\n${encerradas}` : '',
     totalRecusas ? `Recusas:\n${detalheRecusas}` : '',
     'Para pausar: gestão → Recuperação → WhatsApp → Pausar.',
   ].filter(Boolean).join('\n\n')
@@ -302,6 +340,72 @@ export async function resumoDoDia(db, env, agora, fetchImpl, logger) {
     logger.error('Resumo diário do WhatsApp não enviado:', erro?.message || erro)
   }
   return true
+}
+
+// Os números de um dia de Brasília (das 03:00 UTC às 03:00 UTC do dia
+// seguinte), separados do e-mail para o teste conferir as contas.
+export async function numerosDoDia(db, dia) {
+  const inicio = `${dia} 03:00:00`
+  const [porMensagem, recusas, origens, compraram, encerradas] = await Promise.all([
+    db.prepare(`
+      SELECT etapa, COUNT(*) AS enviadas,
+             SUM(CASE WHEN wa_status IN ('delivered', 'read') THEN 1 ELSE 0 END) AS entregues,
+             SUM(CASE WHEN wa_status = 'read' THEN 1 ELSE 0 END) AS lidas
+        FROM lembretes_enviados
+       WHERE canal = 'whatsapp' AND enviado_em >= ? AND enviado_em < datetime(?, '+1 day')
+       GROUP BY etapa ORDER BY etapa`).bind(inicio, inicio).all(),
+    // Recusas: mensagens da sequência que falharam e 1ªs que a Meta não aceitou.
+    db.prepare(`
+      SELECT codigo, SUM(total) AS total FROM (
+        SELECT COALESCE(wa_erro, 'sem código') AS codigo, COUNT(*) AS total
+          FROM lembretes_enviados
+         WHERE canal = 'whatsapp' AND wa_status = 'failed'
+           AND enviado_em >= ? AND enviado_em < datetime(?, '+1 day')
+         GROUP BY 1
+        UNION ALL
+        SELECT COALESCE(whatsapp_erro, 'sem código'), COUNT(*)
+          FROM carrinhos
+         WHERE whatsapp_status = 'failed' AND whatsapp_enviado_em IS NULL
+           AND whatsapp_falhou_em >= ? AND whatsapp_falhou_em < datetime(?, '+1 day')
+         GROUP BY 1
+      ) GROUP BY codigo ORDER BY total DESC`).bind(inicio, inicio, inicio, inicio).all(),
+    // Quem tocou em "Finalizar compra" e preencheu o checkout de novo.
+    db.prepare(`
+      SELECT origem FROM carrinhos
+       WHERE origem LIKE 'utm=whatsapp/lembrete/%'
+         AND criado_em >= ? AND criado_em < datetime(?, '+1 day')
+       LIMIT 500`).bind(inicio, inicio).all(),
+    db.prepare(`
+      SELECT COUNT(DISTINCT pago.email) AS total
+        FROM carrinhos pago
+       WHERE pago.pago_em >= ? AND pago.pago_em < datetime(?, '+1 day')
+         AND EXISTS (
+           SELECT 1 FROM carrinhos s
+             JOIN lembretes_enviados l ON l.carrinho_id = s.id AND l.canal = 'whatsapp'
+            WHERE (s.email = pago.email OR s.telefone = pago.telefone) AND l.enviado_em < pago.pago_em
+            LIMIT 1
+         )
+       LIMIT 1`).bind(inicio, inicio).first(),
+    db.prepare(`
+      SELECT whatsapp_motivo AS motivo, COUNT(*) AS total
+        FROM carrinhos
+       WHERE whatsapp_encerrado_em >= ? AND whatsapp_encerrado_em < datetime(?, '+1 day')
+       GROUP BY 1 ORDER BY 2 DESC`).bind(inicio, inicio).all(),
+  ])
+  // origem = "utm=whatsapp/lembrete/carrinho/semanaN;cupom=..."
+  const cliques = {}
+  for (const { origem } of linhas(origens)) {
+    const partes = String(origem || '').split(';')[0].slice(4).split('/')
+    const conteudo = partes[3] || 'sem marcação'
+    cliques[conteudo] = (cliques[conteudo] || 0) + 1
+  }
+  return {
+    porMensagem: linhas(porMensagem),
+    recusas: linhas(recusas),
+    cliques,
+    compraram: Number(compraram?.total || 0),
+    encerradas: linhas(encerradas),
+  }
 }
 
 // ------------------------------------------------ página dos links ----

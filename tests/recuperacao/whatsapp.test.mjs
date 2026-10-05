@@ -62,6 +62,7 @@ function banco() {
     '0007_whatsapp_semanal',
     '0008_whatsapp_meta',
     '0009_whatsapp_estado',
+    '0010_whatsapp_sequencia',
   ]) {
     b.exec(readFileSync(`migrations/${arquivo}.sql`, 'utf8'))
   }
@@ -71,14 +72,17 @@ function banco() {
   return b
 }
 
+const AGORA_SQL = '2026-01-15 15:00:00' // meioDoDia, no formato do banco
+
 function carrinho(b, id, email, telefone, idade = '-4 hours', extras = {}) {
   b.prepare(`
     INSERT INTO carrinhos (id, email, nome, telefone, criado_em, status, whatsapp_enviado_em)
-    VALUES (?, ?, ?, ?, datetime('now', ?), ?, ?)`).run(
+    VALUES (?, ?, ?, ?, datetime(?, ?), ?, ?)`).run(
     id,
     email,
     extras.nome ?? 'Maria Clara',
     telefone,
+    AGORA_SQL,
     idade,
     extras.status || 'aberto',
     extras.whatsapp_enviado_em || null
@@ -207,8 +211,18 @@ test('janela de 3 h a 48 h: envia uma vez, grava o id e o status', async () => {
   assert.equal(s.meta()[0].url, 'https://graph.facebook.com/v23.0/123456/messages')
   assert.equal(s.meta()[0].headers.Authorization, 'Bearer token-teste')
   assert.equal(s.meta()[0].corpo.to, '5527922220000')
-  const linha = b.prepare(`SELECT whatsapp_msg_id, whatsapp_status, whatsapp_enviado_em IS NOT NULL AS enviado FROM carrinhos WHERE id = 'certo'`).get()
-  assert.deepEqual({ ...linha }, { whatsapp_msg_id: 'wamid.1', whatsapp_status: 'sent', enviado: 1 })
+  const linha = b.prepare(`
+    SELECT l.etapa, l.modelo, l.wa_msg_id, l.wa_status, c.whatsapp_etapa, c.proximo_whatsapp_em
+      FROM lembretes_enviados l JOIN carrinhos c ON c.id = l.carrinho_id
+     WHERE l.canal = 'whatsapp' AND c.id = 'certo'`).get()
+  assert.deepEqual({ ...linha }, {
+    etapa: 1, modelo: 'carrinho_lembrete', wa_msg_id: 'wamid.1', wa_status: 'sent',
+    whatsapp_etapa: 1, proximo_whatsapp_em: '2026-01-22 15:00:00',
+  })
+  assert.equal(
+    s.meta()[0].corpo.template.components[1].parameters[0].text,
+    'r=certo&utm_source=whatsapp&utm_medium=lembrete&utm_campaign=carrinho&utm_content=semana0'
+  )
 
   const r2 = await executarWhatsapp(ambiente(new D1Local(b)), { agora: meioDoDia, logger: mudo, fetchImpl: s.fetchImpl })
   assert.equal(r2.enviados, 0)
@@ -409,14 +423,18 @@ test('SAIR e o botão "Não quero receber": descadastram o e-mail do telefone e 
 test('status: sent → delivered → read, sem regredir; failed só antes de entregar', async () => {
   const b = banco()
   carrinho(b, 'c1', 'maria@example.com', '27911110000')
-  b.exec(`UPDATE carrinhos SET whatsapp_msg_id = 'wamid.x', whatsapp_status = 'sent', whatsapp_enviado_em = datetime('now')`)
+  b.exec(`
+    UPDATE carrinhos SET whatsapp_enviado_em = datetime('now'), whatsapp_etapa = 1;
+    INSERT INTO lembretes_enviados (carrinho_id, canal, etapa, wa_msg_id, wa_status) VALUES ('c1', 'whatsapp', 1, 'wamid.x', 'sent');
+  `)
   const env = ambiente(new D1Local(b))
-  const status = (s) => atenderWebhook(assinado(aviso({ status: [{ id: 'wamid.x', status: s }] })), env, { logger: mudo })
-  const atual = () => b.prepare('SELECT whatsapp_status AS s FROM carrinhos').get().s
+  const status = (s, timestamp) => atenderWebhook(assinado(aviso({ status: [{ id: 'wamid.x', status: s, timestamp }] })), env, { logger: mudo })
+  const atual = () => b.prepare('SELECT wa_status AS s FROM lembretes_enviados').get().s
   await status('delivered')
   assert.equal(atual(), 'delivered')
-  await status('read')
+  await status('read', '1768489320') // 2026-01-15 15:02:00 UTC
   assert.equal(atual(), 'read')
+  assert.equal(b.prepare('SELECT wa_status_em AS em FROM lembretes_enviados').get().em, '2026-01-15 15:02:00')
   await status('delivered')
   assert.equal(atual(), 'read')
   await status('failed')
@@ -429,7 +447,8 @@ test('gestão: conversas com janela de 24 h, totais e custo estimado', async () 
   const b = banco()
   carrinho(b, 'c1', 'maria@example.com', '27911110000', '-4 hours', { nome: 'Maria Clara' })
   b.exec(`
-    UPDATE carrinhos SET whatsapp_enviado_em = datetime('now', '-1 hour'), whatsapp_status = 'read';
+    UPDATE carrinhos SET whatsapp_enviado_em = datetime('now', '-1 hour'), whatsapp_etapa = 1;
+    INSERT INTO lembretes_enviados (carrinho_id, canal, etapa, enviado_em, wa_status) VALUES ('c1', 'whatsapp', 1, datetime('now', '-1 hour'), 'read');
     INSERT INTO whatsapp_mensagens (wa_msg_id, telefone, nome_perfil, direcao, texto, criado_em)
       VALUES ('a', '27911110000', 'Maria', 'entrada', 'oi', datetime('now', '-2 hours')),
              ('b', '27922220000', 'João', 'entrada', 'antiga', datetime('now', '-30 hours'));
@@ -442,7 +461,7 @@ test('gestão: conversas com janela de 24 h, totais e custo estimado', async () 
   ])
   assert.equal(conversas[0].mensagens[0].texto, 'oi')
   const t = await totaisWhatsapp(db)
-  assert.deepEqual(t, { enviados: 1, entregues: 1, lidos: 1, falharam: 0, recuperados: 0, custo_estimado_centavos: 32 })
+  assert.deepEqual(t, { enviados: 1, pessoas: 1, entregues: 1, lidos: 1, falharam: 0, recuperados: 0, custo_estimado_centavos: 32 })
 })
 
 test('gestão: responder só dentro da janela; fora dela recusa sem chamar a Meta', async () => {
@@ -712,10 +731,14 @@ test('ligado: carrinho que esperou a aprovação só recebe se ainda estiver den
 test('resumo do dia: uma vez depois das 20h, com enviados, entregues, lidos, recusas e compras', async () => {
   const b = banco()
   b.exec(`
-    INSERT INTO carrinhos (id, email, telefone, status, criado_em, whatsapp_enviado_em, whatsapp_status) VALUES
-      ('a', 'a@example.com', '27911110001', 'aberto', '2026-01-15 10:00:00', '2026-01-15 14:00:00', 'read'),
-      ('b', 'b@example.com', '27911110002', 'aberto', '2026-01-15 10:00:00', '2026-01-15 15:00:00', 'delivered'),
-      ('c', 'c@example.com', '27911110003', 'aberto', '2026-01-15 10:00:00', '2026-01-14 15:00:00', 'read');
+    INSERT INTO carrinhos (id, email, telefone, status, criado_em, whatsapp_enviado_em, whatsapp_etapa) VALUES
+      ('a', 'a@example.com', '27911110001', 'aberto', '2026-01-15 10:00:00', '2026-01-15 14:00:00', 1),
+      ('b', 'b@example.com', '27911110002', 'aberto', '2026-01-15 10:00:00', '2026-01-15 15:00:00', 1),
+      ('c', 'c@example.com', '27911110003', 'aberto', '2026-01-15 10:00:00', '2026-01-14 15:00:00', 1);
+    INSERT INTO lembretes_enviados (carrinho_id, canal, etapa, enviado_em, wa_status) VALUES
+      ('a', 'whatsapp', 1, '2026-01-15 14:00:00', 'read'),
+      ('b', 'whatsapp', 1, '2026-01-15 15:00:00', 'delivered'),
+      ('c', 'whatsapp', 1, '2026-01-14 15:00:00', 'read');
     INSERT INTO carrinhos (id, email, telefone, status, criado_em, whatsapp_falhou_em, whatsapp_status, whatsapp_erro) VALUES
       ('d', 'd@example.com', '27911110004', 'aberto', '2026-01-15 10:00:00', '2026-01-15 16:00:00', 'failed', '131026');
     INSERT INTO carrinhos (id, email, status, criado_em, pago_em) VALUES
@@ -731,7 +754,8 @@ test('resumo do dia: uma vez depois das 20h, com enviados, entregues, lidos, rec
   assert.equal(m.emails().length, 1)
   const { subject, text } = m.emails()[0].corpo
   assert.equal(subject, 'WhatsApp: resumo de 15/01')
-  assert.ok(text.includes('Enviados: 2\nEntregues: 2\nLidos: 1\nRecusados: 1\nCompraram depois: 1'))
+  assert.ok(text.includes('Enviadas: 2\nEntregues: 2\nLidas: 1\nRecusadas: 1\nVoltaram ao checkout pelo botão: 0\nCompraram hoje depois de um WhatsApp: 1'), text)
+  assert.ok(text.includes('Por mensagem da sequência:\n- 1ª: 2 enviadas, 2 entregues, 1 lidas'), text)
   assert.ok(text.includes('1 × A mensagem não pôde ser entregue'))
   assert.equal(m.envios().length, 0, 'fora do horário não envia lembrete')
 })

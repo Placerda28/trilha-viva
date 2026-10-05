@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDB, getEnv } from '@/lib/d1'
-import { consultarConversas, lerEstadoWhatsapp, totaisWhatsapp } from '@/lib/gestao/whatsapp'
+import { consultarConversas, consultarSequencias, lerEstadoWhatsapp, totaisWhatsapp } from '@/lib/gestao/whatsapp'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
 
 export const runtime = 'nodejs'
@@ -15,10 +15,11 @@ const get = async () => {
     )
   }
   const env = getEnv()
-  const [conversas, totais, estado] = await Promise.all([
+  const [conversas, totais, estado, sequencias] = await Promise.all([
     consultarConversas(db),
     totaisWhatsapp(db),
     lerEstadoWhatsapp(db),
+    consultarSequencias(db),
   ])
   return NextResponse.json(
     {
@@ -27,6 +28,7 @@ const get = async () => {
       totais,
       estado,
       conversas,
+      sequencias,
     },
     { headers: cabecalhosPrivados }
   )
