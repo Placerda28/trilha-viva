@@ -30,9 +30,13 @@ Modelos: 1ª carrinho_lembrete; depois preço → acervo → lembrete, só APPRO
 ## Custo
 - R$ 0,32 por mensagem de marketing. Pior caso: 9 × R$ 0,32 ≈ R$ 2,90 por carrinho. As paradas (compra, sair, não entregue, não lê, respondeu) derrubam bastante.
 
-## Falta (pontos de parada)
-- [ ] OK do Paulo para aplicar a 0010 no D1 de produção (SQL no arquivo; mostrar antes).
-- [ ] OK do Paulo para merge em main e deploy do site e do robô (a ordem: migração → robô → site).
+## Publicado (04/10, OK do Paulo)
+- [x] 0010 aplicada em produção (Paulo liberou a regra): antes e depois 33 carrinhos, 14 lembretes, 19 compras, R$ 1.261,10, 19 clientes; Jonathas e Guilherme viraram "1 de 9" com id e status; nenhum envio órfão.
+- [x] main 3a8521b (147 testes). Robô ba8fbf2c. Site www c084f281 (com .env.local; o build travou 3 vezes com código 127 por restos do next dev/workerd do teste local; encerrados, passou).
+- [x] No ar: home/privacidade/assinar 200 (privacidade com "até nove"); gestão e /api/gestao/whatsapp/sequencia 404 sem login; login vazio 400; webhook sem assinatura 401.
+- Publicado às 22:15 de Brasília: o robô novo só envia a partir das 9h de 05/10. whatsapp_modelos se preenche na 1ª rodada com fila.
+
+## Falta
 - [ ] Depois do deploy: conferir na tela real (computador e celular) o Guilherme com "1º enviado 04/10 15:00 · lido" e "2º previsto 12/10"; CPU do cron no painel (Observability) nas primeiras rodadas.
 - [ ] carrinho_preco e carrinho_acervo em análise na Meta: até aprovarem, a 2ª em diante sai com o carrinho_lembrete (o robô troca sozinho quando aprovar).
 
