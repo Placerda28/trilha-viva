@@ -774,5 +774,5 @@ Branch: `autopreenchimento`. Só navegador: nada muda no servidor, no `/api/chec
 - [x] Provas: 156 testes (`npm test`, 9 novos em tests/checkout), build limpo, 17 verificações em navegador real (Chromium, 390 px) no build local
   - Com armazenamento bloqueado, o único erro na página vem do `fbevents.js` da Meta (em todas as páginas, já antes desta mudança); o formulário envia normal
 - [x] Prévia publicada sem promover: versão 48052974, https://autopreenchimento-www.trilha-viva.workers.dev/assinar (produção segue 100% na cc02dc28). Mesmas 17 verificações de navegador passaram na prévia
-- [ ] Paulo: tocar no Nome no celular → oferece dados do Google/iCloud e preenche os três; checkout abre o Mercado Pago
-- [ ] PARADA: merge em main e deploy só com OK do Paulo
+- [x] Paulo testou no celular (06/10): funcionou
+- [x] OK do Paulo. Merge em main (41482ca), site publicado: versão e51ceaab (100%, com .env.local; envio caiu várias vezes por rede, uma tentativa completou). Conferido no ar: home 200, login 400 "Informe o e-mail e a senha.", as 17 verificações de navegador em trilhaviva.org, e compra real até o Mercado Pago (máscara (27) 99625-3839, /api/checkout 200, abriu www.mercadopago.com.br, dados lembrados na volta; e-mail do Paulo, que já tem compra: nenhum lembrete sai)
