@@ -773,6 +773,6 @@ Branch: `autopreenchimento`. Só navegador: nada muda no servidor, no `/api/chec
 - [x] Frase nova na /privacidade
 - [x] Provas: 156 testes (`npm test`, 9 novos em tests/checkout), build limpo, 17 verificações em navegador real (Chromium, 390 px) no build local
   - Com armazenamento bloqueado, o único erro na página vem do `fbevents.js` da Meta (em todas as páginas, já antes desta mudança); o formulário envia normal
-- [ ] Prévia (não promovida) para o Paulo testar no celular
+- [x] Prévia publicada sem promover: versão 48052974, https://autopreenchimento-www.trilha-viva.workers.dev/assinar (produção segue 100% na cc02dc28). Mesmas 17 verificações de navegador passaram na prévia
 - [ ] Paulo: tocar no Nome no celular → oferece dados do Google/iCloud e preenche os três; checkout abre o Mercado Pago
 - [ ] PARADA: merge em main e deploy só com OK do Paulo
