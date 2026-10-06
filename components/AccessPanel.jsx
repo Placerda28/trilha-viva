@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import ContaForm from './ContaForm'
 import { rastrear } from './MetaPixel'
 import { site } from '@/lib/site'
+import { esquecer } from '@/lib/checkout-campos'
 
 // A tela depois do pagamento. O trabalho dela é um só: transformar quem
 // acabou de pagar em quem já tem acesso. Por isso o único caminho visível
@@ -64,6 +65,8 @@ export default function AccessPanel() {
   const compraId = sessionId || ref
   useEffect(() => {
     if (state.status !== 'paid' || !compraId) return
+    // Compra aprovada: os dados lembrados para a próxima compra não servem mais.
+    esquecer()
     const chave = `tv-compra-${compraId}`
     try {
       if (sessionStorage.getItem(chave)) return
