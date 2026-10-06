@@ -22,6 +22,11 @@ export default function PrivacidadePage() {
             lembrar de uma compra não concluída.
           </li>
           <li>
+            Para facilitar uma próxima compra, seu nome, e-mail e WhatsApp podem ficar salvos apenas
+            no seu próprio navegador. Você pode apagá-los a qualquer momento pelo link &quot;Não é
+            você? Limpar&quot;.
+          </li>
+          <li>
             Dados da transação (valor, data, status) fornecidos pelo Mercado Pago. Não recebemos nem
             armazenamos números de cartão.
           </li>

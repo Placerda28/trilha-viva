@@ -3,6 +3,18 @@
 import { useEffect, useId, useState } from 'react'
 import { priceBRL, site } from '@/lib/site'
 import { rastrear } from '@/components/MetaPixel'
+import {
+  celularValido,
+  digitosCelular,
+  escolherInicial,
+  esquecer,
+  guardar,
+  lerGuardado,
+  mascaraCelular,
+  valoresDoEnvio,
+} from '@/lib/checkout-campos'
+
+const EVENTO_LIMPAR = 'tv-checkout-limpar'
 
 // Formulario que abre o pagamento: manda nome, e-mail e WhatsApp para /api/checkout e
 // leva a pessoa para a URL que volta (o Mercado Pago). A logica do envio e a
@@ -17,28 +29,10 @@ import { rastrear } from '@/components/MetaPixel'
 // Os ids dos campos vem do useId, porque /assinar tem dois cards de preco
 // (topo e fim) e dois campos com o mesmo id quebram o rotulo dos leitores de
 // tela.
-// So os digitos, sem o 55 do Brasil se a pessoa digitou. Valido = DDD + numero
-// (10 ou 11 digitos). O servidor confere de novo do mesmo jeito.
-function digitosCelular(valor) {
-  let d = String(valor || '').replace(/[^0-9]/g, '')
-  if ((d.length === 12 || d.length === 13) && d.startsWith('55')) d = d.slice(2)
-  return d
-}
-
-// Mascara enquanto digita: (11) 98765-4321. So para ler melhor; o que vale e
-// digitosCelular.
-function celularValido(digitos) {
-  return /^[1-9][0-9]{9,10}$/.test(digitos)
-}
-
-function mascaraCelular(valor) {
-  const d = digitosCelular(valor).slice(0, 11)
-  if (d.length <= 2) return d.length ? '(' + d : ''
-  if (d.length <= 6) return '(' + d.slice(0, 2) + ') ' + d.slice(2)
-  if (d.length <= 10) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 6) + '-' + d.slice(6)
-  return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7)
-}
-
+// Os campos dizem ao navegador o que são (autocomplete name/email/tel), para o
+// celular oferecer os dados que já guarda e preencher os três de uma vez. Quem
+// já clicou em comprar neste aparelho encontra os campos preenchidos (só no
+// navegador dela, chave tv_checkout); o carrinho do lembrete vale mais.
 export default function CheckoutForm({ tom = 'claro', rotulo }) {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
@@ -46,6 +40,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
   const [utm, setUtm] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [lembrado, setLembrado] = useState(false)
   const id = useId()
   const escuro = tom === 'escuro'
 
@@ -100,36 +95,64 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
     const content = busca.get('utm_content')
     if (source || medium || campaign) setUtm({ source, medium, campaign, content })
 
-    // Veio do lembrete: preenche o que a pessoa já tinha digitado. Só completa
-    // campo vazio, para não apagar o que ela começou a escrever.
+    // Preenche o que já se sabe: o carrinho do lembrete (?r=) e, no que faltar,
+    // o que ficou guardado neste aparelho. Só completa campo vazio, para não
+    // apagar o que a pessoa começou a escrever.
+    const guardado = lerGuardado()
+    const preencher = (carrinho) => {
+      const inicial = escolherInicial(carrinho, guardado)
+      setNome((atual) => atual || inicial.nome)
+      setEmail((atual) => atual || inicial.email)
+      setTelefone((atual) => atual || inicial.telefone)
+      setLembrado(inicial.lembrado)
+    }
     const carrinho = busca.get('r')
     if (carrinho) {
       fetch('/api/carrinho?r=' + encodeURIComponent(carrinho))
         .then((res) => (res.ok ? res.json() : null))
-        .then((dados) => {
-          if (!dados?.ok) return
-          if (dados.nome) setNome((atual) => atual || dados.nome)
-          if (dados.email) setEmail((atual) => atual || dados.email)
-          if (dados.telefone) setTelefone((atual) => atual || mascaraCelular(dados.telefone))
-        })
-        .catch(() => {})
+        .then((dados) => preencher(dados?.ok ? dados : null))
+        .catch(() => preencher(null))
+    } else if (guardado) {
+      preencher(null)
     }
   }, [])
+
+  // /assinar tem dois formulários (topo e fim): "Limpar" em um esvazia os dois.
+  useEffect(() => {
+    const esvaziar = () => {
+      setNome('')
+      setEmail('')
+      setTelefone('')
+      setLembrado(false)
+    }
+    window.addEventListener(EVENTO_LIMPAR, esvaziar)
+    return () => window.removeEventListener(EVENTO_LIMPAR, esvaziar)
+  }, [])
+
+  function limparLembrado() {
+    esquecer()
+    window.dispatchEvent(new Event(EVENTO_LIMPAR))
+  }
 
   const precoFinal = aplicado ? aplicado.preco : site.price
 
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!nome.trim()) {
+    const valores = valoresDoEnvio({ nome, email, telefone }, e.currentTarget)
+    if (valores.nome !== nome) setNome(valores.nome)
+    if (valores.email !== email) setEmail(valores.email)
+    if (!valores.nome) {
       setError('Informe seu nome.')
       return
     }
-    const celular = digitosCelular(telefone)
+    const celular = digitosCelular(valores.telefone)
     if (!celularValido(celular)) {
       setError('Informe seu WhatsApp com DDD.')
       return
     }
+    setTelefone(mascaraCelular(celular))
+    guardar({ nome: valores.nome, email: valores.email, telefone: celular })
     setLoading(true)
     // Mesmo id no Pixel e no servidor: a Meta conta um evento só.
     const eventoId = crypto.randomUUID()
@@ -138,7 +161,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, email, telefone: celular, eventoId, cupom: aplicado ? aplicado.cupom : '', utm }),
+        body: JSON.stringify({ nome: valores.nome, email: valores.email, telefone: celular, eventoId, cupom: aplicado ? aplicado.cupom : '', utm }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {
@@ -239,9 +262,10 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
         </label>
         <input
           id={`${id}-nome`}
-          name="nome"
+          name="name"
           type="text"
           autoComplete="name"
+          autoCapitalize="words"
           required
           maxLength={80}
           value={nome}
@@ -261,6 +285,8 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
           type="email"
           inputMode="email"
           autoComplete="email"
+          autoCapitalize="off"
+          spellCheck={false}
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -281,12 +307,11 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
         </label>
         <input
           id={`${id}-celular`}
-          name="telefone"
+          name="tel"
           type="tel"
           inputMode="tel"
-          autoComplete="tel-national"
+          autoComplete="tel"
           required
-          maxLength={16}
           value={telefone}
           onChange={(e) => setTelefone(mascaraCelular(e.target.value))}
           placeholder="(27) 99999-9999"
@@ -299,6 +324,19 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
           </p>
         )}
       </div>
+
+      {lembrado && (
+        <p className={`-mt-1 text-[12.5px] ${textoFraco}`}>
+          Não é você?{' '}
+          <button
+            type="button"
+            onClick={limparLembrado}
+            className={`font-semibold underline underline-offset-4 ${escuro ? 'hover:text-white' : 'hover:text-ink'}`}
+          >
+            Limpar
+          </button>
+        </p>
+      )}
 
       {error && (
         <p
