@@ -19,6 +19,7 @@ import { executarRodada } from '../../workers/recuperacao-carrinho/index.js'
 import {
   acaoDeEstadoValida,
   consultarConversas,
+  explicarErroMeta,
   lerEstadoWhatsapp,
   mudarEstadoWhatsapp,
   responderConversa,
@@ -801,4 +802,17 @@ test('WA_MODO=ativo + aguardando_modelo: com vários clientes prontos, a única 
   assert.equal(marcados, 0)
   assert.equal(b.prepare(`SELECT COUNT(*) AS n FROM lembretes_enviados WHERE canal = 'whatsapp'`).get().n, 0)
   assert.equal(estadoAtual(b).estado, 'aguardando_modelo')
+})
+test('erro da Meta vira frase com o código, sem token', () => {
+  const bloqueado = Object.assign(new Error('Meta respondeu HTTP 400 (código 200): API access blocked.'), { codigo: 200 })
+  const frase = explicarErroMeta(bloqueado)
+  assert.match(frase, /código 200/)
+  assert.match(frase, /API access blocked/)
+  assert.match(frase, /bloqueou o acesso/)
+  const token = Object.assign(new Error('Meta respondeu HTTP 401 (código 190): Error validating access token'), { codigo: 190 })
+  assert.match(explicarErroMeta(token), /token/)
+  const prazo = Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })
+  assert.match(explicarErroMeta(prazo), /não respondeu a tempo/)
+  assert.match(explicarErroMeta(new Error('rede')), /não aceitou a mensagem/)
+  assert.match(explicarErroMeta(Object.assign(new Error('x: y'), { codigo: 999 })), /código 999/)
 })

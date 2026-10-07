@@ -1,16 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useGestao } from './useGestao'
 import SubAbasRecuperacao from './SubAbasRecuperacao'
 import { Aviso, Esqueleto, Vazio } from './Estados'
 import { dataHora, moeda, numero } from './formato'
 import SequenciaWhatsapp from './SequenciaWhatsapp'
 
-// Sub-aba WhatsApp da Recuperação: o resultado da sequência (mensagens
-// enviadas, entregues, lidas, quem comprou, custo estimado), em que ponto
-// está cada pessoa (com "Parar sequência") e as conversas com quem respondeu. A Meta só deixa responder com texto livre até 24 h depois da
-// última mensagem do cliente; o servidor confere isso de novo.
+// Sub-aba WhatsApp da Recuperação, em três partes: Conversas (lista e
+// conversa aberta, como no WhatsApp), Sequências (em que ponto está cada
+// pessoa, com "Parar sequência") e Resultado (ligar/pausar e os números).
+// A Meta só deixa responder com texto livre até 24 h depois da última
+// mensagem do cliente; o servidor confere isso de novo.
 
 const LIMITE = 1000
 
@@ -173,53 +174,241 @@ function Sequencia({ s, onMudou }) {
   )
 }
 
-function Mensagem({ m }) {
+// ---------------------------------------------------- conversas ----
+// Organizada como o WhatsApp: a lista de conversas à esquerda e a conversa
+// aberta à direita. No celular, a lista ocupa a tela; tocar numa conversa
+// abre ela, e a seta volta para a lista.
+
+const HORA = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })
+const DIA_CHAVE = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' })
+const DIA_CURTO = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' })
+const DIA_LONGO = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: 'numeric', month: 'long', year: 'numeric' })
+const COLLATOR = new Intl.Collator('pt-BR', { sensitivity: 'base' })
+const ATUALIZAR_MS = 30000
+
+function data(iso) {
+  const d = new Date(iso || '')
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+function diaChave(d) {
+  return DIA_CHAVE.format(d)
+}
+
+function ontemChave() {
+  return diaChave(new Date(Date.now() - 86400000))
+}
+
+// "14:32" hoje, "Ontem", ou "03/10".
+function quandoCurto(d) {
+  if (!d) return ''
+  const dia = diaChave(d)
+  if (dia === diaChave(new Date())) return HORA.format(d)
+  if (dia === ontemChave()) return 'Ontem'
+  return DIA_CURTO.format(d)
+}
+
+function separadorDoDia(d) {
+  const dia = diaChave(d)
+  if (dia === diaChave(new Date())) return 'Hoje'
+  if (dia === ontemChave()) return 'Ontem'
+  return DIA_LONGO.format(d)
+}
+
+function nomeDe(c) {
+  return c.nome || c.nome_perfil || celular(c.telefone)
+}
+
+function iniciais(c) {
+  const partes = String(c.nome || c.nome_perfil || '').trim().split(' ').filter(Boolean)
+  if (!partes.length) return '#'
+  const primeira = partes[0][0] || ''
+  const ultima = partes.length > 1 ? partes[partes.length - 1][0] || '' : ''
+  return (primeira + ultima).toUpperCase()
+}
+
+// Quem respondeu pela equipe: só a parte antes do @.
+function apelido(email) {
+  return String(email || '').split('@')[0]
+}
+
+function ultimaMensagem(c) {
+  return c.mensagens.length ? c.mensagens[c.mensagens.length - 1] : null
+}
+
+// A última mensagem é do cliente e ainda dá para responder (janela de 24 h).
+function aguardandoVoce(c) {
+  return c.janela_aberta && ultimaMensagem(c)?.direcao === 'entrada'
+}
+
+function fimDaJanela(c) {
+  const d = data(c.ultima_entrada_em)
+  return d ? new Date(d.getTime() + 86400000) : null
+}
+
+// Busca pelo começo de qualquer parte do nome (sem ligar para acento) ou por
+// 3+ dígitos do número.
+function combina(c, termo) {
+  const nome = String(c.nome || c.nome_perfil || '')
+  const pedaco = (texto) => COLLATOR.compare(texto.slice(0, termo.length), termo) === 0
+  if (nome.split(' ').some(pedaco) || pedaco(nome)) return true
+  const digitos = termo.split('').filter((x) => x >= '0' && x <= '9').join('')
+  return digitos.length >= 3 && String(c.telefone).includes(digitos)
+}
+
+function Avatar({ c, pequeno }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={
+        'figs flex shrink-0 items-center justify-center rounded-full bg-mist font-bold text-ink ' +
+        (pequeno ? 'h-10 w-10 text-[14px]' : 'h-11 w-11 text-[14.5px]')
+      }
+    >
+      {iniciais(c)}
+    </span>
+  )
+}
+
+function ItemDaLista({ c, ativa, onAbrir }) {
+  const ultima = ultimaMensagem(c)
+  const esperando = aguardandoVoce(c)
+  return (
+    <li className="border-b border-line last:border-b-0">
+      <button
+        type="button"
+        onClick={() => onAbrir(c.telefone)}
+        aria-current={ativa ? 'true' : undefined}
+        className={
+          'flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors duration-150 ' +
+          (ativa ? 'bg-paper' : 'hover:bg-paper/60')
+        }
+      >
+        <Avatar c={c} />
+        <span className="min-w-0 flex-1">
+          <span className="flex items-baseline justify-between gap-2">
+            <span className="truncate font-semibold text-ink">{nomeDe(c)}</span>
+            <span className={'figs shrink-0 text-[12px] ' + (esperando ? 'font-semibold text-ink' : 'text-ink-muted')}>
+              {quandoCurto(data(c.ultima_em))}
+            </span>
+          </span>
+          <span className="mt-0.5 flex items-center justify-between gap-2">
+            <span className="truncate text-[13.5px] text-ink-muted">
+              {ultima ? (ultima.direcao === 'saida' ? 'Você: ' : '') + ultima.texto : 'Sem mensagens'}
+            </span>
+            {esperando && (
+              <span className="flex shrink-0 items-center">
+                <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-signal" />
+                <span className="sr-only">esperando resposta</span>
+              </span>
+            )}
+          </span>
+        </span>
+      </button>
+    </li>
+  )
+}
+
+function Bolha({ m }) {
   const minha = m.direcao === 'saida'
+  const d = data(m.em)
   return (
     <li className={'flex ' + (minha ? 'justify-end' : 'justify-start')}>
       <div
         className={
-          'max-w-[85%] rounded px-3.5 py-2.5 text-[14.5px] leading-relaxed ' +
-          (minha ? 'bg-ink text-white' : 'border border-line bg-white text-ink')
+          'max-w-[85%] rounded-lg px-3 pb-1.5 pt-2 text-[14.5px] leading-snug sm:max-w-[70%] ' +
+          (minha ? 'rounded-br-sm bg-ink text-white' : 'rounded-bl-sm border border-line bg-white text-ink')
         }
       >
         <p className="whitespace-pre-wrap break-words">{m.texto}</p>
-        <p className={'figs mt-1 text-[11.5px] ' + (minha ? 'text-white/70' : 'text-ink-muted')}>
-          {dataHora(m.em)}
-          {minha && m.enviado_por ? ' · ' + m.enviado_por : ''}
+        <p className={'figs mt-0.5 text-right text-[11px] ' + (minha ? 'text-white/70' : 'text-ink-muted')}>
+          {minha && m.enviado_por ? apelido(m.enviado_por) + ' · ' : ''}
+          {d ? HORA.format(d) : ''}
         </p>
       </div>
     </li>
   )
 }
 
-function Responder({ conversa, configurado, onEnviado }) {
+// Mensagens agrupadas por dia, com o separador no meio, como no WhatsApp.
+function Mensagens({ c }) {
+  const caixa = useRef(null)
+  useEffect(() => {
+    const el = caixa.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [c.telefone, c.mensagens.length])
+
+  const itens = []
+  let diaAnterior = ''
+  c.mensagens.forEach((m, i) => {
+    const d = data(m.em)
+    const dia = d ? diaChave(d) : ''
+    if (d && dia !== diaAnterior) {
+      itens.push(
+        <li key={'dia-' + dia} className="flex justify-center py-1.5">
+          <span className="rounded bg-white px-2.5 py-1 text-[12px] font-semibold text-ink-muted">{separadorDoDia(d)}</span>
+        </li>
+      )
+      diaAnterior = dia
+    }
+    itens.push(<Bolha key={i} m={m} />)
+  })
+
+  return (
+    <div ref={caixa} className="min-h-0 flex-1 overflow-y-auto bg-paper px-3 py-4 sm:px-6">
+      <ol className="space-y-1.5" aria-label={'Mensagens com ' + nomeDe(c)}>
+        {itens}
+      </ol>
+    </div>
+  )
+}
+
+function Compositor({ c, configurado, onEnviado }) {
   const [texto, setTexto] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
+  const campo = useRef(null)
+
+  // Trocar de conversa limpa o rascunho e o erro da anterior.
+  useEffect(() => {
+    setTexto('')
+    setErro('')
+  }, [c.telefone])
+
+  // O campo cresce com o texto, até umas 6 linhas.
+  useEffect(() => {
+    const el = campo.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 150) + 'px'
+  }, [texto])
 
   if (!configurado) {
-    return <p className="text-[13.5px] text-ink-muted">Responder pelo site fica disponível quando o WhatsApp for configurado.</p>
-  }
-  if (!conversa.janela_aberta) {
     return (
-      <p className="rounded border border-dashed border-mist-deep px-3.5 py-3 text-[13.5px] text-ink-muted">
-        Janela de 24 h fechada — o cliente precisa escrever de novo.
+      <p className="border-t border-line bg-white px-4 py-3.5 text-center text-[13.5px] text-ink-muted">
+        Responder pelo site fica disponível quando o WhatsApp for configurado.
+      </p>
+    )
+  }
+  if (!c.janela_aberta) {
+    return (
+      <p className="border-t border-line bg-white px-4 py-3.5 text-center text-[13.5px] text-ink-muted">
+        Janela de 24 h fechada. O cliente precisa escrever de novo para você poder responder.
       </p>
     )
   }
 
   async function enviar(e) {
-    e.preventDefault()
+    if (e) e.preventDefault()
     const limpo = texto.trim()
-    if (!limpo) return
+    if (!limpo || enviando) return
     setErro('')
     setEnviando(true)
     try {
       const res = await fetch('/api/gestao/whatsapp/responder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefone: conversa.telefone, texto: limpo }),
+        body: JSON.stringify({ telefone: c.telefone, texto: limpo }),
       })
       const dados = await res.json().catch(() => null)
       if (res.status === 404) setErro('Sua sessão acabou. Entre de novo para responder.')
@@ -232,74 +421,190 @@ function Responder({ conversa, configurado, onEnviado }) {
       setErro('Falha de conexão. Confira a internet e tente de novo.')
     }
     setEnviando(false)
+    campo.current?.focus()
   }
 
-  const fecha = conversa.ultima_entrada_em ? new Date(new Date(conversa.ultima_entrada_em).getTime() + 86400000).toISOString() : null
+  // Enter envia; Shift+Enter quebra a linha (como no WhatsApp Web).
+  function tecla(e) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault()
+      enviar()
+    }
+  }
+
   return (
-    <form onSubmit={enviar} className="space-y-2">
-      <label htmlFor={'resposta-' + conversa.telefone} className="block text-[13px] font-semibold text-ink">
-        Responder
-        {fecha && <span className="figs font-normal text-ink-muted"> · janela aberta até {dataHora(fecha)}</span>}
-      </label>
-      <textarea
-        id={'resposta-' + conversa.telefone}
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
-        maxLength={LIMITE}
-        rows={3}
-        className="w-full rounded border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
-        placeholder="Escreva a resposta"
-      />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="figs text-[12.5px] text-ink-muted">
-          {texto.length}/{LIMITE}
-        </span>
-        <button
-          type="submit"
-          disabled={enviando || !texto.trim()}
-          className="btn-ink !px-5 !py-2.5 !text-[14.5px] disabled:opacity-50"
-        >
-          {enviando ? 'Enviando…' : 'Enviar no WhatsApp'}
-        </button>
-      </div>
+    <form onSubmit={enviar} className="border-t border-line bg-white px-3 py-2.5 sm:px-4">
       {erro && (
-        <p role="alert" className="text-[13.5px] font-medium text-signal-deep">
+        <p role="alert" className="mb-2 rounded border border-signal px-3 py-2 text-[13.5px] font-medium text-signal-deep">
           {erro}
         </p>
       )}
+      <div className="flex items-end gap-2">
+        <label htmlFor={'resposta-' + c.telefone} className="sr-only">
+          Mensagem para {nomeDe(c)}
+        </label>
+        <textarea
+          ref={campo}
+          id={'resposta-' + c.telefone}
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          onKeyDown={tecla}
+          maxLength={LIMITE}
+          rows={1}
+          className="max-h-[150px] min-h-[44px] flex-1 resize-none rounded-[22px] border border-line bg-paper px-4 py-2.5 focus-visible:rounded-[22px] text-[15px] leading-snug text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
+          placeholder="Mensagem"
+        />
+        <button
+          type="submit"
+          disabled={enviando || !texto.trim()}
+          aria-label={enviando ? 'Enviando' : 'Enviar no WhatsApp'}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-opacity duration-150 disabled:opacity-40"
+        >
+          {enviando ? (
+            <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+          ) : (
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+              <path d="M3.4 20.4 21 12 3.4 3.6l-.1 6.5L15 12 3.3 13.9z" />
+            </svg>
+          )}
+        </button>
+      </div>
+      <p className="figs mt-1 flex justify-between px-1 text-[11.5px] text-ink-muted">
+        <span className="hidden sm:inline">Enter envia · Shift+Enter quebra a linha</span>
+        <span className={texto.length > LIMITE - 100 ? 'font-semibold text-signal-deep' : ''}>
+          {texto.length > LIMITE - 200 ? texto.length + '/' + LIMITE : ''}
+        </span>
+      </p>
     </form>
   )
 }
 
-function Conversa({ c, configurado, onEnviado }) {
+function ConversaAberta({ c, configurado, onEnviado, onVoltar }) {
+  const fecha = fimDaJanela(c)
+  const hoje = fecha && diaChave(fecha) === diaChave(new Date())
+  const janela = c.janela_aberta && fecha
+    ? 'Pode responder até ' + (hoje ? '' : quandoCurto(fecha) + ' ') + HORA.format(fecha)
+    : 'Janela fechada'
   return (
-    <li className="rounded border border-line bg-paper/40">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-line bg-white px-4 py-3">
-        <div className="min-w-0">
-          <p className="font-semibold text-ink">{c.nome || c.nome_perfil || 'Sem nome'}</p>
-          <p className="figs break-all text-[13.5px] text-ink-muted">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center gap-3 border-b border-line bg-white px-3 py-2.5 sm:px-4">
+        <button
+          type="button"
+          onClick={onVoltar}
+          aria-label="Voltar para as conversas"
+          className="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink hover:bg-paper md:hidden"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
+        <Avatar c={c} pequeno />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold text-ink">{nomeDe(c)}</p>
+          <p className="figs truncate text-[12.5px] text-ink-muted">
             {celular(c.telefone)}
             {c.email ? ' · ' + c.email : ''}
           </p>
+          <p className="figs truncate text-[12px] text-ink-muted sm:hidden">{janela}</p>
         </div>
-        <p className="figs text-[12.5px] text-ink-muted">Última {dataHora(c.ultima_em)}</p>
+        <span
+          className={
+            'figs hidden shrink-0 rounded border px-2 py-1 text-[12px] font-semibold sm:inline-block ' +
+            (c.janela_aberta ? 'border-ink text-ink' : 'border-line text-ink-muted')
+          }
+        >
+          {janela}
+        </span>
       </div>
-      <ol className="space-y-2.5 px-4 py-4" aria-label={'Mensagens com ' + (c.nome || celular(c.telefone))}>
-        {c.mensagens.map((m, i) => (
-          <Mensagem key={i} m={m} />
-        ))}
-      </ol>
-      <div className="border-t border-line bg-white px-4 py-4">
-        <Responder conversa={c} configurado={configurado} onEnviado={onEnviado} />
-      </div>
-    </li>
+      <Mensagens c={c} />
+      <Compositor c={c} configurado={configurado} onEnviado={onEnviado} />
+    </div>
   )
 }
 
+function Conversas({ conversas, configurado, onEnviado }) {
+  const [aberta, setAberta] = useState(null)
+  const [busca, setBusca] = useState('')
+
+  const termo = busca.trim()
+  const filtradas = termo ? conversas.filter((c) => combina(c, termo)) : conversas
+  const atual = conversas.find((c) => c.telefone === aberta) || null
+  const esperando = conversas.filter(aguardandoVoce).length
+
+  return (
+    <div className="mt-5 grid h-[min(80vh,760px)] min-h-[480px] overflow-hidden rounded border border-line bg-white md:grid-cols-[340px_1fr]">
+      <div className={'min-h-0 flex-col md:flex md:border-r md:border-line ' + (atual ? 'hidden' : 'flex')}>
+        <div className="border-b border-line px-3.5 py-3">
+          <p className="figs text-[13px] text-ink-muted">
+            {numero(conversas.length)} {conversas.length === 1 ? 'conversa' : 'conversas'}
+            {esperando ? ' · ' + numero(esperando) + ' esperando resposta' : ''}
+          </p>
+          <label htmlFor="busca-conversa" className="sr-only">
+            Buscar conversa
+          </label>
+          <input
+            id="busca-conversa"
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar nome ou número"
+            className="mt-2 w-full rounded-full border border-line bg-paper px-4 py-2 text-[14px] focus-visible:rounded-full text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
+          />
+        </div>
+        {filtradas.length === 0 ? (
+          <p className="px-4 py-6 text-center text-[13.5px] text-ink-muted">Nenhuma conversa encontrada.</p>
+        ) : (
+          <ul className="min-h-0 flex-1 overflow-y-auto" aria-label="Conversas">
+            {filtradas.map((c) => (
+              <ItemDaLista key={c.telefone} c={c} ativa={c.telefone === aberta} onAbrir={setAberta} />
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className={'min-h-0 ' + (atual ? 'block' : 'hidden md:block')}>
+        {atual ? (
+          <ConversaAberta c={atual} configurado={configurado} onEnviado={onEnviado} onVoltar={() => setAberta(null)} />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center bg-paper px-6 text-center">
+            <p className="text-[15px] font-semibold text-ink">Escolha uma conversa</p>
+            <p className="mt-1 max-w-xs text-[13.5px] text-ink-muted">
+              O ponto vermelho marca quem está esperando resposta. Dá para responder até 24 h depois da última mensagem do cliente.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------- aba ----
+
+const PARTES = [
+  { id: 'conversas', rotulo: 'Conversas' },
+  { id: 'sequencias', rotulo: 'Sequências' },
+  { id: 'resultado', rotulo: 'Resultado' },
+]
+
 export default function WhatsappConversas() {
   const [tentativa, setTentativa] = useState(0)
+  const [parte, setParte] = useState('conversas')
   const { dados, erro, carregando } = useGestao('/api/gestao/whatsapp', tentativa)
   const t = dados?.totais
+  const recarregar = () => setTentativa((n) => n + 1)
+
+  // Mensagens novas chegam sozinhas: recarrega a cada 30 s com a aba à vista.
+  useEffect(() => {
+    if (parte !== 'conversas') return undefined
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') setTentativa((n) => n + 1)
+    }, ATUALIZAR_MS)
+    return () => clearInterval(id)
+  }, [parte])
+
+  const contagem = {
+    conversas: dados ? (dados.conversas || []).filter(aguardandoVoce).length : 0,
+    sequencias: dados ? (dados.sequencias || []).length : 0,
+  }
 
   return (
     <section aria-labelledby="titulo-whatsapp" className="mt-8">
@@ -308,58 +613,104 @@ export default function WhatsappConversas() {
         WhatsApp
       </h2>
 
-      {dados?.estado && <EstadoWhatsapp estado={dados.estado} onMudou={() => setTentativa((n) => n + 1)} />}
-
       {dados && !dados.configurado && (
         <p className="mb-5 rounded border border-line bg-white px-4 py-3 text-[14px] text-ink-muted">
           O WhatsApp ainda não está configurado. Os números e as conversas aparecem aqui quando ele for ligado.
         </p>
       )}
 
-      {t && (
-        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded border border-line bg-line lg:grid-cols-5">
-          <Total rotulo="Mensagens enviadas" valor={numero(t.enviados)} detalhe={numero(t.pessoas) + (t.pessoas === 1 ? ' pessoa' : ' pessoas') + (t.falharam ? ' · ' + numero(t.falharam) + ' não entregues' : '')} />
-          <Total rotulo="Entregues" valor={numero(t.entregues)} detalhe={porcentagem(t.entregues, t.enviados)} />
-          <Total rotulo="Lidas" valor={numero(t.lidos)} detalhe={porcentagem(t.lidos, t.enviados)} />
-          <Total rotulo="Compraram depois" valor={numero(t.recuperados)} detalhe={porcentagem(t.recuperados, t.pessoas) + ' das pessoas'} />
-          <Total className="col-span-2 lg:col-span-1" rotulo="Custo estimado" valor={moeda(t.custo_estimado_centavos)} detalhe="R$ 0,32 por mensagem" />
-        </dl>
-      )}
+      <div role="tablist" aria-label="WhatsApp" className="flex gap-1 overflow-x-auto border-b border-line">
+        {PARTES.map((p) => {
+          const ativa = parte === p.id
+          const n = contagem[p.id]
+          return (
+            <button
+              key={p.id}
+              type="button"
+              role="tab"
+              id={'aba-' + p.id}
+              aria-selected={ativa}
+              aria-controls={'painel-' + p.id}
+              onClick={() => setParte(p.id)}
+              className={
+                '-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-[14.5px] font-semibold transition-colors duration-150 ' +
+                (ativa ? 'border-ink text-ink' : 'border-transparent text-ink-muted hover:text-ink')
+              }
+            >
+              {p.rotulo}
+              {n > 0 && (
+                <span
+                  className={
+                    'figs rounded-full px-1.5 text-[11.5px] leading-[18px] ' +
+                    (p.id === 'conversas' ? 'bg-signal-deep text-white' : 'bg-mist text-ink')
+                  }
+                >
+                  {numero(n)}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
 
-      <h3 className="mt-10 text-[17px] font-bold text-ink">Sequências</h3>
-      <p className="mt-1 text-[13.5px] text-ink-muted">
-        Quem está recebendo os lembretes (até 9, um por semana) e quem já parou, com o motivo.
-      </p>
-      {dados && (dados.sequencias || []).length === 0 ? (
-        <Vazio titulo="Nenhuma sequência ainda" texto="Quando alguém receber a 1ª mensagem, aparece aqui." />
-      ) : dados ? (
-        <ul className={'mt-5 divide-y divide-line rounded border border-line bg-white ' + (carregando ? 'opacity-60 transition-opacity duration-150' : 'transition-opacity duration-150')}>
-          {dados.sequencias.map((s) => (
-            <Sequencia key={s.telefone + s.email} s={s} onMudou={() => setTentativa((n) => n + 1)} />
-          ))}
-        </ul>
-      ) : null}
-
-      <h3 className="mt-10 text-[17px] font-bold text-ink">Conversas</h3>
-      <p className="mt-1 text-[13.5px] text-ink-muted">
-        Respostas ao lembrete, a mais recente em cima. Também chegam por e-mail no suporte.
-      </p>
-
-      {erro ? (
-        <Aviso erro={erro} onTentar={() => setTentativa((n) => n + 1)} />
+      {erro && !dados ? (
+        <div className="mt-5">
+          <Aviso erro={erro} onTentar={recarregar} />
+        </div>
       ) : !dados ? (
-        <Esqueleto linhas={3} />
-      ) : dados.conversas.length === 0 ? (
-        <Vazio
-          titulo="Nenhuma conversa ainda"
-          texto="Quando alguém responder ao lembrete do WhatsApp, a conversa aparece aqui para você responder."
-        />
+        <div className="mt-5">
+          <Esqueleto linhas={4} />
+        </div>
       ) : (
-        <ul className={'mt-5 space-y-5 ' + (carregando ? 'opacity-60 transition-opacity duration-150' : 'transition-opacity duration-150')}>
-          {dados.conversas.map((c) => (
-            <Conversa key={c.telefone} c={c} configurado={dados.configurado} onEnviado={() => setTentativa((n) => n + 1)} />
-          ))}
-        </ul>
+        <div role="tabpanel" id={'painel-' + parte} aria-labelledby={'aba-' + parte}>
+          {erro && (
+            <div className="mt-5">
+              <Aviso erro={erro} onTentar={recarregar} />
+            </div>
+          )}
+
+          {parte === 'conversas' &&
+            (dados.conversas.length === 0 ? (
+              <Vazio
+                titulo="Nenhuma conversa ainda"
+                texto="Quando alguém responder ao lembrete do WhatsApp, a conversa aparece aqui para você responder."
+              />
+            ) : (
+              <Conversas conversas={dados.conversas} configurado={dados.configurado} onEnviado={recarregar} />
+            ))}
+
+          {parte === 'sequencias' && (
+            <>
+              <p className="mt-5 text-[13.5px] text-ink-muted">
+                Quem está recebendo os lembretes (até 9, um por semana) e quem já parou, com o motivo.
+              </p>
+              {(dados.sequencias || []).length === 0 ? (
+                <Vazio titulo="Nenhuma sequência ainda" texto="Quando alguém receber a 1ª mensagem, aparece aqui." />
+              ) : (
+                <ul className={'mt-4 divide-y divide-line rounded border border-line bg-white transition-opacity duration-150 ' + (carregando ? 'opacity-60' : '')}>
+                  {dados.sequencias.map((s) => (
+                    <Sequencia key={s.telefone + s.email} s={s} onMudou={recarregar} />
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+
+          {parte === 'resultado' && (
+            <div className="mt-5">
+              {dados.estado && <EstadoWhatsapp estado={dados.estado} onMudou={recarregar} />}
+              {t && (
+                <dl className="grid grid-cols-2 gap-px overflow-hidden rounded border border-line bg-line lg:grid-cols-5">
+                  <Total rotulo="Mensagens enviadas" valor={numero(t.enviados)} detalhe={numero(t.pessoas) + (t.pessoas === 1 ? ' pessoa' : ' pessoas') + (t.falharam ? ' · ' + numero(t.falharam) + ' não entregues' : '')} />
+                  <Total rotulo="Entregues" valor={numero(t.entregues)} detalhe={porcentagem(t.entregues, t.enviados)} />
+                  <Total rotulo="Lidas" valor={numero(t.lidos)} detalhe={porcentagem(t.lidos, t.enviados)} />
+                  <Total rotulo="Compraram depois" valor={numero(t.recuperados)} detalhe={porcentagem(t.recuperados, t.pessoas) + ' das pessoas'} />
+                  <Total className="col-span-2 lg:col-span-1" rotulo="Custo estimado" valor={moeda(t.custo_estimado_centavos)} detalhe="R$ 0,32 por mensagem" />
+                </dl>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </section>
   )
