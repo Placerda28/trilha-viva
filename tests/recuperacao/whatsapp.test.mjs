@@ -5,10 +5,13 @@ import { readFileSync } from 'node:fs'
 import { createHmac } from 'node:crypto'
 import {
   assinaturaValida,
+  nomeDoArquivo,
   pedidoDeSaida,
+  pedidoMidia,
   pedidoModelo,
   primeiroNome,
   telefoneSemPais,
+  textoRetomar,
 } from '../../lib/whatsapp-meta.js'
 import {
   atenderWebhook,
@@ -20,6 +23,10 @@ import {
   acaoDeEstadoValida,
   consultarConversas,
   explicarErroMeta,
+  midiaDaMensagemGuardada,
+  responderComAnexo,
+  retomarConversa,
+  validarAnexo,
   lerEstadoWhatsapp,
   mudarEstadoWhatsapp,
   responderConversa,
@@ -64,6 +71,7 @@ function banco() {
     '0008_whatsapp_meta',
     '0009_whatsapp_estado',
     '0010_whatsapp_sequencia',
+    '0011_whatsapp_anexos',
   ]) {
     b.exec(readFileSync(`migrations/${arquivo}.sql`, 'utf8'))
   }
@@ -462,7 +470,7 @@ test('gestão: conversas com janela de 24 h, totais e custo estimado', async () 
   ])
   assert.equal(conversas[0].mensagens[0].texto, 'oi')
   const t = await totaisWhatsapp(db)
-  assert.deepEqual(t, { enviados: 1, pessoas: 1, entregues: 1, lidos: 1, falharam: 0, recuperados: 0, custo_estimado_centavos: 32 })
+  assert.deepEqual(t, { enviados: 1, pessoas: 1, entregues: 1, lidos: 1, falharam: 0, recuperados: 0, retomadas: 0, custo_estimado_centavos: 32 })
 })
 
 test('gestão: responder só dentro da janela; fora dela recusa sem chamar a Meta', async () => {
@@ -815,4 +823,135 @@ test('erro da Meta vira frase com o código, sem token', () => {
   assert.match(explicarErroMeta(prazo), /não respondeu a tempo/)
   assert.match(explicarErroMeta(new Error('rede')), /não aceitou a mensagem/)
   assert.match(explicarErroMeta(Object.assign(new Error('x: y'), { codigo: 999 })), /código 999/)
+})
+
+// ------------------------------------------------ anexos e chamar de novo ----
+
+// Finge a Meta para anexos: /media devolve o id; /messages devolve o wamid;
+// GET da mídia devolve o endereço e o download devolve os bytes.
+function falsaMetaDeMidia({ falha = null } = {}) {
+  const pedidos = []
+  const fetchImpl = async (url, opcoes = {}) => {
+    const texto = String(url)
+    const corpo = typeof opcoes.body === 'string' ? JSON.parse(opcoes.body) : opcoes.body || null
+    pedidos.push({ url: texto, metodo: opcoes.method || 'GET', corpo, headers: opcoes.headers || {} })
+    if (falha) return new Response(JSON.stringify({ error: { code: falha, message: 'falhou' } }), { status: 400 })
+    if (texto.endsWith('/media')) return new Response(JSON.stringify({ id: 'midia.1' }), { status: 200 })
+    if (texto.endsWith('/messages')) return new Response(JSON.stringify({ messages: [{ id: 'wamid.anexo' }] }), { status: 200 })
+    if (texto.includes('/midia.recebida')) {
+      return new Response(JSON.stringify({ url: 'https://lookaside.example/arquivo', mime_type: 'image/jpeg' }), { status: 200 })
+    }
+    if (texto === 'https://lookaside.example/arquivo') return new Response('bytes-da-foto', { status: 200, headers: { 'content-type': 'image/jpeg' } })
+    return new Response('{}', { status: 404 })
+  }
+  return { fetchImpl, pedidos }
+}
+
+test('anexo: tipo, tamanho e legenda conferidos antes de chamar a Meta', () => {
+  assert.equal(validarAnexo({ telefone: '27911110000', mime: 'image/png', tamanho: 1000 }).ok, true)
+  assert.equal(validarAnexo({ telefone: '27911110000', mime: 'application/pdf', tamanho: 10 * 1024 * 1024 }).ok, true)
+  assert.match(validarAnexo({ telefone: '27911110000', mime: 'application/pdf', tamanho: 10 * 1024 * 1024 + 1 }).erro, /10 MB/)
+  assert.match(validarAnexo({ telefone: '27911110000', mime: 'image/jpeg', tamanho: 6 * 1024 * 1024 }).erro, /5 MB/)
+  assert.match(validarAnexo({ telefone: '27911110000', mime: 'text/html', tamanho: 10 }).erro, /não vai pelo WhatsApp/)
+  assert.match(validarAnexo({ telefone: '27911110000', mime: 'image/png', tamanho: 0 }).erro, /vazio/)
+  assert.match(validarAnexo({ telefone: '123', mime: 'image/png', tamanho: 10 }).erro, /Conversa inválida/)
+  assert.match(validarAnexo({ telefone: '27911110000', mime: 'image/png', tamanho: 10, legenda: 'x'.repeat(1001) }).erro, /legenda/)
+  assert.equal(nomeDoArquivo('C:/pasta/../contrato.pdf'), 'contrato.pdf')
+})
+
+test('anexo: dentro da janela sobe o arquivo, envia com legenda e grava; fora dela não chama a Meta', async () => {
+  const b = banco()
+  b.exec(`
+    INSERT INTO whatsapp_mensagens (wa_msg_id, telefone, direcao, texto, criado_em)
+      VALUES ('a', '27911110000', 'entrada', 'oi', datetime('now', '-2 hours')),
+             ('b', '27922220000', 'entrada', 'oi', datetime('now', '-25 hours'));
+  `)
+  const db = new D1Local(b)
+  const env = ambiente(db)
+  const m = falsaMetaDeMidia()
+  const pdf = validarAnexo({ telefone: '27911110000', mime: 'application/pdf', tamanho: 5, legenda: 'Segue o recibo' })
+
+  const fechada = await responderComAnexo(db, env, { telefone: '27922220000', midia: pdf.midia, legenda: '', arquivo: new Uint8Array(5), nome: 'r.pdf', quem: 'p@example.com' }, m.fetchImpl)
+  assert.equal(fechada.status, 409)
+  assert.equal(m.pedidos.length, 0)
+
+  const r = await responderComAnexo(db, env, { telefone: '27911110000', midia: pdf.midia, legenda: pdf.legenda, arquivo: new Uint8Array(5), nome: 'recibo.pdf', quem: 'p@example.com' }, m.fetchImpl)
+  assert.equal(r.ok, true)
+  assert.equal(m.pedidos[0].url, 'https://graph.facebook.com/v23.0/123456/media')
+  assert.equal(m.pedidos[0].corpo.get('type'), 'application/pdf')
+  assert.deepEqual(m.pedidos[1].corpo.document, { id: 'midia.1', caption: 'Segue o recibo', filename: 'recibo.pdf' })
+  assert.equal(m.pedidos[1].corpo.to, '5527911110000')
+  const linha = { ...b.prepare(`SELECT texto, midia_tipo, midia_id, midia_nome, enviado_por FROM whatsapp_mensagens WHERE direcao = 'saida'`).get() }
+  assert.deepEqual(linha, { texto: 'Segue o recibo', midia_tipo: 'document', midia_id: 'midia.1', midia_nome: 'recibo.pdf', enviado_por: 'p@example.com' })
+
+  // A conversa mostra o anexo, sem o id da Meta.
+  const [conversa] = (await consultarConversas(db)).filter((c) => c.telefone === '27911110000')
+  const ultima = conversa.mensagens[conversa.mensagens.length - 1]
+  assert.deepEqual(ultima.midia, { tipo: 'document', nome: 'recibo.pdf', mime: 'application/pdf' })
+  assert.equal(JSON.stringify(conversa).includes('midia.1'), false)
+
+  // Áudio não leva legenda.
+  assert.equal(pedidoMidia('27911110000', { tipo: 'audio', midiaId: 'x', legenda: 'oi' }).audio.caption, undefined)
+})
+
+test('anexo recebido: o webhook grava foto com legenda e o e-mail diz o que chegou; a gestão busca o arquivo na Meta', async () => {
+  const b = banco()
+  carrinho(b, 'c1', 'maria@example.com', '27911110000')
+  const s = falsoServidor()
+  const env = ambiente(new D1Local(b))
+  const corpo = aviso({ mensagens: [{ from: '5527911110000', id: 'wamid.foto', type: 'image', image: { id: 'midia.recebida', mime_type: 'image/jpeg', caption: 'olha o erro' } }] })
+  assert.equal((await atenderWebhook(assinado(corpo), env, { fetchImpl: s.fetchImpl, logger: mudo })).status, 200)
+  const linha = { ...b.prepare('SELECT id, texto, midia_tipo, midia_id, midia_mime FROM whatsapp_mensagens').get() }
+  assert.deepEqual({ ...linha, id: undefined }, { id: undefined, texto: 'olha o erro', midia_tipo: 'image', midia_id: 'midia.recebida', midia_mime: 'image/jpeg' })
+  assert.match(s.emails()[0].corpo.text, /\[foto\] olha o erro/)
+
+  const m = falsaMetaDeMidia()
+  const midia = await midiaDaMensagemGuardada(new D1Local(b), env, linha.id, m.fetchImpl)
+  assert.equal(midia.ok, true)
+  assert.equal(midia.mime, 'image/jpeg')
+  assert.equal(await midia.resposta.text(), 'bytes-da-foto')
+  assert.equal(m.pedidos[1].headers.Authorization, 'Bearer token-teste')
+  assert.equal((await midiaDaMensagemGuardada(new D1Local(b), env, 999, m.fetchImpl)).status, 404)
+  assert.equal((await midiaDaMensagemGuardada(new D1Local(b), env, 'abc', m.fetchImpl)).status, 404)
+})
+
+test('chamar de novo: só com a janela fechada, uma vez a cada 24 h, nunca para quem saiu; conta no custo', async () => {
+  const b = banco()
+  carrinho(b, 'c1', 'maria@example.com', '27911110000', '-4 hours', { nome: 'Maria Clara' })
+  carrinho(b, 'c2', 'joao@example.com', '27922220000', '-4 hours', { nome: 'João' })
+  carrinho(b, 'c3', 'ana@example.com', '27933330000', '-4 hours', { nome: 'Ana' })
+  b.exec(`
+    INSERT INTO whatsapp_mensagens (wa_msg_id, telefone, direcao, texto, criado_em)
+      VALUES ('a', '27911110000', 'entrada', 'oi', datetime('now', '-30 hours')),
+             ('b', '27922220000', 'entrada', 'oi', datetime('now', '-2 hours')),
+             ('c', '27933330000', 'entrada', 'oi', datetime('now', '-30 hours'));
+    INSERT INTO descadastros (email, canal) VALUES ('ana@example.com', 'whatsapp');
+  `)
+  const db = new D1Local(b)
+  const env = ambiente(db)
+  const s = falsoServidor()
+
+  assert.equal((await retomarConversa(db, env, { telefone: '27922220000', quem: 'p@example.com' }, s.fetchImpl)).status, 409)
+  assert.match((await retomarConversa(db, env, { telefone: '27933330000', quem: 'p@example.com' }, s.fetchImpl)).erro, /não receber/)
+  assert.equal(s.meta().length, 0)
+
+  const r = await retomarConversa(db, env, { telefone: '27911110000', quem: 'p@example.com' }, s.fetchImpl)
+  assert.equal(r.ok, true)
+  assert.equal(s.meta()[0].corpo.template.name, 'retomar_conversa')
+  assert.equal(s.meta()[0].corpo.template.components[0].parameters[0].text, 'Maria')
+  const linha = { ...b.prepare(`SELECT texto, modelo, enviado_por FROM whatsapp_mensagens WHERE direcao = 'saida'`).get() }
+  assert.deepEqual(linha, { texto: textoRetomar('Maria Clara'), modelo: 'retomar_conversa', enviado_por: 'p@example.com' })
+
+  assert.match((await retomarConversa(db, env, { telefone: '27911110000', quem: 'p@example.com' }, s.fetchImpl)).erro, /últimas 24 h/)
+  assert.equal(s.meta().length, 1)
+  assert.equal((await totaisWhatsapp(db)).retomadas, 1)
+  assert.equal((await totaisWhatsapp(db)).custo_estimado_centavos, 32)
+
+  const [conversa] = (await consultarConversas(db)).filter((c) => c.telefone === '27911110000')
+  assert.equal(conversa.mensagens[conversa.mensagens.length - 1].modelo, 'retomar_conversa')
+
+  // Modelo ainda não aprovado: a tela explica.
+  b.exec(`DELETE FROM whatsapp_mensagens WHERE modelo IS NOT NULL`)
+  const m = falsaMetaDeMidia({ falha: 132001 })
+  assert.match((await retomarConversa(db, env, { telefone: '27911110000', quem: 'p@example.com' }, m.fetchImpl)).erro, /ainda não foi aprovado/)
 })

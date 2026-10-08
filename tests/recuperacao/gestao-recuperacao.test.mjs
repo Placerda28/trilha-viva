@@ -44,6 +44,7 @@ function bancoGestao() {
   banco.exec(readFileSync('migrations/0008_whatsapp_meta.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0009_whatsapp_estado.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0010_whatsapp_sequencia.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0011_whatsapp_anexos.sql', 'utf8'))
   return banco
 }
 

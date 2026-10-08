@@ -53,6 +53,7 @@ const MIGRACOES = [
   '0008_whatsapp_meta',
   '0009_whatsapp_estado',
   '0010_whatsapp_sequencia',
+  '0011_whatsapp_anexos',
 ]
 
 function banco(ate = MIGRACOES.length) {

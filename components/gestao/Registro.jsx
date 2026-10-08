@@ -19,6 +19,8 @@ const ACOES = {
   cliente_bloqueado: 'bloqueou o cliente',
   cliente_liberado: 'liberou o cliente',
   whatsapp_respondido: 'respondeu no WhatsApp',
+  whatsapp_anexo: 'mandou anexo no WhatsApp',
+  whatsapp_retomado: 'chamou de novo no WhatsApp (pago)',
   cliente_email_corrigido: 'corrigiu o e-mail do cliente para',
   acesso_reenviado: 'reenviou o acesso para',
   whatsapp_pausar: 'pausou o WhatsApp',

@@ -4,6 +4,7 @@ import {
   assinaturaValida,
   chamarMeta,
   configuracaoMeta,
+  midiaDaMensagem,
   pedidoDeSaida,
   pedidoModelo,
   pedidoTexto,
@@ -530,6 +531,8 @@ async function seguinte(db, env, carrinho, { agora, agoraSql, tetoDia, aprovados
 
 // -------------------------------------------------------------- webhook ----
 
+const ROTULOS_MIDIA = { image: 'foto', document: 'arquivo', audio: 'áudio', video: 'vídeo', sticker: 'figurinha' }
+
 function textoDaMensagem(mensagem) {
   if (mensagem?.type === 'text') return String(mensagem.text?.body || '')
   if (mensagem?.type === 'button') return String(mensagem.button?.text || mensagem.button?.payload || '')
@@ -582,16 +585,20 @@ async function pararPelaResposta(db, telefone, motivo) {
      WHERE telefone = ? AND whatsapp_enviado_em IS NOT NULL AND whatsapp_encerrado_em IS NULL`).bind(motivo, telefone).run()
 }
 
-async function guardarMensagem(db, { waId, telefone, nome, direcao, texto, enviadoPor = null }) {
+async function guardarMensagem(db, { waId, telefone, nome, direcao, texto, enviadoPor = null, midia = null }) {
   const resultado = await db.prepare(`
-    INSERT OR IGNORE INTO whatsapp_mensagens (wa_msg_id, telefone, nome_perfil, direcao, texto, enviado_por)
-    VALUES (?, ?, ?, ?, ?, ?)`).bind(
+    INSERT OR IGNORE INTO whatsapp_mensagens (wa_msg_id, telefone, nome_perfil, direcao, texto, enviado_por, midia_tipo, midia_id, midia_nome, midia_mime)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(
     waId || null,
     telefone,
     nome ? String(nome).slice(0, 80) : null,
     direcao,
     String(texto || '').slice(0, 4000),
-    enviadoPor
+    enviadoPor,
+    midia?.tipo || null,
+    midia?.id || null,
+    midia?.nome || null,
+    midia?.mime || null
   ).run()
   return mudancas(resultado) === 1
 }
@@ -621,14 +628,20 @@ async function tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger) {
   const telefone = telefoneSemPais(mensagem?.from)
   if (!telefone) return
   const nome = nomes.get(String(mensagem.from)) || null
-  const texto = textoDaMensagem(mensagem)
+  // Foto, áudio, vídeo, documento: o arquivo fica na Meta (a gestão busca na
+  // hora); aqui vão a legenda e o id. O e-mail diz o que chegou.
+  const midia = midiaDaMensagem(mensagem)
+  const texto = midia ? midia.legenda : textoDaMensagem(mensagem)
+  const resumo = midia
+    ? `[${ROTULOS_MIDIA[midia.tipo] || 'arquivo'}${midia.nome ? ': ' + midia.nome : ''}]${texto ? ' ' + texto : ''}`
+    : texto
 
   // A gestão guarda o telefone sem o 55 e responde pondo o 55 de volta: um
   // número de fora (ex.: +1 631...) viraria um celular brasileiro qualquer.
   // Por isso ele só é encaminhado por e-mail, com o DDI.
   if (telefone === String(mensagem.from).replace(/\D/g, '')) {
     try {
-      await encaminharPorEmail(env, { nome, telefone: `+${telefone}`, texto, estrangeiro: true }, fetchImpl)
+      await encaminharPorEmail(env, { nome, telefone: `+${telefone}`, texto: resumo, estrangeiro: true }, fetchImpl)
     } catch (erro) {
       logger.error('Encaminhamento por e-mail falhou (número de fora do Brasil):', erro?.message || erro)
     }
@@ -646,7 +659,7 @@ async function tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger) {
     }
     await pararPelaResposta(db, telefone, 'descadastro')
     // O wa_msg_id é único: aviso repetido não manda a confirmação de novo.
-    if (!(await guardarMensagem(db, { waId: mensagem.id, telefone, nome, direcao: 'entrada', texto }))) return
+    if (!(await guardarMensagem(db, { waId: mensagem.id, telefone, nome, direcao: 'entrada', texto, midia }))) return
     try {
       const id = await chamarMeta(env, pedidoTexto(telefone, CONFIRMACAO_SAIDA), fetchImpl)
       await guardarMensagem(db, { waId: id, telefone, nome: null, direcao: 'saida', texto: CONFIRMACAO_SAIDA, enviadoPor: 'robô' })
@@ -660,9 +673,9 @@ async function tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger) {
   // pode repetir) é refeita.
   await pararPelaResposta(db, telefone, 'respondeu')
   // O wa_msg_id é único: aviso repetido da Meta não grava nem encaminha de novo.
-  if (!(await guardarMensagem(db, { waId: mensagem.id, telefone, nome, direcao: 'entrada', texto }))) return
+  if (!(await guardarMensagem(db, { waId: mensagem.id, telefone, nome, direcao: 'entrada', texto, midia }))) return
   try {
-    await encaminharPorEmail(env, { nome, telefone, texto }, fetchImpl)
+    await encaminharPorEmail(env, { nome, telefone, texto: resumo }, fetchImpl)
   } catch (erro) {
     // A mensagem já está gravada e aparece na gestão; só o aviso por e-mail falhou.
     logger.error(`Encaminhamento por e-mail falhou (${mascararTelefone(telefone)}):`, erro?.message || erro)
