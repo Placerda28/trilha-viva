@@ -55,6 +55,7 @@ const MIGRACOES = [
   '0010_whatsapp_sequencia',
   '0011_whatsapp_anexos',
   '0013_testes',
+  '0015_whatsapp_aviso_acesso',
 ]
 
 function banco(ate = MIGRACOES.length) {
@@ -124,6 +125,7 @@ function metaFalsa({ modelos = { carrinho_lembrete: 'APPROVED', carrinho_preco: 
     fetchImpl,
     envios: () => pedidos.filter((p) => p.url.endsWith('/messages')),
     consultas: () => pedidos.filter((p) => p.url.includes('/message_templates')),
+    avisosDeParada: () => pedidos.filter((p) => /WhatsApp parado/.test(p.corpo?.subject || '')),
   }
 }
 
@@ -446,6 +448,61 @@ test('erro da conta (cartão) não prejudica a pessoa: fica para amanhã e a rod
   const falha = b.prepare(`SELECT etapa, wa_status, wa_erro FROM lembretes_enviados WHERE carrinho_id = 'b' AND etapa = 2`).get()
   assert.deepEqual({ ...falha }, { etapa: 2, wa_status: 'failed', wa_erro: '131026' })
   assert.equal(estadoDe(b, 'b').etapa, 2)
+})
+
+test('token/acesso recusado na 1ª (200, 190, 10): o carrinho continua na fila e sai quando volta; 1 aviso por dia', async () => {
+  const b = banco()
+  b.exec(`
+    INSERT INTO carrinhos (id, email, nome, telefone, criado_em) VALUES
+      ('ana', 'ana@example.com', 'Ana', '27911110000', '2026-01-15 10:00:00'),
+      ('bia', 'bia@example.com', 'Bia', '27922220000', '2026-01-15 10:30:00');
+  `)
+  const meta = metaFalsa({ erros: [200, 190, 10] })
+  const carrinho = (id) => ({
+    ...b.prepare(`SELECT whatsapp_enviado_em AS enviado, whatsapp_falhou_em AS falhou, whatsapp_etapa AS etapa FROM carrinhos WHERE id = ?`).get(id),
+  })
+
+  await rodada(b, meta, T0)
+  assert.equal(meta.envios().length, 1, 'a rodada para no 1º erro de acesso')
+  assert.deepEqual(carrinho('ana'), { enviado: null, falhou: null, etapa: 0 })
+  assert.equal(b.prepare(`SELECT COUNT(*) AS n FROM lembretes_enviados WHERE canal = 'whatsapp'`).get().n, 0)
+  assert.equal(meta.avisosDeParada().length, 1)
+  assert.match(meta.avisosDeParada()[0].corpo.subject, /token\/acesso recusado pela Meta \(código 200\)/)
+
+  // Mesmo dia, outro código: tenta de novo, mas não manda outro e-mail.
+  await rodada(b, meta, '2026-01-15 15:10:00')
+  assert.equal(meta.envios().length, 2)
+  assert.equal(meta.avisosDeParada().length, 1)
+
+  // No dia seguinte (ainda dentro das 48 h): novo aviso.
+  await rodada(b, meta, '2026-01-16 12:00:00')
+  assert.equal(meta.avisosDeParada().length, 2)
+  assert.match(meta.avisosDeParada()[1].corpo.subject, /código 10\)/)
+
+  // Token arrumado: as duas saem pelo caminho normal.
+  await rodada(b, meta, '2026-01-16 12:10:00')
+  assert.deepEqual(meta.envios().slice(3).map((p) => p.corpo.to), ['5527911110000', '5527922220000'])
+  const lembrete = b.prepare(`SELECT etapa, wa_msg_id, wa_status FROM lembretes_enviados WHERE carrinho_id = 'ana' AND canal = 'whatsapp'`).get()
+  assert.deepEqual({ ...lembrete }, { etapa: 1, wa_msg_id: 'wamid.1', wa_status: 'sent' })
+  assert.equal(carrinho('ana').etapa, 1)
+  assert.equal(meta.avisosDeParada().length, 2)
+})
+
+test('erro do número na 1ª continua definitivo; token recusado numa semanal fica para amanhã e avisa', async () => {
+  const b = banco()
+  b.exec(`INSERT INTO carrinhos (id, email, telefone, criado_em) VALUES ('x', 'x@example.com', '27933330000', '2026-01-15 10:00:00')`)
+  const numero = metaFalsa({ erros: [131026] })
+  await rodada(b, numero, T0)
+  await rodada(b, numero, '2026-01-15 15:10:00')
+  assert.equal(numero.envios().length, 1)
+  assert.equal(b.prepare(`SELECT whatsapp_erro FROM carrinhos WHERE id = 'x' AND whatsapp_falhou_em IS NOT NULL`).get().whatsapp_erro, '131026')
+  assert.equal(numero.avisosDeParada().length, 0)
+
+  emSequencia(b, 's', { telefone: '27911110001' })
+  const token = metaFalsa({ erros: [190] })
+  await rodada(b, token, '2026-01-15 15:20:00')
+  assert.deepEqual(estadoDe(b, 's'), { etapa: 1, proximo: '2026-01-16 15:20:00', encerrado: 0, motivo: null })
+  assert.equal(token.avisosDeParada().length, 1)
 })
 
 test('migração 0010: quem já recebeu a 1ª vira "1 de 9", com id e status, e a 2ª uma semana depois', () => {

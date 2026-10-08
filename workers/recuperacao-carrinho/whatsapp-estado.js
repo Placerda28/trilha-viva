@@ -79,6 +79,13 @@ const ERROS_META = {
   200: 'O usuário do sistema não tem permissão na conta do WhatsApp. Confira os ativos atribuídos ao Trilhavivarobo.',
 }
 
+// Token ou acesso recusado (190 token, 102 sessão, 3 e 10 permissão, 200 a
+// 299 permissões): é da conta, nunca da pessoa.
+export function erroDeAcesso(codigo) {
+  const n = Number(codigo)
+  return n === 3 || n === 10 || n === 102 || n === 190 || (n >= 200 && n <= 299)
+}
+
 export function explicarErro(codigo, detalhe = '') {
   const conhecido = ERROS_META[Number(codigo)]
   return conhecido
@@ -294,6 +301,32 @@ async function atualizarModelos(db, env, fetchImpl, logger) {
       INSERT INTO whatsapp_modelos (nome, status, botao_url, conferido_em) VALUES (?, ?, ?, datetime('now'))
       ON CONFLICT(nome) DO UPDATE SET status = excluded.status, botao_url = excluded.botao_url,
                                       conferido_em = excluded.conferido_em`).bind(nome, status, botaoUrl).run()
+  }
+}
+
+// ------------------------------------------ token/acesso recusado ----
+
+// O WhatsApp para para todo mundo até o Paulo resolver. No máximo 1 e-mail
+// por dia de Brasília; se o e-mail não sair, a próxima rodada tenta de novo.
+export async function avisarAcessoRecusado(db, env, codigo, agora, fetchImpl, logger) {
+  const dia = hojeBrasilia(agora)
+  const vez = await db.prepare(`
+    UPDATE whatsapp_estado SET acesso_avisado_em = ?
+     WHERE id = 1 AND COALESCE(acesso_avisado_em, '') <> ?`).bind(dia, dia).run()
+  if (!mudou(vez)) return false
+  const texto = `O robô tentou mandar um WhatsApp e a Meta recusou o token ou o acesso.\n\n${explicarErro(codigo)}\n\nNenhum carrinho foi prejudicado: quem estava na vez continua na fila, e o robô tenta de novo a cada rodada (dentro das 48 h do carrinho, das 9h às 20h). Este aviso vem no máximo 1 vez por dia.`
+  try {
+    await emailAoSuporte(env, {
+      assunto: `WhatsApp parado: token/acesso recusado pela Meta (código ${codigo})`,
+      texto,
+      html: paragrafos(texto),
+    }, fetchImpl)
+    return true
+  } catch (erro) {
+    logger.error('Aviso de WhatsApp parado não enviado:', erro?.message || erro)
+    await db.prepare(`
+      UPDATE whatsapp_estado SET acesso_avisado_em = NULL WHERE id = 1 AND acesso_avisado_em = ?`).bind(dia).run()
+    return false
   }
 }
 

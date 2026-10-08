@@ -28,6 +28,8 @@ import {
 import {
   CAMINHO_LINK_WHATSAPP,
   atenderLink,
+  avisarAcessoRecusado,
+  erroDeAcesso,
   modelosDaSequencia,
   prepararLigacao,
   resumoDoDia,
@@ -229,6 +231,15 @@ async function reservarPrimeira(db, carrinho, modelo, tetoDia, agoraSql) {
 async function apagarReserva(db, id, etapa) {
   await db.prepare(`
     DELETE FROM lembretes_enviados WHERE carrinho_id = ? AND canal = 'whatsapp' AND etapa = ?`).bind(id, etapa).run()
+}
+
+// Token ou acesso recusado na 1ª: desfaz a vaga e o carrinho volta para a
+// fila (a busca já respeita as 48 h e o horário).
+async function devolverPrimeira(db, id) {
+  await apagarReserva(db, id, 1)
+  await db.prepare(`
+    UPDATE carrinhos SET whatsapp_enviado_em = NULL, whatsapp_etapa = 0, proximo_whatsapp_em = NULL
+     WHERE id = ? AND whatsapp_etapa = 1`).bind(id).run()
 }
 
 // A 1ª não saiu: o carrinho não entra na sequência e não tenta de novo.
@@ -456,12 +467,23 @@ export async function executarWhatsapp(env, opcoes = {}) {
       enviadosHoje += 1
       resultado.enviados += 1
     } catch (erro) {
-      // Sem repetir: uma falha na 1ª marca o carrinho e ele não volta para a fila.
       resultado.falhas += 1
       logger.error(
         `WhatsApp não enviado para ${mascararTelefone(carrinho.telefone)} (carrinho ${carrinho.id}):`,
         erro?.message || erro
       )
+      // Token ou acesso recusado não é da pessoa: o carrinho volta para a
+      // fila, o Paulo é avisado e a rodada para (as outras também falhariam).
+      if (erroDeAcesso(erro?.codigo)) {
+        try {
+          await devolverPrimeira(db, carrinho.id)
+          await avisarAcessoRecusado(db, env, erro.codigo, agora, fetchImpl, logger)
+        } catch (erroBanco) {
+          logger.error(`Falha ao devolver o WhatsApp do carrinho ${carrinho.id} para a fila:`, erroBanco)
+        }
+        break
+      }
+      // Os outros erros, sem repetir: o carrinho fica marcado e não volta para a fila.
       try {
         await registrarFalhaDaPrimeira(db, carrinho.id, erro?.codigo)
       } catch (erroBanco) {
@@ -547,6 +569,7 @@ async function seguinte(db, env, carrinho, { agora, agoraSql, tetoDia, aprovados
       }
       const amanha = ajustarHorario(new Date(agora.getTime() + 24 * 3600000), dias)
       await adiarSeguinte(db, carrinho, etapa, paraSql(amanha))
+      if (erroDeAcesso(codigo)) await avisarAcessoRecusado(db, env, codigo, agora, fetchImpl, logger)
     } catch (erroBanco) {
       logger.error(`Falha ao registrar o erro do WhatsApp do carrinho ${carrinho.id}:`, erroBanco)
     }
