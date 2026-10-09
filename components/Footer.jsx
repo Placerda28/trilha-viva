@@ -45,6 +45,20 @@ export default function Footer() {
               Multitracks gospel com clique, guia e cada instrumento em um canal separado. Um
               pagamento, sem mensalidade.
             </p>
+            <a
+              href="https://www.instagram.com/trilhavivamultitracks/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram da Trilha Viva: @trilhavivamultitracks (abre em nova aba)"
+              className="mt-5 flex w-fit min-h-11 items-center gap-2 text-[14.5px] text-white/75 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="5" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="17.5" cy="6.5" r="0.9" fill="currentColor" stroke="none" />
+              </svg>
+              <span>@trilhavivamultitracks</span>
+            </a>
             <Link href="/assinar" className="btn-signal mt-7 !py-3.5 !px-6 !text-[14.5px]">
               Ver o pacote completo
             </Link>

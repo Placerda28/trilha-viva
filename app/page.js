@@ -316,7 +316,7 @@ export default function Home() {
       <section className="pt-20 sm:pt-28">
         <div className="shell">
           <Figure
-            src="/img/louvor-congregacao.webp"
+            src="/img/louvor-congregacao-4k.webp"
             alt="Igreja reunida em louvor, com as mãos levantadas diante da banda no palco"
             caption="Do culto de domingo ao ensaio de quinta: o mesmo acervo resolve as duas coisas."
             ratio="aspect-[16/7]"
