@@ -79,7 +79,7 @@ export default function Home() {
       <section id="topo" className="relative isolate overflow-hidden bg-ink text-white lg:bg-transparent lg:text-ink">
         <div className="absolute inset-x-0 top-0 -z-10 h-[520px] lg:hidden" aria-hidden="true">
           <Image
-            src="/img/banda-palco.webp"
+            src="/img/banda-palco-4k.webp"
             alt=""
             fill
             priority
@@ -207,7 +207,7 @@ export default function Home() {
         <div className="relative h-[300px] overflow-hidden bg-ink sm:h-[420px] lg:h-[520px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/img/banda-palco.webp"
+            src="/img/banda-palco-4k.webp"
             alt="Equipe de louvor cantando no palco, com banda completa e luzes de show"
             className="h-full w-full object-cover object-center"
           />

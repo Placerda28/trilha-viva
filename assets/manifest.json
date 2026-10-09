@@ -8,5 +8,10 @@
     "sha256": "1f50c1f31c8d842c15a5fcd81bdc7c36a3595d02cb3995c46d8b5ad596af6194",
     "bytes": 31366,
     "parts": 6
+  },
+  "banda-palco-4k.webp": {
+    "sha256": "af1e3a6690454ef9d0f3cb1e569b2a741ebdb54f866998cbf93712b32f7e9a4f",
+    "bytes": 839768,
+    "parts": 140
   }
 }
