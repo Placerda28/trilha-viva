@@ -1,3 +1,19 @@
+# Rastreamento das vendas (Meta + origem), 12/10/2026
+
+Branch `rastreio` (saiu de main 0c2546b). Pedido do Paulo/Cowork em 12/10: 25 vendas no D1 (24/09–10/10, R$ 2.247,50) × 16 no Gerenciador de Anúncios.
+A branch `whatsapp-acesso-meta` (6541f0a) ficou como estava, sem merge.
+
+## Diagnóstico (só leitura), em andamento
+- [x] D1: 25 vendas reais de R$ 89,90 entre 24/09 e 10/10 (fora os 2 testes de R$ 1,00 e `teste_corrigir_email`). Mais 2 depois (11/10 e 12/10).
+- [x] Origem gravada: só 2 das 25 (uma `ig/paid` com ids da campanha, uma `ig/social/link_in_bio`). As 9 primeiras (até 29/09) não têm carrinho: a tabela só nasceu em 29/09.
+- [x] Causa da origem vazia: o `CheckoutForm` só lê a UTM do endereço da própria /assinar. Quem chega por outra página e navega até /assinar perde a origem. O `fbclid` não é guardado.
+- [x] Mesmo id nos dois lados: servidor `r.referencia || r.compraId`, navegador `ref` (external_reference do retorno). A referência sempre existe nas compras do nosso checkout, então o `mp_<id>` não entra.
+- [x] Produção tem `META_CAPI_TOKEN` e NÃO tem `META_TEST_EVENT_CODE` (bom: com ele os eventos iriam só para "Testar eventos").
+- [x] 3 das 25 compraram depois de receber lembrete (19, 29 e 51), sempre por um carrinho novo sem UTM.
+- [ ] Metadata dos pagamentos no MP: a chave em `.dev.vars` dá 401 (não é a de produção). Falta a chave de produção.
+- [ ] Recusas da Meta no Observability: o login do wrangler não tem permissão de ler o registro. Falta o Paulo/Cowork consultar no painel.
+- [ ] Número de Purchase no Gerenciador de Eventos (24/09–10/10). Falta o Paulo/Cowork.
+
 # WhatsApp em sequência — plano A (04/10/2026)
 
 Branch `whatsapp-sequencia` (saiu de main 5307bea). Pedido do Paulo/Cowork em 04/10.
