@@ -12,8 +12,9 @@ A branch `whatsapp-acesso-meta` (6541f0a) ficou como estava, sem merge.
 - [x] 3 das 25 compraram depois de receber lembrete (19, 29 e 51), sempre por um carrinho novo sem UTM.
 - [x] Metadata no MP (chave de produção em `.env.mp.local`, fora do git): as 25 têm referência, ip e navegador. 21 têm fbp. 11 têm fbc (10 com o clique no anúncio de 0–2 h antes; 1 de 65 h, a do lembrete). 4 sem fbp nem fbc (21, 27, 32, 42). 9 compras feitas no computador, 8 abertas dentro do app do Instagram/Facebook. Pix aprovado em até 7 min.
 - [x] Conclusão parcial: a hipótese "Pix e lembrete chegam sem identidade" não se confirma (as 3 do lembrete têm fbp). A diferença 25 × 16 tem cara de atribuição (14 sem clique recente em link da Meta), não de envio perdido. Falta B e C para fechar.
-- [ ] Recusas da Meta no Observability: o login do wrangler não tem permissão de ler o registro. Falta o Paulo/Cowork consultar no painel.
-- [ ] Número de Purchase no Gerenciador de Eventos (24/09–10/10). Falta o Paulo/Cowork.
+- [x] Cowork, 12/10. Gerenciador de Eventos, Purchase 24/09–10/10: 62 recebidos = 28 do nosso servidor + 17 do gateway da própria Meta + 17 do navegador. InitiateCheckout: 210 (75 + 67 + 68). Qualidade 7,3/10. Avisos: enviar telefone (+21%), nome/país/etc., external_id (+10,7%), fbc 66,67%, desduplicação ainda em análise. Erro ativo: dados de visitantes da UE serão bloqueados em 11 dias (site de categoria religiosa).
+- [x] Cloudflare Observability (só 7 dias, 05/10–12/10): 0 linhas `meta capi`. O código só grava em caso de falha, então 0 = nenhuma recusa no período (a busca avisou que pode estar incompleta).
+- [x] CONCLUSÃO: (a) não recebido ≈ 0 (servidor 28 para 27 compras no período, contando os 2 testes de R$ 1). (b) recebido e não atribuído = 9 (25 − 16). Fazer 2.1, 2.3, 2.4, 2.5 e 2.6. Não fazer 2.2 (as 4 sem cookie também não tinham no carrinho) nem 2.7 (nada a reenviar).
 
 # WhatsApp em sequência — plano A (04/10/2026)
 
