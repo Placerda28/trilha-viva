@@ -1,3 +1,36 @@
+# Pós-pagamento: volta automática e compras de teste, 12/10/2026
+
+Branch `pos-pagamento` (saiu de main 9a510c6). Pedido do Paulo/Cowork em 12/10. Backend da Tarefa B feito pelo Codex (`tasks/pos-pagamento-codex.md`), revisado pelo Claude.
+
+## A1. Diagnóstico (só leitura)
+- [x] A preferência JÁ mandava `back_urls` (success e pending → `/sucesso`, failure → `/assinar?cancelado=1`), com endereço https absoluto, e `auto_return: "approved"`.
+- [x] Documentação oficial do Checkout Pro: a volta automática acontece só com pagamento APROVADO, em até 40 segundos (não dá para mudar). A documentação não fala do Pix: a volta sozinha da tela do QR NÃO é garantida.
+- [x] A `/sucesso` já conferia o pagamento, mas só por 80 s (20 × 4 s). Depois ficava parada em "Aguardando".
+- [x] O webhook já gravava a compra e mandava o e-mail de criar senha (link de 7 dias, uso único).
+
+## A2–A4. Feito
+- [x] `/sucesso`: confere a cada 3 s por até 3 min (lib/pos-pagamento.js). Pago → criar senha com o e-mail travado; já tem senha → /entrar com o e-mail preenchido (pela memória da aba, nunca no endereço); esgotado → "Assim que o pagamento cair… e-mail p***@gmail.com (e WhatsApp, se ligado)" + "Já paguei, conferir de novo"; recusado → mensagem + "Tentar de novo".
+- [x] "Primeiro acesso" (/primeiro-acesso, link na tela Entrar): link de criar senha de 72 h; mesma resposta com compra, sem compra e acima do limite; 3 pedidos/hora por e-mail e por IP (tabela `pedidos_acesso`, migração 0014).
+- [x] WhatsApp `acesso_liberado` (lib/whatsapp-acesso.js) ligado no webhook do MP, DESLIGADO até a Meta aprovar e `WA_ACESSO=ativo`. Texto para aprovar: `tasks/whatsapp-acesso-liberado.md`.
+- [x] E-mail de acesso: assunto atual "Crie sua senha e entre no acervo Trilha Viva" (já diz o que fazer). Rodapé agora manda para "Primeiro acesso" quando o link vence.
+
+## B. Feito
+- [x] Migração 0013: `teste`/`teste_por`/`teste_em` em compras e carrinhos, `contatos_teste` (2 e-mails + celular do Paulo), visões `compras_reais`/`carrinhos_reais` (o filtro mora num lugar só).
+- [x] Gestão: "Marcar como teste"/"Desmarcar teste" em Clientes e Recuperação, "Parar lembretes" (status ignorado + WhatsApp encerrado, sem marcar teste), "Bloquear/Liberar acesso", filtro "Mostrar testes" com selo TESTE (Clientes, Período, Recuperação), "Contatos de teste" na tela Equipe. Tudo no registro de ações.
+- [x] Teste não manda Purchase nem InitiateCheckout à Meta (servidor) e a /sucesso não dispara o Pixel. Coluna Meta mostra "não enviado (teste)".
+- [x] Robô `recuperacao-carrinho`: ignora teste e contatos de teste em e-mail e WhatsApp.
+- [x] Bloquear corta novos downloads na hora; links de download já emitidos valem até vencer.
+
+## Provas
+- [x] 206 testes passando (novos: preferência, /sucesso, primeiro acesso, link vencido/reusado, WhatsApp de acesso, marcar/desmarcar, contato de teste, robô, Meta, parar lembretes, bloqueio).
+- [x] Build limpo em ~/tv-build (commit 6c40486, Environments: .env.local).
+- [x] Telas locais (Playwright, 390 e 1280): pendente → pago → senha com e-mail travado (3 consultas); esgotado após 61 consultas e "Já paguei" consulta de novo; já tem conta → /entrar?ja=1 com e-mail preenchido; primeiro acesso sem rolagem lateral. Prints no scratchpad da sessão.
+- [ ] PONTO DE PARADA 1: Paulo aprovar o texto do modelo `acesso_liberado` antes de mandar à Meta.
+- [ ] PONTO DE PARADA 2: Paulo aplicar 0013 e 0014 no D1 de produção (ANTES do deploy do site e do robô).
+- [ ] PONTO DE PARADA 3: Paulo dizer quais compras de hoje marcar como teste.
+- [ ] PONTO DE PARADA 4: merge em main + deploy do site (~/tv-build) + deploy do robô.
+- [ ] Depois do deploy: compra real R$ 1,00 no cartão (outra conta, vídeo), Pix no celular, números da gestão, log do robô, CPU do /api/checkout e do webhook.
+
 # Fundo animado no topo da página inicial, 12/10/2026
 
 Branch `hero-gradiente` (saiu de main 9e1f5dd). Pedido do Paulo/Cowork em 12/10: gradiente animado estilo "Prism" do Spell UI, só no topo da home, escuro como os anúncios ("Solta a VS." v3).
