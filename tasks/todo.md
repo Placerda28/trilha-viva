@@ -10,7 +10,8 @@ A branch `whatsapp-acesso-meta` (6541f0a) ficou como estava, sem merge.
 - [x] Mesmo id nos dois lados: servidor `r.referencia || r.compraId`, navegador `ref` (external_reference do retorno). A referência sempre existe nas compras do nosso checkout, então o `mp_<id>` não entra.
 - [x] Produção tem `META_CAPI_TOKEN` e NÃO tem `META_TEST_EVENT_CODE` (bom: com ele os eventos iriam só para "Testar eventos").
 - [x] 3 das 25 compraram depois de receber lembrete (19, 29 e 51), sempre por um carrinho novo sem UTM.
-- [ ] Metadata dos pagamentos no MP: a chave em `.dev.vars` dá 401 (não é a de produção). Falta a chave de produção.
+- [x] Metadata no MP (chave de produção em `.env.mp.local`, fora do git): as 25 têm referência, ip e navegador. 21 têm fbp. 11 têm fbc (10 com o clique no anúncio de 0–2 h antes; 1 de 65 h, a do lembrete). 4 sem fbp nem fbc (21, 27, 32, 42). 9 compras feitas no computador, 8 abertas dentro do app do Instagram/Facebook. Pix aprovado em até 7 min.
+- [x] Conclusão parcial: a hipótese "Pix e lembrete chegam sem identidade" não se confirma (as 3 do lembrete têm fbp). A diferença 25 × 16 tem cara de atribuição (14 sem clique recente em link da Meta), não de envio perdido. Falta B e C para fechar.
 - [ ] Recusas da Meta no Observability: o login do wrangler não tem permissão de ler o registro. Falta o Paulo/Cowork consultar no painel.
 - [ ] Número de Purchase no Gerenciador de Eventos (24/09–10/10). Falta o Paulo/Cowork.
 
