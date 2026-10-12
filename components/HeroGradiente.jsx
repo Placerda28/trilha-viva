@@ -7,8 +7,8 @@ import { heroGradiente as g } from '@/lib/hero-gradiente'
 // Desenho adaptado do preset "Prism" do Animated Gradient do Spell UI
 // (https://github.com/xxtomm/spell-ui, licença MIT, (c) 2025 Spell UI), reescrito
 // em WebGL 1 puro, sem biblioteca, com as cores da marca e com economia:
-// metade da resolução, no máximo 1,5x de densidade, 30 quadros por segundo no
-// celular, pausa fora da tela e com a aba escondida. Se o aparelho não tiver
+// metade da resolução, no máximo 1,5x de densidade, 30 quadros por segundo,
+// pausa fora da tela e com a aba escondida. Se o aparelho não tiver
 // WebGL ou o desenho falhar, nada acontece e fica o fundo estático em CSS.
 
 const VERTICES = `
@@ -136,8 +136,9 @@ export default function HeroGradiente() {
     const ro = new ResizeObserver(ajustar)
     ro.observe(area)
 
-    const celular = window.matchMedia('(pointer: coarse)').matches
-    const intervalo = celular ? 1000 / 30 : 0
+    // 30 quadros por segundo em qualquer aparelho: o movimento é tão lento
+    // que 60 não se distingue, e custa o dobro de bateria e de GPU.
+    const intervalo = 1000 / 30
     let visivelNaTela = true
     let quadro = 0
     let ultimo = 0
