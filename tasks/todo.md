@@ -1,3 +1,20 @@
+# Fundo animado no topo da página inicial, 12/10/2026
+
+Branch `hero-gradiente` (saiu de main 9e1f5dd). Pedido do Paulo/Cowork em 12/10: gradiente animado estilo "Prism" do Spell UI, só no topo da home, escuro como os anúncios ("Solta a VS." v3).
+Decisão do Paulo (12/10): no celular o gradiente SUBSTITUI a foto da banda no topo.
+
+- [x] Spell UI: licença MIT, sem pacote npm, mas usa next-themes + TypeScript e não tem pausa nem reserva. Feito componente próprio em WebGL 1 puro (components/HeroGradiente.jsx), nada instalado.
+- [x] Ajustes num lugar só: lib/hero-gradiente.js (cores, força do vermelho e do feixe, velocidade). O fundo estático em CSS sai do mesmo arquivo.
+- [x] Carregamento: components/HeroFundo.jsx espera o load + requestIdleCallback e só então baixa o efeito (dynamic, ssr:false). Fade de 600 ms. Pausa fora da tela e com a aba escondida; metade da resolução, DPR no máx. 1,5; 30 qps no celular.
+- [x] Reduzir movimento: o efeito nem é baixado (testado). Sem WebGL: fica o estático, sem erro novo no console (testado).
+- [x] Contraste (pior ponto em 40 s de animação): computador ≥ 10,36:1; celular ≥ 5,33:1 ("de R$ 899,00", que passou de branco 60% para 70%).
+- [x] Testes: 174 passando.
+- [ ] Build, peso a mais do JavaScript, Lighthouse mobile antes × depois, CPU parado 30 s.
+- [ ] Prévia na Cloudflare (sem promover) para o Paulo ver no celular (Instagram) e no computador.
+- [ ] Merge em main e publicação: só com OK do Paulo.
+
+Lighthouse ANTES (produção, trilhaviva.org, mobile, 3 rodadas): Performance 61 / 67 / 54; LCP 9,4 / 9,3 / 6,8 s (a foto de 840 KB era o LCP); CLS 0,001; TBT 490 / 310 / 970 ms.
+
 # Rastreamento das vendas (Meta + origem), 12/10/2026
 
 Branch `rastreio` (saiu de main 0c2546b). Pedido do Paulo/Cowork em 12/10: 25 vendas no D1 (24/09–10/10, R$ 2.247,50) × 16 no Gerenciador de Anúncios.
