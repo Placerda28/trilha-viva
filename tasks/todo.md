@@ -14,7 +14,7 @@ A branch `whatsapp-acesso-meta` (6541f0a) ficou como estava, sem merge.
 - [x] ATENÇÃO: o build falha na pasta "C:dev" (o Next lê "Cdev" e não acha a fonte da /opengraph-image), também na main sem as mudanças. Build feito na cópia ~/tv-build (git worktree, nome de pasta comum), onde passa.
 - [x] 0012 aplicada no D1 de produção pelo Paulo em 12/10 (14 colunas conferidas). O site antigo não usa as colunas: nada muda até o deploy.
 - [x] Merge em main (a54ce29) e deploy pelo Paulo de ~/tv-build em 12/10 17:13 UTC: versão 1a2b577d (100%). Conferido no ar: home 200, /assinar 200, login 400 "Informe o e-mail e a senha." (ok), frase nova na /privacidade.
-- [ ] Prova real: compra de R$ 1,00 por Pix, outra conta, pelo link com UTM de teste → gestão com origem "teste" e Meta ✓; Purchase do servidor no Gerenciador de Eventos; log "meta capi Purchase ok".
+- [x] Prova real (12/10, Pix R$ 1,00, outra conta): compra 61 mp_183795116626 com utm meta/teste/teste, meta_status ok às 17:33:26 UTC; carrinho com origem utm=meta/-/teste/teste e fbp. A compra 60 (sem abrir o link) entrou como direto e também com Meta ok. Falta: Purchase do servidor no Gerenciador de Eventos e a linha "meta capi Purchase ok" no Observability (Cowork).
 - [ ] Depois do deploy: CPU do /api/checkout e do webhook no painel da Cloudflare.
 
 ## Diagnóstico (só leitura), fechado
