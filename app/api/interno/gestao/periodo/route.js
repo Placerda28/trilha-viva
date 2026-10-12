@@ -6,6 +6,7 @@ import { preencherFormas } from '@/lib/gestao/forma'
 import {
   comprasMpSemForma,
   consultarItensPeriodo,
+  consultarOrigensPeriodo,
   consultarResumoPeriodo,
   itemPeriodoDaLinha,
 } from '@/lib/gestao/periodo'
