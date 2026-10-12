@@ -3,6 +3,20 @@
 Branch `rastreio` (saiu de main 0c2546b). Pedido do Paulo/Cowork em 12/10: 25 vendas no D1 (24/09–10/10, R$ 2.247,50) × 16 no Gerenciador de Anúncios.
 A branch `whatsapp-acesso-meta` (6541f0a) ficou como estava, sem merge.
 
+## Correções feitas e provadas (local), 12/10
+- [x] 2.1 Origem: componente  (layout) grava o cookie  (90 dias, primeira e última) em qualquer página com utm_* ou fbclid; sem _fbc, monta fb.1.<ms>.<fbclid>. O checkout usa a UTM da /assinar ou, sem ela, a do cookie. Carrinho e metadata do MP levam fbp/fbc/ip/ua, telefone e UTM.
+- [x] 2.3 Migração  (só colunas novas em carrinhos e compras). Aplicada SÓ no D1 local. Privacidade atualizada.
+- [x] 2.4 Purchase e InitiateCheckout do servidor com ph, fn, ln, external_id, country (SHA-256) e content_ids/content_type/num_items/order_id.
+- [x] 2.5 Compra grava meta_status/meta_enviado_em (ok fica gravado mesmo se uma repetição falhar); log .
+- [x] 2.6 Gestão > Por período: colunas Origem e Meta e "Vendas por campanha e anúncio" (compras antigas em "Sem registro").
+- [x] Não feitos de propósito: 2.2 e 2.7 (ver conclusão do diagnóstico). Stripe: só ganhou o log de sucesso (vem do lib/meta.js).
+- [x] Provas: 174 testes passando (13 novos); build limpo; visita local com ?utm_source=meta&utm_campaign=teste&utm_content=teste&fbclid=TESTE123abc na home, Pixel bloqueado, depois /assinar sem nada → carrinho com utm teste/teste e fbc fb.1.<ms>.TESTE123abc; gestão conferida no computador e no celular (sem rolagem lateral); custo ~0,14 ms por evento.
+- [x] ATENÇÃO: o build falha na pasta  (o Next lê  e não acha a fonte da /opengraph-image), também na main sem as mudanças. Build feito na cópia  (git worktree, nome de pasta comum), onde passa.
+- [ ] PARADA: aplicar a 0012 no D1 de produção (ANTES do deploy: sem as colunas o carrinho não é gravado).
+- [ ] PARADA: merge em main + deploy (de ~/tv-build).
+- [ ] Prova real: compra de R$ 1,00 por Pix, outra conta, pelo link com UTM de teste → gestão com origem "teste" e Meta ✓; Purchase do servidor no Gerenciador de Eventos; log .
+- [ ] Depois do deploy: CPU do /api/checkout e do webhook no painel da Cloudflare.
+
 ## Diagnóstico (só leitura), em andamento
 - [x] D1: 25 vendas reais de R$ 89,90 entre 24/09 e 10/10 (fora os 2 testes de R$ 1,00 e `teste_corrigir_email`). Mais 2 depois (11/10 e 12/10).
 - [x] Origem gravada: só 2 das 25 (uma `ig/paid` com ids da campanha, uma `ig/social/link_in_bio`). As 9 primeiras (até 29/09) não têm carrinho: a tabela só nasceu em 29/09.
