@@ -91,7 +91,7 @@ async function buscarPrimeiras(db, soTelefone, agoraSql) {
   const resultado = await db.prepare(`
     SELECT id, email, nome, telefone, datetime(criado_em, '+3 hours') AS vez_em
       FROM carrinhos
-     WHERE telefone IS NOT NULL
+     WHERE teste = 0 AND whatsapp_encerrado_em IS NULL AND telefone IS NOT NULL
        AND whatsapp_enviado_em IS NULL
        AND whatsapp_falhou_em IS NULL
        AND status <> 'pago'
@@ -131,7 +131,7 @@ async function buscarSeguintes(db, soTelefone, agoraSql) {
              WHERE o.email = c.email AND o.status = 'lembrado' AND o.finalizado_em IS NULL
                AND o.etapa_email < 4) AS emails_previstos
       FROM carrinhos c
-     WHERE c.whatsapp_enviado_em IS NOT NULL
+     WHERE c.teste = 0 AND c.whatsapp_enviado_em IS NOT NULL
        AND c.whatsapp_encerrado_em IS NULL
        AND c.whatsapp_etapa BETWEEN 1 AND ${TOTAL_MENSAGENS - 1}
        AND c.proximo_whatsapp_em <= ?
@@ -154,6 +154,8 @@ function diasDeEmailDaLinha(linha) {
 async function impedimentos(db, email, telefone, agoraSql) {
   const linha = await db.prepare(`
     SELECT
+      EXISTS(SELECT 1 FROM contatos_teste
+        WHERE (tipo = 'email' AND valor = ?) OR (tipo = 'telefone' AND valor = ?) LIMIT 1) AS teste,
       EXISTS(
         SELECT 1 FROM compras p JOIN clientes c ON c.id = p.cliente_id
          WHERE p.status = 'pago' AND c.email = ? LIMIT 1
@@ -167,8 +169,9 @@ async function impedimentos(db, email, telefone, agoraSql) {
                 OR outro.whatsapp_encerrado_em > datetime(?, '-${DIAS_SEM_NOVA_SEQUENCIA} days'))
          LIMIT 1
       ) AS ja_enviado
-    LIMIT 1`).bind(email, email, telefone, email, agoraSql).first()
+    LIMIT 1`).bind(email, telefone, email, email, telefone, email, agoraSql).first()
   return {
+    teste: Boolean(Number(linha?.teste || 0)),
     temCompra: Boolean(Number(linha?.tem_compra || 0)),
     descadastrado: Boolean(Number(linha?.descadastrado || 0)),
     jaEnviado: Boolean(Number(linha?.ja_enviado || 0)),
@@ -179,7 +182,7 @@ async function impedimentos(db, email, telefone, agoraSql) {
 async function naoTentarDeNovo(db, id) {
   await db.prepare(`
     UPDATE carrinhos SET whatsapp_falhou_em = datetime('now')
-     WHERE id = ? AND whatsapp_enviado_em IS NULL AND whatsapp_falhou_em IS NULL`).bind(id).run()
+     WHERE id = ? AND teste = 0 AND whatsapp_encerrado_em IS NULL AND whatsapp_enviado_em IS NULL AND whatsapp_falhou_em IS NULL`).bind(id).run()
 }
 
 // Reserva atômica da 1ª: a linha em lembretes_enviados é a vaga. O teto do
@@ -190,7 +193,9 @@ async function reservarPrimeira(db, carrinho, modelo, tetoDia, agoraSql) {
     INSERT OR IGNORE INTO lembretes_enviados (carrinho_id, canal, etapa, enviado_em, modelo)
     SELECT c.id, 'whatsapp', 1, ?, ?
       FROM carrinhos c
-     WHERE c.id = ?
+     WHERE c.id = ? AND c.teste = 0
+       AND c.whatsapp_encerrado_em IS NULL
+       AND NOT EXISTS (SELECT 1 FROM contatos_teste t WHERE t.valor = c.email OR t.valor = c.telefone LIMIT 1)
        AND c.whatsapp_enviado_em IS NULL
        AND c.whatsapp_falhou_em IS NULL
        AND NOT EXISTS (
@@ -214,7 +219,7 @@ async function reservarPrimeira(db, carrinho, modelo, tetoDia, agoraSql) {
        SET whatsapp_enviado_em = ?, whatsapp_etapa = 1,
            proximo_whatsapp_em = datetime(?, '+7 days'),
            whatsapp_encerrado_em = NULL, whatsapp_motivo = NULL
-     WHERE id = ? AND whatsapp_enviado_em IS NULL`).bind(agoraSql, agoraSql, carrinho.id).run()
+     WHERE id = ? AND teste = 0 AND whatsapp_encerrado_em IS NULL AND whatsapp_enviado_em IS NULL`).bind(agoraSql, agoraSql, carrinho.id).run()
   if (mudancas(marcado) === 1) return true
 
   await apagarReserva(db, carrinho.id, 1)
@@ -250,7 +255,16 @@ async function encerrar(db, id, motivo, agoraSql) {
 
 // Varredura barata a cada rodada: quem comprou ou pediu para sair (por
 // e-mail ou WhatsApp) para na hora, mesmo sem a próxima ter vencido.
-async function encerrarPorCompraOuSaida(db, agoraSql) {
+async function encerrarPorCompraOuSaida(db, agoraSql, logger) {
+  const testes = await db.prepare(`
+    UPDATE carrinhos
+       SET whatsapp_encerrado_em = ?, whatsapp_motivo = 'teste', proximo_whatsapp_em = NULL
+     WHERE whatsapp_encerrado_em IS NULL
+       AND (teste = 1 OR EXISTS(SELECT 1 FROM contatos_teste t
+         WHERE (t.tipo = 'email' AND t.valor = carrinhos.email)
+            OR (t.tipo = 'telefone' AND t.valor = carrinhos.telefone) LIMIT 1))`).bind(agoraSql).run()
+  if (mudancas(testes)) logger.log(`whatsapp pulado (teste) ${mudancas(testes)} carrinhos`)
+
   const compra = await db.prepare(`
     UPDATE carrinhos
        SET whatsapp_encerrado_em = ?, whatsapp_motivo = 'comprou', proximo_whatsapp_em = NULL
@@ -281,9 +295,10 @@ async function reservarSeguinte(db, carrinho, etapa, modelo, proximaEm, tetoDia,
     INSERT OR IGNORE INTO lembretes_enviados (carrinho_id, canal, etapa, enviado_em, modelo)
     SELECT c.id, 'whatsapp', ?, ?, ?
       FROM carrinhos c
-     WHERE c.id = ?
-       AND c.whatsapp_etapa = ?
+     WHERE c.id = ? AND c.teste = 0
        AND c.whatsapp_encerrado_em IS NULL
+       AND NOT EXISTS (SELECT 1 FROM contatos_teste t WHERE t.valor = c.email OR t.valor = c.telefone LIMIT 1)
+       AND c.whatsapp_etapa = ?
        AND c.proximo_whatsapp_em <= ?
        AND (
          SELECT COUNT(*) FROM lembretes_enviados
@@ -319,7 +334,7 @@ async function adiarSeguinte(db, carrinho, etapa, novaVez) {
   await db.prepare(`
     UPDATE carrinhos
        SET whatsapp_etapa = ?, proximo_whatsapp_em = ?, whatsapp_encerrado_em = NULL, whatsapp_motivo = NULL
-     WHERE id = ? AND whatsapp_etapa = ?`).bind(etapa - 1, novaVez, carrinho.id, etapa).run()
+     WHERE id = ? AND whatsapp_etapa = ? AND teste = 0 AND whatsapp_motivo IS NULL`).bind(etapa - 1, novaVez, carrinho.id, etapa).run()
 }
 
 async function gravarEnvio(db, carrinhoId, etapa, msgId, agoraSql) {
@@ -360,7 +375,7 @@ export async function executarWhatsapp(env, opcoes = {}) {
   const estado = await prepararLigacao(db, env, { dentroDoHorario: dentro, fetchImpl, logger })
   if (estado.estado !== 'ativo') return resultado
   await resumoDoDia(db, env, agora, fetchImpl, logger)
-  await encerrarPorCompraOuSaida(db, agoraSql)
+  await encerrarPorCompraOuSaida(db, agoraSql, logger)
   if (!dentro) return resultado
 
   const tetoDia = tetoDoDia(estado, limite(env.WA_TETO_DIA, 30))
@@ -408,7 +423,11 @@ export async function executarWhatsapp(env, opcoes = {}) {
     }
 
     const bloqueio = await impedimentos(db, email, carrinho.telefone, agoraSql)
-    if (bloqueio.temCompra || bloqueio.descadastrado || bloqueio.jaEnviado) {
+    if (bloqueio.teste) {
+      logger.log(`whatsapp pulado (teste) ${carrinho.id}`)
+      await encerrar(db, carrinho.id, 'teste', agoraSql)
+    }
+    if (bloqueio.teste || bloqueio.temCompra || bloqueio.descadastrado || bloqueio.jaEnviado) {
       await naoTentarDeNovo(db, carrinho.id)
       resultado.ignorados += 1
       continue
@@ -458,6 +477,12 @@ export async function executarWhatsapp(env, opcoes = {}) {
 // 'falhou' (erro da pessoa, conta como não entregue), 'erro_da_conta',
 // 'encerrado', 'adiado' ou 'sem_vaga'.
 async function seguinte(db, env, carrinho, { agora, agoraSql, tetoDia, aprovados, modelos, fetchImpl, logger }) {
+  const bloqueio = await impedimentos(db, carrinho.email, carrinho.telefone, agoraSql)
+  if (bloqueio.teste) {
+    logger.log(`whatsapp pulado (teste) ${carrinho.id}`)
+    await encerrar(db, carrinho.id, 'teste', agoraSql)
+    return 'encerrado'
+  }
   if (Number(carrinho.tem_compra || 0)) {
     await encerrar(db, carrinho.id, 'comprou', agoraSql)
     return 'encerrado'

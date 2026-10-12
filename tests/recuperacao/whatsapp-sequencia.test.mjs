@@ -54,6 +54,7 @@ const MIGRACOES = [
   '0009_whatsapp_estado',
   '0010_whatsapp_sequencia',
   '0011_whatsapp_anexos',
+  '0013_testes',
 ]
 
 function banco(ate = MIGRACOES.length) {
@@ -493,4 +494,31 @@ test('gestão: lista de sequências com "X de 9", próxima e motivo; parar e ret
   assert.deepEqual(meta.envios().map((p) => p.corpo.to), ['5527922220000'])
   lista = await consultarSequencias(db, agora)
   assert.equal(lista.find((s) => s.telefone === '27922220000').enviadas, 3)
+})
+
+
+test('teste exclui primeira e seguintes do WhatsApp e encerra antes do próximo vencimento', async () => {
+  const b = banco()
+  b.exec(`INSERT INTO carrinhos (id, email, telefone, criado_em, teste) VALUES
+    ('primeira-teste', 'primeira@example.com', '27911112222', datetime('2026-01-15 15:00:00', '-4 hours'), 1),
+    ('lista-email', 'paulohenrique_ls@hotmail.com', '27911113333', datetime('2026-01-15 15:00:00', '-4 hours'), 0),
+    ('lista-telefone', 'telefone@example.com', '27996253839', datetime('2026-01-15 15:00:00', '-4 hours'), 0),
+    ('parado', 'parado@example.com', '27911114444', datetime('2026-01-15 15:00:00', '-4 hours'), 0);
+    UPDATE carrinhos SET whatsapp_encerrado_em = '2026-01-15 14:00:00', whatsapp_motivo = 'gestao', status = 'ignorado' WHERE id = 'parado';`)
+  emSequencia(b, 'seguinte-teste', { telefone: '27911115555' })
+  emSequencia(b, 'futuro-teste', { telefone: '27911116666', proximo: '2026-02-01 15:00:00' })
+  emSequencia(b, 'seguinte-lista', { telefone: '27996253839' })
+  b.exec("UPDATE carrinhos SET teste = 1 WHERE id IN ('seguinte-teste', 'futuro-teste')")
+  const meta = metaFalsa()
+  const r = await rodada(b, meta, T0)
+  assert.equal(r.enviados, 0)
+  assert.equal(meta.envios().length, 0)
+  assert.equal(meta.consultas().length, 0)
+  for (const id of ['primeira-teste', 'seguinte-teste', 'futuro-teste', 'lista-email', 'lista-telefone', 'seguinte-lista']) {
+    assert.equal(estadoDe(b, id).motivo, 'teste')
+    assert.equal(estadoDe(b, id).encerrado, 1)
+    assert.equal(estadoDe(b, id).proximo, null)
+  }
+  assert.equal(estadoDe(b, 'parado').motivo, 'gestao')
+  b.close()
 })

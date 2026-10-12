@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server'
 import { confirmarPagamento } from '@/lib/confirmar'
+import { acharPorEmail } from '@/lib/clientes'
+import { getDB } from '@/lib/d1'
+import { ehTeste } from '@/lib/teste'
+import { mascararEmail } from '@/lib/pos-pagamento'
+import { acessoPorWhatsappLigado } from '@/lib/whatsapp-acesso'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -18,7 +23,9 @@ function limited(ip) {
   arr.push(now)
   hits.set(ip, arr)
   if (hits.size > 5000) hits.clear()
-  return arr.length > 20
+  // A /sucesso consulta a cada 3 s (20 por minuto) e ainda sobra para o
+  // botão "Já paguei, conferir de novo".
+  return arr.length > 30
 }
 
 const noStore = { 'Cache-Control': 'no-store, max-age=0' }
@@ -59,9 +66,17 @@ export async function POST(req) {
     )
   }
 
+  // Daqui em diante o pagamento é desta pessoa (número + referência
+  // conferidos). Mesmo assim, enquanto não estiver pago, a tela só recebe o
+  // e-mail mascarado: é o que ela mostra.
+  const avisos = {
+    emailMascarado: mascararEmail(r.email),
+    whatsapp: acessoPorWhatsappLigado(process.env) && Boolean(r.telefone),
+  }
+
   if (r.status === 'failed') {
     return NextResponse.json(
-      { status: 'error', error: 'O pagamento não foi aprovado. Você pode tentar de novo pela página de compra.' },
+      { status: 'failed', ...avisos, error: 'O pagamento não foi aprovado. Você pode tentar de novo pela página de compra.' },
       { headers: noStore }
     )
   }
@@ -70,16 +85,27 @@ export async function POST(req) {
     return NextResponse.json(
       {
         status: 'pending',
-        email: r.email || null,
+        ...avisos,
         message: 'Estamos aguardando a confirmação do pagamento. No Pix, costuma levar poucos segundos depois que você paga.',
       },
       { headers: noStore }
     )
   }
 
+  // Já tem senha? A tela manda para a entrada em vez de pedir outra.
+  // Compra de teste? A tela não manda a compra ao Pixel da Meta.
+  const db = getDB()
+  const [cliente, teste] = await Promise.all([
+    r.email ? acharPorEmail(r.email).catch(() => null) : null,
+    db ? ehTeste(db, { email: r.email, telefone: r.telefone, referencia: r.referencia }) : false,
+  ])
+
   return NextResponse.json(
     {
       status: 'paid',
+      ...avisos,
+      temConta: Boolean(cliente?.supabase_id),
+      teste: Boolean(teste),
       email: r.email || null,
       nome: r.nome || null,
       // Diz à tela se o e-mail de apoio realmente sai, para ela não prometer

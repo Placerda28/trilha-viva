@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { CHAVE_EMAIL_ENTRAR } from '@/lib/pos-pagamento'
 
 // Uma peça para as quatro telas de conta. O que muda entre elas é pouco —
 // quais campos aparecem, para onde o formulário vai e o que dizer depois —
@@ -21,6 +22,15 @@ const MODOS = {
     pedeEmail: false,
     pedeSenha: true,
     confirma: true,
+  },
+  // Comprou e fechou a tela sem criar a senha: pede o link de criar senha.
+  primeiro: {
+    rota: '/api/conta/primeiro-acesso',
+    botao: 'Enviar link para criar minha senha',
+    enviando: 'Enviando…',
+    pedeEmail: true,
+    pedeSenha: false,
+    confirma: false,
   },
   recuperar: {
     rota: '/api/conta/recuperar',
@@ -43,7 +53,9 @@ const MODOS = {
 const campo =
   'mt-2 w-full rounded border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none'
 
-export default function ContaForm({ modo }) {
+// emailFixo: na /sucesso o e-mail vem da compra. Ele aparece preenchido e
+// travado, só para a pessoa saber com qual e-mail vai entrar depois.
+export default function ContaForm({ modo, emailFixo = '' }) {
   const cfg = MODOS[modo]
 
   const [email, setEmail] = useState('')
@@ -70,6 +82,18 @@ export default function ContaForm({ modo }) {
     setRef(p.get('external_reference') || '')
     if (p.get('criada')) setAviso('Senha criada. Entre com ela abaixo.')
     if (p.get('expirou')) setAviso('Sua sessão expirou. Entre de novo para continuar.')
+    // Vindo da /sucesso de quem já tem senha: o e-mail chega pela memória da
+    // aba (nunca pelo endereço) e é apagado depois de lido.
+    if (p.get('ja')) {
+      setAviso('Pagamento confirmado. Você já tem uma senha com este e-mail: entre com ela.')
+      try {
+        const guardado = sessionStorage.getItem(CHAVE_EMAIL_ENTRAR)
+        if (guardado) setEmail(guardado)
+        sessionStorage.removeItem(CHAVE_EMAIL_ENTRAR)
+      } catch {
+        /* sem memória da aba: a pessoa digita o e-mail */
+      }
+    }
   }, [])
 
   async function enviar(e) {
@@ -95,7 +119,7 @@ export default function ContaForm({ modo }) {
       })
       const dados = await res.json().catch(() => ({}))
 
-      if (modo === 'recuperar') {
+      if (modo === 'recuperar' || modo === 'primeiro') {
         // Respeitar o erro do servidor aqui é essencial: sem isto, uma
         // resposta "o envio de e-mail não está ativo" virava a mesma mensagem
         // de sucesso, e a tela mentia para quem estava esperando o link.
@@ -146,6 +170,23 @@ export default function ContaForm({ modo }) {
     <form onSubmit={enviar} className="space-y-4" noValidate>
       {aviso && (
         <p className="rounded border border-line bg-mist px-4 py-3 text-[14px] text-ink">{aviso}</p>
+      )}
+
+      {emailFixo && !cfg.pedeEmail && (
+        <div>
+          <label htmlFor="email-fixo" className="block text-[13px] font-semibold text-ink">
+            E-mail da compra
+          </label>
+          <input
+            id="email-fixo"
+            type="email"
+            value={emailFixo}
+            readOnly
+            aria-readonly="true"
+            autoComplete="username"
+            className={campo.replace('bg-white', 'bg-mist')}
+          />
+        </div>
       )}
 
       {cfg.pedeEmail && (

@@ -53,6 +53,7 @@ function bancoComDados() {
   banco.exec(readFileSync('migrations/0002_cupons.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0012_rastreio.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0013_testes.sql', 'utf8'))
   banco.exec(`
     INSERT INTO clientes (id, email, nome, bloqueado, supabase_id, criado_em) VALUES
       (1, 'master@example.com', 'Master 100%', 0, 'sup_1', '2026-09-20 12:00:00'),

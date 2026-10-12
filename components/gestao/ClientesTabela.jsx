@@ -1,6 +1,8 @@
 import { dataHora, moeda, numero, FORMAS } from './formato'
 import { formatarCelular } from '@/lib/gestao/csv'
 import CorrigirEmail from './CorrigirEmail'
+import AcoesCliente from './AcoesCliente'
+import { SeloTeste } from './AcaoGestao'
 import { rotuloOrigem } from '@/lib/rastreio'
 
 // Uma linha por cliente (ou por compra, na tela de período). No computador é
@@ -16,6 +18,7 @@ function Marcas({ c }) {
   const status = c.compra?.status
   return (
     <>
+      {c.teste && <SeloTeste />}
       {c.bloqueado && (
         <span className="rounded-sm border border-signal-deep px-1.5 py-0.5 text-[11.5px] font-semibold text-signal-deep">
           Bloqueado
@@ -55,6 +58,7 @@ function Nome({ c, whatsapp, onMudou }) {
       <span className="block break-all text-[13.5px] text-ink-muted">{c.email}</span>
       {whatsapp && <Whatsapp telefone={c.telefone} />}
       {onMudou && <CorrigirEmail c={c} onMudou={onMudou} />}
+      {onMudou && <AcoesCliente c={c} onMudou={onMudou} />}
     </>
   )
 }
@@ -72,6 +76,8 @@ function OrigemCompra({ compra }) {
 function MetaCompra({ meta }) {
   if (!meta) return <span className="text-ink-faint">—</span>
   if (meta === 'ok') return <span className="whitespace-nowrap text-ink">✓ enviado</span>
+  // Compra de teste não vai para a Meta, de propósito.
+  if (meta === 'teste') return <span className="whitespace-nowrap text-ink-muted">não enviado (teste)</span>
   return (
     <span className="whitespace-nowrap text-signal-deep" title={'Código: ' + meta}>
       ✗ falhou

@@ -21,6 +21,7 @@ import {
   normalizarCodigoCupom,
   reservarCupom,
 } from '@/lib/gestao/cupons'
+import { ehContatoTeste, enviarMetaSeReal } from '@/lib/teste'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -88,8 +89,8 @@ export async function POST(req) {
     ua: (req.headers.get('user-agent') || '').slice(0, 400),
   }
   const eventoId = String(body.eventoId || '').slice(0, 64) || crypto.randomUUID()
-  const inicioCheckout = (valor = site.price) =>
-    enviarEventoMeta({
+  const inicioCheckout = async (valor = site.price) =>
+    enviarMetaSeReal(await ehContatoTeste(getDB(), { email, telefone }), {
       nome: 'InitiateCheckout',
       id: eventoId,
       email,
@@ -98,7 +99,7 @@ export async function POST(req) {
       ...rastreio,
       url: `${site.url}/assinar`,
       valor,
-    })
+    }, enviarEventoMeta)
 
   const provedor = provedorAtivo()
   const codigoInformado = normalizarCodigoCupom(body.cupom)
@@ -222,7 +223,7 @@ export async function POST(req) {
           },
         },
       ],
-      metadata: { nome, produto: 'pacote-4000-vs', ...rastreio },
+      metadata: { nome, telefone, produto: 'pacote-4000-vs', ...rastreio },
       payment_intent_data: {
         description: 'Trilha Viva — Pacote 2.000 Multitracks Gospel',
         metadata: { nome, email },

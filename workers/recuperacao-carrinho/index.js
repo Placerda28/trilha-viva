@@ -150,9 +150,9 @@ async function contarEnvios(db) {
 
 async function buscarCandidatosIniciais(db) {
   const resultado = await db.prepare(`
-    SELECT id, email, nome
+    SELECT id, email, nome, telefone
       FROM carrinhos
-     WHERE status = 'aberto'
+     WHERE teste = 0 AND status = 'aberto'
        AND criado_em >= datetime('now', '-48 hours')
        AND criado_em <= datetime('now', '-1 hour')
      ORDER BY criado_em ASC, id ASC
@@ -162,9 +162,9 @@ async function buscarCandidatosIniciais(db) {
 
 async function buscarSeguimentos(db) {
   const resultado = await db.prepare(`
-    SELECT id, email, nome, etapa_email
+    SELECT id, email, nome, telefone, etapa_email
       FROM carrinhos
-     WHERE status = 'lembrado'
+     WHERE teste = 0 AND status = 'lembrado'
        AND finalizado_em IS NULL
        AND proximo_email_em <= datetime('now')
      ORDER BY proximo_email_em ASC, criado_em ASC, id ASC
@@ -172,9 +172,12 @@ async function buscarSeguimentos(db) {
   return linhas(resultado)
 }
 
-async function impedimentosIniciais(db, email) {
+async function impedimentosIniciais(db, email, telefone, id) {
   const resultado = await db.prepare(`
     SELECT
+      EXISTS(SELECT 1 FROM contatos_teste
+        WHERE (tipo = 'email' AND valor = ?) OR (tipo = 'telefone' AND valor = ?) LIMIT 1)
+      OR EXISTS(SELECT 1 FROM carrinhos WHERE id = ? AND teste = 1 LIMIT 1) AS teste,
       EXISTS(
         SELECT 1
           FROM compras p
@@ -203,17 +206,21 @@ async function impedimentosIniciais(db, email) {
          WHERE d.email = ?
          LIMIT 1
       ) AS descadastrado
-    LIMIT 1`).bind(email, email, email, email).first()
+    LIMIT 1`).bind(email, telefone || '', id, email, email, email, email).first()
   return {
+    teste: Boolean(Number(resultado?.teste || 0)),
     temCompra: Boolean(Number(resultado?.tem_compra || 0)),
     jaLembrado: Boolean(Number(resultado?.ja_lembrado || 0)),
     descadastrado: Boolean(Number(resultado?.descadastrado || 0)),
   }
 }
 
-async function impedimentosSeguimento(db, email) {
+async function impedimentosSeguimento(db, email, telefone, id) {
   const resultado = await db.prepare(`
     SELECT
+      EXISTS(SELECT 1 FROM contatos_teste
+        WHERE (tipo = 'email' AND valor = ?) OR (tipo = 'telefone' AND valor = ?) LIMIT 1)
+      OR EXISTS(SELECT 1 FROM carrinhos WHERE id = ? AND teste = 1 LIMIT 1) AS teste,
       EXISTS(
         SELECT 1
           FROM compras p
@@ -227,8 +234,9 @@ async function impedimentosSeguimento(db, email) {
          WHERE d.email = ?
          LIMIT 1
       ) AS descadastrado
-    LIMIT 1`).bind(email, email).first()
+    LIMIT 1`).bind(email, telefone || '', id, email, email).first()
   return {
+    teste: Boolean(Number(resultado?.teste || 0)),
     temCompra: Boolean(Number(resultado?.tem_compra || 0)),
     descadastrado: Boolean(Number(resultado?.descadastrado || 0)),
   }
@@ -238,7 +246,7 @@ async function ignorar(db, id) {
   await db.prepare(`
     UPDATE carrinhos
        SET status = 'ignorado'
-     WHERE id = ? AND status = 'aberto'`).bind(id).run()
+     WHERE id = ? AND teste = 0 AND status = 'aberto'`).bind(id).run()
 }
 
 async function reservarPrimeiro(db, id, email, tetoDia, tetoMes) {
@@ -249,7 +257,8 @@ async function reservarPrimeiro(db, id, email, tetoDia, tetoMes) {
       (carrinho_id, canal, etapa, enviado_em)
     SELECT c.id, 'email', 1, datetime('now')
       FROM carrinhos c
-     WHERE c.id = ? AND c.status = 'aberto'
+     WHERE c.id = ? AND c.teste = 0 AND c.status = 'aberto'
+       AND NOT EXISTS (SELECT 1 FROM contatos_teste t WHERE t.valor = c.email OR t.valor = c.telefone LIMIT 1)
        AND NOT EXISTS (
          SELECT 1
            FROM lembretes_enviados anterior
@@ -279,7 +288,7 @@ async function reservarPrimeiro(db, id, email, tetoDia, tetoMes) {
            email_enviado_em = datetime('now'),
            etapa_email = 1,
            proximo_email_em = datetime('now', '+7 days')
-     WHERE id = ? AND status = 'aberto'`).bind(id).run()
+     WHERE id = ? AND teste = 0 AND status = 'aberto'`).bind(id).run()
   if (mudancas(atualizado) === 1) return true
 
   await apagarReserva(db, id, 1)
@@ -292,7 +301,8 @@ async function reservarSeguimento(db, id, etapaAnterior, etapa, tetoDia, tetoMes
       (carrinho_id, canal, etapa, enviado_em)
     SELECT id, 'email', ?, datetime('now')
       FROM carrinhos
-     WHERE id = ?
+     WHERE id = ? AND teste = 0
+       AND NOT EXISTS (SELECT 1 FROM contatos_teste t WHERE t.valor = carrinhos.email OR t.valor = carrinhos.telefone LIMIT 1)
        AND status = 'lembrado'
        AND finalizado_em IS NULL
        AND etapa_email = ?
@@ -391,7 +401,7 @@ async function executarRodadaEmail(env, opcoes = {}) {
     await db.prepare(`
       UPDATE carrinhos
          SET status = 'ignorado'
-       WHERE status = 'aberto'
+       WHERE teste = 0 AND status = 'aberto'
          AND criado_em < datetime('now', '-48 hours')`).run()
   }
 
@@ -408,8 +418,9 @@ async function executarRodadaEmail(env, opcoes = {}) {
 
     let reservado = false
     try {
-      const bloqueios = await impedimentosIniciais(db, email)
-      if (bloqueios.temCompra || bloqueios.jaLembrado || bloqueios.descadastrado) {
+      const bloqueios = await impedimentosIniciais(db, email, carrinho.telefone, carrinho.id)
+      if (bloqueios.teste) logger.log(`lembrete pulado (teste) ${carrinho.id}`)
+      if (bloqueios.teste || bloqueios.temCompra || bloqueios.jaLembrado || bloqueios.descadastrado) {
         await ignorar(db, carrinho.id)
         resultado.ignorados += 1
         continue
@@ -452,7 +463,12 @@ async function executarRodadaEmail(env, opcoes = {}) {
 
     const etapaAnterior = Number(carrinho.etapa_email || 0)
     try {
-      const bloqueios = await impedimentosSeguimento(db, email)
+      const bloqueios = await impedimentosSeguimento(db, email, carrinho.telefone, carrinho.id)
+      if (bloqueios.teste) {
+        logger.log(`lembrete pulado (teste) ${carrinho.id}`)
+        await finalizar(db, carrinho.id, 'teste')
+        continue
+      }
       if (bloqueios.temCompra) {
         await finalizar(db, carrinho.id, 'comprou')
         continue

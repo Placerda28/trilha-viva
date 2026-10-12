@@ -32,6 +32,7 @@ const get = async (req) => {
     filtro,
     busca: url.searchParams.get('busca'),
     pagina: url.searchParams.get('pagina'),
+    mostrarTestes: url.searchParams.get('testes') === '1',
     whatsappAtivo: (await lerEstadoWhatsapp(db)).estado === 'ativo',
   })
   return NextResponse.json({ ok: true, ...resultado }, { headers: cabecalhosPrivados })

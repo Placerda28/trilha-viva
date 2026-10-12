@@ -192,7 +192,7 @@ import { gravarCarrinho } from '../../lib/carrinhos.js'
 
 function bancoDeTeste() {
   const banco = new DatabaseSync(':memory:')
-  for (const m of ['0000_esquema_atual', '0001_gestao_fase1', '0002_cupons', '0004_carrinhos', '0012_rastreio']) {
+  for (const m of ['0000_esquema_atual', '0001_gestao_fase1', '0002_cupons', '0004_carrinhos', '0012_rastreio', '0013_testes']) {
     banco.exec(readFileSync(`migrations/${m}.sql`, 'utf8'))
   }
   const db = {

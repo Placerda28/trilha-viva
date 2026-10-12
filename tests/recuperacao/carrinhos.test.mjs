@@ -55,6 +55,7 @@ test('carrinho grava e devolve o celular limpo para preencher o checkout', async
   banco.exec(readFileSync('migrations/0000_esquema_atual.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0012_rastreio.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0013_testes.sql', 'utf8'))
   const db = new D1Local(banco)
   await gravarCarrinho(db, {
     id: 'referencia',

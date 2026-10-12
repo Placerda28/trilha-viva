@@ -43,6 +43,7 @@ function bancoRobo() {
   banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0005_recuperacao_v2.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0006_whatsapp.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0013_testes.sql', 'utf8'))
   return banco
 }
 
@@ -317,4 +318,28 @@ test('assuntos e textos das quatro etapas seguem a especificação', async () =>
     assert.match(email.text, /Pix ou cartão, acesso liberado na hora\./)
     assert.match(email.text, new RegExp(`utm_campaign=${etapa === 1 ? 'carrinho' : `carrinho-${etapa}`}`))
   }
+})
+
+
+test('teste não recebe email inicial nem seguimento; contato da lista impede mesmo carrinho antigo', async () => {
+  const banco = bancoRobo()
+  carrinho(banco, 'marcado', 'marcado@example.com')
+  protocolo(banco, 'sequencia', 'sequencia@example.com')
+  carrinho(banco, 'email-lista', 'paulohenrique_ls@hotmail.com')
+  protocolo(banco, 'telefone-lista', 'telefone@example.com')
+  banco.exec(`
+    UPDATE carrinhos SET teste = 1 WHERE id IN ('marcado', 'sequencia');
+    UPDATE carrinhos SET telefone = '27996253839' WHERE id = 'telefone-lista';
+  `)
+  const pedidos = []
+  const logs = []
+  const resultado = await executarRodada(env(new D1Local(banco)), {
+    logger: { log: (s) => logs.push(s), error: (e) => { throw new Error(e) } },
+    fetchImpl: async (...args) => { pedidos.push(args); return envioOk() },
+  })
+  assert.equal(resultado.enviados, 0)
+  assert.equal(pedidos.length, 0)
+  assert.ok(logs.some((s) => s.includes('pulado (teste)')))
+  assert.equal(banco.prepare("SELECT finalizado_motivo FROM carrinhos WHERE id = 'telefone-lista'").get().finalizado_motivo, 'teste')
+  banco.close()
 })

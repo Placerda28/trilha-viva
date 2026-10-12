@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import ContaForm from './ContaForm'
 import { rastrear } from './MetaPixel'
 import { site } from '@/lib/site'
 import { esquecer } from '@/lib/checkout-campos'
+import { CHAVE_EMAIL_ENTRAR, INTERVALO_MS, proximoPasso } from '@/lib/pos-pagamento'
 
 // A tela depois do pagamento. O trabalho dela é um só: transformar quem
 // acabou de pagar em quem já tem acesso. Por isso o único caminho visível
@@ -15,16 +16,16 @@ export default function AccessPanel() {
   const params = useSearchParams()
   // Stripe volta com ?session_id=. O Mercado Pago volta com ?payment_id= e
   // ?external_reference= (a referência aleatória que prova que a compra é
-  // desta pessoa).
+  // desta pessoa). Sem os dois juntos, nada é consultado.
   const sessionId = params.get('session_id')
   const paymentId = params.get('payment_id')
   const ref = params.get('external_reference')
   const temCompra = Boolean(sessionId || (paymentId && paymentId !== 'null' && ref))
   const [state, setState] = useState({ status: temCompra ? 'loading' : 'missing' })
-  const tries = useRef(0)
+  const [passo, setPasso] = useState(temCompra ? 'esperar' : 'missing')
+  const [rodada, setRodada] = useState(0)
 
-  const check = useCallback(async () => {
-    if (!temCompra) return
+  const consultar = useCallback(async () => {
     try {
       const res = await fetch('/api/acesso', {
         method: 'POST',
@@ -32,42 +33,66 @@ export default function AccessPanel() {
         body: JSON.stringify(sessionId ? { session_id: sessionId } : { payment_id: paymentId, ref }),
         cache: 'no-store',
       })
-      const data = await res.json()
-      setState(data)
-      return data.status
+      return await res.json()
     } catch {
-      setState({ status: 'error', error: 'Falha de conexão ao verificar o pagamento.' })
-      return 'error'
+      // Queda de internet no meio da espera não encerra nada: conta como
+      // "ainda pendente" e a próxima consulta tenta de novo.
+      return { status: 'pending' }
     }
-  }, [temCompra, sessionId, paymentId, ref])
+  }, [sessionId, paymentId, ref])
 
+  // Confere a cada 3 segundos, por até 3 minutos. "Já paguei, conferir de
+  // novo" começa uma nova rodada de 3 minutos.
   useEffect(() => {
-    let stop = false
+    if (!temCompra) return
+    let parar = false
     let timer
-    const run = async () => {
-      const status = await check()
-      if (stop) return
-      if (status === 'pending' && tries.current < 20) {
-        tries.current += 1
-        timer = setTimeout(run, 4000)
+    let tentativas = 0
+    const rodar = async () => {
+      const dados = await consultar()
+      if (parar) return
+      // Guarda o que a resposta trouxe (e-mail mascarado, aviso de WhatsApp)
+      // sem perder o que veio antes.
+      setState((antes) => ({ ...antes, ...dados }))
+      const p = proximoPasso(dados, tentativas)
+      if (p === 'esperar') {
+        tentativas += 1
+        timer = setTimeout(rodar, INTERVALO_MS)
+        return
       }
+      setPasso(p)
     }
-    run()
+    setPasso('esperar')
+    rodar()
     return () => {
-      stop = true
+      parar = true
       clearTimeout(timer)
     }
-  }, [check])
+  }, [temCompra, consultar, rodada])
+
+  // Já tem senha: vai para a entrada com o e-mail preenchido. O e-mail passa
+  // pela memória da aba, nunca pelo endereço (o Pixel lê o endereço).
+  useEffect(() => {
+    if (passo !== 'entrar') return
+    try {
+      sessionStorage.setItem(CHAVE_EMAIL_ENTRAR, state.email || '')
+    } catch {
+      /* sem memória da aba: a pessoa digita o e-mail */
+    }
+    window.location.replace('/entrar?ja=1')
+  }, [passo, state.email])
 
   // Compra no Pixel, uma vez por pagamento (recarregar a página não conta de
   // novo). O id é o mesmo que o aviso da operadora manda pelo servidor: a
-  // sessão na Stripe, a referência no Mercado Pago.
+  // sessão na Stripe, a referência no Mercado Pago. Compra de teste não vai.
   const compraId = sessionId || ref
+  const pago = state.status === 'paid'
   useEffect(() => {
-    if (state.status !== 'paid' || !compraId) return
+    if (!pago || !compraId) return
     // Compra aprovada: os dados lembrados para a próxima compra não servem mais.
     esquecer()
-    const chave = `tv-compra-${compraId}`
+    if (state.teste) return
+    const chave = 'tv-compra-' + compraId
     try {
       if (sessionStorage.getItem(chave)) return
       sessionStorage.setItem(chave, '1')
@@ -75,9 +100,9 @@ export default function AccessPanel() {
       /* sem sessionStorage: a Meta ainda deduplica pelo id */
     }
     rastrear('Purchase', { value: site.price, currency: site.currency }, compraId)
-  }, [state.status, compraId])
+  }, [pago, state.teste, compraId])
 
-  if (state.status === 'missing') {
+  if (passo === 'missing') {
     return (
       <Painel titulo="Nada por aqui ainda">
         <p>
@@ -96,61 +121,70 @@ export default function AccessPanel() {
     )
   }
 
-  if (state.status === 'loading') {
+  if (passo === 'esperar' || passo === 'entrar') {
     return (
-      <Painel titulo="Confirmando seu pagamento…">
-        <p>Só um instante. Estamos verificando com a operadora.</p>
+      <Painel titulo={passo === 'entrar' ? 'Pagamento confirmado' : 'Confirmando seu pagamento…'}>
+        <p>
+          {passo === 'entrar'
+            ? 'Você já tem uma senha com este e-mail. Levando você para a entrada…'
+            : 'Só um instante. Estamos conferindo com o Mercado Pago. No Pix, isso leva alguns segundos depois que você paga.'}
+        </p>
         <div className="mt-6 h-[2px] w-full overflow-hidden bg-line">
           <div className="h-full w-1/3 animate-pulse bg-signal" />
         </div>
+        {passo === 'esperar' && (
+          <p className="mt-5 text-[14px] text-ink-faint">Pode deixar esta página aberta. Ela segue sozinha.</p>
+        )}
       </Painel>
     )
   }
 
-  if (state.status === 'pending') {
+  if (passo === 'senha') {
+    // A criação de senha é a primeira coisa da tela: título curto e o
+    // formulário logo abaixo, com o e-mail da compra já preenchido e travado.
     return (
-      <Painel titulo="Aguardando a confirmação do pagamento" alerta>
-        <p>{state.message}</p>
-        <p className="mt-3">
-          Pode deixar esta página aberta — assim que o pagamento cair, ela segue sozinha para o
-          próximo passo.
-        </p>
-      </Painel>
-    )
-  }
-
-  if (state.status === 'paid') {
-    return (
-      <Painel titulo="Pagamento confirmado. Falta criar sua senha." ok>
-        <p>
-          Sua conta usa{' '}
-          <strong className="font-semibold text-ink">{state.email || 'o e-mail da compra'}</strong>.
-          Escolha uma senha e o acervo abre em seguida.
-        </p>
-
-        <div className="mt-7 border-t border-line pt-7">
-          <ContaForm modo="criar" />
-        </div>
-
+      <Painel titulo="Pagamento confirmado. Crie sua senha." ok>
+        <ContaForm modo="criar" emailFixo={state.email || ''} />
         <p className="mt-6 text-[13.5px] leading-relaxed text-ink-faint">
           {state.mailed
             ? 'Se você fechar esta página antes de terminar, tudo bem: enviamos o mesmo link para o seu e-mail.'
-            : 'Termine agora, nesta tela. Se fechar antes, use "Esqueci minha senha" na página de entrada com este mesmo e-mail.'}
+            : 'Termine agora, nesta tela. Se fechar antes, use "Primeiro acesso" na página de entrada com este mesmo e-mail.'}
         </p>
       </Painel>
     )
   }
 
+  const recusado = passo === 'recusado'
+  const destino = state.emailMascarado ? (
+    <strong className="font-semibold text-ink">{state.emailMascarado}</strong>
+  ) : (
+    'informado na compra'
+  )
   return (
-    <Painel titulo="Não conseguimos confirmar automaticamente" alerta>
-      <p>{state.error || 'Tente recarregar a página em alguns instantes.'}</p>
-      <p className="mt-3">
-        Se o valor já saiu da sua conta, o acesso não se perde: o link para criar a senha também vai
-        para o e-mail informado no pagamento. Confira a caixa de spam.
-      </p>
-      <button type="button" onClick={check} className="btn-quiet mt-6">
-        Verificar de novo
-      </button>
+    <Painel titulo={recusado ? 'O pagamento não foi aprovado' : 'Ainda não recebemos a confirmação'} alerta>
+      {recusado ? (
+        <p>
+          O Mercado Pago recusou ou cancelou este pagamento e nada foi cobrado por nós. Se quiser,
+          tente de novo pela página de compra.
+        </p>
+      ) : passo === 'erro' ? (
+        <p>{state.error || 'Não conseguimos conferir este pagamento agora.'}</p>
+      ) : (
+        <p>
+          Assim que o pagamento cair, você recebe o link de acesso no e-mail {destino}
+          {state.whatsapp ? ' e no WhatsApp' : ''}. Confira também a caixa de spam.
+        </p>
+      )}
+      <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+        <button type="button" onClick={() => setRodada((n) => n + 1)} className="btn-ink">
+          Já paguei, conferir de novo
+        </button>
+        {recusado && (
+          <Link href="/assinar" className="btn-quiet">
+            Tentar de novo
+          </Link>
+        )}
+      </div>
     </Painel>
   )
 }

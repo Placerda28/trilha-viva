@@ -9,6 +9,8 @@ import { getDB } from '@/lib/d1'
 import { cancelarReservaCupom, estenderReservaCupom } from '@/lib/gestao/cupons'
 import { marcarCarrinhosPagos } from '@/lib/carrinhos'
 import { gravarRastreioCompra } from '@/lib/rastreio-compra'
+import { ehTeste, enviarMetaSeReal } from '@/lib/teste'
+import { enviarAcessoLiberado } from '@/lib/whatsapp-acesso'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -20,7 +22,7 @@ export const dynamic = 'force-dynamic'
 // Uma diferença importa: o Mercado Pago avisa o mesmo pagamento várias vezes
 // (quando ele nasce, quando o Pix cai, a cada atualização). O e-mail só sai na
 // primeira vez que a compra entra no banco, para ninguém receber três iguais.
-async function liberarAcesso(r) {
+async function liberarAcesso(r, teste) {
   const email = normalizarEmail(r.email)
   if (!email) {
     console.error('mp webhook sem e-mail', r.pagamentoId)
@@ -40,11 +42,18 @@ async function liberarAcesso(r) {
     forma: r.forma,
     cupom: r.cupom,
     referencia: r.referencia,
+    teste,
   })
   if (!nova) return
 
   const token = await criarToken({ clienteId: cliente.id, tipo: 'criar_senha', horas: 24 * 7 })
-  if (token) await enviarCriarSenha({ para: email, nome: r.nome, token })
+  if (!token) return
+  await enviarCriarSenha({ para: email, nome: r.nome, token })
+  // O mesmo link também pelo WhatsApp, para quem fechou a tela do Mercado
+  // Pago sem voltar ao site. Só sai depois que a Meta aprovar o modelo e o
+  // WA_ACESSO estiver "ativo"; nunca derruba o aviso (ver lib/whatsapp-acesso.js).
+  const whatsapp = await enviarAcessoLiberado(process.env, getDB(), { telefone: r.telefone, nome: r.nome, token })
+  if (whatsapp !== 'desligado') console.log('whatsapp acesso liberado', whatsapp, r.pagamentoId)
 }
 
 export async function POST(req) {
@@ -86,7 +95,8 @@ export async function POST(req) {
       // Compra para a Meta pelo servidor. O id é a referência do pagamento, a
       // mesma que volta em /sucesso e que a tela usa no Pixel. O Mercado Pago
       // avisa o mesmo pagamento várias vezes; a Meta descarta as repetições.
-      const meta = await enviarEventoMeta({
+      const teste = await ehTeste(getDB(), r)
+      const meta = await enviarMetaSeReal(teste, {
         nome: 'Purchase',
         id: r.referencia || r.compraId,
         email: r.email,
@@ -97,8 +107,8 @@ export async function POST(req) {
         valor: r.valorCentavos / 100,
         moeda: String(r.moeda || 'brl').toUpperCase(),
         referencia: r.referencia || r.compraId,
-      })
-      await liberarAcesso(r)
+      }, enviarEventoMeta)
+      await liberarAcesso(r, teste)
       try {
         // Origem da venda e resultado do envio à Meta, na própria compra.
         await gravarRastreioCompra(getDB(), { compraId: r.compraId, origem: r.utm, metaStatus: meta.status })

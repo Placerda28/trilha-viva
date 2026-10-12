@@ -72,6 +72,7 @@ function banco() {
     '0009_whatsapp_estado',
     '0010_whatsapp_sequencia',
     '0011_whatsapp_anexos',
+  '0013_testes',
   ]) {
     b.exec(readFileSync(`migrations/${arquivo}.sql`, 'utf8'))
   }

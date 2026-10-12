@@ -20,6 +20,7 @@ const get = async (req) => {
   const resultado = await consultarClientes(db, {
     q: url.searchParams.get('q'),
     pagina: url.searchParams.get('pagina'),
+    mostrarTestes: url.searchParams.get('testes') === '1',
   })
   await preencherFormas(resultado.linhas)
 

@@ -41,7 +41,7 @@ const get = async (req) => {
     )
   }
 
-  const itens = await consultarItensPeriodo(db, { ...periodo, pagina })
+  const itens = await consultarItensPeriodo(db, { ...periodo, pagina, mostrarTestes: url.searchParams.get('testes') === '1' })
   const mpNaPagina = itens.linhas.filter(
     (linha) => !linha.compra_forma && String(linha.compra_origem || '').startsWith('mp_')
   )

@@ -5,6 +5,7 @@ import { useGestao } from './useGestao'
 import ClientesTabela from './ClientesTabela'
 import { Aviso, Esqueleto, Vazio, Paginacao, BaixarPlanilha } from './Estados'
 import { numero } from './formato'
+import { MostrarTestes } from './AcaoGestao'
 
 const POR_PAGINA = 25
 
@@ -13,6 +14,7 @@ export default function ClientesLista() {
   const [q, setQ] = useState('')
   const [pagina, setPagina] = useState(1)
   const [tentativa, setTentativa] = useState(0)
+  const [testes, setTestes] = useState(false)
 
   // Espera a pessoa parar de digitar antes de buscar: sem isso, "maria" vira
   // cinco consultas ao banco.
@@ -24,7 +26,7 @@ export default function ClientesLista() {
     return () => clearTimeout(t)
   }, [texto])
 
-  const url = '/api/gestao/clientes?q=' + encodeURIComponent(q) + '&pagina=' + pagina
+  const url = '/api/gestao/clientes?q=' + encodeURIComponent(q) + '&pagina=' + pagina + (testes ? '&testes=1' : '')
   const { dados, erro, carregando } = useGestao(url, tentativa)
   const total = dados?.total ?? 0
 
@@ -46,7 +48,17 @@ export default function ClientesLista() {
         <BaixarPlanilha href={'/api/gestao/clientes/csv?q=' + encodeURIComponent(q)} />
       </div>
 
-      <p className="figs mt-4 min-h-[20px] text-[13.5px] text-ink-muted" aria-live="polite">
+      <div className="mt-3">
+        <MostrarTestes
+          valor={testes}
+          onMudar={(v) => {
+            setTestes(v)
+            setPagina(1)
+          }}
+        />
+      </div>
+
+      <p className="figs mt-2 min-h-[20px] text-[13.5px] text-ink-muted" aria-live="polite">
         {dados
           ? q
             ? numero(total) + (total === 1 ? ' cliente encontrado' : ' clientes encontrados')

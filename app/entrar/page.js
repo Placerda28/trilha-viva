@@ -28,8 +28,9 @@ export default function EntrarPage() {
         .
       </p>
       <p className="mt-2 text-[13.5px] leading-relaxed text-ink-muted">
-        Comprou e não criou a senha? Procure o e-mail de confirmação — ele tem o link. Ou use
-        &quot;Esqueci minha senha&quot; acima com o mesmo endereço.
+        <a href="/primeiro-acesso" className="link-signal font-semibold">
+          Primeiro acesso? Comprei e ainda não criei minha senha
+        </a>
       </p>
     </div>
   )

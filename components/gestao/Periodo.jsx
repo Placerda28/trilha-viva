@@ -5,6 +5,7 @@ import { useGestao } from './useGestao'
 import Grafico from './Grafico'
 import Segmentos from './Segmentos'
 import ClientesTabela from './ClientesTabela'
+import { MostrarTestes } from './AcaoGestao'
 import { Aviso, Esqueleto, Vazio, Paginacao, BaixarPlanilha } from './Estados'
 import { ATALHOS, intervaloDoAtalho, diasEntre, diaPorExtenso, moeda, numero } from './formato'
 
@@ -124,13 +125,15 @@ export default function Periodo() {
   const [agrupar, setAgrupar] = useState('dia')
   const [pagina, setPagina] = useState(1)
   const [tentativa, setTentativa] = useState(0)
+  const [testes, setTestes] = useState(false)
 
   const valido = /^\d{4}-\d{2}-\d{2}$/.test(de) && /^\d{4}-\d{2}-\d{2}$/.test(ate) && de <= ate
   const longoDemais = valido && diasEntre(de, ate) > 731
 
   const url =
     valido && !longoDemais
-      ? '/api/gestao/periodo?de=' + de + '&ate=' + ate + '&agrupar=' + agrupar + '&pagina=' + pagina
+      ? '/api/gestao/periodo?de=' + de + '&ate=' + ate + '&agrupar=' + agrupar + '&pagina=' + pagina +
+        (testes ? '&testes=1' : '')
       : null
   const { dados, erro, carregando } = useGestao(url, tentativa)
 
@@ -254,6 +257,17 @@ export default function Periodo() {
             Compras no período{' '}
             <span className="figs font-normal text-ink-muted">({numero(dados.total_itens)})</span>
           </h3>
+          {/* Os totais acima nunca contam teste; o filtro só mostra as compras
+              de teste nesta lista, com o selo. */}
+          <div className="mt-2">
+            <MostrarTestes
+              valor={testes}
+              onMudar={(v) => {
+                setTestes(v)
+                setPagina(1)
+              }}
+            />
+          </div>
           {dados.itens.length === 0 ? (
             <Vazio
               titulo="Nenhuma compra neste período"

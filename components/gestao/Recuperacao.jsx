@@ -7,6 +7,7 @@ import { Aviso, Esqueleto, Vazio, BaixarPlanilha } from './Estados'
 import { dataHora, moeda, numero } from './formato'
 import SubAbasRecuperacao from './SubAbasRecuperacao'
 import SequenciaWhatsapp from './SequenciaWhatsapp'
+import AcaoGestao, { MostrarTestes, SeloTeste } from './AcaoGestao'
 
 // Aba Recuperação: uma linha por pessoa que deixou nome, e-mail e celular no
 // checkout e não pagou na hora. Mostra em que ponto da sequência de e-mails
@@ -32,6 +33,8 @@ const MOTIVO = {
   sequencia: 'Recebeu os 4 e-mails e não comprou',
   descadastro: 'Pediu para não receber lembretes',
   comprou: 'Já tinha comprado por outro caminho',
+  teste: 'Marcado como teste',
+  gestao: 'Lembretes parados pela gestão',
 }
 
 // (11) 98765-4321 a partir dos dígitos que o servidor guarda.
@@ -152,11 +155,53 @@ function Whatsapp({ p }) {
   return <span className="text-[13.5px] text-ink-muted">{WHATSAPP_OUTROS[w.situacao] || '—'}</span>
 }
 
-function Pessoa({ p }) {
+// Na Recuperação: marcar o carrinho como teste (sai dos números e para os
+// lembretes) ou só parar os lembretes de uma pessoa real (continua contando).
+function AcoesCarrinho({ p, onMudou }) {
+  const andando = p.situacao === 'andamento' || p.situacao === 'aguardando' || (p.whatsapp?.proximo_em && !p.pago_em)
+  return (
+    <span className="mt-0.5 flex flex-wrap gap-x-4">
+      {p.teste ? (
+        <AcaoGestao
+          rotulo="Desmarcar teste"
+          explicacao="O carrinho volta a contar. Os lembretes que já pararam não voltam."
+          confirmar="Desmarcar teste"
+          url="/api/gestao/recuperacao/teste"
+          corpo={{ email: p.email, teste: false }}
+          onFeito={onMudou}
+        />
+      ) : (
+        <AcaoGestao
+          rotulo="Marcar como teste"
+          explicacao="Os carrinhos e compras deste e-mail saem dos números e todos os lembretes (e-mail e WhatsApp) param."
+          confirmar="Marcar como teste"
+          url="/api/gestao/recuperacao/teste"
+          corpo={{ email: p.email, teste: true }}
+          onFeito={onMudou}
+        />
+      )}
+      {!p.teste && andando && (
+        <AcaoGestao
+          rotulo="Parar lembretes"
+          explicacao="Esta pessoa não recebe mais nenhum e-mail nem WhatsApp de lembrete. Ela continua contando nos números."
+          confirmar="Parar lembretes"
+          url="/api/gestao/recuperacao/parar"
+          corpo={{ email: p.email }}
+          onFeito={onMudou}
+        />
+      )}
+    </span>
+  )
+}
+
+function Pessoa({ p, onMudou }) {
   const tel = celular(p.telefone)
   return (
     <>
-      <span className="block font-semibold text-ink">{p.nome || 'Sem nome'}</span>
+      <span className="flex flex-wrap items-center gap-2">
+        <span className="font-semibold text-ink">{p.nome || 'Sem nome'}</span>
+        {p.teste && <SeloTeste />}
+      </span>
       <span className="block break-all text-[13.5px] text-ink-muted">{p.email}</span>
       {tel ? (
         <a
@@ -171,11 +216,12 @@ function Pessoa({ p }) {
       ) : (
         <span className="mt-0.5 block text-[13px] text-ink-faint">Sem celular</span>
       )}
+      {onMudou && <AcoesCarrinho p={p} onMudou={onMudou} />}
     </>
   )
 }
 
-function Tabela({ itens }) {
+function Tabela({ itens, onMudou }) {
   return (
     <>
       <div className="mt-6 hidden overflow-hidden rounded border border-line bg-white md:block">
@@ -193,7 +239,7 @@ function Tabela({ itens }) {
             {itens.map((p) => (
               <tr key={p.email} className="align-top">
                 <td className="max-w-[300px] px-4 py-3.5">
-                  <Pessoa p={p} />
+                  <Pessoa p={p} onMudou={onMudou} />
                 </td>
                 <td className="figs whitespace-nowrap px-4 py-3.5 text-ink-muted">{dataHora(p.criado_em)}</td>
                 <td className="px-4 py-3.5">
@@ -217,7 +263,7 @@ function Tabela({ itens }) {
           <li key={p.email} className="px-4 py-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <Pessoa p={p} />
+                <Pessoa p={p} onMudou={onMudou} />
               </div>
               <div className="shrink-0 text-right">
                 <Situacao p={p} />
@@ -263,6 +309,7 @@ export default function Recuperacao() {
   const [q, setQ] = useState('')
   const [pagina, setPagina] = useState(1)
   const [tentativa, setTentativa] = useState(0)
+  const [testes, setTestes] = useState(false)
 
   // Espera parar de digitar antes de consultar o banco.
   useEffect(() => {
@@ -274,7 +321,10 @@ export default function Recuperacao() {
   }, [texto])
 
   const busca = 'filtro=' + filtro + '&busca=' + encodeURIComponent(q)
-  const { dados, erro, carregando } = useGestao('/api/gestao/recuperacao?' + busca + '&pagina=' + pagina, tentativa)
+  const { dados, erro, carregando } = useGestao(
+    '/api/gestao/recuperacao?' + busca + '&pagina=' + pagina + (testes ? '&testes=1' : ''),
+    tentativa
+  )
   const t = dados?.totais
 
   return (
@@ -341,6 +391,13 @@ export default function Recuperacao() {
           />
           <BaixarPlanilha href={'/api/gestao/recuperacao/csv?' + busca} />
         </div>
+        <MostrarTestes
+          valor={testes}
+          onMudar={(v) => {
+            setTestes(v)
+            setPagina(1)
+          }}
+        />
       </div>
 
       {erro ? (
@@ -355,7 +412,7 @@ export default function Recuperacao() {
         )
       ) : (
         <div className={carregando ? 'opacity-60 transition-opacity duration-150' : 'transition-opacity duration-150'}>
-          <Tabela itens={dados.itens} />
+          <Tabela itens={dados.itens} onMudou={() => setTentativa((n) => n + 1)} />
           {/* A rota não conta o total (seria uma consulta a mais): sabe só se
               há próxima página. */}
           {(pagina > 1 || dados.temMais) && (

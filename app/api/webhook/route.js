@@ -1,3 +1,6 @@
+import { ehTeste, enviarMetaSeReal } from '@/lib/teste'
+import { getDB } from '@/lib/d1'
+import { gravarRastreioCompra } from '@/lib/rastreio-compra'
 import { NextResponse } from 'next/server'
 import { getCryptoProvider, getStripe } from '@/lib/stripe'
 import { acharOuCriar, registrarCompra, criarToken } from '@/lib/clientes'
@@ -18,7 +21,7 @@ export const dynamic = 'force-dynamic'
 // As duas rotas gravam a mesma compra, e isso é de propósito: o banco recusa
 // stripe_session_id repetido, então quem chegar primeiro grava e a segunda
 // passa sem estragar nada.
-async function liberarAcesso(session) {
+async function liberarAcesso(session, teste) {
   const email = normalizarEmail(session.customer_details?.email)
   if (!email) {
     console.error('webhook sem e-mail', session.id)
@@ -39,6 +42,7 @@ async function liberarAcesso(session) {
     valor: session.amount_total,
     moeda: session.currency,
     forma: 'cartao',
+    teste,
   })
 
   // Sete dias é folga de sobra para quem viajou ou só abre o e-mail no fim de
@@ -76,7 +80,8 @@ export async function POST(req) {
       // Compra para a Meta pelo servidor, com o id da sessão da Stripe — o
       // mesmo que a tela /sucesso usa no Pixel.
       const m = session.metadata || {}
-      await enviarEventoMeta({
+      const teste = await ehTeste(getDB(), { email: session.customer_details?.email, telefone: m.telefone || session.customer_details?.phone })
+      const meta = await enviarMetaSeReal(teste, {
         nome: 'Purchase',
         id: session.id,
         email: session.customer_details?.email,
@@ -87,9 +92,10 @@ export async function POST(req) {
         url: `${site.url}/sucesso`,
         valor: (session.amount_total || 0) / 100,
         moeda: String(session.currency || 'brl').toUpperCase(),
-      })
+      }, enviarEventoMeta)
       try {
-        await liberarAcesso(session)
+        await liberarAcesso(session, teste)
+        await gravarRastreioCompra(getDB(), { compraId: session.id, metaStatus: meta.status })
       } catch (err) {
         // Nunca devolver erro à Stripe por uma falha nossa de gravação: ela
         // reenviaria o aviso várias vezes. O registro no log é o que permite
