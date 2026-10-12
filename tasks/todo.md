@@ -12,7 +12,7 @@ A branch `whatsapp-acesso-meta` (6541f0a) ficou como estava, sem merge.
 - [x] Não feitos de propósito: 2.2 e 2.7 (ver conclusão do diagnóstico). Stripe: só ganhou o log de sucesso (vem do lib/meta.js).
 - [x] Provas: 174 testes passando (13 novos); build limpo; visita local com ?utm_source=meta&utm_campaign=teste&utm_content=teste&fbclid=TESTE123abc na home, Pixel bloqueado, depois /assinar sem nada → carrinho com utm teste/teste e fbc fb.1.<ms>.TESTE123abc; gestão conferida no computador e no celular (sem rolagem lateral); custo ~0,14 ms por evento.
 - [x] ATENÇÃO: o build falha na pasta "C:dev" (o Next lê "Cdev" e não acha a fonte da /opengraph-image), também na main sem as mudanças. Build feito na cópia ~/tv-build (git worktree, nome de pasta comum), onde passa.
-- [ ] PARADA: aplicar a 0012 no D1 de produção (ANTES do deploy: sem as colunas o carrinho não é gravado).
+- [x] 0012 aplicada no D1 de produção pelo Paulo em 12/10 (14 colunas conferidas). O site antigo não usa as colunas: nada muda até o deploy.
 - [ ] PARADA: merge em main + deploy (de ~/tv-build).
 - [ ] Prova real: compra de R$ 1,00 por Pix, outra conta, pelo link com UTM de teste → gestão com origem "teste" e Meta ✓; Purchase do servidor no Gerenciador de Eventos; log "meta capi Purchase ok".
 - [ ] Depois do deploy: CPU do /api/checkout e do webhook no painel da Cloudflare.
