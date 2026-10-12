@@ -4,6 +4,7 @@ import {
   normalizarEmailLembrete,
 } from '../../lib/lembrete-assinatura.js'
 import { atenderWebhook, executarWhatsapp } from './whatsapp.js'
+import { acompanharAcessoLiberado } from './acesso-liberado.js'
 
 const EMAILS = {
   1: {
@@ -534,6 +535,14 @@ export async function executarRodada(env, opcoes = {}) {
     resultado.whatsapp = await executarWhatsapp(env, opcoes)
   } catch (erro) {
     logger.error('Falha na etapa de WhatsApp da rodada:', erro)
+  }
+
+  // Modelo "acesso_liberado" na Meta (status, aviso e teste). Independente
+  // dos lembretes: uma falha aqui não atrapalha nada.
+  try {
+    await acompanharAcessoLiberado(env, { db: env.DB, fetchImpl: opcoes.fetchImpl, logger })
+  } catch (erro) {
+    logger.error('Falha ao acompanhar o modelo acesso_liberado:', erro)
   }
 
   if (erroEmail) throw erroEmail

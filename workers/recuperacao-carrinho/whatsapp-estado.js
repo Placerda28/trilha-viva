@@ -48,7 +48,7 @@ export function tetoDoDia(estado, tetoNormal) {
 
 // ------------------------------------------------------------ e-mail ----
 
-async function emailAoSuporte(env, { assunto, texto, html }, fetchImpl) {
+export async function emailAoSuporte(env, { assunto, texto, html }, fetchImpl) {
   const para = String(env.WA_ENCAMINHAR_PARA || env.LEMBRETE_BCC || '').trim()
   if (!para || !env.RESEND_API_KEY) return
   const resposta = await fetchImpl('https://api.resend.com/emails', {
