@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { getStripe, PRODUCT_NAME } from '@/lib/stripe'
 import { site } from '@/lib/site'
 import { criarPreferencia, provedorAtivo } from '@/lib/mercadopago'
-import { enviarEventoMeta, ipDoPedido, lerCookiesMeta } from '@/lib/meta'
+import { enviarEventoMeta, ipDoPedido, lerCookiesMeta, lerOrigemVisita } from '@/lib/meta'
+import { temOrigem } from '@/lib/rastreio'
 import { getDB } from '@/lib/d1'
 import {
   gravarCarrinho,
@@ -55,7 +56,11 @@ export async function POST(req) {
   const nome = String(body.nome || '').trim().slice(0, 80)
   // WhatsApp obrigatório, como o e-mail: DDD + número (o 55 é tirado se vier).
   const telefone = limparTelefone(body.telefone)
-  const utm = limparUtm(body.utm)
+  // Origem: a do endereço da própria /assinar e, sem ela, a última guardada no
+  // cookie tv_origem (quem chegou pelo anúncio em outra página e navegou até
+  // aqui).
+  const daPagina = limparUtm(body.utm)
+  const utm = temOrigem(daPagina) ? daPagina : lerOrigemVisita(req)?.ultimo || daPagina
 
   if (!nomeValido(nome)) {
     return NextResponse.json({ error: 'Informe seu nome.' }, { status: 400 })
@@ -88,6 +93,8 @@ export async function POST(req) {
       nome: 'InitiateCheckout',
       id: eventoId,
       email,
+      telefone,
+      nomeCliente: nome,
       ...rastreio,
       url: `${site.url}/assinar`,
       valor,
@@ -133,6 +140,8 @@ export async function POST(req) {
         nome,
         telefone,
         origem: origemDoCarrinho({ utm, cupom: cupom?.codigo }),
+        utm,
+        ...rastreio,
       })
     } catch (err) {
       // A recuperação é acessória: uma falha nela nunca bloqueia uma venda.
@@ -154,6 +163,8 @@ export async function POST(req) {
         // esperando alguém.
         venceEmMs: venceLink,
         rastreio,
+        telefone,
+        utm,
       })
       if (!url) throw new Error('preferência sem init_point')
       await inicioCheckout((cupom?.preco_centavos ?? precoBaseCentavos) / 100)

@@ -52,7 +52,9 @@ test('celular guarda só dígitos, remove o 55 e exige DDD válido', () => {
 
 test('carrinho grava e devolve o celular limpo para preencher o checkout', async () => {
   const banco = new DatabaseSync(':memory:')
+  banco.exec(readFileSync('migrations/0000_esquema_atual.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0012_rastreio.sql', 'utf8'))
   const db = new D1Local(banco)
   await gravarCarrinho(db, {
     id: 'referencia',

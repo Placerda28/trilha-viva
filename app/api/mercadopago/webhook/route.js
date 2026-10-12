@@ -8,6 +8,7 @@ import { site } from '@/lib/site'
 import { getDB } from '@/lib/d1'
 import { cancelarReservaCupom, estenderReservaCupom } from '@/lib/gestao/cupons'
 import { marcarCarrinhosPagos } from '@/lib/carrinhos'
+import { gravarRastreioCompra } from '@/lib/rastreio-compra'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -85,16 +86,26 @@ export async function POST(req) {
       // Compra para a Meta pelo servidor. O id é a referência do pagamento, a
       // mesma que volta em /sucesso e que a tela usa no Pixel. O Mercado Pago
       // avisa o mesmo pagamento várias vezes; a Meta descarta as repetições.
-      await enviarEventoMeta({
+      const meta = await enviarEventoMeta({
         nome: 'Purchase',
         id: r.referencia || r.compraId,
         email: r.email,
+        telefone: r.telefone,
+        nomeCliente: r.nome,
         ...r.rastreio,
         url: `${site.url}/sucesso`,
         valor: r.valorCentavos / 100,
         moeda: String(r.moeda || 'brl').toUpperCase(),
+        referencia: r.referencia || r.compraId,
       })
       await liberarAcesso(r)
+      try {
+        // Origem da venda e resultado do envio à Meta, na própria compra.
+        await gravarRastreioCompra(getDB(), { compraId: r.compraId, origem: r.utm, metaStatus: meta.status })
+      } catch (err) {
+        // Acompanhamento: nunca pode atrapalhar a compra já liberada.
+        console.error('mp gravar rastreio', r.pagamentoId, err?.message)
+      }
       try {
         await marcarCarrinhosPagos(getDB(), { referencia: r.referencia, email: r.email })
       } catch (err) {
