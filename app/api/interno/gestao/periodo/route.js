@@ -6,6 +6,7 @@ import { preencherFormas } from '@/lib/gestao/forma'
 import {
   comprasMpSemForma,
   consultarItensPeriodo,
+  consultarOrigensPeriodo,
   consultarResumoPeriodo,
   itemPeriodoDaLinha,
 } from '@/lib/gestao/periodo'
@@ -52,7 +53,10 @@ const get = async (req) => {
   await preencherFormas([...itens.linhas, ...extras])
 
   // Os totais são lidos depois do cache para já refletirem as formas recém-descobertas.
-  const resumo = await consultarResumoPeriodo(db, periodo)
+  const [resumo, origens] = await Promise.all([
+    consultarResumoPeriodo(db, periodo),
+    consultarOrigensPeriodo(db, periodo),
+  ])
   return NextResponse.json(
     {
       ok: true,
@@ -60,6 +64,7 @@ const get = async (req) => {
       ate: periodo.ate,
       agrupar,
       totais: resumo.totais,
+      origens,
       serie: montarSerie({ de: periodo.de, ate: periodo.ate, agrupar, linhas: resumo.dias }),
       pagina,
       por_pagina: itens.por_pagina,

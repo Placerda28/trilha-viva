@@ -1,6 +1,7 @@
 import { dataHora, moeda, numero, FORMAS } from './formato'
 import { formatarCelular } from '@/lib/gestao/csv'
 import CorrigirEmail from './CorrigirEmail'
+import { rotuloOrigem } from '@/lib/rastreio'
 
 // Uma linha por cliente (ou por compra, na tela de período). No computador é
 // uma tabela; no celular, uma lista em que cada cliente é um bloco — sete
@@ -58,10 +59,31 @@ function Nome({ c, whatsapp, onMudou }) {
   )
 }
 
+// Origem da venda: o anúncio (utm_content), senão a campanha, senão a fonte.
+// Compra sem nenhum registro de rastreio é de antes de 12/10/2026: traço, para
+// não parecer venda "direta".
+function OrigemCompra({ compra }) {
+  if (!compra || (!compra.utm_source && !compra.meta)) {
+    return <span className="text-ink-faint" title="Compra anterior ao registro da origem">—</span>
+  }
+  return <span className="break-all">{rotuloOrigem(compra)}</span>
+}
+
+function MetaCompra({ meta }) {
+  if (!meta) return <span className="text-ink-faint">—</span>
+  if (meta === 'ok') return <span className="whitespace-nowrap text-ink">✓ enviado</span>
+  return (
+    <span className="whitespace-nowrap text-signal-deep" title={'Código: ' + meta}>
+      ✗ falhou
+    </span>
+  )
+}
+
 const chave = (c, i) => (c.compra?.id || 'c') + '-' + c.id + '-' + i
 
 // onMudou: só a aba Clientes passa (mostra "Corrigir e-mail").
-export default function ClientesTabela({ itens, whatsapp = false, onMudou }) {
+// rastreio: só a aba Período passa (colunas Origem e Meta).
+export default function ClientesTabela({ itens, whatsapp = false, onMudou, rastreio = false }) {
   return (
     <>
       <div className="mt-6 hidden overflow-hidden rounded border border-line bg-white md:block">
@@ -73,6 +95,8 @@ export default function ClientesTabela({ itens, whatsapp = false, onMudou }) {
               <th scope="col" className="px-4 py-3 text-right font-semibold">Valor</th>
               <th scope="col" className="px-4 py-3 font-semibold">Forma</th>
               <th scope="col" className="px-4 py-3 font-semibold">Cupom</th>
+              {rastreio && <th scope="col" className="px-4 py-3 font-semibold">Origem</th>}
+              {rastreio && <th scope="col" className="px-4 py-3 font-semibold">Meta</th>}
               <th scope="col" className="px-4 py-3 font-semibold">Senha</th>
               <th scope="col" className="px-4 py-3 text-right font-semibold">Downloads</th>
             </tr>
@@ -93,6 +117,16 @@ export default function ClientesTabela({ itens, whatsapp = false, onMudou }) {
                 <td className="px-4 py-3.5 text-ink">
                   {c.compra?.cupom || <span className="text-ink-faint">—</span>}
                 </td>
+                {rastreio && (
+                  <td className="max-w-[160px] px-4 py-3.5 text-ink">
+                    <OrigemCompra compra={c.compra} />
+                  </td>
+                )}
+                {rastreio && (
+                  <td className="px-4 py-3.5">
+                    <MetaCompra meta={c.compra?.meta} />
+                  </td>
+                )}
                 <td className="whitespace-nowrap px-4 py-3.5">
                   {c.tem_senha ? (
                     <span className="text-ink">Criou</span>
@@ -131,6 +165,22 @@ export default function ClientesTabela({ itens, whatsapp = false, onMudou }) {
                 <dt className="text-ink-muted">Downloads</dt>
                 <dd className="text-ink">{numero(c.downloads)}</dd>
               </div>
+              {rastreio && c.compra && (
+                <>
+                  <div>
+                    <dt className="text-ink-muted">Origem</dt>
+                    <dd className="text-ink">
+                      <OrigemCompra compra={c.compra} />
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-ink-muted">Meta</dt>
+                    <dd>
+                      <MetaCompra meta={c.compra.meta} />
+                    </dd>
+                  </div>
+                </>
+              )}
               {c.compra?.cupom && (
                 <div className="col-span-2">
                   <dt className="text-ink-muted">Cupom</dt>

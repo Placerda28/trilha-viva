@@ -63,6 +63,50 @@ function Formas({ t }) {
   )
 }
 
+// Vendas por campanha e por anúncio. É aqui que se vê qual criativo vende.
+// Compras de antes de 12/10/2026 não têm a origem gravada e ficam numa linha
+// à parte, para não se misturarem com as vendas diretas.
+function Origens({ linhas }) {
+  const nomeCampanha = (l) =>
+    !l.registrado ? 'Sem registro (antes de 12/10)' : l.campanha || l.fonte || 'Direto'
+  return (
+    <>
+      <h3 className="mt-10 text-[17px] font-bold text-ink">Vendas por campanha e anúncio</h3>
+      <div className="mt-4 overflow-hidden rounded border border-line bg-white">
+        <table className="w-full text-left text-[14px]">
+          <thead>
+            <tr className="border-b border-line bg-paper/60 text-[12.5px] text-ink-muted">
+              <th scope="col" className="px-4 py-3 font-semibold">Campanha</th>
+              <th scope="col" className="hidden px-4 py-3 font-semibold sm:table-cell">Anúncio</th>
+              <th scope="col" className="px-4 py-3 text-right font-semibold">Vendas</th>
+              <th scope="col" className="px-4 py-3 text-right font-semibold">Valor</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {linhas.map((l, i) => (
+              <tr key={i} className="align-top">
+                <td className={'break-words px-3 py-3 sm:px-4 ' + (l.registrado ? 'text-ink' : 'text-ink-muted')}>
+                  {nomeCampanha(l)}
+                  {l.registrado && l.campanha && l.fonte && (
+                    <span className="block text-[12.5px] text-ink-muted">{l.fonte}</span>
+                  )}
+                  {/* No celular o anúncio vai embaixo da campanha: 4 colunas não cabem. */}
+                  {l.anuncio && <span className="block text-[13px] text-ink sm:hidden">Anúncio: {l.anuncio}</span>}
+                </td>
+                <td className="hidden break-words px-4 py-3 text-ink sm:table-cell">
+                  {l.anuncio || <span className="text-ink-faint">—</span>}
+                </td>
+                <td className="figs px-3 py-3 text-right text-ink sm:px-4">{numero(l.compras)}</td>
+                <td className="figs whitespace-nowrap px-3 py-3 text-right text-ink sm:px-4">{moeda(l.centavos)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )
+}
+
 // Período longo demais para barras diárias vira semana (e depois mês): 300
 // barras de 1 px não dizem nada.
 function agruparPara(de, ate, atual) {
@@ -204,6 +248,8 @@ export default function Periodo() {
             <Grafico serie={dados.serie} titulo={'Faturamento por ' + NOME_AGRUPAR[dados.agrupar]} />
           ) : null}
 
+          {dados.origens?.length > 0 && <Origens linhas={dados.origens} />}
+
           <h3 className="mt-10 text-[17px] font-bold text-ink">
             Compras no período{' '}
             <span className="figs font-normal text-ink-muted">({numero(dados.total_itens)})</span>
@@ -215,7 +261,7 @@ export default function Periodo() {
             />
           ) : (
             <>
-              <ClientesTabela itens={dados.itens} />
+              <ClientesTabela itens={dados.itens} rastreio />
               <Paginacao pagina={pagina} porPagina={POR_PAGINA} total={dados.total_itens} onIr={setPagina} />
             </>
           )}

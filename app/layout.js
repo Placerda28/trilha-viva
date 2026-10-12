@@ -4,6 +4,7 @@ import '@fontsource-variable/source-serif-4'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import MetaPixel from '@/components/MetaPixel'
+import Origem from '@/components/Origem'
 import { site } from '@/lib/site'
 
 export const metadata = {
@@ -111,6 +112,7 @@ export default function RootLayout({ children }) {
         <main id="conteudo">{children}</main>
         <Footer />
         <MetaPixel />
+        <Origem />
       </body>
     </html>
   )

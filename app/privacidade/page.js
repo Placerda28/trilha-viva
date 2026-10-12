@@ -60,7 +60,9 @@ export default function PrivacidadePage() {
           Usamos o Pixel da Meta e a API de Conversões da Meta (Facebook e Instagram) para saber
           quais anúncios trazem visitas e compras. Eles registram páginas visitadas, o início do
           pagamento e a compra concluída, junto com cookies da Meta, endereço IP e navegador. O
-          e-mail da compra só é enviado criptografado (hash SHA-256), nunca em texto aberto. O
+          e-mail, o telefone e o nome da compra só são enviados criptografados (hash SHA-256), nunca
+          em texto aberto. Também guardamos a origem da visita (o link ou anúncio que trouxe você) e
+          os identificadores da Meta do checkout, para medir quais anúncios vendem. O
           tratamento pela Meta segue a política de privacidade dela. Você pode limitar anúncios
           personalizados nas configurações de anúncios da sua conta Meta ou bloqueando cookies de
           terceiros no navegador.
