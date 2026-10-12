@@ -1,17 +1,18 @@
 # Modelo de WhatsApp "acesso_liberado" (PONTO DE PARADA 1: aprovação do Paulo)
 
 Mensagem automática que sai quando o pagamento é confirmado, para quem tem celular na compra.
-É o mesmo número dos lembretes. Ainda NÃO foi enviada à Meta.
+É o mesmo número dos lembretes. Texto aprovado pelo Paulo em 12/10/2026. O cadastro na Meta é feito à mão no WhatsApp Manager (a chave da API é segredo e fica só na Cloudflare).
 
 ## Para cadastrar na Meta (WhatsApp Manager > Modelos de mensagem > Criar)
 
 - **Categoria:** Utilidade (não Marketing: é aviso de uma compra feita)
 - **Nome:** `acesso_liberado`
 - **Idioma:** Português (BR)
-- **Corpo** (a variável {{1}} é o primeiro nome; exemplo para a Meta: "Ana"):
+- **Corpo** (a variável {{1}} é o primeiro nome; exemplo para a Meta: "Ana"). APROVADO pelo Paulo em 12/10/2026:
 
-  > Oi {{1}}, seu pagamento foi confirmado e seu acesso à Trilha Viva está liberado. Toque no botão abaixo para criar sua senha e baixar suas 2.000 multitracks. O link vale por 7 dias e só pode ser usado uma vez.
+  > Olá, {{1}}! Seu pagamento foi confirmado e seu acesso à Trilha Viva está liberado. Toque no botão abaixo para criar sua senha e começar a baixar suas multitracks. Se o link vencer, use “Primeiro acesso” em trilhaviva.org/entrar.
 
+- **Rodapé:** `Trilha Viva`
 - **Botão:** "Visitar site", tipo **dinâmico**
   - Texto do botão: `Criar minha senha`
   - URL: `https://trilhaviva.org/criar-senha?t={{1}}`
