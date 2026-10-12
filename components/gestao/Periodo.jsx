@@ -77,7 +77,7 @@ function Origens({ linhas }) {
           <thead>
             <tr className="border-b border-line bg-paper/60 text-[12.5px] text-ink-muted">
               <th scope="col" className="px-4 py-3 font-semibold">Campanha</th>
-              <th scope="col" className="px-4 py-3 font-semibold">Anúncio</th>
+              <th scope="col" className="hidden px-4 py-3 font-semibold sm:table-cell">Anúncio</th>
               <th scope="col" className="px-4 py-3 text-right font-semibold">Vendas</th>
               <th scope="col" className="px-4 py-3 text-right font-semibold">Valor</th>
             </tr>
@@ -85,17 +85,19 @@ function Origens({ linhas }) {
           <tbody className="divide-y divide-line">
             {linhas.map((l, i) => (
               <tr key={i} className="align-top">
-                <td className={'break-all px-4 py-3 ' + (l.registrado ? 'text-ink' : 'text-ink-muted')}>
+                <td className={'break-words px-3 py-3 sm:px-4 ' + (l.registrado ? 'text-ink' : 'text-ink-muted')}>
                   {nomeCampanha(l)}
                   {l.registrado && l.campanha && l.fonte && (
                     <span className="block text-[12.5px] text-ink-muted">{l.fonte}</span>
                   )}
+                  {/* No celular o anúncio vai embaixo da campanha: 4 colunas não cabem. */}
+                  {l.anuncio && <span className="block text-[13px] text-ink sm:hidden">Anúncio: {l.anuncio}</span>}
                 </td>
-                <td className="break-all px-4 py-3 text-ink">
+                <td className="hidden break-words px-4 py-3 text-ink sm:table-cell">
                   {l.anuncio || <span className="text-ink-faint">—</span>}
                 </td>
-                <td className="figs px-4 py-3 text-right text-ink">{numero(l.compras)}</td>
-                <td className="figs whitespace-nowrap px-4 py-3 text-right text-ink">{moeda(l.centavos)}</td>
+                <td className="figs px-3 py-3 text-right text-ink sm:px-4">{numero(l.compras)}</td>
+                <td className="figs whitespace-nowrap px-3 py-3 text-right text-ink sm:px-4">{moeda(l.centavos)}</td>
               </tr>
             ))}
           </tbody>
