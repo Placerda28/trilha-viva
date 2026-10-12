@@ -25,10 +25,14 @@ Branch `pos-pagamento` (saiu de main 9a510c6). Pedido do Paulo/Cowork em 12/10. 
 - [x] 206 testes passando (novos: preferência, /sucesso, primeiro acesso, link vencido/reusado, WhatsApp de acesso, marcar/desmarcar, contato de teste, robô, Meta, parar lembretes, bloqueio).
 - [x] Build limpo em ~/tv-build (commit 6c40486, Environments: .env.local).
 - [x] Telas locais (Playwright, 390 e 1280): pendente → pago → senha com e-mail travado (3 consultas); esgotado após 61 consultas e "Já paguei" consulta de novo; já tem conta → /entrar?ja=1 com e-mail preenchido; primeiro acesso sem rolagem lateral. Prints no scratchpad da sessão.
-- [ ] PONTO DE PARADA 1: Paulo aprovar o texto do modelo `acesso_liberado` antes de mandar à Meta.
-- [ ] PONTO DE PARADA 2: Paulo aplicar 0013 e 0014 no D1 de produção (ANTES do deploy do site e do robô).
-- [ ] PONTO DE PARADA 3: Paulo dizer quais compras de hoje marcar como teste.
-- [ ] PONTO DE PARADA 4: merge em main + deploy do site (~/tv-build) + deploy do robô.
+- [x] PONTO 1: Paulo aprovou o modelo com texto próprio (12/10). Código igualado (lib/whatsapp-acesso.js). Cadastro na Meta é à mão no WhatsApp Manager (WA_TOKEN é segredo, só na Cloudflare). Depois: WA_ACESSO=ativo + Promote version.
+- [x] PONTO 2: backup ~/tv-backups/d1-antes-0013.sql (361 KB, 38 compras, 68 carrinhos, 36 clientes) e 0013 + 0014 aplicadas no D1 de produção em 12/10 ~19:45 UTC (SQL executado em ~/tv-backups/0013-0014-executado.sql).
+- [x] PONTO 3: marcadas como teste as compras 60 (mp_183793582286) e 61 (mp_183795116626), R$ 1,00 Pix, trilhaviva.suporte@gmail.com, e os 3 carrinhos delas (dc81df5d, 5b5ff3f2, daf3be17). O e-mail já está em contatos_teste. A compra 12 (24/09, R$ 1,00, mesmo e-mail) NÃO foi marcada: Paulo decide. SQL em ~/tv-backups/marcar-testes-12-10.sql.
+- [x] PONTO 4: merge em main (9b3f042, fast-forward) e deploy: site www versão 683a89c6, robô recuperacao-carrinho versão c7aef658 (vars do painel iguais ao wrangler.jsonc).
+- [x] No ar: /, /assinar, /sucesso, /primeiro-acesso, /entrar 200; /gestao 404 sem sessão (esperado); login 400 "Informe o e-mail e a senha."; checkout abre o Mercado Pago e o carrinho do e-mail de teste nasce com teste = 1 e log "meta capi InitiateCheckout pulado (teste)".
+- [x] Totais: compras pagas reais 36 (eram 38); hoje (Brasília) 1 venda R$ 89,90 em vez de 3 / R$ 91,90.
+- [x] Robô: ciclos 19:50 e 20:00 UTC encerraram o WhatsApp dos 7 carrinhos de teste (log "whatsapp pulado (teste) 3 carrinhos" às 20:00); nenhum e-mail para eles.
+- [x] CPU (wrangler tail, quente): /api/checkout 10–42 ms, webhook sem assinatura 7 ms, /api/acesso 10–25 ms, /sucesso 20–22 ms; partidas a frio 200–340 ms. O webhook ASSINADO só aparece na compra real.
 - [ ] Depois do deploy: compra real R$ 1,00 no cartão (outra conta, vídeo), Pix no celular, números da gestão, log do robô, CPU do /api/checkout e do webhook.
 
 # Fundo animado no topo da página inicial, 12/10/2026
