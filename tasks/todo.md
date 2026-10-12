@@ -16,8 +16,10 @@ Decisão do Paulo (12/10): no celular o gradiente SUBSTITUI a foto da banda no t
 - [x] CPU parado 30 s (Chrome real): no ar 4,9% de 1 núcleo; prévia 13,7% (GPU 6,2%) com 30 qps — a 60 qps eram 18,9%, por isso 30 qps em qualquer aparelho. Topo fora da tela: 4,6% (pausa funciona).
 - [x] Prints 1440 e 390 e vídeos curtos: scratchpad da sessão (provas/).
 - [x] Prévia sem promover: https://hero-gradiente-www.trilha-viva.workers.dev (versão 8571f1b8). Produção não mudou.
-- [ ] Paulo: abrir a prévia no celular pelo Instagram (mandar o link numa DM para si mesmo e tocar nele) e no computador; dizer se quer mais/menos vermelho, feixe ou movimento.
-- [ ] Merge em main e publicação: só com OK do Paulo.
+- [x] Paulo: abrir a prévia no celular pelo Instagram (mandar o link numa DM para si mesmo e tocar nele) e no computador; dizer se quer mais/menos vermelho, feixe ou movimento.
+- [x] Paulo aprovou como está (sem a foto da banda no celular). Merge em main (fast-forward, d5d3ffb) e deploy de ~/tv-build em 12/10 18:46 UTC: versão c78ca839. Antes estava a e8cfa55a (17:43, mesmo código com troca de segredo).
+- [x] Conferido no ar: home, /assinar e /musicas 200; login 400 "Informe o e-mail e a senha."; fundo animado roda no computador e no celular (canvas visível, imagem muda em 4 s); botão do topo leva à /assinar com o formulário; console sem erro nem aviso. Única falha de rede: telemetria do próprio Pixel da Meta (on.aws), que já existia na versão anterior.
+- [ ] Prova do Mercado Pago: enviar o formulário cria carrinho real. Fazer com um e-mail que já tem compra paga (o robô ignora, sem lembrete) — aguardando o Paulo.
 
 Lighthouse ANTES (produção, trilhaviva.org, mobile, 3 rodadas): Performance 61 / 67 / 54; LCP 9,4 / 9,3 / 6,8 s (a foto de 840 KB era o LCP); CLS 0,001; TBT 490 / 310 / 970 ms.
 
