@@ -14,6 +14,7 @@ Site https://trilhaviva.org, vende um pacote de multitracks gospel. Dono: Paulo.
 
 ## Fatos que não podem ser esquecidos
 - Next.js em Cloudflare Workers via OpenNext, plano grátis: **10 ms de CPU por visita**. Coisa pesada no carregamento de módulo derruba a página com Erro 1102 (intermitente). Telas dinâmicas: consultas enxutas, paginação, nada de listas enormes no servidor. `localeCompare` é caro: reaproveitar um `Intl.Collator`.
+- **Build e deploy NÃO funcionam na pasta `C:dev`** (desde 12/10/2026): o Next lê o caminho como "Cdev" e o prerender da /opengraph-image não acha a fonte. Publicar da cópia `~/tv-build` (git worktree em pasta de nome comum, já com `node_modules`, `.env.local`, `.dev.vars` e `package-lock.json`): `cd ~/tv-build && git checkout --detach main && npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy`. Se o envio cair (ECONNRESET), repetir só o `deploy`. Migração do D1 sempre ANTES do deploy que usa as colunas novas.
 - Não mexer em `incrementalCache` / `enableCacheInterception` do `open-next.config.ts`.
 - `"keep_vars": true` no `wrangler.jsonc` tem que continuar lá, senão o deploy apaga as variáveis do painel.
 - Variável nova no painel da Cloudflare só vale depois de "Promote version" (Deployments → Version History).
