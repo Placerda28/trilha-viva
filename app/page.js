@@ -202,6 +202,7 @@ export default function Home() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/img/banda-palco-4k.webp"
+            loading="lazy"
             alt="Equipe de louvor cantando no palco, com banda completa e luzes de show"
             className="h-full w-full object-cover object-center"
           />
