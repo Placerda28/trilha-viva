@@ -8,7 +8,8 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 - [ ] Revisar a branch e decidir o merge com o Paulo. Ela saiu de `acesso-liberado-robo`, então essa entra antes ou junto. Detalhe: `docs/superpowers/specs/2026-10-18-organizacao-e-toolkit-design.md`.
 - [ ] Push de `organizacao` e do commit que só existe neste PC em `whatsapp-acesso-meta` (OK do Paulo).
 - [ ] Atualizar `.env.example` e `.dev.vars.example` (ainda falam de Stripe e Drive).
-- [ ] Remover `~/tv-build` quando o Paulo autorizar.
+- [ ] Antes do merge: `npm run build` limpo em `C:\dev\trilha-viva` (não foi refeito depois das mudanças de lint, por falta de memória no PC) e `npx opennextjs-cloudflare build` (nunca terminou aqui).
+- [ ] Remover `~/tv-build` quando o build do OpenNext passar em `C:\dev` e o Paulo autorizar.
 
 ## WhatsApp `acesso_liberado` (branch `acesso-liberado-robo`)
 - [ ] Quando a Meta aprovar o modelo: `WA_ACESSO=ativo` no www e conferir o teste no celular do Paulo.
@@ -20,6 +21,9 @@ Detalhe: `arquivo/2026-10-12-whatsapp-acesso-liberado-e-cpu-do-checkout.md`.
 - [ ] Prova do Mercado Pago no formulário com fundo animado. Detalhe: `arquivo/2026-10-12-fundo-animado-no-topo-da-pagina-inicial.md`.
 - [ ] WhatsApp em sequência: conferir na tela real e a CPU do cron. Os modelos `carrinho_preco`/`carrinho_acervo` estavam em análise na Meta. Detalhe: `arquivo/2026-10-04-whatsapp-em-sequencia-plano-a.md`.
 - [ ] Recuperação por e-mail: teste real do lembrete com um e-mail sem compra. Detalhe: `arquivo/2026-09-29-recuperacao-de-carrinho-por-e-mail.md`.
+
+## Segurança
+- [ ] Paulo: confirmar que o 1º token da Meta (colado no chat em 02/10) foi **revogado**. Se não foi, revogar no painel da Meta. Detalhe: `arquivo/2026-10-02-whatsapp-pela-api-oficial-da-meta.md`.
 
 ## WhatsApp pela API da Meta (conferir)
 Em 02/10 ficaram 14 itens abertos: modelo `carrinho_lembrete`, teste do SAIR, cartão na Meta, ligar de verdade, verificação da empresa, número real e reenvio do acesso do Rafael. Vários podem ter sido resolvidos pelas frentes seguintes (sequência, ligar automático, número real).

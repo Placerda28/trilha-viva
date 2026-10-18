@@ -47,6 +47,7 @@
 
 ## Publicação
 - O caminho principal é um commit em `main`: a Cloudflare faz o build e publica sozinha.
-- A reserva manual é `npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy`, que precisa do `.env.local`. Se o envio cair (ECONNRESET), repita só o `deploy`.
-- Histórico: entre 12/10 e 18/10/2026 publicava-se da cópia `~/tv-build`, porque a pasta antiga ("C:dev", com um caractere especial no nome) quebrava o build. Desde 18/10 o projeto fica em `C:\dev\trilha-viva`, com nome normal. O `~/tv-build` continua como reserva até o Paulo autorizar a remoção.
+- **Reserva manual (só com OK do Paulo), o único caminho já provado:** `cd ~/tv-build && git checkout --detach main && npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy`. O `~/tv-build` é um git worktree e já tem `node_modules`, `.env.local`, `.dev.vars` e `package-lock.json`. Se o envio cair (ECONNRESET), repita só o `deploy`.
+- O mesmo build direto em `C:\dev\trilha-viva` (`npx opennextjs-cloudflare build`) **ainda não foi provado**: em 18/10 ele foi interrompido por falta de memória no PC. Quando passar ali, este trecho muda e o `~/tv-build` pode ser removido, com OK do Paulo.
+- Histórico: a partir de 12/10/2026 passou-se a publicar do `~/tv-build`, porque a pasta antiga ("C:dev", com um caractere especial no nome) quebrava o build. Desde 18/10 o projeto fica em `C:\dev\trilha-viva`.
 - O robô se publica à parte: `cd workers/recuperacao-carrinho && npx wrangler deploy`, só com OK.
