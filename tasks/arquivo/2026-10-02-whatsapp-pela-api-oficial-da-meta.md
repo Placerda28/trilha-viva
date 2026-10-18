@@ -1,0 +1,61 @@
+# WhatsApp pela API oficial da Meta (02/10/2026)
+
+Branch `recuperacao-whatsapp`. Plano: tasks/recuperacao-whatsapp.md. Passo a passo do Paulo: tasks/whatsapp-passo-a-passo-paulo.md.
+Decisões do Paulo (02/10): API oficial da Meta (não Z-API), UMA mensagem 3 h depois do carrinho, celular opcional. Substitui a versão não oficial (desligada, nunca enviou nada).
+Codex indisponível (a conta do ChatGPT recusou gpt-6.1-sol, gpt-5.4 e spark; ~/.codex/config.toml aponta para gpt-6.1-sol): backend feito pelo Claude.
+- [x] 0008 escrita (whatsapp_msg_id, whatsapp_status, tabela whatsapp_mensagens) — NÃO aplicada em produção (ponto de parada 1)
+- [x] lib/whatsapp-meta.js (modelo, texto livre, assinatura X-Hub-Signature-256, telefone com DDD 55 preservado)
+- [x] Robô: envio 3–48 h, 9h–20h, teto 30/dia, WA_MODO=teste filtra o celular de teste, uma por telefone/e-mail, erro não repete; /whatsapp: verificação GET, POST assinado (401 se falso), SAIR/botão → descadastro + confirmação, outras → tabela + e-mail ao suporte, status sem regredir; e-mail e WhatsApp independentes na rodada
+- [x] Checkout com celular opcional (vazio/inválido → NULL); link do botão só com o código do carrinho
+- [x] Gestão: coluna WhatsApp com status da Meta; sub-aba WhatsApp (totais, custo estimado, conversas, resposta só na janela de 24 h conferida no servidor, registro "respondeu no WhatsApp")
+- [x] Privacidade: um lembrete pelo WhatsApp, "Não quero receber" ou SAIR
+- [x] `npm test` 102/102; build limpo
+- [x] Prova LOCAL: webhook GET certo 200 com o desafio, errado 404, raiz 404; assinatura falsa 401; mensagem comum gravada uma vez (repetida não duplica); botão "Não quero receber" descadastrou o e-mail certo; checkout com celular inválido seguiu para o pagamento e gravou telefone NULL; telas 1280/390 sem erro (sub-aba marcada, totais no celular)
+- [x] 0008 APLICADA em produção em 02/10 (Paulo liberou). 17 carrinhos, 13 compras, R$ 811,60 intactos.
+- [x] Merge em main (c00a07d), site 9c943d76 (com .env.local; vars WA_PHONE_NUMBER_ID e WA_GRAPH_VERSION no wrangler.jsonc, keep_vars mantido), robô bbe757e9 (WA_MODO=teste, número de teste 1361467643717151, celular de teste 27996253839).
+  - Provas 1 e 2 NO AR: checkout abre o Mercado Pago sem telefone, com telefone inválido e com válido (e-mail do Paulo, que já tem compra: nenhum lembrete sai); só o válido gravou 27996253839. Gestão WhatsApp e responder sem login: 404. Webhook do robô 404 até os segredos existirem.
+- [x] Paulo: Etapa A (app, número de teste, conta 1605027684651104, modelo em análise, usuário do sistema Trilhavivarobo)
+- [x] Segredos (03/10, 00h28–01h42 UTC): robô WA_TOKEN, WA_APP_SECRET, WA_VERIFY_TOKEN (Secret Change, valem na hora; webhook sem assinatura passou a dar 401); site WA_TOKEN pelo painel (o secret put do terminal não gravou), versão e9087870 a 100%, ADMIN_MASTER/EMAIL_FROM/WA_* preservados, site e checkout normais.
+  - [ ] Paulo: confirmar que o 1º token (colado no chat em 02/10) foi revogado.
+- [x] Etapa B (03/10): webhook verificado pela Meta, campo messages assinado (v26.0). Robô e site passaram para WA_GRAPH_VERSION=v26.0 (robô efe0dc48).
+- [x] App da Meta publicado (03/10). Privacidade ganhou "WhatsApp" e "#exclusao-de-dados" para a Meta.
+- [x] WhatsApp OBRIGATÓRIO no checkout, como o e-mail (pedido do Paulo, 03/10; site 9ca826ce). No ar: vazio e inválido → 400 "Informe seu WhatsApp com DDD.", válido abre o Mercado Pago.
+- [ ] Modelo carrinho_lembrete aprovado → provas 4 a 6 com o celular do Paulo
+- [x] Webhook provado em 03/10 09:42 pelo botão "Teste" do painel (gestão + e-mail do suporte OK); linha de teste apagada do D1.
+- [x] 03/10: webhook ignora outro phone_number_id e não grava número estrangeiro (f304706); robô 3122c099.
+- [x] 03/10: número de teste da Meta abandonado (hello_world para 5527996253839 voltou failed, erro 130497 "restricted from messaging users in this country"); conta de teste 1605027684651104 bateu no limite de números.
+- [x] 03/10: número real +55 27 99291-2872 ("Trilha Viva", Conectado) numa WABA nova 2270775880440864, phone_number_id 1463806263472529. Trilhavivarobo com controle total na WABA nova; webhooks assinados; carrinho_lembrete recriado (em análise), hello_world ativo (Cowork/Paulo pelo painel).
+- [x] 03/10: IDs novos no site e no robô (603e21b), WA_MODO segue teste. Site www 15792e58, robô 26728038. Smoke: home/privacidade 200, gestão 404 deslogado, webhook sem assinatura 401, segredos WA_* presentes.
+- [x] Prova 3 com o número real (03/10): "oi" de 5527996253839 às 15:56 → webhook 200, D1 (whatsapp_mensagens id 2), gestão e e-mail do suporte OK; resposta pela gestão às 15:57 (id 3) chegou no celular; Meta mandou 3 avisos de status (15:57:04/05/12). Status de resposta manual não é guardado (só o do lembrete, em carrinhos); totais da gestão contam só lembretes — mantido.
+- [ ] Teste do SAIR — só com OK do Paulo (descadastra os e-mails ligados ao telefone)
+- [ ] Paulo: cartão na Meta (Etapa 2 → informações de pagamento) — sem isso o lembrete não sai
+- [ ] Teste completo do lembrete com cartão + modelo aprovado (recuar data do carrinho só com autorização): mensagem, botão Finalizar compra → /assinar preenchido, botão Não quero receber
+- [ ] Ligar de verdade (WA_MODO=ativo, WHATSAPP_ATIVO=sim) só depois do lembrete e do SAIR aprovados
+- [ ] Recomendado: verificação da empresa na Meta (evita 130497, aumenta limite)
+- [ ] Coluna WhatsApp em Clientes (branch clientes-whatsapp): telefone do carrinho mais recente do mesmo e-mail (pago primeiro), na mesma consulta; link wa.me; planilha com coluna WhatsApp; 106 testes, build limpo; 8 de 18 clientes têm número em produção. Falta: OK do Paulo → merge/deploy → conferir na tela e na planilha
+- [ ] carrinho_lembrete aprovado na WABA nova → teste completo do lembrete (recuar data do carrinho só com autorização)
+- [x] 03/10: cliente Rafael Cunha (id 19, compra 30, Pix R$ 89,90): e-mail "rafacunha46@gmail.comr" → "rafacunha46@gmail.com" no cliente e no carrinho (SQL em produção + SELECT). Sem conta de senha; não havia outro cliente com o e-mail certo. A linha de tentativa de login (histórico) ficou como estava.
+- [ ] Reenviar o acesso do Rafael: gestão → Clientes → Rafael → "Corrigir e-mail" → "Só reenviar o acesso para rafacunha46@gmail.com"; conferir no Resend que entregou.
+- [x] 03/10: botão "Corrigir e-mail" + "Reenviar acesso" na aba Clientes (lib/gestao/corrigir-email.js, rotas /api/gestao/clientes/email e /acesso). Troca cliente, carrinhos e descadastro numa transação; compras/sessões seguem pelo id. Quem tem senha: troca também na Supabase (antes). Recusa e-mail de outro cliente, da equipe ou do master. Reenvio: criar senha (7 dias) ou redefinir (24 h) se já tem senha. Registro com antes/depois. 127 testes (7 novos), build limpo.
+- [ ] SE as vendas caírem: tornar o WhatsApp OPCIONAL no checkout (decisão do Paulo em 03/10: fica obrigatório por enquanto).
+  - O que muda: desfazer o commit 0707985 ("WhatsApp obrigatorio no checkout") — 3 arquivos: a tela do checkout (components/CheckoutForm.jsx: tira a obrigatoriedade e o aviso "Informe seu WhatsApp com DDD."), a API (app/api/checkout/route.js: aceita sem telefone, mas recusa número inválido se for preenchido) e a frase da política de privacidade.
+  - Precisa de deploy do site (o robô não muda). Banco não muda.
+  - Tempo: cerca de 30 a 40 min com testes, build, deploy e conferência no ar.
+  - Efeito: quem não preencher o WhatsApp não recebe o lembrete por WhatsApp (o e-mail continua).
+- [ ] Ligar sem deploy (branch whatsapp-ligar-automatico, abd2091) — substitui o "ligar de verdade" manual (WA_MODO/WHATSAPP_ATIVO):
+  - estado no banco (migração 0009: whatsapp_estado + carrinhos.whatsapp_erro): aguardando_modelo → teste_enviado → ativo | pausado. WA_MODO vira trava geral.
+  - robô confere o modelo a cada 30 min; recusado → e-mail com motivo (1 vez por motivo); aprovado → teste para o Paulo (9h–20h, no máx. 1 a cada 6 h; erro → e-mail explicando) → e-mail com LIGAR / NÃO LIGAR (HMAC WA_LINK_SEGREDO, uso único, 72 h; GET só mostra botão, POST muda).
+  - teste não entregue avisado pelo webhook (failed) → volta a aguardar + e-mail. Ligado: teto 10/dia nos 3 primeiros dias, resumo diário depois das 20h, carrinhos só dentro de 48 h.
+  - gestão → Recuperação → WhatsApp: estado + Ligar / Pausar / Retomar (só admin, registrado). "Desligado" da aba Pessoas vem do estado; WHATSAPP_ATIVO não é mais usado.
+  - provas: 117 testes (13 novos), build limpo, simulação no wrangler dev local (GET 200 / link falso 410 / POST liga / reuso 410).
+  - [x] 03/10: migração 0009 em produção (SELECT: estado aguardando_modelo, coluna whatsapp_erro, 30 carrinhos intactos); WA_LINK_SEGREDO gerado e gravado direto no robô.
+  - [x] 03/10: publicado com a coluna WhatsApp em Clientes. Site www 7355a902; robô 2b71dcfb (WA_MODO=ativo). main 1b34eb1. 120 testes, build limpo.
+  - [x] Prova WA_MODO=ativo + aguardando_modelo: teste automático (só a consulta do modelo) + produção: consulta às 19:40 (modo teste) e 20:10 UTC (modo ativo) = PENDING; 0 enviados, 0 reservas, nenhuma saída nova.
+  - [x] Smoke: home/privacidade 200; gestão e rotas novas 404 sem login; webhook sem assinatura 401; link falso 410; checkout recusa sem/inválido e abre o Mercado Pago com número válido.
+  - [ ] Paulo/Cowork: conferir /gestao/clientes (coluna WhatsApp), a planilha e Recuperação → WhatsApp ("Aguardando aprovação da Meta").
+  - [ ] Quando a Meta aprovar: teste chega no celular do Paulo + e-mail com LIGAR → conferir e tocar em LIGAR.
+- [ ] Futuro: mensagens do Direct do Instagram e do Messenger da Página não chegam (são outros canais); só quem cai no WhatsApp aparece na gestão.
+- [ ] Prova 7: CPU do /api/checkout no painel Observability
+- [ ] Pontos de parada 4 e 5: migrar o número real e WA_MODO=ativo
+
+---
