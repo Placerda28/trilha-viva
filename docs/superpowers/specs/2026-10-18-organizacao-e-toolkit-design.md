@@ -74,9 +74,38 @@ Fatos: o repo fica em `C:\dev\trilha-viva-palco` (GitHub `Placerda28/trilha-viva
 Decisão do Paulo (18/10): o Palco entra na organização.
 - O `HISTORICO.md` ganha a área `PALCO`, e o passado do Palco é reconstruído a partir do `git log` e do `todo.md` dele.
 - O `LEIA-ME.md` do Drive e o mapa do `AGENTS.md` do site apontam para o Palco.
-- O repo do Palco ganha um `AGENTS.md` curto: o que é, onde está o site, a regra do histórico e o caminho do `todo.md`. Ganha também um `CLAUDE.md` que importa o AGENTS. Os dois entram por commit numa branch `organizacao` do Palco.
-- Fica fora desta entrega a adoção completa do toolkit no Palco (docs/, lint, skills). Essa adoção é uma rodada própria do prompt 12 lá, anotada como próxima ação.
 - O push de `partes-e-rampa` também depende do OK do Paulo.
+- **Adoção completa do toolkit no Palco também entra (decisão do Paulo, 18/10).** O trabalho vai numa branch `organizacao` no repo do Palco, que sai de `partes-e-rampa` porque é a mais nova.
+
+Linha de base do Palco (18/10): `npm run lint`, `typecheck`, `test` (130 testes) e `build` passam. O Playwright (`test:e2e`) roda no CI do GitHub, porque o WebKit só tem Web Audio no Linux.
+
+Stack: Vite 8, React 19, TypeScript 6, Worker Hono em Cloudflare com D1, Supabase (só o login do site), Tailwind 4, ESLint 10 flat com typescript-eslint, Vitest 5, Playwright, ferramentas Python em `tools/`, CI em `.github/workflows/testes.yml`. Arquivos acima de 350 linhas: `app/src/audio/motores.ts` (914), `app/src/palco/TelaPalco.tsx` (796), `worker/src/rotas.ts` (475).
+
+Documentos do Palco (as mesmas 9 destinações):
+- `AGENTS.md` e `CLAUDE.md` são novos e seguem o mesmo padrão do site.
+- `PRODUCT.md` é novo, montado a partir do README e de `docs/checklist-funcionalidades.md`.
+- `README.md`, o guia para quem não programa, fica como está, com um mapa acrescentado.
+- `docs/architecture.md` é novo, montado a partir de `docs/decisao-motor.md`, `grade-e-partes.md` e `workers-builds.md`, que continuam e passam a ser linkados.
+- `docs/design.md` mapeia para o `docs/identidade-visual.md` que já existe. Esse arquivo fica canônico, então o design.md só aponta para ele ou é um link curto.
+- `docs/onboarding.md`, `docs/quality.md` e `docs/setup.md` são novos.
+- `tasks/todo.md` (28,8K) é enxugado como o do site, e o resto vai para `tasks/arquivo/`.
+
+Matriz do Palco (o que muda em relação ao site):
+
+| Componente | Ação no Palco |
+|---|---|
+| Superpowers, Ponytail, Caveman, RTK, Context7, memória, hooks | iguais ao site (reusar) |
+| Graphify | `.graphifyignore` com exclusões para `saida`, `dist`, `.wrangler`, `tools/.modelos-whisper`, `tests/fixtures`, `*.log` e `.env`, extração `--code-only` e `graphify-out/` no `.gitignore` |
+| Vercel skills | `vercel-react-best-practices`, `vercel-composition-patterns` e `find-skills`, no projeto e com `--copy`. As de Next e de deploy na Vercel ficam fora |
+| next-dev-loop / next-bundle-optimizer | N/A, porque o Palco é Vite e não Next |
+| supabase-postgres-best-practices | N/A, porque o banco é D1. A Supabase só faz o login |
+| gh-fix-ci | **instalar** (Codex), porque o Palco tem GitHub Actions. Uso só em leitura, sem mexer no CI sem pedido |
+| differential-review + prompt 13 | instalar e registrar em `docs/quality.md`, porque há login, permissão de acesso e chaves B2 |
+| shadcn | N/A, porque o Palco não usa shadcn (componentes próprios e Tailwind 4) |
+| Sentry | N/A |
+| ESLint | já existe e passa. Medir o perfil tipado (`no-floating-promises`, `no-misused-promises`) e os módulos de quality gate do toolkit, com contagem por regra. Regra nova com violações entra como `warn` num comando de medição separado, sem tocar no `npm run lint` que o CI usa. Regra nova sem violação entra como `error` |
+| Arquivos > 350 linhas | contagem e plano registrados em `docs/quality.md`, sem refatorar agora (o motor de áudio é sensível) |
+| Avaliação do harness | a mesma rodada descartável vale para os dois |
 
 ### 4.5 Documentos do repositório (as 9 destinações do toolkit)
 
