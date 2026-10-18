@@ -7,6 +7,8 @@
     "prebuild": "node scripts/decode-assets.mjs",
     "build": "next build",
     "test": "node --test tests/gestao/*.test.mjs tests/recuperacao/*.test.mjs tests/checkout/*.test.mjs",
+    "lint": "eslint .",
+    "lint:verify": "node eslint-rules/verify.mjs eslint-rules/index.cjs",
     "start": "next start",
     "cf:build": "opennextjs-cloudflare build",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
@@ -26,8 +28,12 @@
     "tailwind-merge": "^2.6.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
+    "@eslint/js": "^9.39.5",
     "@opennextjs/cloudflare": "^1.20.6",
     "autoprefixer": "10.4.20",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.26",
     "postcss": "8.5.28",
     "tailwindcss": "3.4.17",
     "tailwindcss-animate": "^1.0.7",

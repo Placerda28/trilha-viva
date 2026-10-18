@@ -4,6 +4,8 @@ import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare'
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // O lint é só medição (npm run lint); o build e o deploy não dependem dele.
+  eslint: { ignoreDuringBuilds: true },
   async headers() {
     return [
       {

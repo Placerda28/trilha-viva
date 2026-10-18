@@ -17,3 +17,6 @@ public/img
 # Fica na pasta local e no OneDrive (Claude outputs), não no repositório: muda a
 # cada compactação e o que interessa do projeto já está em tasks/todo.md.
 contexto-compactado-*.md
+
+# Grafo do graphify (gerado; refazer com graphify extract)
+graphify-out/

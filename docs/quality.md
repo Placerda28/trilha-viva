@@ -13,6 +13,26 @@ npm run build    # build do Next (também monta as imagens de assets/)
 - Os testes usam o `node --test` puro, sem framework. Os arquivos ficam em `tests/<área>/*.test.mjs`.
 - Eles não acessam serviço real: D1, Mercado Pago, Meta e e-mail são simulados dentro dos testes.
 
+## Lint (modo medição desde 18/10/2026)
+- `npm run lint` roda o ESLint 9 (`eslint.config.mjs`) com `eslint:recommended`, as regras do Next (`eslint-config-next` 15.5) e as três regras `quality/*` do toolkit (`eslint-rules/`, copiadas sem alteração da revisão `de66fe3`).
+- Quase tudo fica em **aviso**: nada trava, e o build não roda o lint (`eslint.ignoreDuringBuilds` no `next.config.mjs`), então o deploy não muda.
+- A exceção é `quality/no-direct-data-access`, que entrou como **erro** porque mediu zero: componentes em `components/` não importam `@/lib/d1`.
+- `npm run lint:verify` é o auto-teste das regras `quality/*`.
+- Para atualizar as regras: copie de novo as três `.cjs` e o `verify.mjs` da revisão nova do toolkit, rode `npm run lint:verify` e meça de novo.
+
+Linha de base (203 arquivos, 0 erros, 70 avisos):
+
+| Avisos | Regra | O que significa |
+|---|---|---|
+| 51 | `quality/no-direct-console` | `console.*` direto; nos Workers é o log de fato, então é aceitável até existir um módulo de log |
+| 11 | `quality/max-lines` | arquivos acima de 350 linhas (tabela abaixo) |
+| 5 | `no-unused-vars` | variável não usada |
+| 1 | `@next/next/no-img-element` | `<img>` em vez de `next/image` (proposital, ver `docs/architecture.md`) |
+| 1 | `no-useless-escape` | barra invertida sem efeito |
+| 1 | `import/no-anonymous-default-export` | export default sem nome |
+
+Plano de redução: quando uma regra zerar, ela passa a `error`. `no-unused-vars` e `no-useless-escape` são os mais fáceis. O `no-direct-console` só cai se o Paulo quiser um módulo de log.
+
 ## Tamanho de arquivo (referência do toolkit: 350 linhas)
 Arquivos acima do limite em 18/10/2026 (o catálogo gerado não conta):
 
