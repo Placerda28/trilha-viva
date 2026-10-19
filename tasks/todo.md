@@ -10,11 +10,12 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 - [ ] Paulo: a conta da Stripe (reserva) recebe pagamentos de outros produtos? Se sim, falta o mesmo filtro do Mercado Pago no caminho da Stripe.
 
 ## Ferramentas (19/10)
-- [ ] O build do OpenNext funciona em `C:\dev`, mas leva ~50 min (antivírus?). Paulo: exclusão do Defender para `C:\dev` e OK para remover `~/tv-build` (detalhe em `docs/setup.md`).
-- [ ] Robô, branch `whatsapp-acesso-meta` (2 commits, pronta desde 19/10; 214 testes passando): a recusa de token/acesso pela Meta não encerra mais o WhatsApp do carrinho; 1 e-mail de aviso por dia. Foi rebaseada sobre a `main` e a migração renumerada para `0015` (a `0012` já existia). A revisão do Codex achou 2 problemas, já corrigidos com teste. **Para publicar, nesta ordem e com OK do Paulo:** (1) `npx wrangler d1 execute trilha-viva --remote --file migrations/0015_whatsapp_aviso_acesso.sql`; (2) merge na `main`; (3) `cd workers/recuperacao-carrinho && npx wrangler deploy`. Sem a 0015, o aviso por e-mail falha, mas os envios continuam. Deixado para depois (menor): o e-mail de aviso pode sair 2 vezes no dia se a conexão com o Resend cair depois do envio (falta uma chave de idempotência).
+- [ ] O build do OpenNext funciona em `C:\dev`, mas leva ~50 min (antivírus?). Opcional, Paulo: exclusão do Defender para `C:\dev` (administrador). O `~/tv-build` foi removido em 19/10.
+- [x] Robô `whatsapp-acesso-meta` publicado em 19/10 (versão 6358fe4b, commit 064ec7a): recusa de token/acesso pela Meta não encerra o WhatsApp do carrinho; 1 e-mail de aviso por dia. A coluna da migração `0015` já existia em produção (aplicada em 08/10 com o número antigo); backup em `~/tv-backups/d1-antes-0015.sql`.
+- [ ] Menor: o e-mail de aviso pode sair 2 vezes no dia se a conexão com o Resend cair depois do envio (falta uma chave de idempotência).
 
 ## WhatsApp `acesso_liberado` (na `main` desde 19/10)
-- [ ] Quando a Meta aprovar o modelo: `WA_ACESSO=ativo` no www e conferir o teste no celular do Paulo.
+- [ ] A Meta **aprovou** o modelo `acesso_liberado` (status APPROVED no banco; o teste foi para o celular do Paulo em 13/10). Falta, com OK do Paulo: `printf 'ativo' | npx wrangler secret put WA_ACESSO` no www (publica na hora) e conferir numa compra de teste.
 - O robô agora pode ser publicado a partir da `main` (a branch `acesso-liberado-robo` entrou junto com `organizacao`).
 Detalhe: `arquivo/2026-10-12-whatsapp-acesso-liberado-e-cpu-do-checkout.md`.
 
@@ -25,7 +26,7 @@ Detalhe: `arquivo/2026-10-12-whatsapp-acesso-liberado-e-cpu-do-checkout.md`.
 - [ ] Recuperação por e-mail: teste real do lembrete com um e-mail sem compra. Detalhe: `arquivo/2026-09-29-recuperacao-de-carrinho-por-e-mail.md`.
 
 ## Segurança
-- [ ] Paulo: confirmar que o 1º token da Meta (colado no chat em 02/10) foi **revogado**. Se não foi, revogar no painel da Meta. Detalhe: `arquivo/2026-10-02-whatsapp-pela-api-oficial-da-meta.md`.
+- [x] O 1º token da Meta (colado no chat em 02/10) foi revogado, confirmado pelo Paulo em 19/10.
 
 ## WhatsApp pela API da Meta (conferir)
 Em 02/10 ficaram 14 itens abertos: modelo `carrinho_lembrete`, teste do SAIR, cartão na Meta, ligar de verdade, verificação da empresa, número real e reenvio do acesso do Rafael. Vários podem ter sido resolvidos pelas frentes seguintes (sequência, ligar automático, número real).
