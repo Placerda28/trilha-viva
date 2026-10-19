@@ -42,5 +42,10 @@
   "overrides": {
     "postcss": "8.5.28",
     "sharp": "^0.35.4"
+  },
+  "allowScripts": {
+    "esbuild@0.25.4": true,
+    "esbuild@0.28.1": true,
+    "workerd@1.20260921.1": true
   }
 }

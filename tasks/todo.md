@@ -5,7 +5,7 @@ Só o que ainda está aberto. O detalhe de cada frente fica em `tasks/arquivo/`,
 Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido resolvidos por trabalho posterior. Confirme antes de agir e apague o que já estiver feito.
 
 ## Ferramentas (19/10)
-- [ ] O `npx opennextjs-cloudflare build` trava em `C:\dev` ("Bundling cache assets"). Investigar antes de remover `~/tv-build` (detalhe em `docs/setup.md`).
+- [ ] O build do OpenNext funciona em `C:\dev`, mas leva ~50 min (antivírus?). Paulo: exclusão do Defender para `C:\dev` e OK para remover `~/tv-build` (detalhe em `docs/setup.md`).
 - [ ] `whatsapp-acesso-meta` (1 commit, no GitHub desde 19/10): decidir se entra na `main`.
 
 ## WhatsApp `acesso_liberado` (na `main` desde 19/10)

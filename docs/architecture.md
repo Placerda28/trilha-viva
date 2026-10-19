@@ -47,7 +47,7 @@
 
 ## Publicação
 - O caminho principal é um commit em `main`: a Cloudflare faz o build e publica sozinha.
-- **Reserva manual (só com OK do Paulo), o único caminho já provado:** `cd ~/tv-build && git checkout --detach main && npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy`. O `~/tv-build` é um git worktree e já tem `node_modules`, `.env.local`, `.dev.vars` e `package-lock.json`. Se o envio cair (ECONNRESET), repita só o `deploy`.
-- O mesmo build direto em `C:\dev\trilha-viva` (`npx opennextjs-cloudflare build`) **ainda não foi provado**: em 18/10 ele foi interrompido por falta de memória no PC. Quando passar ali, este trecho muda e o `~/tv-build` pode ser removido, com OK do Paulo.
+- **Reserva manual (só com OK do Paulo):** na pasta do projeto, `npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy`. Precisa do `.env.local`. Se o envio cair (ECONNRESET), repita só o `deploy`.
+- O build do OpenNext **funciona em `C:\dev\trilha-viva`** (provado em 19/10), mas leva uns 50 minutos neste PC. A etapa "Bundling cache assets" grava cerca de 1 arquivo por segundo (1.950 páginas) e parece travada, mas não está: confira se a pasta `.open-next/cache` cresce antes de encerrar. O provável culpado é o antivírus do Windows examinando cada arquivo; uma exclusão do Defender para `C:\dev` (pede administrador) deve acelerar. Feche o Chrome antes (o build precisa de uns 3 GB livres).
 - Histórico: a partir de 12/10/2026 passou-se a publicar do `~/tv-build`, porque a pasta antiga ("C:dev", com um caractere especial no nome) quebrava o build. Desde 18/10 o projeto fica em `C:\dev\trilha-viva`.
 - O robô se publica à parte: `cd workers/recuperacao-carrinho && npx wrangler deploy`, só com OK.

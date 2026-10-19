@@ -35,7 +35,7 @@ Estados possíveis: **validado** (rodou e foi conferido), **configurado** (insta
 | `templates/next/` (TS, Zod, Pino, Drizzle) | N/A | o projeto é JS, com D1 sem ORM |
 | Documentos (9 destinos) | validado | AGENTS, CLAUDE, PRODUCT, README e `docs/{architecture,design,onboarding,quality,setup}`; sem placeholder, sem segredo, links conferidos |
 | Avaliação do harness (doc 07, prompt 14) | validado (smoke) | ver abaixo |
-| Build do OpenNext em `C:\dev` | **bloqueado** | Em 19/10 o `npx opennextjs-cloudflare build` travou de novo em "Bundling cache assets" (23 min sem CPU; com 2,9 GB livres), e o processo foi encerrado. O `npm run build` passa. O deploy segue pelo build da Cloudflare (Linux), e `~/tv-build` continua como reserva manual. Para investigar: o npm 11 bloqueou os `postinstall` de `esbuild`/`workerd` no `npm ci` (`npm install-scripts ls`) |
+| Build do OpenNext em `C:\dev` | validado | Em 19/10 completou (`worker.js` gerado), em ~50 min. Não trava: "Bundling cache assets" grava ~1 arquivo/s (1.950 páginas, versões iguais às do `~/tv-build`); suspeita de antivírus. Os `postinstall` de `esbuild`/`workerd`, que o npm 11 bloqueava, foram liberados em `allowScripts` (não eram a causa, mas o `workerd` precisa deles para o `wrangler dev`) |
 
 ## Verificação de 18/10/2026
 | Checagem | Antes | Depois |
@@ -80,7 +80,7 @@ Um único resultado bom é teste de fumaça, não prova de confiabilidade.
 - Gatilho "regra zerou": as regras do Next e do recommended voltaram a valer como erro (`docs/quality.md`).
 
 ## Pendências (causa → próxima ação)
-- O build do OpenNext trava em `C:\dev` no Windows → investigar (postinstall bloqueado pelo npm 11, ou "Bundling cache assets" com 1.951 páginas). Até lá: build da Cloudflare, e `~/tv-build` como reserva manual. Só remover `~/tv-build` depois que isso for resolvido.
+- Build do OpenNext lento em `C:\dev` (~50 min) → o Paulo pode criar uma exclusão do Defender para `C:\dev` (administrador). `~/tv-build` já não é necessário: remover com OK do Paulo (`git worktree remove ~/tv-build`).
 
 ## Decisões para rever (gatilho)
 - Subir para Next 16.3+ → avaliar `next-dev-loop` e `next-bundle-optimizer`. Hoje é Next 15.5; subir é uma migração própria, com OK do Paulo.
