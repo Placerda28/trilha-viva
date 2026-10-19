@@ -137,7 +137,7 @@ function emSequencia(b, id, { telefone = '27911110000', email = `${id}@example.c
     VALUES (?, ?, 'Maria Clara', ?, datetime(?, '-4 hours'), 'aberto', ?, ?, ?)`).run(
     id, email, telefone, inicio, inicio, etapa, proximo || T0
   )
-  const lista = mensagens || Array.from({ length: etapa }, (_, i) => ({ status: 'read' }))
+  const lista = mensagens || Array.from({ length: etapa }, () => ({ status: 'read' }))
   lista.forEach((m, i) => {
     b.prepare(`
       INSERT INTO lembretes_enviados (carrinho_id, canal, etapa, enviado_em, modelo, wa_msg_id, wa_status)

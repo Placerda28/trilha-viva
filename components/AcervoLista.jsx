@@ -21,7 +21,7 @@ function rotulo(v, i) {
   return partes.length ? partes.join(' · ') : 'Versão ' + (i + 1)
 }
 
-export default function AcervoLista({ restam, limite }) {
+export default function AcervoLista({ restam }) {
   const [montado, setMontado] = useState(false)
   const [q, setQ] = useState('')
   const [artista, setArtista] = useState('')

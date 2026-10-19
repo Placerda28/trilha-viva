@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { confirmarPagamento } from '@/lib/confirmar'
 import { criarConta, senhasConfiguradas } from '@/lib/senhas'
 import { acharOuCriar, registrarCompra, usarToken, salvarSupabaseId } from '@/lib/clientes'
-import { criarSessao, normalizarEmail } from '@/lib/sessao'
+import { criarSessao } from '@/lib/sessao'
 import { mesmaOrigem } from '@/lib/origem'
 
 export const runtime = 'nodejs'

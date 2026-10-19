@@ -1,7 +1,8 @@
-// ESLint em MODO MEDIÇÃO (18/10/2026): tudo em "warn", nada trava.
-// O build não roda o lint (next.config.mjs: eslint.ignoreDuringBuilds), então
-// o deploy da Cloudflare não muda. A contagem por regra fica em docs/quality.md;
-// regra que chegar a zero aviso pode virar "error".
+// ESLint do site. Começou em modo medição (18/10/2026); em 19/10 as regras do
+// Next e do eslint:recommended chegaram a zero e passaram a valer com o nível
+// padrão delas (erro). Só as duas regras abaixo com violações antigas ficam em
+// aviso. O build não roda o lint (next.config.mjs: eslint.ignoreDuringBuilds),
+// então o deploy da Cloudflare não depende dele. Contagem em docs/quality.md.
 //
 // As regras quality/* vêm do Vibe Coding Toolkit (revisão de66fe3), copiadas sem
 // alteração em eslint-rules/. Conferir com: npm run lint:verify
@@ -14,16 +15,7 @@ const compat = new FlatCompat({
   recommendedConfig: js.configs.recommended,
 })
 
-// Rebaixa qualquer regra "error" para "warn": nesta fase só se mede.
-const emAviso = (configs) => configs.map((c) => c.rules ? {
-  ...c,
-  rules: Object.fromEntries(Object.entries(c.rules).map(([nome, valor]) => {
-    const [nivel, ...opcoes] = Array.isArray(valor) ? valor : [valor]
-    return [nome, nivel === 'error' || nivel === 2 ? ['warn', ...opcoes] : valor]
-  })),
-} : c)
-
-export default emAviso([
+const config = [
   {
     ignores: [
       '.next/', '.open-next/', '.wrangler/', 'node_modules/', 'public/img/',
@@ -39,20 +31,23 @@ export default emAviso([
   {
     plugins: { quality },
     rules: {
+      // Em aviso: 11 arquivos ainda passam de 350 linhas (plano em docs/quality.md).
       'quality/max-lines': ['warn', { max: 350 }],
-      // O site não tem um módulo de log: nos Workers, console.* é o log. A regra
-      // mede quantas chamadas existem caso um dia se crie esse módulo.
+      // Em aviso: o site não tem um módulo de log; nos Workers, console.* é o log.
       'quality/no-direct-console': ['warn', { logger: 'um módulo de log do projeto' }],
+      // Componentes de tela não falam direto com o D1; quem consulta é lib/ ou a rota.
+      'quality/no-direct-data-access': ['error', {
+        modules: ['@/lib/d1', '@/lib/d1.js'],
+        bindings: ['getDB', 'getEnv', 'umaLinha', 'executar'],
+        layers: ['/components/'],
+      }],
     },
   },
-]).concat({
-  // Fora do emAviso de propósito: medida com zero violação em 18/10, já entra como
-  // "error". Componentes de tela não falam direto com o D1; quem consulta é lib/ ou a rota.
-  rules: {
-    'quality/no-direct-data-access': ['error', {
-      modules: ['@/lib/d1', '@/lib/d1.js'],
-      bindings: ['getDB', 'getEnv', 'umaLinha', 'executar'],
-      layers: ['/components/'],
-    }],
+  {
+    // Um Worker da Cloudflare se declara com `export default { fetch, scheduled }`.
+    files: ['workers/**'],
+    rules: { 'import/no-anonymous-default-export': 'off' },
   },
-})
+]
+
+export default config

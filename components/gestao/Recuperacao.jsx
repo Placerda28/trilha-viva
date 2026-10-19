@@ -15,7 +15,6 @@ import AcaoGestao, { MostrarTestes, SeloTeste } from './AcaoGestao'
 // de WhatsApp (1ª 3 h depois, depois 1 por semana até 9, pela API oficial da
 // Meta; "desligado" enquanto não estiver ligado) e quem comprou depois.
 
-const POR_PAGINA = 50
 const TOTAL_EMAILS = 4
 
 const FILTROS = [

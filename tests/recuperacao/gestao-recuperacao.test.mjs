@@ -231,7 +231,7 @@ test('CSV usa os mesmos dados, horário de Brasília e neutraliza fórmulas', as
     'email',
   ])
   assert.equal(CABECALHO_RECUPERACAO[10], 'Pago em')
-  assert.match(gerarCsv(['Nome'], [[linhaCsv[0]]]), /'\=Recuperado/)
+  assert.match(gerarCsv(['Nome'], [[linhaCsv[0]]]), /'=Recuperado/)
 })
 
 test('gestão mostra a mensagem única do WhatsApp: status da Meta, previsto em 3 h, desligado e recuperação', async () => {

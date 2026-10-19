@@ -19,7 +19,7 @@ O site https://trilhaviva.org vende acesso vitalício, em pagamento único, a um
 - `npm run dev`: abre o site em http://localhost:3000.
 - `npm test`: roda os testes (`node --test`).
 - `npm run build`: faz o build do Next.
-- `npm run lint`: ESLint, quase tudo em aviso (não entra no build). Termina com erro se um componente importar o D1 direto (detalhes em `docs/quality.md`).
+- `npm run lint`: ESLint (não entra no build, mas rode antes de entregar). Só tamanho de arquivo e `console` ficam em aviso; o resto dá erro (`docs/quality.md`).
 - `npm run preview`: mostra o site no runtime dos Workers, igual à produção.
 - **Publicar:** todo commit em `main` publica o site sozinho, pelo build da Cloudflare. A reserva manual é `npm run deploy`, e só roda com o OK do Paulo.
 
