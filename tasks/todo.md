@@ -4,6 +4,29 @@ Só o que ainda está aberto. O detalhe de cada frente fica em `tasks/arquivo/`,
 
 Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido resolvidos por trabalho posterior. Confirme antes de agir e apague o que já estiver feito.
 
+## Próxima sessão: comece por aqui (deixado em 19/10/2026, 19h UTC)
+
+**Estado no fim do dia 19/10:**
+- Site no ar: `main` em `7c2ffba` (versão www `be4d8650`), com a organização, os consertos de segurança, o `next` 15.5.28 e o robô.
+- Robô no ar: versão `6358fe4b`. Rodou às 19:00 depois do deploy.
+- O `wrangler tail` não conecta nesta rede: prove a rodada do robô pelo D1 (`whatsapp_modelos.conferido_em`).
+- Palco: a branch `organizacao` está no GitHub com o CI verde, mas fora da `main`. O Paulo vai tratar do Palco numa sessão só dele.
+- O toolkit no site está concluído (`docs/setup.md`).
+
+**Na ordem:**
+1. **Ligar o WhatsApp de "acesso liberado"**, cujo modelo já foi aprovado pela Meta. Perguntar ao Paulo: ligar direto ou primeiro fazer uma compra de teste? Para ligar: `printf 'ativo' | npx wrangler secret put WA_ACESSO` (vale na hora).
+2. **Compra de teste real** (R$ 1,00, com outra conta). É a primeira depois dos consertos de segurança. Conferir:
+   - a `/sucesso` libera e leva a criar a senha;
+   - a compra aparece na gestão;
+   - a compra chega à Meta pelo servidor (o Pixel não carrega mais na `/sucesso`);
+   - se o item 1 foi feito, o WhatsApp de acesso chega.
+3. **Stripe (reserva):** perguntar ao Paulo se a conta recebe pagamentos de outros produtos. Se sim, aplicar ali o mesmo filtro do Mercado Pago.
+4. **5 achados baixos** da revisão de segurança (relatório privado em `~/tv-backups/seguranca/2026-10-19-baseline.md`), um por vez, com teste e revisão do diff.
+5. **Robô, menor:** chave de idempotência no e-mail de aviso, para não sair 2 vezes no mesmo dia.
+6. **Opcional:** exclusão do Defender para `C:\dev`, como administrador, para o build do OpenNext deixar de levar ~50 min.
+
+**Como retomar:** abra o Claude Code em `C:\dev\trilha-viva` e diga "continuar de onde paramos". O `AGENTS.md` leva aos docs; este arquivo diz o que fazer; o `HISTORICO.md` do Drive mostra o que foi feito.
+
 ## Segurança: revisão de base de 19/10 (relatório privado em `~/tv-backups/seguranca/2026-10-19-baseline.md`)
 - [x] 3 achados médios consertados com teste e publicados (19/10).
 - [ ] 5 achados baixos (detalhe no relatório).
