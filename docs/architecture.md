@@ -7,7 +7,7 @@
 - **Pagamento**: Mercado Pago Checkout Pro, com Pix e cartão (`lib/mercadopago.js`). A Stripe fica como reserva (`PAGAMENTO=stripe`).
 - **Entrega dos arquivos**: Backblaze B2, com link temporário (`lib/b2.js`) e cota de downloads (`lib/cota.js`).
 - **E-mail**: Resend (`lib/email.js`). **WhatsApp**: API oficial da Meta (`lib/whatsapp-*.js`).
-- **Meta (anúncios)**: Pixel no navegador (`components/MetaPixel.jsx`) e eventos pelo servidor (`lib/meta.js`, `lib/rastreio*.js`).
+- **Meta (anúncios)**: Pixel no navegador (`components/MetaPixel.jsx`) e eventos pelo servidor (`lib/meta.js`, `lib/rastreio*.js`). Desde 19/10 a compra (Purchase) vai **só pelo servidor**, com id `mp_<número do pagamento>`: o Pixel não carrega na `/sucesso`, cujo endereço traz a chave da compra, e a `/sucesso` responde com `Referrer-Policy: no-referrer`.
 - **Robô** `workers/recuperacao-carrinho/`: um Worker separado, com `wrangler.jsonc` próprio. Manda lembretes de carrinho abandonado por e-mail e WhatsApp e acompanha a aprovação de modelos na Meta. É publicado à parte do site.
 
 ## Pastas
@@ -38,6 +38,7 @@
 - A compra do Mercado Pago é gravada como `mp_<id>` na coluna `stripe_session_id`. A `external_reference` é um UUID.
 - **Não mexa no fluxo de download** (`app/api/baixar`, `lib/b2.js`, `lib/cota.js`).
 - Datas no D1 são UTC (`datetime('now')`). O dia do negócio é o de Brasília (UTC−3).
+- **Só libera acesso o pagamento que nasceu do checkout do site**: a conta do Mercado Pago recebe também Pix e cobranças de outras coisas. `resumirPagamento` exige `metadata.referencia` igual à `external_reference` (UUID); o resto é `alheio` e é ignorado. A chave da compra (`payment_id` + `external_reference`, no endereço da `/sucesso`) só cria a senha nas primeiras 24 h. O endereço de volta do pagamento é sempre o do site, nunca o cabeçalho `Origin`. Testes em `tests/checkout/seguranca-pagamento.test.mjs`.
 - Compra e carrinho de teste ficam marcados com `teste = 1`. As visões `compras_reais` e `carrinhos_reais` filtram os testes, e teste não manda evento à Meta.
 - Dado de fora dentro de `<script>` passa por `ldJson()` de `lib/safe.js`. Nome de cliente em e-mail passa por `escapeHtml`.
 - Evite sequências de escape com barra invertida e caracteres invisíveis em literais: elas já se corromperam no caminho até o repositório (veja `lib/safe.js` e `app/api/baixar/route.js`).

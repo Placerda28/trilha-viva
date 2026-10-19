@@ -82,7 +82,7 @@ Um único resultado bom é teste de fumaça, não prova de confiabilidade.
 - Gatilho "regra zerou": as regras do Next e do recommended voltaram a valer como erro (`docs/quality.md`).
 
 ## Pendências (causa → próxima ação)
-- 3 achados médios da revisão de segurança (pagamento, endereço de volta do checkout, chave da compra no endereço) → consertar numa tarefa própria, com teste, e depois rodar a revisão em modo diff.
+- Os 3 achados médios da revisão de segurança foram consertados em 19/10, com 10 testes (`tests/checkout/seguranca-pagamento.test.mjs`). A revisão em modo diff (Opus) liberou, e o achado importante dela (referrer da `/sucesso`) também foi corrigido. Faltam os 5 baixos e a dúvida da Stripe (aceita qualquer sessão paga da conta; só importa se a conta Stripe atende outros produtos) → tarefa própria.
 - Build do OpenNext lento em `C:\dev` (~50 min) → o Paulo pode criar uma exclusão do Defender para `C:\dev` (administrador). `~/tv-build` já não é necessário: remover com OK do Paulo (`git worktree remove ~/tv-build`).
 
 ## Decisões para rever (gatilho)

@@ -5,7 +5,9 @@ Só o que ainda está aberto. O detalhe de cada frente fica em `tasks/arquivo/`,
 Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido resolvidos por trabalho posterior. Confirme antes de agir e apague o que já estiver feito.
 
 ## Segurança: revisão de base de 19/10 (relatório privado em `~/tv-backups/seguranca/2026-10-19-baseline.md`)
-- [ ] 3 achados médios para consertar com teste (o detalhe está só no relatório): confirmação do pagamento, endereço de volta do checkout e chave da compra no endereço da `/sucesso`. Depois, 5 baixos.
+- [x] 3 achados médios consertados com teste e publicados (19/10).
+- [ ] 5 achados baixos (detalhe no relatório).
+- [ ] Paulo: a conta da Stripe (reserva) recebe pagamentos de outros produtos? Se sim, falta o mesmo filtro do Mercado Pago no caminho da Stripe.
 
 ## Ferramentas (19/10)
 - [ ] O build do OpenNext funciona em `C:\dev`, mas leva ~50 min (antivírus?). Paulo: exclusão do Defender para `C:\dev` e OK para remover `~/tv-build` (detalhe em `docs/setup.md`).
