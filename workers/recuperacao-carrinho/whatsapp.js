@@ -152,8 +152,9 @@ function diasDeEmailDaLinha(linha) {
 }
 
 // Compra, descadastro ou sequência deste telefone/e-mail nos últimos 60 dias
-// (rodando ou encerrada) impedem a 1ª mensagem.
-async function impedimentos(db, email, telefone, agoraSql) {
+// (rodando ou encerrada) impedem a 1ª mensagem. `id` é o próprio carrinho: a
+// reserva dele feita por outra rodada (que pode devolver a vaga) não conta.
+async function impedimentos(db, email, telefone, agoraSql, id = '') {
   const linha = await db.prepare(`
     SELECT
       EXISTS(SELECT 1 FROM contatos_teste
@@ -166,12 +167,13 @@ async function impedimentos(db, email, telefone, agoraSql) {
       EXISTS(
         SELECT 1 FROM carrinhos outro
          WHERE (outro.telefone = ? OR outro.email = ?)
+           AND outro.id <> ?
            AND outro.whatsapp_enviado_em IS NOT NULL
            AND (outro.whatsapp_encerrado_em IS NULL
                 OR outro.whatsapp_encerrado_em > datetime(?, '-${DIAS_SEM_NOVA_SEQUENCIA} days'))
          LIMIT 1
       ) AS ja_enviado
-    LIMIT 1`).bind(email, telefone, email, email, telefone, email, agoraSql).first()
+    LIMIT 1`).bind(email, telefone, email, email, telefone, email, id, agoraSql).first()
   return {
     teste: Boolean(Number(linha?.teste || 0)),
     temCompra: Boolean(Number(linha?.tem_compra || 0)),
@@ -340,12 +342,15 @@ async function reservarSeguinte(db, carrinho, etapa, modelo, proximaEm, tetoDia,
 }
 
 // Erro da conta (não da pessoa): desfaz a vaga e a mensagem fica para amanhã.
+// O 'fim' foi gravado pela própria reserva da última; outro motivo (SAIR,
+// compra, teste) continua valendo.
 async function adiarSeguinte(db, carrinho, etapa, novaVez) {
   await apagarReserva(db, carrinho.id, etapa)
   await db.prepare(`
     UPDATE carrinhos
        SET whatsapp_etapa = ?, proximo_whatsapp_em = ?, whatsapp_encerrado_em = NULL, whatsapp_motivo = NULL
-     WHERE id = ? AND whatsapp_etapa = ? AND teste = 0 AND whatsapp_motivo IS NULL`).bind(etapa - 1, novaVez, carrinho.id, etapa).run()
+     WHERE id = ? AND whatsapp_etapa = ? AND teste = 0
+       AND (whatsapp_motivo IS NULL OR whatsapp_motivo = 'fim')`).bind(etapa - 1, novaVez, carrinho.id, etapa).run()
 }
 
 async function gravarEnvio(db, carrinhoId, etapa, msgId, agoraSql) {
@@ -433,7 +438,7 @@ export async function executarWhatsapp(env, opcoes = {}) {
       continue
     }
 
-    const bloqueio = await impedimentos(db, email, carrinho.telefone, agoraSql)
+    const bloqueio = await impedimentos(db, email, carrinho.telefone, agoraSql, carrinho.id)
     if (bloqueio.teste) {
       logger.log(`whatsapp pulado (teste) ${carrinho.id}`)
       await encerrar(db, carrinho.id, 'teste', agoraSql)

@@ -488,6 +488,42 @@ test('token/acesso recusado na 1ª (200, 190, 10): o carrinho continua na fila e
   assert.equal(meta.avisosDeParada().length, 2)
 })
 
+test('corrida entre rodadas: a reserva da outra rodada (que depois devolve a vaga) não descarta o carrinho para sempre', async () => {
+  const b = banco()
+  b.exec(`INSERT INTO carrinhos (id, email, nome, telefone, criado_em) VALUES ('ana', 'ana@example.com', 'Ana', '27911110000', '2026-01-15 10:00:00')`)
+  // A rodada A reserva a ana logo antes de a rodada B conferir os impedimentos
+  // e devolve a vaga (token recusado) logo depois.
+  class Intercalado extends D1Local {
+    prepare(sql) {
+      const p = super.prepare(sql)
+      if (!/AS ja_enviado/.test(sql)) return p
+      const first = p.first.bind(p)
+      p.first = async () => {
+        b.exec(`INSERT INTO lembretes_enviados (carrinho_id, canal, etapa, enviado_em, modelo) VALUES ('ana', 'whatsapp', 1, '${T0}', 'carrinho_lembrete')`)
+        b.exec(`UPDATE carrinhos SET whatsapp_enviado_em = '${T0}', whatsapp_etapa = 1 WHERE id = 'ana'`)
+        const linha = await first()
+        b.exec(`DELETE FROM lembretes_enviados WHERE carrinho_id = 'ana'`)
+        b.exec(`UPDATE carrinhos SET whatsapp_enviado_em = NULL, whatsapp_etapa = 0, proximo_whatsapp_em = NULL WHERE id = 'ana'`)
+        return linha
+      }
+      return p
+    }
+  }
+  const meta = metaFalsa()
+  await executarWhatsapp(ambiente(new Intercalado(b)), { agora: em(T0), logger: mudo, fetchImpl: meta.fetchImpl })
+  assert.equal(b.prepare(`SELECT whatsapp_falhou_em AS f FROM carrinhos WHERE id = 'ana'`).get().f, null)
+})
+
+test('token recusado na 9ª mensagem: a sequência não acaba, fica para amanhã', async () => {
+  const b = banco()
+  emSequencia(b, 'nove', { telefone: '27911110009', etapa: 8 })
+  const token = metaFalsa({ erros: [190] })
+  await rodada(b, token, T0)
+  assert.equal(token.envios().length, 1)
+  assert.deepEqual(estadoDe(b, 'nove'), { etapa: 8, proximo: '2026-01-16 15:00:00', encerrado: 0, motivo: null })
+  assert.equal(b.prepare(`SELECT COUNT(*) AS n FROM lembretes_enviados WHERE carrinho_id = 'nove' AND etapa = 9`).get().n, 0)
+})
+
 test('erro do número na 1ª continua definitivo; token recusado numa semanal fica para amanhã e avisa', async () => {
   const b = banco()
   b.exec(`INSERT INTO carrinhos (id, email, telefone, criado_em) VALUES ('x', 'x@example.com', '27933330000', '2026-01-15 10:00:00')`)
