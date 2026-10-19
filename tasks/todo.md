@@ -6,7 +6,7 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 
 ## Ferramentas (19/10)
 - [ ] O build do OpenNext funciona em `C:\dev`, mas leva ~50 min (antivírus?). Paulo: exclusão do Defender para `C:\dev` e OK para remover `~/tv-build` (detalhe em `docs/setup.md`).
-- [ ] `whatsapp-acesso-meta` (1 commit, no GitHub desde 19/10): decidir se entra na `main`.
+- [ ] Robô, branch `whatsapp-acesso-meta` (2 commits, pronta desde 19/10; 214 testes passando): a recusa de token/acesso pela Meta não encerra mais o WhatsApp do carrinho; 1 e-mail de aviso por dia. Foi rebaseada sobre a `main` e a migração renumerada para `0015` (a `0012` já existia). A revisão do Codex achou 2 problemas, já corrigidos com teste. **Para publicar, nesta ordem e com OK do Paulo:** (1) `npx wrangler d1 execute trilha-viva --remote --file migrations/0015_whatsapp_aviso_acesso.sql`; (2) merge na `main`; (3) `cd workers/recuperacao-carrinho && npx wrangler deploy`. Sem a 0015, o aviso por e-mail falha, mas os envios continuam. Deixado para depois (menor): o e-mail de aviso pode sair 2 vezes no dia se a conexão com o Resend cair depois do envio (falta uma chave de idempotência).
 
 ## WhatsApp `acesso_liberado` (na `main` desde 19/10)
 - [ ] Quando a Meta aprovar o modelo: `WA_ACESSO=ativo` no www e conferir o teste no celular do Paulo.
