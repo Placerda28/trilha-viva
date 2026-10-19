@@ -16,12 +16,12 @@ npm ci
 ```
 Use uma pasta de nome simples (sem caractere especial), como `C:\dev\...`. Uma pasta com ":" no nome já quebrou o build.
 
-O `package-lock.json` deste repositório **não é versionado** (fica fora pelo `.git/info/exclude` local). Num PC novo, o `npm ci` não roda sem ele: use `npm install` ou copie o lock de um PC que funciona.
+O `package-lock.json` é versionado desde 19/10/2026, então o `npm ci` instala exatamente as mesmas versões em qualquer PC.
 
 ## 3. Variáveis (segredos)
 - Copie `.env.example` para `.env.local` (`npm run dev` e `npm run build`) e `.dev.vars.example` para `.dev.vars` (`npm run preview`).
 - Os valores vêm do painel da Cloudflare (Worker `www`, em Settings → Variables and secrets) ou do Paulo. **Nunca do repositório.**
-- Atenção: os dois `.example` estão desatualizados. Ainda falam de Stripe e Drive e não listam Mercado Pago, B2, Supabase, Meta e WhatsApp. Use a lista do painel como fonte. Essa pendência está registrada em `docs/setup.md`.
+- Os dois `.example` listam todos os nomes que o código lê (conferidos em 19/10/2026). As `NEXT_PUBLIC_*` vão no `.env.local` porque entram no build; os segredos vão no `.dev.vars`.
 
 ## 4. Conferir
 ```bash

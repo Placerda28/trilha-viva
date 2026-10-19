@@ -1,8 +1,44 @@
-# Copie para .dev.vars (fica fora do git) para rodar o preview local do Worker.
+# Copie para .dev.vars (fica fora do git) para rodar `npm run preview` / `wrangler dev`.
+# Em produção estes valores ficam no Worker www (Settings → Variables and secrets,
+# como Secret) — `npx wrangler secret put NOME`. Valores com o Paulo, nunca no git.
+# Lista conferida com o código em 19/10/2026.
 NEXTJS_ENV=development
 NEXT_PUBLIC_SITE_URL=http://localhost:8788
+
+# Pagamento: Mercado Pago (padrão). PAGAMENTO=stripe força a reserva.
+MP_ACCESS_TOKEN=
+MP_WEBHOOK_SECRET=
+PAGAMENTO=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
-DRIVE_URL=
+
+# Login: a Supabase só confere a senha (chave de servidor).
+SUPABASE_SECRET_KEY=
+
+# Entrega dos arquivos (Backblaze B2). NUNCA gerar de novo a chave do site.
+B2_KEY_ID=
+B2_APP_KEY=
+B2_BUCKET=
+B2_BUCKET_ID=
+
+# E-mail (Resend)
 RESEND_API_KEY=
 EMAIL_FROM=
+
+# Meta: eventos de compra pelo servidor
+META_CAPI_TOKEN=
+META_TEST_EVENT_CODE=
+
+# WhatsApp (API oficial da Meta). WA_PHONE_NUMBER_ID e WA_GRAPH_VERSION também
+# estão em wrangler.jsonc (não são segredo). WA_ACESSO=ativo liga o aviso de acesso.
+WA_TOKEN=
+WA_PHONE_NUMBER_ID=
+WA_GRAPH_VERSION=
+WA_TEMPLATE=
+WA_TEMPLATE_ACESSO=
+WA_TEMPLATE_RETOMAR=
+WA_ACESSO=
+
+# Gestão e robô
+ADMIN_MASTER=
+LEMBRETE_SEGREDO=
