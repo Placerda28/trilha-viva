@@ -59,3 +59,9 @@ O site tem pagamento, login, webhooks e dados de clientes. Para revisar:
 - **Skill `differential-review`** (instalada no projeto): use-a para revisar o diff de uma branch que mexe em checkout, webhook, sessão, permissão da gestão ou robô. Sem ela, faça o rastreio manual do código.
 - Instalar ou rodar a revisão não autoriza testar contra a produção, enviar código para fora nem aplicar correção sozinha.
 - Para atualizar o prompt, troque a revisão (`de66fe3`) pela mais nova do toolkit e registre a troca em `docs/setup.md`.
+
+## Auditoria de dependências
+- Rode `npm audit --omit=dev`, que mostra o que vai para produção. Se houver conserto sem versão maior, rode `npm audit fix --omit=dev`, depois `npm ci` (o `--omit=dev` tira as ferramentas de desenvolvimento do `node_modules`), `npm test` e `npm run build`.
+- Não use `npm audit fix` sem `--omit=dev` nem `--force` sem revisar: em 19/10 o `fix` completo mexia em 77 pacotes, inclusive no `wrangler`, que é a ferramenta de deploy.
+- **19/10/2026:** produção com 0 vulnerabilidades depois de `next` 15.5.26 → 15.5.28 (envenenamento de cache SSG/ISR, moderada) e `sharp` 0.35.4 → 0.35.5 (alta, só no build).
+- Continuam no desenvolvimento, porque pedem versão maior (`--force`): `braces`, `postcss-selector-parser` e `undici` (este via `wrangler`/miniflare). Nenhuma vai para o site publicado. Reavaliar quando subir `wrangler` ou o Tailwind.
