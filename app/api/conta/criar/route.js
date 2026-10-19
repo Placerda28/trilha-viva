@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { confirmarPagamento } from '@/lib/confirmar'
+import { chaveDaCompraNoPrazo } from '@/lib/mercadopago'
 import { criarConta, senhasConfiguradas } from '@/lib/senhas'
 import { acharOuCriar, registrarCompra, usarToken, salvarSupabaseId } from '@/lib/clientes'
 import { criarSessao } from '@/lib/sessao'
@@ -54,6 +55,10 @@ export async function POST(req) {
     if (r.status === 'unconfigured') return erro('Pagamento indisponível no momento.', 503)
     if (r.status === 'error') return erro('Não localizamos esse pagamento.', 404)
     if (r.status !== 'paid') return erro('O pagamento ainda não foi confirmado.', 409)
+    // A chave da compra fica no endereço da /sucesso: só vale nas primeiras 24 h.
+    if (corpo.payment_id && !chaveDaCompraNoPrazo(r.aprovadoEm)) {
+      return erro('Este link de confirmação venceu. Use o link do e-mail ou "Primeiro acesso" na tela Entrar.', 410)
+    }
 
     email = r.email
     nome = r.nome || ''

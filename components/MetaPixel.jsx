@@ -13,16 +13,21 @@ export default function MetaPixel() {
   const pathname = usePathname()
   const primeira = useRef(true)
 
+  // O endereço da /sucesso traz a chave da compra (payment_id +
+  // external_reference): o Pixel não carrega ali, para ela não ir à Meta. A
+  // compra chega à Meta pelo servidor (webhook do Mercado Pago).
+  const fora = pathname === '/sucesso'
+
   useEffect(() => {
-    if (!id) return
+    if (!id || fora) return
     if (primeira.current) {
       primeira.current = false
       return // o PageView da primeira página já vai no código-base
     }
     window.fbq?.('track', 'PageView')
-  }, [pathname, id])
+  }, [pathname, id, fora])
 
-  if (!id) return null
+  if (!id || fora) return null
 
   return (
     <>

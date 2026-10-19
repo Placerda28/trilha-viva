@@ -4,8 +4,6 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import ContaForm from './ContaForm'
-import { rastrear } from './MetaPixel'
-import { site } from '@/lib/site'
 import { esquecer } from '@/lib/checkout-campos'
 import { CHAVE_EMAIL_ENTRAR, INTERVALO_MS, proximoPasso } from '@/lib/pos-pagamento'
 
@@ -82,25 +80,13 @@ export default function AccessPanel() {
     window.location.replace('/entrar?ja=1')
   }, [passo, state.email])
 
-  // Compra no Pixel, uma vez por pagamento (recarregar a página não conta de
-  // novo). O id é o mesmo que o aviso da operadora manda pelo servidor: a
-  // sessão na Stripe, a referência no Mercado Pago. Compra de teste não vai.
-  const compraId = sessionId || ref
+  // Compra aprovada: os dados lembrados para a próxima compra não servem mais.
+  // A compra vai à Meta só pelo servidor: o Pixel não carrega na /sucesso,
+  // cujo endereço traz a chave da compra (achado M-3 de 19/10).
   const pago = state.status === 'paid'
   useEffect(() => {
-    if (!pago || !compraId) return
-    // Compra aprovada: os dados lembrados para a próxima compra não servem mais.
-    esquecer()
-    if (state.teste) return
-    const chave = 'tv-compra-' + compraId
-    try {
-      if (sessionStorage.getItem(chave)) return
-      sessionStorage.setItem(chave, '1')
-    } catch {
-      /* sem sessionStorage: a Meta ainda deduplica pelo id */
-    }
-    rastrear('Purchase', { value: site.price, currency: site.currency }, compraId)
-  }, [pago, state.teste, compraId])
+    if (pago) esquecer()
+  }, [pago])
 
   if (passo === 'missing') {
     return (

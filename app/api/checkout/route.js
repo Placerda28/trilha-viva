@@ -75,9 +75,10 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Informe seu WhatsApp com DDD.' }, { status: 400 })
   }
 
-  const origin =
-    req.headers.get('origin') ||
-    (process.env.NEXT_PUBLIC_SITE_URL ? process.env.NEXT_PUBLIC_SITE_URL : site.url)
+  // Endereço de volta do pagamento: sempre o do site. O cabeçalho Origin pode
+  // ser forjado por quem chama a API, e mandaria o comprador (com a chave da
+  // compra no endereço) para outro site.
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || site.url
 
   // Dados que a Conversions API usa para reconhecer a pessoa. Vão também
   // gravados no pagamento, para o aviso da operadora mandar a compra com eles.

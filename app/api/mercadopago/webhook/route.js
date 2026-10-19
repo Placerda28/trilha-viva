@@ -92,13 +92,15 @@ export async function POST(req) {
     // direto no Mercado Pago, com a nossa chave.
     const r = resumirPagamento(await buscarPagamento(dataId))
     if (r.status === 'paid') {
-      // Compra para a Meta pelo servidor. O id é a referência do pagamento, a
-      // mesma que volta em /sucesso e que a tela usa no Pixel. O Mercado Pago
-      // avisa o mesmo pagamento várias vezes; a Meta descarta as repetições.
+      // Compra para a Meta só pelo servidor (o Pixel não carrega na /sucesso,
+      // cujo endereço traz a chave da compra). O Mercado Pago avisa o mesmo
+      // pagamento várias vezes; a Meta descarta as repetições pelo id.
       const teste = await ehTeste(getDB(), r)
       const meta = await enviarMetaSeReal(teste, {
         nome: 'Purchase',
-        id: r.referencia || r.compraId,
+        // mp_<número>: não é segredo. A referência aleatória é a chave da
+        // compra e não sai para a Meta (achado M-3 de 19/10).
+        id: r.compraId,
         email: r.email,
         telefone: r.telefone,
         nomeCliente: r.nome,
@@ -106,7 +108,7 @@ export async function POST(req) {
         url: `${site.url}/sucesso`,
         valor: r.valorCentavos / 100,
         moeda: String(r.moeda || 'brl').toUpperCase(),
-        referencia: r.referencia || r.compraId,
+        referencia: r.compraId,
       }, enviarEventoMeta)
       await liberarAcesso(r, teste)
       try {
