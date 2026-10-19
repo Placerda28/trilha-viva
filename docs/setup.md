@@ -35,14 +35,14 @@ Estados possíveis: **validado** (rodou e foi conferido), **configurado** (insta
 | `templates/next/` (TS, Zod, Pino, Drizzle) | N/A | o projeto é JS, com D1 sem ORM |
 | Documentos (9 destinos) | validado | AGENTS, CLAUDE, PRODUCT, README e `docs/{architecture,design,onboarding,quality,setup}`; sem placeholder, sem segredo, links conferidos |
 | Avaliação do harness (doc 07, prompt 14) | validado (smoke) | ver abaixo |
-| Build do OpenNext em `C:\dev` | **bloqueado** | `npx opennextjs-cloudflare build` foi interrompido pelo Claude Code por falta de memória no PC. Retomar com o PC folgado. Até lá, `~/tv-build` continua como reserva |
+| Build do OpenNext em `C:\dev` | **bloqueado** | Em 19/10 o `npx opennextjs-cloudflare build` travou de novo em "Bundling cache assets" (23 min sem CPU; com 2,9 GB livres), e o processo foi encerrado. O `npm run build` passa. O deploy segue pelo build da Cloudflare (Linux), e `~/tv-build` continua como reserva manual. Para investigar: o npm 11 bloqueou os `postinstall` de `esbuild`/`workerd` no `npm ci` (`npm install-scripts ls`) |
 
 ## Verificação de 18/10/2026
 | Checagem | Antes | Depois |
 |---|---|---|
 | `npm test` | 210 passando | 210 passando |
-| `npm run build` | **falhava** (`/apple-icon`, fonte do og como `.ttf.bin` no `node_modules`) | passa (1.951 páginas) depois do `npm ci`. Não foi refeito depois das mudanças de lint, que não entram no build |
-| `npm run lint` | não existia | 0 erros, 70 avisos |
+| `npm run build` | **falhava** (`/apple-icon`, fonte do og como `.ttf.bin` no `node_modules`) | passa (1.951 páginas) depois do `npm ci`; refeito em 19/10 com tudo (lint, lock) e passou de novo |
+| `npm run lint` | não existia | 18/10: 0 erros e 70 avisos. 19/10: 0 erros e 62 avisos, e o resto das regras valendo como erro |
 | Site local | — | `next dev`: `/` e `/entrar` respondem 200 |
 
 ## Avaliação do harness (smoke, 18/10/2026)
@@ -73,13 +73,16 @@ Um único resultado bom é teste de fumaça, não prova de confiabilidade.
 - Grafo: `GRAPHIFY_NO_AUTO_REFRESH=1 graphify extract . --code-only --no-cluster` (sem hook de Git).
 - Regras de lint e prompt 13: troque a revisão `de66fe3` pela nova e meça de novo (`docs/quality.md`).
 
+## Resolvido em 19/10/2026 (decisões do Paulo)
+- Push de `organizacao` e `whatsapp-acesso-meta`; merge de `organizacao` (que já inclui `acesso-liberado-robo`) na `main`, publicado pelo build da Cloudflare.
+- `package-lock.json` versionado (o lock já tinha os binários de Linux).
+- `.env.example` e `.dev.vars.example` com todos os nomes que o código lê, conferidos com os segredos do Worker `www` (só nomes).
+- Gatilho "regra zerou": as regras do Next e do recommended voltaram a valer como erro (`docs/quality.md`).
+
 ## Pendências (causa → próxima ação)
-- Build do OpenNext em `C:\dev` não provado (memória) → rodar `npx opennextjs-cloudflare build` com o PC folgado. Se passar, pedir ao Paulo para remover `~/tv-build`.
-- `.env.example` e `.dev.vars.example` desatualizados (Stripe/Drive) → atualizar a lista de nomes a partir do painel, sem valores.
-- `package-lock.json` não versionado → decidir com o Paulo se passa a ser versionado (recomendado para `npm ci` em PC novo).
-- Push e merge da branch `organizacao` (precisa de `acesso-liberado-robo` antes) → OK do Paulo.
+- O build do OpenNext trava em `C:\dev` no Windows → investigar (postinstall bloqueado pelo npm 11, ou "Bundling cache assets" com 1.951 páginas). Até lá: build da Cloudflare, e `~/tv-build` como reserva manual. Só remover `~/tv-build` depois que isso for resolvido.
 
 ## Decisões para rever (gatilho)
-- Subir para Next 16.3+ → avaliar `next-dev-loop` e `next-bundle-optimizer`.
-- Regra de lint zerou → promover a `error`.
-- Projeto ganhar GitHub Actions → instalar `gh-fix-ci`.
+- Subir para Next 16.3+ → avaliar `next-dev-loop` e `next-bundle-optimizer`. Hoje é Next 15.5; subir é uma migração própria, com OK do Paulo.
+- `quality/max-lines` ou `quality/no-direct-console` zerarem → promover a `error`.
+- O site ganhar GitHub Actions → instalar `gh-fix-ci` (o Palco já tem).

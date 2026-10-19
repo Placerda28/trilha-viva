@@ -1,19 +1,16 @@
 # Em andamento e esperando o Paulo
 
-Só o que ainda está aberto. O detalhe de cada frente fica em `tasks/arquivo/`, e o resumo do que já foi feito, no `HISTORICO.md` do Drive. Atualizado em 18/10/2026.
+Só o que ainda está aberto. O detalhe de cada frente fica em `tasks/arquivo/`, e o resumo do que já foi feito, no `HISTORICO.md` do Drive. Atualizado em 19/10/2026.
 
 Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido resolvidos por trabalho posterior. Confirme antes de agir e apague o que já estiver feito.
 
-## Organização e toolkit (branch `organizacao`, 18/10)
-- [ ] Revisar a branch e decidir o merge com o Paulo. Ela saiu de `acesso-liberado-robo`, então essa entra antes ou junto. Detalhe: `docs/superpowers/specs/2026-10-18-organizacao-e-toolkit-design.md`.
-- [ ] Push de `organizacao` e do commit que só existe neste PC em `whatsapp-acesso-meta` (OK do Paulo).
-- [ ] Atualizar `.env.example` e `.dev.vars.example` (ainda falam de Stripe e Drive).
-- [ ] Antes do merge: `npm run build` limpo em `C:\dev\trilha-viva` (não foi refeito depois das mudanças de lint, por falta de memória no PC) e `npx opennextjs-cloudflare build` (nunca terminou aqui).
-- [ ] Remover `~/tv-build` quando o build do OpenNext passar em `C:\dev` e o Paulo autorizar.
+## Ferramentas (19/10)
+- [ ] O `npx opennextjs-cloudflare build` trava em `C:\dev` ("Bundling cache assets"). Investigar antes de remover `~/tv-build` (detalhe em `docs/setup.md`).
+- [ ] `whatsapp-acesso-meta` (1 commit, no GitHub desde 19/10): decidir se entra na `main`.
 
-## WhatsApp `acesso_liberado` (branch `acesso-liberado-robo`)
+## WhatsApp `acesso_liberado` (na `main` desde 19/10)
 - [ ] Quando a Meta aprovar o modelo: `WA_ACESSO=ativo` no www e conferir o teste no celular do Paulo.
-- [ ] Merge da branch em `main` (OK do Paulo). Até lá, NÃO publicar o robô a partir da `main`.
+- O robô agora pode ser publicado a partir da `main` (a branch `acesso-liberado-robo` entrou junto com `organizacao`).
 Detalhe: `arquivo/2026-10-12-whatsapp-acesso-liberado-e-cpu-do-checkout.md`.
 
 ## Provas em produção que dependem do Paulo (conferir)
