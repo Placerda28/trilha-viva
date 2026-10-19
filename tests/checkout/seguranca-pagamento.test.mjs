@@ -59,6 +59,21 @@ test('M-3: a Meta não recebe a referência secreta (nem como id do evento nem c
   assert.doesNotMatch(rota, /referencia: r\.referencia \|\| r\.compraId/)
 })
 
+test('M-3: a /sucesso não manda o próprio endereço como referrer para a página seguinte', () => {
+  const config = readFileSync('next.config.mjs', 'utf8')
+  const bloco = config.slice(config.indexOf("source: '/sucesso'"))
+  assert.match(bloco.slice(0, 600), /Referrer-Policy['"],\s*value:\s*['"]no-referrer/)
+})
+
+test('M-3: chave vencida (mais de 24 h) não devolve e-mail nem nome completos', () => {
+  assert.match(readFileSync('app/api/acesso/route.js', 'utf8'), /chaveDaCompraNoPrazo\(/)
+})
+
+test('M-3: aprovado sem date_approved usa a última atualização como data', () => {
+  const r = resumirPagamento(doCheckout({ date_approved: null, date_last_updated: '2026-10-19T08:00:00.000-03:00' }))
+  assert.equal(r.aprovadoEm, '2026-10-19T08:00:00.000-03:00')
+})
+
 test('M-3: o Pixel não carrega na /sucesso (o endereço dela traz a chave da compra)', () => {
   const pixel = readFileSync('components/MetaPixel.jsx', 'utf8')
   assert.match(pixel, /pathname === '\/sucesso'/)

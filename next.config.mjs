@@ -18,7 +18,12 @@ const nextConfig = {
       },
       {
         source: '/sucesso',
-        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+        // O endereço da /sucesso traz a chave da compra: a página seguinte não
+        // pode recebê-lo como referrer (e o Pixel de lá mandá-lo à Meta).
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+        ],
       },
     ]
   },

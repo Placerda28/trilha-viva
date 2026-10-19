@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { confirmarPagamento } from '@/lib/confirmar'
+import { chaveDaCompraNoPrazo } from '@/lib/mercadopago'
 import { acharPorEmail } from '@/lib/clientes'
 import { getDB } from '@/lib/d1'
 import { ehTeste } from '@/lib/teste'
@@ -100,14 +101,18 @@ export async function POST(req) {
     db ? ehTeste(db, { email: r.email, telefone: r.telefone, referencia: r.referencia }) : false,
   ])
 
+  // Chave da compra com mais de 24 h (achado M-3 de 19/10): a tela não recebe
+  // mais o e-mail nem o nome completos. A criação da senha também recusa.
+  const noPrazo = !body.payment_id || chaveDaCompraNoPrazo(r.aprovadoEm)
+
   return NextResponse.json(
     {
       status: 'paid',
       ...avisos,
       temConta: Boolean(cliente?.supabase_id),
       teste: Boolean(teste),
-      email: r.email || null,
-      nome: r.nome || null,
+      email: noPrazo ? r.email || null : null,
+      nome: noPrazo ? r.nome || null : null,
       // Diz à tela se o e-mail de apoio realmente sai, para ela não prometer
       // uma mensagem que nunca vai chegar.
       mailed: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
