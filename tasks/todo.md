@@ -14,7 +14,7 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 - O toolkit no site está concluído (`docs/setup.md`).
 
 **Na ordem:**
-1. **Ligar o WhatsApp de "acesso liberado"**, cujo modelo já foi aprovado pela Meta. Perguntar ao Paulo: ligar direto ou primeiro fazer uma compra de teste? Para ligar: `printf 'ativo' | npx wrangler secret put WA_ACESSO` (vale na hora).
+1. [x] **WhatsApp de "acesso liberado" ligado em 20/10** (versão www `427487cc`). O `secret put` simples foi recusado porque a última versão era uma prévia não publicada da branch `organizacao` (Workers Builds sobe uma prévia a cada push fora da `main`). Caminho usado: `printf 'ativo' | npx wrangler versions secret put WA_ACESSO --name www` e depois `npx wrangler versions deploy <id>@100% --name www --yes`. Conferir antes que a prévia é do mesmo commit da produção.
 2. **Compra de teste real** (R$ 1,00, com outra conta). É a primeira depois dos consertos de segurança. Conferir:
    - a `/sucesso` libera e leva a criar a senha;
    - a compra aparece na gestão;
