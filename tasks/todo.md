@@ -37,33 +37,26 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 - [x] Robô `whatsapp-acesso-meta` publicado em 19/10 (versão 6358fe4b, commit 064ec7a): recusa de token/acesso pela Meta não encerra o WhatsApp do carrinho; 1 e-mail de aviso por dia. A coluna da migração `0015` já existia em produção (aplicada em 08/10 com o número antigo); backup em `~/tv-backups/d1-antes-0015.sql`.
 - [x] E-mail de aviso com chave de idempotência do dia (20/10).
 
-## WhatsApp `acesso_liberado` (na `main` desde 19/10)
-- [ ] A Meta **aprovou** o modelo `acesso_liberado` (status APPROVED no banco; o teste foi para o celular do Paulo em 13/10). Falta, com OK do Paulo: `printf 'ativo' | npx wrangler secret put WA_ACESSO` no www (publica na hora) e conferir numa compra de teste.
-- O robô agora pode ser publicado a partir da `main` (a branch `acesso-liberado-robo` entrou junto com `organizacao`).
-Detalhe: `arquivo/2026-10-12-whatsapp-acesso-liberado-e-cpu-do-checkout.md`.
+## Conferido em 20/10 (resolvido pelo uso real, sai da lista)
+- `acesso_liberado` ligado e provado na compra de teste 91.
+- Cartão e Pix provados por vendas reais: 19 no cartão e 22 no Pix até 20/10, chegando à Meta (`meta_status=ok`).
+- Recuperação por e-mail rodando: 24 lembretes da 1ª etapa e 14 da 2ª.
+- WhatsApp em sequência ativo desde 04/10, com os 3 modelos aprovados e as 3 etapas saindo.
+- Número real e ligação sem deploy em uso (`whatsapp_estado=ativo`).
+- Coluna WhatsApp em Clientes no ar (`components/gestao/ClientesTabela.jsx`).
+- Acesso do Rafael reenviado em 03/10 (registro `acesso_reenviado`).
+- `CUPOM_TESTE` não existe mais no `www`.
 
-## Provas em produção que dependem do Paulo (conferir)
-- [ ] Compra real de R$ 1,00 no cartão (outra conta) e Pix no celular; conferir os números da gestão, o log do robô e a CPU do `/api/checkout` e do webhook. Detalhe: `arquivo/2026-10-12-pos-pagamento-volta-automatica-e-compras-de-teste.md` e `arquivo/2026-10-12-rastreamento-das-vendas.md`.
-- [ ] Prova do Mercado Pago no formulário com fundo animado. Detalhe: `arquivo/2026-10-12-fundo-animado-no-topo-da-pagina-inicial.md`.
-- [ ] WhatsApp em sequência: conferir na tela real e a CPU do cron. Os modelos `carrinho_preco`/`carrinho_acervo` estavam em análise na Meta. Detalhe: `arquivo/2026-10-04-whatsapp-em-sequencia-plano-a.md`.
-- [ ] Recuperação por e-mail: teste real do lembrete com um e-mail sem compra. Detalhe: `arquivo/2026-09-29-recuperacao-de-carrinho-por-e-mail.md`.
-
-## Segurança
-- [x] O 1º token da Meta (colado no chat em 02/10) foi revogado, confirmado pelo Paulo em 19/10.
-
-## WhatsApp pela API da Meta (conferir)
-Em 02/10 ficaram 14 itens abertos: modelo `carrinho_lembrete`, teste do SAIR, cartão na Meta, ligar de verdade, verificação da empresa, número real e reenvio do acesso do Rafael. Vários podem ter sido resolvidos pelas frentes seguintes (sequência, ligar automático, número real).
-- Detalhe: `arquivo/2026-10-02-whatsapp-pela-api-oficial-da-meta.md`.
-- Checklist "Para ligar": `tasks/whatsapp.md`.
-- Guia do Paulo: `tasks/whatsapp-passo-a-passo-paulo.md`.
-
-## Menu de gestão (conferir)
-- [ ] Paulo: apagar a variável `CUPOM_TESTE` no painel (o código já não lê).
-- [ ] Paulo: confirmar a compra de R$ 1,00 de 24/09 (mp_179645402809).
-- [ ] Prova em produção da Equipe: membro novo, troca de senha, removido perde o acesso.
-- [ ] Ideias da Fase 4 ainda não feitas: entrega do acesso idempotente (`compras.acesso_enviado_em`) e partes da visão geral e das ações.
+## Ainda aberto
+- [ ] Paulo: a compra de R$ 1,00 de 24/09 (`mp_179645402809`, compra 10) está como venda real (`teste=0`). Se foi teste, marcar na gestão para não somar nos números.
+- [ ] Prova da Equipe: removido perde o acesso. Membro novo e troca de senha já ocorreram (Kaylan, 24/09).
+- [ ] SAIR do WhatsApp nunca foi usado em produção (`descadastros` vazio). Provar só com OK do Paulo.
+- [ ] Paulo: verificação da empresa na Meta (recomendado: evita o erro 130497 e aumenta o limite).
+- [ ] CPU do `/api/checkout`, do webhook e do cron no painel da Cloudflare (Observability).
+- [ ] Ideia da Fase 4: entrega do acesso idempotente (`compras.acesso_enviado_em`, coluna ainda não existe).
 - Reembolso: ADIADO por decisão do Paulo (24/09).
-Detalhe: `arquivo/2026-09-24-menu-de-gestao-plano-e-andamento.md`.
+- Futuro: o Direct do Instagram e o Messenger não chegam à gestão (são outros canais).
+- Detalhes antigos: `arquivo/2026-10-02-whatsapp-pela-api-oficial-da-meta.md`, `arquivo/2026-09-24-menu-de-gestao-plano-e-andamento.md`, `arquivo/2026-10-12-*.md`.
 
 ## Se as vendas caírem
 - Tornar o WhatsApp opcional no checkout. A decisão de 03/10 foi manter obrigatório por enquanto.
