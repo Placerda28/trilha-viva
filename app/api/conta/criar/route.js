@@ -88,9 +88,9 @@ export async function POST(req) {
   if (!cliente) return erro('Banco indisponível no momento.', 503)
 
   const conta = await criarConta({ email, senha, nome })
-  // Quem já tem senha (criada agora ou antes) não precisa do link de acesso
-  // que o aviso do Mercado Pago mandaria depois.
-  if (compraId && (conta.ok || conta.jaExiste)) {
+  // Quem acabou de criar a senha não precisa do link de acesso que o aviso do
+  // Mercado Pago mandaria depois. (jaExiste também cobre outros erros 422.)
+  if (compraId && conta.ok) {
     await reservarEnvioAcesso(getDB(), compraId).catch((err) => console.error('marcar acesso entregue', err?.message))
   }
   if (!conta.ok) {

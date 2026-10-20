@@ -124,7 +124,13 @@ export async function POST(req) {
         moeda: String(r.moeda || 'brl').toUpperCase(),
         referencia: r.compraId,
       }, enviarEventoMeta)
-      entregue = await liberarAcesso(r, teste)
+      try {
+        entregue = await liberarAcesso(r, teste)
+      } catch (err) {
+        // Banco fora do ar ao gravar a compra: o reenvio do aviso tenta de novo.
+        console.error('mp liberar acesso', r.pagamentoId, err?.message)
+        entregue = false
+      }
       try {
         // Origem da venda e resultado do envio à Meta, na própria compra.
         await gravarRastreioCompra(getDB(), { compraId: r.compraId, origem: r.utm, metaStatus: meta.status })
