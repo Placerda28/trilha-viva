@@ -5,6 +5,9 @@ import { criarConta, senhasConfiguradas } from '@/lib/senhas'
 import { acharOuCriar, registrarCompra, usarToken, salvarSupabaseId } from '@/lib/clientes'
 import { criarSessao } from '@/lib/sessao'
 import { mesmaOrigem } from '@/lib/origem'
+import { getDB } from '@/lib/d1'
+import { reservarEnvioAcesso } from '@/lib/gestao/cupons'
+import { ehTeste } from '@/lib/teste'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -43,6 +46,7 @@ export async function POST(req) {
 
   let email = ''
   let nome = ''
+  let compraId = null
 
   if (corpo.token) {
     const linha = await usarToken({ token: String(corpo.token), tipo: 'criar_senha' })
@@ -75,14 +79,20 @@ export async function POST(req) {
       forma: r.forma,
       cupom: r.cupom,
       referencia: r.referencia,
-      acessoEntregue: true,
+      teste: await ehTeste(getDB(), r),
     })
+    compraId = r.compraId
   }
 
   const cliente = await acharOuCriar({ email, nome })
   if (!cliente) return erro('Banco indisponível no momento.', 503)
 
   const conta = await criarConta({ email, senha, nome })
+  // Quem já tem senha (criada agora ou antes) não precisa do link de acesso
+  // que o aviso do Mercado Pago mandaria depois.
+  if (compraId && (conta.ok || conta.jaExiste)) {
+    await reservarEnvioAcesso(getDB(), compraId).catch((err) => console.error('marcar acesso entregue', err?.message))
+  }
   if (!conta.ok) {
     if (conta.jaExiste) {
       return NextResponse.json(

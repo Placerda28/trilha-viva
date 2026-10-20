@@ -21,18 +21,18 @@ export const dynamic = 'force-dynamic'
 //
 // Uma diferença importa: o Mercado Pago avisa o mesmo pagamento várias vezes
 // (quando ele nasce, quando o Pix cai, a cada atualização). O acesso sai uma
-// vez só (compras.acesso_enviado_em); se nem o e-mail nem o WhatsApp saírem, o
-// próximo aviso tenta de novo.
+// vez só (compras.acesso_enviado_em). Devolve false se nem o e-mail nem o
+// WhatsApp saíram: o aviso responde erro e o Mercado Pago reenvia.
 async function liberarAcesso(r, teste) {
   const email = normalizarEmail(r.email)
   if (!email) {
     console.error('mp webhook sem e-mail', r.pagamentoId)
-    return
+    return true
   }
   const cliente = await acharOuCriar({ email, nome: r.nome })
   if (!cliente) {
     console.error('mp webhook sem banco', r.pagamentoId)
-    return
+    return true
   }
   await registrarCompra({
     clienteId: cliente.id,
@@ -45,12 +45,12 @@ async function liberarAcesso(r, teste) {
     referencia: r.referencia,
     teste,
   })
-  if (!(await reservarEnvioAcesso(getDB(), r.compraId))) return
+  if (!(await reservarEnvioAcesso(getDB(), r.compraId))) return true
 
   let saiu = false
   try {
     const token = await criarToken({ clienteId: cliente.id, tipo: 'criar_senha', horas: 24 * 7 })
-    if (!token) return
+    if (!token) return false
     saiu = await enviarCriarSenha({ para: email, nome: r.nome, token })
     // O mesmo link também pelo WhatsApp, para quem fechou a tela do Mercado
     // Pago sem voltar ao site. Só sai depois que a Meta aprovar o modelo e o
@@ -58,12 +58,15 @@ async function liberarAcesso(r, teste) {
     const whatsapp = await enviarAcessoLiberado(process.env, getDB(), { telefone: r.telefone, nome: r.nome, token })
     if (whatsapp !== 'desligado') console.log('whatsapp acesso liberado', whatsapp, r.pagamentoId)
     saiu = saiu || whatsapp === 'enviado'
+  } catch (err) {
+    console.error('mp enviar acesso', r.pagamentoId, err?.message)
   } finally {
     if (!saiu) {
       console.error('mp acesso não saiu; o próximo aviso tenta de novo', r.pagamentoId)
       await desfazerEnvioAcesso(getDB(), r.compraId).catch((err) => console.error('mp desfazer acesso', err?.message))
     }
   }
+  return saiu
 }
 
 export async function POST(req) {
@@ -97,6 +100,7 @@ export async function POST(req) {
     return NextResponse.json({ received: true, ignored: tipo || 'sem tipo' })
   }
 
+  let entregue = true
   try {
     // O aviso só diz "o pagamento X mudou". O estado verdadeiro é consultado
     // direto no Mercado Pago, com a nossa chave.
@@ -120,7 +124,7 @@ export async function POST(req) {
         moeda: String(r.moeda || 'brl').toUpperCase(),
         referencia: r.compraId,
       }, enviarEventoMeta)
-      await liberarAcesso(r, teste)
+      entregue = await liberarAcesso(r, teste)
       try {
         // Origem da venda e resultado do envio à Meta, na própria compra.
         await gravarRastreioCompra(getDB(), { compraId: r.compraId, origem: r.utm, metaStatus: meta.status })
@@ -151,5 +155,8 @@ export async function POST(req) {
     console.error('mp liberar acesso', dataId, err?.message)
   }
 
+  // Única exceção à regra acima: o acesso de quem pagou não saiu. O erro faz o
+  // Mercado Pago reenviar o aviso, e o reenvio tenta mandar de novo.
+  if (!entregue) return NextResponse.json({ received: false }, { status: 500 })
   return NextResponse.json({ received: true })
 }

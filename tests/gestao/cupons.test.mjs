@@ -262,8 +262,9 @@ test('acesso da compra sai uma vez; se nada saiu, o próximo aviso tenta de novo
   await desfazerEnvioAcesso(d1, 'mp_1')
   assert.equal(await reservarEnvioAcesso(d1, 'mp_1'), true, 'depois de falhar, o próximo aviso manda')
 
-  // Senha criada na /sucesso antes do aviso: o aviso não manda o link.
-  await registrarCompraNoBanco(d1, { ...base, sessionId: 'mp_2', acessoEntregue: true })
+  // Senha criada na /sucesso antes do aviso: a /sucesso marca e o aviso não manda.
+  await registrarCompraNoBanco(d1, { ...base, sessionId: 'mp_2' })
+  assert.equal(await reservarEnvioAcesso(d1, 'mp_2'), true)
   assert.equal(await reservarEnvioAcesso(d1, 'mp_2'), false)
   assert.equal(await reservarEnvioAcesso(d1, 'mp_inexistente'), false)
 })
