@@ -75,6 +75,7 @@ export async function POST(req) {
       forma: r.forma,
       cupom: r.cupom,
       referencia: r.referencia,
+      acessoEntregue: true,
     })
   }
 

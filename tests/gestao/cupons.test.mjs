@@ -10,6 +10,8 @@ import {
   estenderReservaCupom,
   vencimentoDoLinkComCupom,
   registrarCompraNoBanco,
+  reservarEnvioAcesso,
+  desfazerEnvioAcesso,
   reservarCupom,
   validarCriacaoCupom,
 } from '../../lib/gestao/cupons.js'
@@ -53,6 +55,7 @@ function bancoCupons() {
   banco.exec(readFileSync('migrations/0002_cupons.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0013_testes.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0016_acesso_enviado.sql', 'utf8'))
   banco.exec(`
     INSERT INTO clientes (id, email, nome) VALUES (1, 'ana@example.com', 'Ana');
     INSERT INTO cupons
@@ -247,4 +250,20 @@ test('aviso pendente atrasado não reativa vaga já vencida', async () => {
   assert.equal(await estenderReservaCupom(d1, referencia), false)
   const vivas = banco.prepare("SELECT COUNT(*) AS n FROM cupom_reservas WHERE expira_em > datetime('now')").get().n
   assert.equal(vivas, 1)
+})
+
+test('acesso da compra sai uma vez; se nada saiu, o próximo aviso tenta de novo', async () => {
+  const { d1 } = bancoCupons()
+  const base = { clienteId: 1, paymentIntent: '1', valor: 100, moeda: 'brl', forma: 'pix' }
+  await registrarCompraNoBanco(d1, { ...base, sessionId: 'mp_1' })
+
+  assert.equal(await reservarEnvioAcesso(d1, 'mp_1'), true)
+  assert.equal(await reservarEnvioAcesso(d1, 'mp_1'), false, 'aviso repetido não manda de novo')
+  await desfazerEnvioAcesso(d1, 'mp_1')
+  assert.equal(await reservarEnvioAcesso(d1, 'mp_1'), true, 'depois de falhar, o próximo aviso manda')
+
+  // Senha criada na /sucesso antes do aviso: o aviso não manda o link.
+  await registrarCompraNoBanco(d1, { ...base, sessionId: 'mp_2', acessoEntregue: true })
+  assert.equal(await reservarEnvioAcesso(d1, 'mp_2'), false)
+  assert.equal(await reservarEnvioAcesso(d1, 'mp_inexistente'), false)
 })

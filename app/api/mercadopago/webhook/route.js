@@ -6,7 +6,7 @@ import { normalizarEmail } from '@/lib/sessao'
 import { enviarEventoMeta } from '@/lib/meta'
 import { site } from '@/lib/site'
 import { getDB } from '@/lib/d1'
-import { cancelarReservaCupom, estenderReservaCupom } from '@/lib/gestao/cupons'
+import { cancelarReservaCupom, desfazerEnvioAcesso, estenderReservaCupom, reservarEnvioAcesso } from '@/lib/gestao/cupons'
 import { marcarCarrinhosPagos } from '@/lib/carrinhos'
 import { gravarRastreioCompra } from '@/lib/rastreio-compra'
 import { ehTeste, enviarMetaSeReal } from '@/lib/teste'
@@ -20,8 +20,9 @@ export const dynamic = 'force-dynamic'
 // compra e manda por e-mail o link para criar a senha.
 //
 // Uma diferença importa: o Mercado Pago avisa o mesmo pagamento várias vezes
-// (quando ele nasce, quando o Pix cai, a cada atualização). O e-mail só sai na
-// primeira vez que a compra entra no banco, para ninguém receber três iguais.
+// (quando ele nasce, quando o Pix cai, a cada atualização). O acesso sai uma
+// vez só (compras.acesso_enviado_em); se nem o e-mail nem o WhatsApp saírem, o
+// próximo aviso tenta de novo.
 async function liberarAcesso(r, teste) {
   const email = normalizarEmail(r.email)
   if (!email) {
@@ -33,7 +34,7 @@ async function liberarAcesso(r, teste) {
     console.error('mp webhook sem banco', r.pagamentoId)
     return
   }
-  const nova = await registrarCompra({
+  await registrarCompra({
     clienteId: cliente.id,
     sessionId: r.compraId,
     paymentIntent: r.pagamentoId,
@@ -44,16 +45,25 @@ async function liberarAcesso(r, teste) {
     referencia: r.referencia,
     teste,
   })
-  if (!nova) return
+  if (!(await reservarEnvioAcesso(getDB(), r.compraId))) return
 
-  const token = await criarToken({ clienteId: cliente.id, tipo: 'criar_senha', horas: 24 * 7 })
-  if (!token) return
-  await enviarCriarSenha({ para: email, nome: r.nome, token })
-  // O mesmo link também pelo WhatsApp, para quem fechou a tela do Mercado
-  // Pago sem voltar ao site. Só sai depois que a Meta aprovar o modelo e o
-  // WA_ACESSO estiver "ativo"; nunca derruba o aviso (ver lib/whatsapp-acesso.js).
-  const whatsapp = await enviarAcessoLiberado(process.env, getDB(), { telefone: r.telefone, nome: r.nome, token })
-  if (whatsapp !== 'desligado') console.log('whatsapp acesso liberado', whatsapp, r.pagamentoId)
+  let saiu = false
+  try {
+    const token = await criarToken({ clienteId: cliente.id, tipo: 'criar_senha', horas: 24 * 7 })
+    if (!token) return
+    saiu = await enviarCriarSenha({ para: email, nome: r.nome, token })
+    // O mesmo link também pelo WhatsApp, para quem fechou a tela do Mercado
+    // Pago sem voltar ao site. Só sai depois que a Meta aprovar o modelo e o
+    // WA_ACESSO estiver "ativo"; nunca derruba o aviso (ver lib/whatsapp-acesso.js).
+    const whatsapp = await enviarAcessoLiberado(process.env, getDB(), { telefone: r.telefone, nome: r.nome, token })
+    if (whatsapp !== 'desligado') console.log('whatsapp acesso liberado', whatsapp, r.pagamentoId)
+    saiu = saiu || whatsapp === 'enviado'
+  } finally {
+    if (!saiu) {
+      console.error('mp acesso não saiu; o próximo aviso tenta de novo', r.pagamentoId)
+      await desfazerEnvioAcesso(getDB(), r.compraId).catch((err) => console.error('mp desfazer acesso', err?.message))
+    }
+  }
 }
 
 export async function POST(req) {
