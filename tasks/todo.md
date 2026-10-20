@@ -48,12 +48,12 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 - `CUPOM_TESTE` não existe mais no `www`.
 
 ## Ainda aberto
-- [ ] Paulo: a compra de R$ 1,00 de 24/09 (`mp_179645402809`, compra 10) está como venda real (`teste=0`). Se foi teste, marcar na gestão para não somar nos números.
-- [ ] Prova da Equipe: removido perde o acesso. Membro novo e troca de senha já ocorreram (Kaylan, 24/09).
-- [ ] SAIR do WhatsApp nunca foi usado em produção (`descadastros` vazio). Provar só com OK do Paulo.
-- [ ] Paulo: verificação da empresa na Meta (recomendado: evita o erro 130497 e aumenta o limite).
-- [ ] CPU do `/api/checkout`, do webhook e do cron no painel da Cloudflare (Observability).
-- [ ] Ideia da Fase 4: entrega do acesso idempotente (`compras.acesso_enviado_em`, coluna ainda não existe).
+- [x] Compra 10 (`mp_179645402809`, Kaylan) marcada como teste em 20/10 (Paulo confirmou).
+- [ ] Prova da Equipe: removido perde o acesso (Paulo vai testar em 20/10). Membro novo e troca de senha já ocorreram (Kaylan, 24/09).
+- [ ] SAIR do WhatsApp nunca foi usado em produção (`descadastros` vazio). Paulo deu OK em 20/10: falta ele tocar em "Não quero receber" num lembrete e eu conferir.
+- [x] Verificação da empresa na Meta: feita (Paulo, 20/10).
+- [x] CPU conferida em 20/10 (7 dias, API GraphQL): www 48.289 pedidos, 0 erros, p50 8 ms, p99 311 ms, nenhum `exceededCpu`; robô 1.055 rodadas, 0 erros, máx. 30 ms.
+- [ ] Entrega do acesso idempotente: commit `4f7a363` (migração 0016). Aplicar a 0016 no D1 ANTES do push.
 - Reembolso: ADIADO por decisão do Paulo (24/09).
 - Futuro: o Direct do Instagram e o Messenger não chegam à gestão (são outros canais).
 - Detalhes antigos: `arquivo/2026-10-02-whatsapp-pela-api-oficial-da-meta.md`, `arquivo/2026-09-24-menu-de-gestao-plano-e-andamento.md`, `arquivo/2026-10-12-*.md`.
