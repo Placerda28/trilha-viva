@@ -15,12 +15,12 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 
 **Na ordem:**
 1. [x] **WhatsApp de "acesso liberado" ligado em 20/10** (versão www `427487cc`). O `secret put` simples foi recusado porque a última versão era uma prévia não publicada da branch `organizacao` (Workers Builds sobe uma prévia a cada push fora da `main`). Caminho usado: `printf 'ativo' | npx wrangler versions secret put WA_ACESSO --name www` e depois `npx wrangler versions deploy <id>@100% --name www --yes`. Conferir antes que a prévia é do mesmo commit da produção.
-2. **Compra de teste real** (R$ 1,00, com outra conta). É a primeira depois dos consertos de segurança. Conferir:
+2. [x] **Compra de teste feita em 20/10** (compra 91, Pix, teste=1; WhatsApp `acesso_liberado` saiu em 1 s). Paulo confirmou a liberação. Texto original: **Compra de teste real** (R$ 1,00, com outra conta). É a primeira depois dos consertos de segurança. Conferir:
    - a `/sucesso` libera e leva a criar a senha;
    - a compra aparece na gestão;
    - a compra chega à Meta pelo servidor (o Pixel não carrega mais na `/sucesso`);
    - se o item 1 foi feito, o WhatsApp de acesso chega.
-3. **Stripe (reserva):** perguntar ao Paulo se a conta recebe pagamentos de outros produtos. Se sim, aplicar ali o mesmo filtro do Mercado Pago.
+3. [x] **Stripe: desativada, não recebe nada** (Paulo, 20/10). Filtro desnecessário. Texto original: perguntar ao Paulo se a conta recebe pagamentos de outros produtos. Se sim, aplicar ali o mesmo filtro do Mercado Pago.
 4. **5 achados baixos** da revisão de segurança (relatório privado em `~/tv-backups/seguranca/2026-10-19-baseline.md`), um por vez, com teste e revisão do diff.
 5. **Robô, menor:** chave de idempotência no e-mail de aviso, para não sair 2 vezes no mesmo dia.
 6. **Opcional:** exclusão do Defender para `C:\dev`, como administrador, para o build do OpenNext deixar de levar ~50 min.
@@ -30,7 +30,7 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 ## Segurança: revisão de base de 19/10 (relatório privado em `~/tv-backups/seguranca/2026-10-19-baseline.md`)
 - [x] 3 achados médios consertados com teste e publicados (19/10).
 - [ ] 5 achados baixos (detalhe no relatório).
-- [ ] Paulo: a conta da Stripe (reserva) recebe pagamentos de outros produtos? Se sim, falta o mesmo filtro do Mercado Pago no caminho da Stripe.
+- [x] Stripe desativada (Paulo, 20/10): sem filtro a aplicar.
 
 ## Ferramentas (19/10)
 - [ ] O build do OpenNext funciona em `C:\dev`, mas leva ~50 min (antivírus?). Opcional, Paulo: exclusão do Defender para `C:\dev` (administrador). O `~/tv-build` foi removido em 19/10.
