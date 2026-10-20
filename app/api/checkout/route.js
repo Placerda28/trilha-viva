@@ -40,7 +40,7 @@ function limited(ip) {
 }
 
 export async function POST(req) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anon'
+  const ip = req.headers.get('cf-connecting-ip') || 'anon'
   if (limited(ip)) {
     return NextResponse.json({ error: 'Muitas tentativas. Aguarde um minuto.' }, { status: 429 })
   }

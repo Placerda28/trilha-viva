@@ -23,6 +23,12 @@ export async function GET(req) {
   const url = new URL(req.url)
   const BASE = url.origin
 
+  // Outro site pode abrir este endereço com o cookie da pessoa e gastar a cota
+  // do dia. Só vale clique daqui ou endereço digitado; sem o cabeçalho
+  // (navegador antigo), segue como antes.
+  const origem = req.headers.get('sec-fetch-site')
+  if (origem && origem !== 'same-origin' && origem !== 'none') return voltar('outro-site', BASE)
+
   const cliente = await clienteAtual()
   if (!cliente) return NextResponse.redirect(new URL('/entrar?expirou=1', BASE), { status: 303 })
   if (cliente.bloqueado) return voltar('suspenso', BASE)

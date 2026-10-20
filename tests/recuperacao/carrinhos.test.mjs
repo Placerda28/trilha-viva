@@ -7,6 +7,7 @@ import {
   gravarCarrinho,
   limparTelefone,
   limparUtm,
+  marcarCarrinhosPagos,
   nomeValido,
   origemDoCarrinho,
   telefoneValido,
@@ -69,6 +70,9 @@ test('carrinho grava e devolve o celular limpo para preencher o checkout', async
     { ...(await carrinhoParaPreencher(db, 'referencia')) },
     { nome: 'Pessoa', email: 'pessoa@example.com', telefone: '11987654321' }
   )
+
+  await marcarCarrinhosPagos(db, { referencia: 'referencia' })
+  assert.equal(await carrinhoParaPreencher(db, 'referencia'), null)
 })
 
 test('nome é obrigatório depois do trim e aceita até 80 caracteres', () => {

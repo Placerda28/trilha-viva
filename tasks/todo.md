@@ -29,7 +29,7 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 
 ## Segurança: revisão de base de 19/10 (relatório privado em `~/tv-backups/seguranca/2026-10-19-baseline.md`)
 - [x] 3 achados médios consertados com teste e publicados (19/10).
-- [ ] 5 achados baixos (detalhe no relatório).
+- [x] 5 achados baixos tratados em 20/10: B-1 aceito pelo Paulo; B-2 checkout/carrinho usam `cf-connecting-ip` (falta freio de cupom no D1 ou regra de rate limit da Cloudflare); B-3 carrinho pago não revela dados; B-4 aceito (reenvio é idempotente, prazo arriscaria reenvios legítimos); B-5 `/api/baixar` recusa `Sec-Fetch-Site` de outro site. Revisão do Codex: nenhum problema real.
 - [x] Stripe desativada (Paulo, 20/10): sem filtro a aplicar.
 
 ## Ferramentas (19/10)

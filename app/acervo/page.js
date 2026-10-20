@@ -27,6 +27,7 @@ const AVISOS = {
   'nao-encontrada': 'Não encontrei essa música. Se o link veio de algum lugar, avise o suporte.',
   'sem-arquivo': 'Essa música está sem arquivo no momento. Avise o suporte.',
   falhou: 'Não consegui abrir esse arquivo agora. Tente de novo em instantes.',
+  'outro-site': 'Para baixar, clique na música aqui no acervo.',
 }
 
 export default async function AcervoPage({ searchParams }) {
