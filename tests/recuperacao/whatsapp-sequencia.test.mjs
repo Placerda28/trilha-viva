@@ -11,6 +11,7 @@ import {
   paradaPelaEntrega,
 } from '../../lib/whatsapp-sequencia.js'
 import { atenderWebhook, executarWhatsapp } from '../../workers/recuperacao-carrinho/whatsapp.js'
+import { emailAoSuporte } from '../../workers/recuperacao-carrinho/whatsapp-estado.js'
 import { consultarSequencias, mudarSequencia, validarAcaoSequencia } from '../../lib/gestao/whatsapp.js'
 
 // Sequência do WhatsApp (plano A): 1ª 3 h depois do carrinho, depois 1 por
@@ -100,7 +101,7 @@ function metaFalsa({ modelos = { carrinho_lembrete: 'APPROVED', carrinho_preco: 
   const fila = [...erros]
   const fetchImpl = async (url, opcoes = {}) => {
     const corpo = opcoes.body ? JSON.parse(opcoes.body) : null
-    pedidos.push({ url: String(url), corpo })
+    pedidos.push({ url: String(url), corpo, headers: opcoes.headers || {} })
     if (String(url).includes('/message_templates')) {
       const data = Object.entries(modelos).map(([name, status]) => ({
         name,
@@ -478,6 +479,8 @@ test('token/acesso recusado na 1ª (200, 190, 10): o carrinho continua na fila e
   await rodada(b, meta, '2026-01-16 12:00:00')
   assert.equal(meta.avisosDeParada().length, 2)
   assert.match(meta.avisosDeParada()[1].corpo.subject, /código 10\)/)
+  // Chave do dia: se a resposta do Resend se perder, o reenvio não duplica.
+  assert.deepEqual(meta.avisosDeParada().map((p) => p.headers['Idempotency-Key']), ['whatsapp-parado-2026-01-15', 'whatsapp-parado-2026-01-16'])
 
   // Token arrumado: as duas saem pelo caminho normal.
   await rodada(b, meta, '2026-01-16 12:10:00')
@@ -614,4 +617,11 @@ test('teste exclui primeira e seguintes do WhatsApp e encerra antes do próximo 
   }
   assert.equal(estadoDe(b, 'parado').motivo, 'gestao')
   b.close()
+})
+
+test('aviso ao suporte: 409 com chave conta como já enviado; sem chave é erro', async () => {
+  const env = { WA_ENCAMINHAR_PARA: 'suporte@example.com', RESEND_API_KEY: 'k', EMAIL_FROM: 'robo@example.com' }
+  const conflito = async () => new Response('{}', { status: 409 })
+  await emailAoSuporte(env, { assunto: 'a', texto: 't', html: 'h', chave: 'whatsapp-parado-2026-01-15' }, conflito)
+  await assert.rejects(emailAoSuporte(env, { assunto: 'a', texto: 't', html: 'h' }, conflito), /HTTP 409/)
 })

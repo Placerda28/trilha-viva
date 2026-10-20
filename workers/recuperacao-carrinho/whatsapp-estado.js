@@ -48,14 +48,19 @@ export function tetoDoDia(estado, tetoNormal) {
 
 // ------------------------------------------------------------ e-mail ----
 
-export async function emailAoSuporte(env, { assunto, texto, html }, fetchImpl) {
+// chave: o Resend ignora um 2º envio com a mesma chave em 24 h.
+export async function emailAoSuporte(env, { assunto, texto, html, chave }, fetchImpl) {
   const para = String(env.WA_ENCAMINHAR_PARA || env.LEMBRETE_BCC || '').trim()
   if (!para || !env.RESEND_API_KEY) return
+  const headers = { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' }
+  if (chave) headers['Idempotency-Key'] = chave
   const resposta = await fetchImpl('https://api.resend.com/emails', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ from: env.EMAIL_FROM, to: [para], subject: assunto.slice(0, 150), text: texto, html }),
   })
+  // 409 com chave: um e-mail com essa chave já saiu (ou está saindo).
+  if (chave && resposta.status === 409) return
   if (!resposta.ok) throw new Error(`Resend respondeu com HTTP ${resposta.status}`)
 }
 
@@ -320,6 +325,7 @@ export async function avisarAcessoRecusado(db, env, codigo, agora, fetchImpl, lo
       assunto: `WhatsApp parado: token/acesso recusado pela Meta (código ${codigo})`,
       texto,
       html: paragrafos(texto),
+      chave: `whatsapp-parado-${dia}`,
     }, fetchImpl)
     return true
   } catch (erro) {
