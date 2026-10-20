@@ -22,7 +22,7 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
    - se o item 1 foi feito, o WhatsApp de acesso chega.
 3. [x] **Stripe: desativada, não recebe nada** (Paulo, 20/10). Filtro desnecessário. Texto original: perguntar ao Paulo se a conta recebe pagamentos de outros produtos. Se sim, aplicar ali o mesmo filtro do Mercado Pago.
 4. **5 achados baixos** da revisão de segurança (relatório privado em `~/tv-backups/seguranca/2026-10-19-baseline.md`), um por vez, com teste e revisão do diff.
-5. **Robô, menor:** chave de idempotência no e-mail de aviso, para não sair 2 vezes no mesmo dia.
+5. [x] **Robô publicado em 20/10** (versão `90992375`, commit `46e603b`): aviso de WhatsApp parado leva `Idempotency-Key` do dia. Texto original: chave de idempotência no e-mail de aviso, para não sair 2 vezes no mesmo dia.
 6. **Opcional:** exclusão do Defender para `C:\dev`, como administrador, para o build do OpenNext deixar de levar ~50 min.
 
 **Como retomar:** abra o Claude Code em `C:\dev\trilha-viva` e diga "continuar de onde paramos". O `AGENTS.md` leva aos docs; este arquivo diz o que fazer; o `HISTORICO.md` do Drive mostra o que foi feito.
@@ -35,7 +35,7 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 ## Ferramentas (19/10)
 - [ ] O build do OpenNext funciona em `C:\dev`, mas leva ~50 min (antivírus?). Opcional, Paulo: exclusão do Defender para `C:\dev` (administrador). O `~/tv-build` foi removido em 19/10.
 - [x] Robô `whatsapp-acesso-meta` publicado em 19/10 (versão 6358fe4b, commit 064ec7a): recusa de token/acesso pela Meta não encerra o WhatsApp do carrinho; 1 e-mail de aviso por dia. A coluna da migração `0015` já existia em produção (aplicada em 08/10 com o número antigo); backup em `~/tv-backups/d1-antes-0015.sql`.
-- [ ] Menor: o e-mail de aviso pode sair 2 vezes no dia se a conexão com o Resend cair depois do envio (falta uma chave de idempotência).
+- [x] E-mail de aviso com chave de idempotência do dia (20/10).
 
 ## WhatsApp `acesso_liberado` (na `main` desde 19/10)
 - [ ] A Meta **aprovou** o modelo `acesso_liberado` (status APPROVED no banco; o teste foi para o celular do Paulo em 13/10). Falta, com OK do Paulo: `printf 'ativo' | npx wrangler secret put WA_ACESSO` no www (publica na hora) e conferir numa compra de teste.
