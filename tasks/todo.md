@@ -4,28 +4,20 @@ Só o que ainda está aberto. O detalhe de cada frente fica em `tasks/arquivo/`,
 
 Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido resolvidos por trabalho posterior. Confirme antes de agir e apague o que já estiver feito.
 
-## Próxima sessão: comece por aqui (deixado em 19/10/2026, 19h UTC)
+## Próxima sessão: comece por aqui (deixado em 21/10/2026)
 
-**Estado no fim do dia 19/10:**
-- Site no ar: `main` em `7c2ffba` (versão www `be4d8650`), com a organização, os consertos de segurança, o `next` 15.5.28 e o robô.
-- Robô no ar: versão `6358fe4b`. Rodou às 19:00 depois do deploy.
-- O `wrangler tail` não conecta nesta rede: prove a rodada do robô pelo D1 (`whatsapp_modelos.conferido_em`).
-- Palco: a branch `organizacao` está no GitHub com o CI verde, mas fora da `main`. O Paulo vai tratar do Palco numa sessão só dele.
-- O toolkit no site está concluído (`docs/setup.md`).
+O roteiro de 19/10 foi concluído em 20 e 21/10 (detalhe no `HISTORICO.md` do Drive). No ar: site `df79b202`, robô `7b99c0c1`, Palco `1e310dd8`.
 
-**Na ordem:**
-1. [x] **WhatsApp de "acesso liberado" ligado em 20/10** (versão www `427487cc`). O `secret put` simples foi recusado porque a última versão era uma prévia não publicada da branch `organizacao` (Workers Builds sobe uma prévia a cada push fora da `main`). Caminho usado: `printf 'ativo' | npx wrangler versions secret put WA_ACESSO --name www` e depois `npx wrangler versions deploy <id>@100% --name www --yes`. Conferir antes que a prévia é do mesmo commit da produção.
-2. [x] **Compra de teste feita em 20/10** (compra 91, Pix, teste=1; WhatsApp `acesso_liberado` saiu em 1 s). Paulo confirmou a liberação. Texto original: **Compra de teste real** (R$ 1,00, com outra conta). É a primeira depois dos consertos de segurança. Conferir:
-   - a `/sucesso` libera e leva a criar a senha;
-   - a compra aparece na gestão;
-   - a compra chega à Meta pelo servidor (o Pixel não carrega mais na `/sucesso`);
-   - se o item 1 foi feito, o WhatsApp de acesso chega.
-3. [x] **Stripe: desativada, não recebe nada** (Paulo, 20/10). Filtro desnecessário. Texto original: perguntar ao Paulo se a conta recebe pagamentos de outros produtos. Se sim, aplicar ali o mesmo filtro do Mercado Pago.
-4. **5 achados baixos** da revisão de segurança (relatório privado em `~/tv-backups/seguranca/2026-10-19-baseline.md`), um por vez, com teste e revisão do diff.
-5. [x] **Robô publicado em 20/10** (versão `90992375`, commit `46e603b`): aviso de WhatsApp parado leva `Idempotency-Key` do dia. Texto original: chave de idempotência no e-mail de aviso, para não sair 2 vezes no mesmo dia.
-6. [x] **Exclusão do Defender para `C:\dev` feita pelo Paulo em 20/10** (medir o tempo no próximo build). Texto original: exclusão do Defender para `C:\dev`, como administrador, para o build do OpenNext deixar de levar ~50 min.
+**Testes do Paulo (pediu para fazer outra hora).** Ao voltar, pergunte quais ele já fez e confira o que der no banco:
+1. **Gestão do site:** abrir as abas Cupons, Recuperação e WhatsApp e ver se algo ficou estranho. Elas mudaram por dentro em 21/10, com a divisão dos arquivos grandes; o comportamento deveria ser o mesmo.
+2. **Equipe:** remover um membro e conferir que ele perde o acesso à gestão.
+3. **SAIR do WhatsApp:** tocar em "Não quero receber" num lembrete. Depois eu confiro a tabela `descadastros` e o carrinho.
+4. **Palco ao vivo:** partes no lugar certo, pulo natural, guia anunciando o destino e fader de rampa, inclusive durante o crossfade.
+5. **Acesso da compra:** na próxima venda real, o acesso deve chegar uma vez só (`compras.acesso_enviado_em` preenchido).
 
-**Como retomar:** abra o Claude Code em `C:\dev\trilha-viva` e diga "continuar de onde paramos". O `AGENTS.md` leva aos docs; este arquivo diz o que fazer; o `HISTORICO.md` do Drive mostra o que foi feito.
+**Frentes grandes, cada uma em sessão própria:**
+- **Next 16 no site.** O Next 15 saiu do suporte em 21/10; o build só passa por causa da opção `--dangerouslyUseUnsupportedNextVersion` no painel da Cloudflare. Planejar antes de fazer.
+- **Palco:** dividir `app/src/audio/motores.ts`, que exige plano e prova de áudio; consertar o teste instável do potenciômetro (ver `tasks/todo.md` do Palco).
 
 ## Segurança: revisão de base de 19/10 (relatório privado em `~/tv-backups/seguranca/2026-10-19-baseline.md`)
 - [x] 3 achados médios consertados com teste e publicados (19/10).
