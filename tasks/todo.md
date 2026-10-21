@@ -53,7 +53,7 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 - [ ] SAIR do WhatsApp nunca foi usado em produção (`descadastros` vazio). Paulo deu OK em 20/10: falta ele tocar em "Não quero receber" num lembrete e eu conferir.
 - [x] Verificação da empresa na Meta: feita (Paulo, 20/10).
 - [x] CPU conferida em 20/10 (7 dias, API GraphQL): www 48.289 pedidos, 0 erros, p50 8 ms, p99 311 ms, nenhum `exceededCpu`; robô 1.055 rodadas, 0 erros, máx. 30 ms.
-- [ ] Entrega do acesso idempotente: commit `4f7a363` (migração 0016). Aplicar a 0016 no D1 ANTES do push.
+- [x] Entrega do acesso idempotente no ar em 21/10 (commits `4f7a363`, `bc0b61f`, `dc5b917`; migração 0016 aplicada antes, backup em `~/tv-backups/d1-compras-antes-0016.sql`). Prova: próxima compra real recebe o acesso uma vez.
 - Reembolso: ADIADO por decisão do Paulo (24/09).
 - Futuro: o Direct do Instagram e o Messenger não chegam à gestão (são outros canais).
 - Detalhes antigos: `arquivo/2026-10-02-whatsapp-pela-api-oficial-da-meta.md`, `arquivo/2026-09-24-menu-de-gestao-plano-e-andamento.md`, `arquivo/2026-10-12-*.md`.
