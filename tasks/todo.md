@@ -48,7 +48,7 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 - `CUPOM_TESTE` não existe mais no `www`.
 
 ## Ainda aberto
-- [ ] **URGENTE: build automático quebrado desde 21/10.** O OpenNext recusa Next 15 (2 anos do lançamento, 21/10/2024). Todo push na `main` falha no Workers Builds. Publicado à mão em 21/10 (www `40ce34ce`) com `npx opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && npx opennextjs-cloudflare deploy`. Saídas: (a) Paulo põe a mesma opção no comando de build do painel (Workers > www > Settings > Build); (b) de verdade: subir para Next 16 (o 15 deixa de receber consertos de segurança).
+- [ ] **URGENTE: build automático quebrado desde 21/10.** O OpenNext recusa Next 15 (2 anos do lançamento, 21/10/2024). Todo push na `main` falha no Workers Builds. Publicado à mão em 21/10 (www `40ce34ce`) com `npx opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && npx opennextjs-cloudflare deploy`. Paulo pôs a opção no comando de build do painel em 21/10. Falta o definitivo: subir para Next 16 (o 15 deixa de receber consertos de segurança).
 - [x] Compra 10 (`mp_179645402809`, Kaylan) marcada como teste em 20/10 (Paulo confirmou).
 - [ ] Prova da Equipe: removido perde o acesso (Paulo vai testar em 20/10). Membro novo e troca de senha já ocorreram (Kaylan, 24/09).
 - [ ] SAIR do WhatsApp nunca foi usado em produção (`descadastros` vazio). Paulo deu OK em 20/10: falta ele tocar em "Não quero receber" num lembrete e eu conferir.
