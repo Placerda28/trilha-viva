@@ -19,6 +19,19 @@ O roteiro de 19/10 foi concluído em 20 e 21/10 (detalhe no `HISTORICO.md` do Dr
 - **Next 16 no site.** O Next 15 saiu do suporte em 21/10; o build só passa por causa da opção `--dangerouslyUseUnsupportedNextVersion` no painel da Cloudflare. Planejar antes de fazer.
 - **Palco:** dividir `app/src/audio/motores.ts`, que exige plano e prova de áudio; consertar o teste instável do potenciômetro (ver `tasks/todo.md` do Palco).
 
+## Plano de SEO (`tasks/plano-seo.md`), iniciado em 21/10/2026
+
+Branch `seo-fase-a`. Uma fase de cada vez, com prova e OK do Paulo antes de seguir.
+
+### Fase A: correções rápidas (feita no código, falta publicar)
+- [x] **1.1 Drive:** o passo 1 do "Do download ao domingo" (`lib/tools.js`, usado na home e na `/como-usar`) dizia que o acervo abre no Google Drive. Trocado pelo texto do plano. Antes, a busca por "Drive" achava esse texto visível ao cliente e mais 5 comentários de código. Depois, só os 5 comentários (`app/api/acesso`, `lib/arquivos.js`, `lib/artists.js`, `lib/catalog.js`, `lib/safe.js`).
+- [ ] **1.2 www e http:** fica no painel da Cloudflare (o Paulo faz pelo navegador, com o passo a passo da conversa de 21/10). Depois, rodar os 3 `curl` do plano e testar checkout, login e webhook. O webhook não vai no código (a preferência não manda `notification_url`): conferir no painel do Mercado Pago que a URL cadastrada é `https://trilhaviva.org/...`, sem `www` e sem `http`.
+- [x] **1.3 Redirecionamentos:** `data/redirects.json` com 197 slugs antigos, tirados do histórico do git do catálogo: 55 vão para a música, 104 para o artista e 38 para `/musicas`. A regra de correspondência fica em `scripts/achar-redirects.mjs`, e a revisão linha a linha em `tasks/redirects-revisao.csv`. Prova local (`next start`): os 10 endereços do Google respondem 301 para uma página 200; slug desconhecido continua dando 404.
+- [x] **1.4 Sitemap:** `lastmod` real (`data/lastmod.json`, tirado do histórico), artista = maior data das músicas, páginas fixas com data constante, sem `changefreq`/`priority`. São 1.938 endereços (1.563 músicas, 362 artistas, 9 páginas, 4 posts), sem divisão porque fica abaixo de 2.000. As 1.563 músicas reúnem 1.819 arquivos, porque as versões de tom/ao vivo ficam na mesma página. Os 1.613/1.822 do plano são o catálogo de 22/09, antes de juntar duplicatas. Prova local: `checar-sitemap` deu 1.938 respostas 200, 0 de 3xx e 0 de 4xx.
+- [x] **1.5 Metadados sociais:** o `twitter` do layout perdeu título e descrição, e o Next passa a copiar os do `og` de cada página. `/blog`, `/faq`, `/artistas`, `/termos` e `/privacidade` ganharam `openGraph` próprio. Antes, herdavam o `og:url` da home. Conferido em home, música, artista, blog, artigo e FAQ.
+- **Regra para o futuro:** sempre que um slug mudar, a linha entra no `data/redirects.json` (rodar `scripts/achar-redirects.mjs` depois de gerar o catálogo). Isso está anotado no `leia-me.txt` do gerador e no `docs/architecture.md`.
+- Falta: commit, merge e publicação (com o OK do Paulo). Depois de publicar, repetir as provas em produção (redirects no runtime dos Workers e `checar-sitemap https://trilhaviva.org`), testar checkout, login, área do cliente e o link do Zorcha, reenviar o sitemap e pedir "Validar correção" no Search Console.
+
 ## Segurança: revisão de base de 19/10 (relatório privado em `~/tv-backups/seguranca/2026-10-19-baseline.md`)
 - [x] 3 achados médios consertados com teste e publicados (19/10).
 - [x] 5 achados baixos tratados em 20/10: B-1 aceito pelo Paulo; B-2 checkout/carrinho usam `cf-connecting-ip` (falta freio de cupom no D1 ou regra de rate limit da Cloudflare); B-3 carrinho pago não revela dados; B-4 aceito (reenvio é idempotente, prazo arriscaria reenvios legítimos); B-5 `/api/baixar` recusa `Sec-Fetch-Site` de outro site. Revisão do Codex: nenhum problema real.

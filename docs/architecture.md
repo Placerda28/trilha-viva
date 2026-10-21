@@ -17,6 +17,7 @@
 - `components/`: componentes do site. `components/gestao/` reúne as telas da gestão.
 - `lib/`: regras do negócio. `lib/gestao/` guarda o backend da gestão (permissão em `permissao.js`).
 - `lib/catalog.js` + `lib/catalog-dados-1…8.js`: o acervo, já pronto e ordenado. **Arquivo gerado, não edite à mão.** O gerador (`gerar_catalogo.py`) fica no Drive, em `01 - DEV (ARQUIVOS DO SITE)\Claude outputs\gerar catalogo`.
+- `data/redirects.json`: a única fonte dos redirecionamentos 301 de músicas que mudaram de endereço (lido pelo `redirects()` do `next.config.mjs`). `data/lastmod.json`: data real da última mudança de cada música, usada no sitemap. Depois de gerar um catálogo novo, rode `node scripts/achar-redirects.mjs` e `node scripts/gerar-lastmod.mjs` (o passo a passo está no `leia-me.txt` do gerador). `node scripts/checar-sitemap.mjs <endereço>` confere se todo endereço do sitemap responde 200.
 - `assets/*.b64.NN` + `assets/manifest.json`: as imagens em pedaços base64, conferidas por sha256. `scripts/decode-assets.mjs` monta tudo em `public/img/` antes do build (`prebuild`).
 - `migrations/`: SQL do D1, numerado.
 - `tests/`: `checkout/`, `gestao/`, `recuperacao/` (`node --test`).

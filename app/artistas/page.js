@@ -4,11 +4,15 @@ import { Breadcrumbs } from '@/components/ui'
 import { artistList } from '@/lib/artists'
 import { site, priceBRL } from '@/lib/site'
 
+const title = 'Artistas e ministérios com multitrack gospel'
+const description =
+  'Multitracks gospel (VS) de Fernandinho, Gabriela Rocha, Isaías Saad, Morada, Casa Worship, Aline Barros e dezenas de outros artistas e ministérios — todos no pacote Trilha Viva.'
+
 export const metadata = {
-  title: 'Artistas e ministérios com multitrack gospel',
-  description:
-    'Multitracks gospel (VS) de Fernandinho, Gabriela Rocha, Isaías Saad, Morada, Casa Worship, Aline Barros e dezenas de outros artistas e ministérios — todos no pacote Trilha Viva.',
+  title,
+  description,
   alternates: { canonical: '/artistas' },
+  openGraph: { title, description, url: `${site.url}/artistas` },
 }
 
 export default function ArtistasPage() {

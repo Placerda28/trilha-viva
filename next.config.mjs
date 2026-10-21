@@ -6,6 +6,15 @@ const nextConfig = {
   poweredByHeader: false,
   // O lint é só medição (npm run lint); o build e o deploy não dependem dele.
   eslint: { ignoreDuringBuilds: true },
+  async redirects() {
+    const { readFile } = await import('node:fs/promises')
+    const mapa = JSON.parse(await readFile(new URL('./data/redirects.json', import.meta.url), 'utf8'))
+    return Object.entries(mapa).map(([slug, destination]) => ({
+      source: `/musicas/${slug}`,
+      destination,
+      statusCode: 301,
+    }))
+  },
   async headers() {
     return [
       {

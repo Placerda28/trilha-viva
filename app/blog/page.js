@@ -4,11 +4,15 @@ import { posts } from '@/lib/posts'
 import { site } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 
+const title = 'Blog — multitrack, clique e guia para ministérios de louvor'
+const description =
+  'Guias práticos sobre multitrack gospel: o que é VS, como tocar com clique e guia, configuração no REAPER e como escolher entre playback e multitrack.'
+
 export const metadata = {
-  title: 'Blog — multitrack, clique e guia para ministérios de louvor',
-  description:
-    'Guias práticos sobre multitrack gospel: o que é VS, como tocar com clique e guia, configuração no REAPER e como escolher entre playback e multitrack.',
+  title,
+  description,
   alternates: { canonical: '/blog' },
+  openGraph: { title, description, url: `${site.url}/blog` },
 }
 
 const fmt = (d) =>

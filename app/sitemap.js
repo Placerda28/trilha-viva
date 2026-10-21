@@ -2,47 +2,41 @@ import { songs } from '@/lib/catalog'
 import { artistList } from '@/lib/artists'
 import { posts } from '@/lib/posts'
 import { site } from '@/lib/site'
+import lastmod from '@/data/lastmod.json'
+import redirects from '@/data/redirects.json'
+
+// Pré-renderizado no build: os agrupamentos abaixo não rodam a cada visita.
+export const dynamic = 'force-static'
+
+// Datas do último commit de cada página. Atualizar quando o texto mudar.
+const paginas = {
+  '/': '2026-10-21',
+  '/assinar': '2026-09-29',
+  '/musicas': '2026-09-22',
+  '/artistas': '2026-09-11',
+  '/como-usar': '2026-10-21',
+  '/blog': '2026-09-05',
+  '/faq': '2026-09-05',
+  '/termos': '2026-09-05',
+  '/privacidade': '2026-10-12',
+}
 
 export default function sitemap() {
-  const now = new Date()
-
-  const statics = [
-    { url: '/', priority: 1, changeFrequency: 'weekly' },
-    { url: '/assinar', priority: 0.95, changeFrequency: 'weekly' },
-    { url: '/musicas', priority: 0.9, changeFrequency: 'weekly' },
-    { url: '/artistas', priority: 0.8, changeFrequency: 'weekly' },
-    { url: '/como-usar', priority: 0.85, changeFrequency: 'monthly' },
-    { url: '/blog', priority: 0.7, changeFrequency: 'weekly' },
-    { url: '/faq', priority: 0.7, changeFrequency: 'monthly' },
-    { url: '/termos', priority: 0.3, changeFrequency: 'yearly' },
-    { url: '/privacidade', priority: 0.3, changeFrequency: 'yearly' },
-  ].map((p) => ({
-    url: `${site.url}${p.url}`,
-    lastModified: now,
-    changeFrequency: p.changeFrequency,
-    priority: p.priority,
+  const statics = Object.entries(paginas).map(([caminho, data]) => ({
+    url: `${site.url}${caminho}`,
+    lastModified: data,
   }))
-
-  const songUrls = songs.map((s) => ({
+  const songUrls = songs.filter((s) => !Object.hasOwn(redirects, s.slug)).map((s) => ({
     url: `${site.url}/musicas/${s.slug}`,
-    lastModified: now,
-    changeFrequency: 'monthly',
-    priority: 0.6,
+    lastModified: lastmod[s.slug],
   }))
-
   const artistUrls = artistList.map((a) => ({
     url: `${site.url}/artistas/${a.slug}`,
-    lastModified: now,
-    changeFrequency: 'monthly',
-    priority: 0.55,
+    lastModified: a.songs.reduce((maior, s) => lastmod[s.slug] > maior ? lastmod[s.slug] : maior, ''),
   }))
-
   const postUrls = posts.map((p) => ({
     url: `${site.url}/blog/${p.slug}`,
-    lastModified: new Date(p.date + 'T12:00:00'),
-    changeFrequency: 'monthly',
-    priority: 0.65,
+    lastModified: p.updated || p.date,
   }))
-
   return [...statics, ...songUrls, ...artistUrls, ...postUrls]
 }

@@ -3,11 +3,15 @@ import { Breadcrumbs, Faq } from '@/components/ui'
 import { faq } from '@/lib/faq'
 import { site, priceBRL } from '@/lib/site'
 
+const title = 'Dúvidas frequentes sobre multitracks gospel'
+const description =
+  'O que é multitrack (VS), como recebo o acesso, quais programas usar, funciona no tablet, dá para mudar o tom e como funciona a garantia de 7 dias.'
+
 export const metadata = {
-  title: 'Dúvidas frequentes sobre multitracks gospel',
-  description:
-    'O que é multitrack (VS), como recebo o acesso, quais programas usar, funciona no tablet, dá para mudar o tom e como funciona a garantia de 7 dias.',
+  title,
+  description,
   alternates: { canonical: '/faq' },
+  openGraph: { title, description, url: `${site.url}/faq` },
 }
 
 const ld = {

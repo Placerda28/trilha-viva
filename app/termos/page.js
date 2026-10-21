@@ -1,10 +1,14 @@
 import { Breadcrumbs } from '@/components/ui'
 import { site, priceBRL } from '@/lib/site'
 
+const title = 'Termos de uso'
+const description = 'Condições de uso do acervo Trilha Viva — Multitracks Gospel.'
+
 export const metadata = {
-  title: 'Termos de uso',
-  description: 'Condições de uso do acervo Trilha Viva — Multitracks Gospel.',
+  title,
+  description,
   alternates: { canonical: '/termos' },
+  openGraph: { title, description, url: `${site.url}/termos` },
 }
 
 export default function TermosPage() {

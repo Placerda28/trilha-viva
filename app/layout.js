@@ -44,11 +44,9 @@ export const metadata = {
     title: 'Trilha Viva — Multitracks Gospel | 2.000 VS com clique e guia',
     description: site.description,
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Trilha Viva — Multitracks Gospel',
-    description: site.description,
-  },
+  // Sem title/description: o Next copia os do openGraph de cada página. Com
+  // eles aqui, toda página interna herdava os textos da home.
+  twitter: { card: 'summary_large_image' },
   robots: {
     index: true,
     follow: true,
