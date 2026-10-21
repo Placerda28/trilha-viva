@@ -1,13 +1,13 @@
 import Link from 'next/link'
-import { SectionHead, SongGrid, Faq, Check, Figure, Icone } from '@/components/ui'
-import { SessionPanel, SessionMini, TrackList, CHANNELS } from '@/components/Track'
+import { SongGrid, Check, Figure } from '@/components/ui'
+import { SessionPanel, CHANNELS } from '@/components/Track'
 import BarraCompra from '@/components/BarraCompra'
-import HeroFundo from '@/components/HeroFundo'
-import { fundoEstatico } from '@/lib/hero-gradiente'
+import HomeAbertura from '@/components/HomeAbertura'
+import HomeProgramasPreco from '@/components/HomeProgramasPreco'
 import { destaques } from '@/lib/catalog'
 import { artistList } from '@/lib/artists'
-import { site, includes, priceBRL, discountPct } from '@/lib/site'
-import { tools, usos, steps } from '@/lib/tools'
+import { site, includes, priceBRL } from '@/lib/site'
+import { usos } from '@/lib/tools'
 import { faq } from '@/lib/faq'
 
 export const metadata = {
@@ -24,15 +24,6 @@ const aberta = destaques[0]
 // Os artistas com mais músicas no acervo, lidos do catálogo (a lista já vem
 // ordenada por quantidade). Nada escrito à mão: se o acervo mudar, muda aqui.
 const topArtistas = artistList.slice(0, 12)
-
-// Confiança logo abaixo do botão. Só o que é verdade hoje: o pagamento é pelo
-// Mercado Pago (desde 23/09/2026), o acesso sai quando o pagamento é aprovado
-// e o download é arquivo por arquivo na área do acervo.
-const confianca = [
-  ['cadeado', 'Pagamento seguro pelo Mercado Pago'],
-  ['raio', 'Acesso liberado na hora'],
-  ['download', 'Download música por música'],
-]
 
 const productLd = {
   '@context': 'https://schema.org',
@@ -72,100 +63,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify([productLd, faqLd]) }}
       />
 
-      {/* ABERTURA
-          Topo preto, emendado no cabecalho, com faixas de luz vinho, vermelho
-          baixo e um feixe claro (12/10/2026, como nos anuncios). O fundo em CSS
-          aparece de cara; o animado (HeroFundo) entra depois da pagina pronta.
-          Cores e velocidade: lib/hero-gradiente.js. No celular o topo ja mostra
-          o produto (os canais), o preco e o botao; no computador, texto a
-          esquerda e o setlist a direita. */}
-      <section id="topo" className="relative isolate overflow-hidden bg-ink text-white">
-        <div className="absolute inset-0 -z-10" style={{ backgroundImage: fundoEstatico }} aria-hidden="true">
-          <HeroFundo />
-          {/* Sombra atras do texto, para a leitura nao depender de onde a luz passa */}
-          <div className="absolute inset-0 bg-ink/45 lg:bg-transparent lg:bg-gradient-to-r lg:from-ink/80 lg:via-ink/45 lg:to-ink/10" />
-        </div>
-
-        <div className="shell pb-10 pt-6 sm:pt-10 lg:pb-20 lg:pt-24">
-          <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:gap-16">
-            <div className="min-w-0">
-              <p className="chip">{discountPct}% de desconto no lançamento</p>
-
-              <h1 className="mt-4 max-w-[14ch] text-[clamp(2.4rem,10.5vw,2.8rem)] font-extrabold leading-[1.02] tracking-[-0.02em] text-white [text-wrap:balance] sm:mt-6 lg:mt-7 lg:max-w-[13ch] lg:text-d1">
-                2.000 multitracks gospel na sua igreja.
-              </h1>
-
-              <p className="mt-3 max-w-lg font-read text-[17px] leading-[1.5] text-white/80 sm:mt-5 lg:mt-7 lg:text-[19px] lg:leading-[1.6]">
-                Clique, guia e cada instrumento em um canal separado.
-              </p>
-
-              {/* Celular: produto, preco, botao e confianca, nesta ordem */}
-              <div className="lg:hidden">
-                <SessionMini song={aberta} className="mt-5" />
-
-                <div className="mt-6 text-center">
-                  <p className="figs text-[15px] text-white/70">
-                    de <span className="line-through">{priceBRL(site.fullPrice)}</span>
-                  </p>
-                  <p className="figs mt-0.5 text-[44px] font-extrabold leading-none tracking-[-0.03em] text-white">
-                    {priceBRL(site.price)}
-                  </p>
-                  <p className="mt-2 text-[14px] text-white/75">pagamento único, acesso vitalício</p>
-                </div>
-
-                <Link href="/assinar" className="btn-glow mt-5 w-full py-[18px] text-[16px]">
-                  Quero meu acesso
-                </Link>
-                <Link href="/musicas" className="btn-onink mt-3 w-full">
-                  Ver o acervo
-                </Link>
-
-                <ul className="mt-6 grid grid-cols-3 gap-3 text-center">
-                  {confianca.map(([icone, texto]) => (
-                    <li key={texto} className="flex flex-col items-center gap-2">
-                      <Icone nome={icone} />
-                      <span className="text-[12.5px] leading-[1.35] text-white/80">{texto}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Computador: como era */}
-              <div className="mt-9 hidden gap-3 lg:flex lg:items-center">
-                <Link href="/assinar" className="btn-signal">
-                  Liberar acesso vitalício por {priceBRL(site.price)}
-                </Link>
-                <Link href="/musicas" className="btn-onink border-white/70">
-                  Ver o acervo
-                </Link>
-              </div>
-
-              <p className="mt-6 hidden max-w-md text-[14.5px] leading-[1.6] text-white/75 lg:block">
-                De <span className="line-through">{priceBRL(site.fullPrice)}</span> por{' '}
-                {priceBRL(site.price)} em pagamento único, no Pix ou no cartão. Sete dias de garantia.
-              </p>
-            </div>
-
-            {/* O setlist: prova e navegação ao mesmo tempo (no celular, o
-                painel de canais acima faz esse papel) */}
-            <div className="hidden overflow-hidden rounded-lg border border-white/10 bg-ink/75 lg:block">
-              <div className="flex items-baseline justify-between gap-4 px-4 py-4 sm:px-5">
-                <p className="text-[15px] font-bold">Domingo de manhã</p>
-                <p className="figs text-[13px] text-white/55">8 de mais de 2.000</p>
-              </div>
-              <TrackList songs={setlist} tone="light" />
-              <div className="border-t border-white/10 px-4 py-4 sm:px-5">
-                <Link
-                  href="/musicas"
-                  className="text-[14.5px] font-semibold text-mist underline decoration-mist/40 decoration-2 underline-offset-4 hover:decoration-mist"
-                >
-                  Abrir o acervo inteiro
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HomeAbertura setlist={setlist} aberta={aberta} />
 
       {/* ARTISTAS — nomes reais do acervo, os que têm mais músicas */}
       <section aria-labelledby="artistas-titulo" className="border-b border-line bg-white">
@@ -334,139 +232,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FERRAMENTAS */}
-      <section className="mt-20 bg-mist py-20 sm:mt-28 sm:py-28">
-        <div className="shell">
-          <SectionHead
-            title="Qual programa usar para rodar o multitrack"
-            sub="Você precisa de algo que toque vários canais ao mesmo tempo e mande o clique só para o fone. Estes são os que mais funcionam em igreja no Brasil."
-          />
-
-          <div className="mt-12 divide-y divide-line border-y border-line bg-white">
-            {tools.slice(0, 3).map((t) => (
-              <article
-                key={t.slug}
-                className="grid gap-4 px-5 py-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)] lg:gap-12"
-              >
-                <div>
-                  <h3 className="text-[22px] font-bold leading-none tracking-[-0.02em] text-ink">
-                    {t.name}
-                  </h3>
-                  <p className="mt-2 text-[13.5px] text-ink-muted">{t.platform}</p>
-                </div>
-                <div>
-                  <p className="max-w-2xl text-[16px] leading-[1.68] text-ink-muted">{t.summary}</p>
-                  <p className="mt-3 text-[14.5px] font-semibold text-ink">{t.price}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          <div className="mt-10 flex flex-wrap items-center gap-6">
-            <Link href="/como-usar" className="btn-ink">
-              Ver o guia de configuração
-            </Link>
-            <p className="max-w-sm text-[14.5px] text-ink-muted">
-              Também cobrimos Waveform Free, Cantabile, Studio One e uso no tablet.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* PASSO A PASSO — aqui a numeração é real, é uma sequência */}
-      <section className="shell pt-20 sm:pt-28">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] lg:gap-20">
-          <div className="lg:sticky lg:top-28 lg:self-start">
-            <h2 className="text-d2 text-ink">Do download ao domingo</h2>
-            <p className="mt-5 font-read text-[18px] leading-[1.7] text-ink-muted">
-              Cinco passos. Nenhum deles exige que você seja técnico de áudio.
-            </p>
-          </div>
-          <ol className="divide-y divide-line border-y border-line">
-            {steps.map((s) => (
-              <li key={s.n} className="grid gap-3 py-7 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-8">
-                <span className="figs text-[20px] font-extrabold leading-none text-signal-deep">
-                  {s.n}
-                </span>
-                <div>
-                  <h3 className="text-[19px] font-bold leading-snug tracking-[-0.015em] text-ink">
-                    {s.title}
-                  </h3>
-                  <p className="mt-2 text-[15.5px] leading-[1.7] text-ink-muted">{s.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      {/* PREÇO */}
-      <section id="preco" className="shell pt-20 sm:pt-28">
-        <div className="panel overflow-hidden">
-          <div className="grid lg:grid-cols-2">
-            <div className="border-b border-white/10 p-8 sm:p-12 lg:border-b-0 lg:border-r">
-              <h2 className="text-d2 text-white">Um pagamento. O acervo inteiro.</h2>
-              <p className="mt-6 max-w-md font-read text-[17px] leading-[1.68] text-white/60">
-                Sem plano mensal, sem crédito por música, sem escolher faixa a faixa. Você paga uma
-                vez e leva os 2.000 multitracks.
-              </p>
-
-              <div className="mt-10 flex items-baseline gap-4">
-                <span className="figs text-[52px] font-extrabold leading-none tracking-[-0.04em]">
-                  {priceBRL(site.price)}
-                </span>
-                <span className="figs text-[16px] text-white/55 line-through">
-                  {priceBRL(site.fullPrice)}
-                </span>
-              </div>
-              <p className="mt-3 text-[14.5px] text-white/55">
-                Pagamento único no Pix ou no cartão, à vista ou parcelado.
-              </p>
-
-              <Link href="/assinar" className="btn-glow mt-8 w-full sm:w-auto">
-                Liberar meu acesso agora
-              </Link>
-              <p className="mt-5 text-[13.5px] text-white/55">
-                Pagamento pelo Mercado Pago, com sete dias de garantia.
-              </p>
-            </div>
-
-            <div className="p-8 sm:p-12">
-              <h3 className="text-[17px] font-bold text-white">Está tudo incluso</h3>
-              <ul className="mt-6 divide-y divide-white/10 border-y border-white/10">
-                {[
-                  'Mais de 2.000 multitracks gospel (VS)',
-                  'Clique e guia em canais separados',
-                  'Bateria, baixo, teclado, guitarra, pads, sopros e vocais isolados',
-                  'Arquivos em WAV e MP3, organizados por música',
-                  'Preparado para transposição de tom',
-                  'Compatível com REAPER, Ableton, Prime e tablet',
-                  'Acesso vitalício, com até 30 downloads por dia',
-                  'Novas trilhas somadas ao acervo',
-                  'Suporte por e-mail para configurar o seu setup',
-                ].map((t) => (
-                  <li
-                    key={t}
-                    className="flex items-start gap-4 py-3.5 text-[15.5px] leading-[1.6] text-white/75"
-                  >
-                    <Check tone="light" className="mt-[8px] shrink-0" />
-                    {t}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* DÚVIDAS */}
-      <section className="shell pt-20 sm:pt-28">
-        <h2 className="text-d2 text-ink">Perguntas que sempre chegam</h2>
-        <Faq items={faq.slice(0, 8)} className="mt-10" />
-        <Link href="/faq" className="link-quiet mt-8 inline-block text-[16px] font-semibold">
-          Ver todas as dúvidas
-        </Link>
-      </section>
+      <HomeProgramasPreco />
 
       {/* FECHAMENTO */}
       <section className="shell pt-20 sm:pt-28">
