@@ -51,7 +51,9 @@ Arquivos acima do limite em 18/10/2026 (o catálogo gerado não conta):
 | 376 | `components/CheckoutForm.jsx` |
 | 360 | `lib/gestao/cupons.js` |
 
-Plano: dividir só numa tarefa própria, um arquivo por vez, por responsabilidade, com os testes da área passando antes e depois e sem aumentar o trabalho no carregamento do módulo (limite de CPU). O `max-lines` do lint (abaixo) acompanha a contagem.
+**21/10/2026: os 11 foram divididos** (branch `dividir-arquivos`, um commit por arquivo, 226 testes e revisão do Codex). Zerado, o `quality/max-lines` virou erro.
+
+Plano original: dividir só numa tarefa própria, um arquivo por vez, por responsabilidade, com os testes da área passando antes e depois e sem aumentar o trabalho no carregamento do módulo (limite de CPU). O `max-lines` do lint (abaixo) acompanha a contagem.
 
 ## Revisão de segurança
 O site tem pagamento, login, webhooks e dados de clientes. Para revisar:

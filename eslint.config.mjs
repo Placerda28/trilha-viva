@@ -32,7 +32,7 @@ const config = [
     plugins: { quality },
     rules: {
       // Em aviso: 11 arquivos ainda passam de 350 linhas (plano em docs/quality.md).
-      'quality/max-lines': ['warn', { max: 350 }],
+      'quality/max-lines': ['error', { max: 350 }],
       // Em aviso: o site não tem um módulo de log; nos Workers, console.* é o log.
       'quality/no-direct-console': ['warn', { logger: 'um módulo de log do projeto' }],
       // Componentes de tela não falam direto com o D1; quem consulta é lib/ ou a rota.
