@@ -15,7 +15,7 @@ Estados possíveis: **validado** (rodou e foi conferido), **configurado** (insta
 | RTK | reusado, validado | hook `rtk hook claude`; saídas condensadas observadas, sem wrapper duplo |
 | Context7 | reusado, validado | consulta real em 18/10 (`/vercel/next.js`, ESLint flat config) usada para configurar o lint; também está no `~/.codex/config.toml` |
 | Graphify | validado | `.graphifyignore` + `graphify extract . --code-only --no-cluster` → 1.554 nós; `graphify explain clienteAtual` aponta `lib/sessao.js`. `graphify-out/` fora do git. Os `.sql` não entram (falta `tree_sitter_sql`) |
-| Skills Vercel (`vercel-react-best-practices`, `vercel-composition-patterns`, `find-skills`) | configurado | `.claude/skills`, `.agents/skills`, `skills-lock.json`; nomes do frontmatter conferidos; nenhuma duplica skill global |
+| Skills Vercel (`vercel-react-best-practices`, `vercel-composition-patterns`, `find-skills`) | validado | sessão nova `claude -p` em 21/10 listou a skill como PRESENTE;  `.claude/skills`, `.agents/skills`, `skills-lock.json`; nomes do frontmatter conferidos; nenhuma duplica skill global |
 | `web-design-guidelines`, `writing-guidelines`, `vercel-react-view-transitions` | N/A | a primeira já existe global (duplicaria); as outras duas ninguém pediu |
 | `deploy-to-vercel`, `vercel-cli-with-tokens`, `vercel-optimize` | N/A | o deploy é Cloudflare |
 | next-dev-loop | N/A | exige Next 16.3+ |
@@ -23,7 +23,7 @@ Estados possíveis: **validado** (rodou e foi conferido), **configurado** (insta
 | supabase-postgres-best-practices | N/A | o banco é D1 (SQLite); a Supabase só confere senha |
 | gh-fix-ci | N/A | o site não tem GitHub Actions |
 | Revisão de segurança (prompt 13) | validado | revisão de base do repositório inteiro em 19/10 (commit `77e9688`, só leitura, agente Opus): 0 críticos, 0 altos, 3 médios, 5 baixos. O relatório privado fica fora do repo, em `~/tv-backups/seguranca/2026-10-19-baseline.md`. Os consertos são tarefa própria (`tasks/todo.md`) |
-| differential-review | configurado | skill no projeto (Claude e Codex) |
+| differential-review | validado | sessão nova `claude -p` em 21/10 listou a skill como PRESENTE;  skill no projeto (Claude e Codex) |
 | shadcn | N/A | o `shadcn init` não roda aqui (ver `tasks/arquivo/2026-09-05-ajustes-shadcn-animacao-semgrep.md`); os componentes ficam em `components/ui/` |
 | Sentry MCP | N/A | o projeto não usa Sentry |
 | agent-browser / Chrome DevTools MCP | N/A por ora | nenhuma lacuna concreta; `npm run dev` + `curl` bastaram para a prova local |
