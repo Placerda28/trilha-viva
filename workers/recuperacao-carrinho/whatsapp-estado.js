@@ -6,7 +6,25 @@ import {
   telefoneSemPais,
   textoIgual,
 } from '../../lib/whatsapp-meta.js'
-import { MODELOS, MOTIVOS } from '../../lib/whatsapp-sequencia.js'
+import { MODELOS } from '../../lib/whatsapp-sequencia.js'
+import {
+  CAMINHO_LINK,
+  assinarLink,
+  emailAoSuporte,
+  explicarErro,
+  hojeBrasilia,
+  linhas,
+  montarLink,
+  mudou,
+  novoNonce,
+  paragrafos,
+} from './whatsapp-suporte.js'
+
+// E-mail ao suporte, erros da Meta e links assinados ficam em
+// whatsapp-suporte.js; o resumo do dia, em whatsapp-resumo.js. Quem já
+// importava daqui segue importando daqui.
+export { emailAoSuporte, erroDeAcesso, explicarErro, hojeBrasilia } from './whatsapp-suporte.js'
+export { resumoDoDia, numerosDoDia } from './whatsapp-resumo.js'
 
 // Ligar o WhatsApp sem deploy. O estado fica no banco (tabela whatsapp_estado):
 //   aguardando_modelo → a Meta aprova o modelo → teste vai para o celular do
@@ -19,16 +37,6 @@ const LINK_VALIDO_HORAS = 72
 const DIAS_DE_FREIO = 3
 const TETO_DO_FREIO = 10
 
-const CAMINHO_LINK = '/whatsapp/ligar'
-
-function mudou(resultado) {
-  return Number(resultado?.meta?.changes ?? resultado?.changes ?? 0) === 1
-}
-
-function linhas(resultado) {
-  return Array.isArray(resultado?.results) ? resultado.results : []
-}
-
 export async function lerEstado(db) {
   const linha = await db.prepare(`
     SELECT *, COALESCE(ligado_em > datetime('now', '-${DIAS_DE_FREIO} days'), 0) AS no_freio
@@ -36,97 +44,10 @@ export async function lerEstado(db) {
   return linha || { estado: 'aguardando_modelo' }
 }
 
-export function hojeBrasilia(agora = new Date()) {
-  return new Date(new Date(agora).getTime() - 3 * 3600000).toISOString().slice(0, 10)
-}
-
 // Nos 3 primeiros dias depois de ligar, no máximo 10 por dia (a conta dos
 // dias é feita no banco, com o mesmo relógio das outras datas).
 export function tetoDoDia(estado, tetoNormal) {
   return Number(estado?.no_freio || 0) ? Math.min(TETO_DO_FREIO, tetoNormal) : tetoNormal
-}
-
-// ------------------------------------------------------------ e-mail ----
-
-// chave: o Resend ignora um 2º envio com a mesma chave em 24 h.
-export async function emailAoSuporte(env, { assunto, texto, html, chave }, fetchImpl) {
-  const para = String(env.WA_ENCAMINHAR_PARA || env.LEMBRETE_BCC || '').trim()
-  if (!para || !env.RESEND_API_KEY) return
-  const headers = { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' }
-  if (chave) headers['Idempotency-Key'] = chave
-  const resposta = await fetchImpl('https://api.resend.com/emails', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ from: env.EMAIL_FROM, to: [para], subject: assunto.slice(0, 150), text: texto, html }),
-  })
-  // 409 com chave: um e-mail com essa chave já saiu (ou está saindo).
-  if (chave && resposta.status === 409) return
-  if (!resposta.ok) throw new Error(`Resend respondeu com HTTP ${resposta.status}`)
-}
-
-function paragrafos(texto) {
-  return texto
-    .split('\n\n')
-    .map((p) => `<p style="white-space:pre-wrap">${escapeHtml(p)}</p>`)
-    .join('')
-}
-
-// O que cada erro comum da Meta quer dizer, e o que o Paulo faz.
-const ERROS_META = {
-  131042: 'Problema de pagamento na conta do WhatsApp. Cadastre ou atualize o cartão no Gerenciador de Negócios da Meta (Configurações de pagamento do WhatsApp).',
-  130497: 'A Meta está impedindo esta conta de mandar mensagens para o Brasil. Normalmente se resolve com a verificação da empresa na Meta.',
-  132001: 'A Meta não encontrou o modelo "carrinho_lembrete" em português (pt_BR) nesta conta.',
-  132000: 'O modelo aprovado não bate com o que o robô manda (nome ou botão). Avise o Claude Code.',
-  132012: 'O modelo aprovado não bate com o que o robô manda (nome ou botão). Avise o Claude Code.',
-  131026: 'A mensagem não pôde ser entregue nesse celular (sem WhatsApp, versão antiga ou bloqueio).',
-  190: 'O token do robô expirou ou foi revogado. Gere um novo token do usuário do sistema e cadastre na Cloudflare.',
-  10: 'O usuário do sistema não tem permissão na conta do WhatsApp. Confira os ativos atribuídos ao Trilhavivarobo.',
-  200: 'O usuário do sistema não tem permissão na conta do WhatsApp. Confira os ativos atribuídos ao Trilhavivarobo.',
-}
-
-// Token ou acesso recusado (190 token, 102 sessão, 3 e 10 permissão, 200 a
-// 299 permissões): é da conta, nunca da pessoa.
-export function erroDeAcesso(codigo) {
-  const n = Number(codigo)
-  return n === 3 || n === 10 || n === 102 || n === 190 || (n >= 200 && n <= 299)
-}
-
-export function explicarErro(codigo, detalhe = '') {
-  const conhecido = ERROS_META[Number(codigo)]
-  return conhecido
-    ? `${conhecido} (código ${codigo})`
-    : `Erro ${codigo || 'desconhecido'} da Meta${detalhe ? `: ${detalhe}` : ''}. Encaminhe este e-mail ao Claude Code.`
-}
-
-// -------------------------------------------------------------- links ----
-
-function paraHex(bytes) {
-  let hex = ''
-  for (const byte of new Uint8Array(bytes)) hex += byte.toString(16).padStart(2, '0')
-  return hex
-}
-
-async function assinarLink(acao, nonce, segredo) {
-  const chave = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(String(segredo)),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  )
-  return paraHex(await crypto.subtle.sign('HMAC', chave, new TextEncoder().encode(`whatsapp:${acao}:${nonce}`)))
-}
-
-function novoNonce() {
-  const bytes = new Uint8Array(16)
-  crypto.getRandomValues(bytes)
-  return paraHex(bytes)
-}
-
-async function montarLink(env, acao, nonce) {
-  const base = String(env.WA_LINK_BASE || '').replace(/\/+$/, '')
-  const t = await assinarLink(acao, nonce, env.WA_LINK_SEGREDO)
-  return `${base}${CAMINHO_LINK}?acao=${acao}&n=${nonce}&t=${t}`
 }
 
 // ------------------------------------------------------ modelo na Meta ----
@@ -333,117 +254,6 @@ export async function avisarAcessoRecusado(db, env, codigo, agora, fetchImpl, lo
     await db.prepare(`
       UPDATE whatsapp_estado SET acesso_avisado_em = NULL WHERE id = 1 AND acesso_avisado_em = ?`).bind(dia).run()
     return false
-  }
-}
-
-// --------------------------------------------------- resumo do dia ----
-
-// Uma vez por dia, depois das 20h de Brasília (quando os envios acabam).
-export async function resumoDoDia(db, env, agora, fetchImpl, logger) {
-  const local = new Date(new Date(agora).getTime() - 3 * 3600000)
-  if (local.getUTCHours() < 20) return false
-  const dia = hojeBrasilia(agora)
-  const vez = await db.prepare(`
-    UPDATE whatsapp_estado SET resumo_enviado_em = ?
-     WHERE id = 1 AND estado = 'ativo' AND COALESCE(resumo_enviado_em, '') <> ?`).bind(dia, dia).run()
-  if (!mudou(vez)) return false
-
-  const n = (v) => Number(v || 0)
-  const [d, m, a] = [dia.slice(8, 10), dia.slice(5, 7), dia.slice(0, 4)]
-  const numeros = await numerosDoDia(db, dia)
-  const total = (campo) => numeros.porMensagem.reduce((s, r) => s + n(r[campo]), 0)
-  const totalRecusas = numeros.recusas.reduce((s, r) => s + n(r.total), 0)
-  const porMensagem = numeros.porMensagem
-    .map((r) => `- ${r.etapa}ª: ${n(r.enviadas)} enviadas, ${n(r.entregues)} entregues, ${n(r.lidas)} lidas`)
-    .join('\n')
-  const cliques = Object.entries(numeros.cliques)
-    .sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0))
-    .map(([conteudo, quantos]) => `${conteudo}: ${quantos}`)
-    .join(' · ')
-  const totalCliques = Object.values(numeros.cliques).reduce((s, v) => s + v, 0)
-  const encerradas = numeros.encerradas
-    .map((r) => `- ${MOTIVOS[r.motivo] || r.motivo}: ${n(r.total)}`)
-    .join('\n')
-  const detalheRecusas = numeros.recusas.map((r) => `- ${n(r.total)} × ${explicarErro(r.codigo)}`).join('\n')
-  const texto = [
-    `WhatsApp em ${d}/${m}/${a}:`,
-    `Enviadas: ${total('enviadas')}\nEntregues: ${total('entregues')}\nLidas: ${total('lidas')}\nRecusadas: ${totalRecusas}\nVoltaram ao checkout pelo botão: ${totalCliques}${cliques ? ` (${cliques})` : ''}\nCompraram hoje depois de um WhatsApp: ${n(numeros.compraram)}`,
-    porMensagem ? `Por mensagem da sequência:\n${porMensagem}` : '',
-    encerradas ? `Sequências que pararam hoje:\n${encerradas}` : '',
-    totalRecusas ? `Recusas:\n${detalheRecusas}` : '',
-    'Para pausar: gestão → Recuperação → WhatsApp → Pausar.',
-  ].filter(Boolean).join('\n\n')
-  try {
-    await emailAoSuporte(env, { assunto: `WhatsApp: resumo de ${d}/${m}`, texto, html: paragrafos(texto) }, fetchImpl)
-  } catch (erro) {
-    logger.error('Resumo diário do WhatsApp não enviado:', erro?.message || erro)
-  }
-  return true
-}
-
-// Os números de um dia de Brasília (das 03:00 UTC às 03:00 UTC do dia
-// seguinte), separados do e-mail para o teste conferir as contas.
-export async function numerosDoDia(db, dia) {
-  const inicio = `${dia} 03:00:00`
-  const [porMensagem, recusas, origens, compraram, encerradas] = await Promise.all([
-    db.prepare(`
-      SELECT etapa, COUNT(*) AS enviadas,
-             SUM(CASE WHEN wa_status IN ('delivered', 'read') THEN 1 ELSE 0 END) AS entregues,
-             SUM(CASE WHEN wa_status = 'read' THEN 1 ELSE 0 END) AS lidas
-        FROM lembretes_enviados
-       WHERE canal = 'whatsapp' AND enviado_em >= ? AND enviado_em < datetime(?, '+1 day')
-       GROUP BY etapa ORDER BY etapa`).bind(inicio, inicio).all(),
-    // Recusas: mensagens da sequência que falharam e 1ªs que a Meta não aceitou.
-    db.prepare(`
-      SELECT codigo, SUM(total) AS total FROM (
-        SELECT COALESCE(wa_erro, 'sem código') AS codigo, COUNT(*) AS total
-          FROM lembretes_enviados
-         WHERE canal = 'whatsapp' AND wa_status = 'failed'
-           AND enviado_em >= ? AND enviado_em < datetime(?, '+1 day')
-         GROUP BY 1
-        UNION ALL
-        SELECT COALESCE(whatsapp_erro, 'sem código'), COUNT(*)
-          FROM carrinhos
-         WHERE whatsapp_status = 'failed' AND whatsapp_enviado_em IS NULL
-           AND whatsapp_falhou_em >= ? AND whatsapp_falhou_em < datetime(?, '+1 day')
-         GROUP BY 1
-      ) GROUP BY codigo ORDER BY total DESC`).bind(inicio, inicio, inicio, inicio).all(),
-    // Quem tocou em "Finalizar compra" e preencheu o checkout de novo.
-    db.prepare(`
-      SELECT origem FROM carrinhos
-       WHERE origem LIKE 'utm=whatsapp/lembrete/%'
-         AND criado_em >= ? AND criado_em < datetime(?, '+1 day')
-       LIMIT 500`).bind(inicio, inicio).all(),
-    db.prepare(`
-      SELECT COUNT(DISTINCT pago.email) AS total
-        FROM carrinhos pago
-       WHERE pago.pago_em >= ? AND pago.pago_em < datetime(?, '+1 day')
-         AND EXISTS (
-           SELECT 1 FROM carrinhos s
-             JOIN lembretes_enviados l ON l.carrinho_id = s.id AND l.canal = 'whatsapp'
-            WHERE (s.email = pago.email OR s.telefone = pago.telefone) AND l.enviado_em < pago.pago_em
-            LIMIT 1
-         )
-       LIMIT 1`).bind(inicio, inicio).first(),
-    db.prepare(`
-      SELECT whatsapp_motivo AS motivo, COUNT(*) AS total
-        FROM carrinhos
-       WHERE whatsapp_encerrado_em >= ? AND whatsapp_encerrado_em < datetime(?, '+1 day')
-       GROUP BY 1 ORDER BY 2 DESC`).bind(inicio, inicio).all(),
-  ])
-  // origem = "utm=whatsapp/lembrete/carrinho/semanaN;cupom=..."
-  const cliques = {}
-  for (const { origem } of linhas(origens)) {
-    const partes = String(origem || '').split(';')[0].slice(4).split('/')
-    const conteudo = partes[3] || 'sem marcação'
-    cliques[conteudo] = (cliques[conteudo] || 0) + 1
-  }
-  return {
-    porMensagem: linhas(porMensagem),
-    recusas: linhas(recusas),
-    cliques,
-    compraram: Number(compraram?.total || 0),
-    encerradas: linhas(encerradas),
   }
 }
 
