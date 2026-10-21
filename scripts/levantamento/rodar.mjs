@@ -86,6 +86,13 @@ export async function survey(file,path) {
   return {result,unknown,stats,detected,namedEvidence:named.bpm}
 }
 
+async function recanais(file,path,item) {
+  const audio=audioFiles((await indexArchive(file.read,file.size,/\.rar$/i.test(path)?'rar':'zip')).entries)
+  const unknown={}
+  for(const e of audio) if(!channel(e.name)) {const name=e.name.split(/[\\/]/).at(-1);unknown[name]=(unknown[name]??0)+1}
+  return {...item,unknown,result:{...item.result,canais:[...new Set(audio.map(e=>channel(e.name)).filter(Boolean))]}}
+}
+
 export function finalizeSong(items) {
   for(const item of items) {
     if(!item.detected)continue
@@ -131,12 +138,19 @@ export async function main(args=process.argv.slice(2),directory=checkpointDir,co
       continue
     }
     for(const path of map[slug]) {
-      let item
-      try {
+      let item=opt.reprocess?null:cache.result(path)
+      if(item) {
+        cached++
+        // Canais saem do índice já guardado: mudar a tabela de nomes não exige baixar nem recalcular o BPM.
+        if(item.result.qtd_arquivos!==null) item=await recanais(await cache.open(path),path,item)
+      }
+      else try {
         const before=b2?.bytes??0
         const file=await cache.open(path,b2?await b2.open(path):undefined)
         item=await survey(file,path)
         if((b2?.bytes??0)===before)cached++
+        // Cópia: o finalizeSong altera item.result depois.
+        if(!opt.reprocess)await cache.setResult(path,structuredClone(item))
       } catch(error) {
         if(error.code==='CACHE_MISS')throw error
         item={result:{caminho:path,bpm:null,tom:null,duracao_seg:null,canais:[],qtd_arquivos:null,

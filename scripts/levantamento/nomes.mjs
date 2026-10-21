@@ -5,8 +5,8 @@ const rules = [
   ['Teclado / Piano', 'keys piano acpiano teclado rhodes synth sinthy synths arp arps organ orgao wurli bel bell bells sinos'],
   ['Guitarra / Violão', 'gt gtr guitar guitars guitarra eg ag violao ac acg acoustic nylon egt elec electric'], ['Pads', 'pad pads softpad'],
   ['Cordas', 'strings cordas sting stings violin violino violinos cello'], ['Sopros', 'brass horns sopros metais sax trompete trombone'],
-  ['Percussão', 'perc percussion percussao shaker tambourine pandeiro conga'],
-  ['Backing vocals', 'bv bvs bgv bgvs backing backings coral coro choir alto soprano tenor gang'], ['Vocal principal', 'vox vocal vocals lead voz vozes'],
+  ['Percussão', 'perc percussion percussao shaker tambourine pandeiro conga ganza meia'],
+  ['Backing vocals', 'bv bvs bgv bgvs backs backing backings oohs coral coro choir alto soprano tenor gang'], ['Vocal principal', 'vox vocal vocals lead voz vozes'],
 ]
 export function channel(name) {
   const base = plain(name.split(/[\\/]/).at(-1).replace(/\.[^.]+$/, ''))
@@ -14,7 +14,10 @@ export function channel(name) {
   const tokens = base.split(/[^a-z]+/).filter(Boolean)
   if (/^(?:loops?|fx|efeitos?|vocoder|stems|mix|full)$/.test(tokens[0])) return null
   // Bip como sufixo marca a versão da faixa, não o instrumento (ACG_bip, LOOP_bip).
-  return rules.find(([, words]) => words.split(' ').some(w => tokens.includes(w)))?.[0] ?? (tokens[0] === 'bip' ? 'Clique' : null)
+  const found = list => rules.find(([, words]) => words.split(' ').some(w => list.includes(w)))?.[0]
+  // Plural/singular solto ("1CLICKS", "2GUIAS", "STRING") só depois do casamento exato.
+  const flex = tokens.flatMap(t => [t.endsWith('s') ? t.slice(0, -1) : t + 's'])
+  return found(tokens) ?? found(flex) ?? (tokens[0] === 'bip' ? 'Clique' : null)
 }
 export function audioFiles(entries) {
   return entries.filter(e => !e.directory && !/(^|[\\/])(?:__MACOSX(?:[\\/]|$)|\.DS_Store(?:[\\/]|$)|\._)/i.test(e.name)

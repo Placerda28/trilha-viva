@@ -29,6 +29,9 @@ export async function openCache(directory,offline) {
   }
   return {
     get map(){return state.map}, get selection(){return state.selection},
+    // Resultado pronto de cada arquivo: retomar a coleta não recalcula o que já foi feito.
+    result(path){return state.archives[path]?.result??null},
+    async setResult(path,value){if(state.archives[path]){state.archives[path].result=value;await save()}},
     async setSelection(map,selection){state.map=map;state.selection=selection;await save()},
     async open(path,remote) {
       let item=state.archives[path]
