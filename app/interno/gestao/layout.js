@@ -47,7 +47,7 @@ export default async function GestaoLayout({ children }) {
           <TrocarSenha email={admin.cliente.email} />
         </Casca>
       ) : (
-        <Casca papel={admin.papel} email={admin.cliente.email} fase1>
+        <Casca papel={admin.papel} email={admin.cliente.email} parcial>
           {children}
         </Casca>
       )}

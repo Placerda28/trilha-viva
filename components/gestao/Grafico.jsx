@@ -3,12 +3,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { moeda, moedaCurta, numero } from './formato'
 
-// Faturamento por faixa (dia, semana ou mês), em SVG feito à mão: uma
-// biblioteca de gráficos pesaria mais que a tela inteira.
+const COMPACTO = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
+const valorDe = (s) => s.valor ?? s.centavos ?? 0
+
+// Barras por faixa (dia, semana ou mês), em SVG feito à mão: uma biblioteca de
+// gráficos pesaria mais que a tela inteira.
 //
 // Uma série só, então sem legenda: o título diz o que é. Barras em preto; a
 // que está sob o dedo ou o mouse fica vermelha e mostra o valor. O vermelho
-// nunca pinta o gráfico todo, só a barra apontada.
+// nunca pinta o gráfico todo, só a barra apontada. As cores vêm dos tokens do
+// Tailwind (fill-ink, stroke-line...), para uma troca de paleta chegar aqui.
+//
+// formato="moeda" (padrão): a série traz `centavos` (e `compras`), como no Painel.
+// formato="numero": a série traz `valor`, e `unidade` diz o que conta ("downloads").
 
 const ALTURA = 200
 const MARGEM_ESQ = 56
@@ -37,7 +44,10 @@ function barra(x, y, w, h) {
   )
 }
 
-export default function Grafico({ serie, titulo, acoes, className = 'mt-6' }) {
+export default function Grafico({ serie, titulo, acoes, className = 'mt-6', formato = 'moeda', unidade = '' }) {
+  const inteiro = formato === 'numero'
+  const cheio = (v) => (inteiro ? numero(v) : moeda(v))
+  const curto = (v) => (inteiro ? COMPACTO.format(v) : moedaCurta(v))
   const caixa = useRef(null)
   const [largura, setLargura] = useState(0)
   const [ativo, setAtivo] = useState(null)
@@ -55,8 +65,9 @@ export default function Grafico({ serie, titulo, acoes, className = 'mt-6' }) {
   useEffect(() => setAtivo(null), [serie])
 
   const n = serie.length
-  const maior = serie.reduce((m, s) => Math.max(m, s.centavos), 0)
-  const teto = tetoRedondo(maior)
+  const maior = serie.reduce((m, s) => Math.max(m, valorDe(s)), 0)
+  // Contagem: teto par, para a guia do meio cair num número inteiro.
+  const teto = inteiro ? Math.ceil(tetoRedondo(Math.max(maior, 4)) / 2) * 2 : tetoRedondo(maior)
   const areaW = Math.max(0, largura - MARGEM_ESQ)
   const areaH = ALTURA - MARGEM_TOPO - MARGEM_BAIXO
   const faixa = n ? areaW / n : 0
@@ -87,7 +98,7 @@ export default function Grafico({ serie, titulo, acoes, className = 'mt-6' }) {
   const ponto = ativo !== null ? serie[ativo] : null
   const centroX = ativo !== null ? MARGEM_ESQ + ativo * faixa + faixa / 2 : 0
   const resumo =
-    titulo + '. ' + n + ' faixas. Maior valor: ' + moeda(maior) + '. Use as setas para percorrer.'
+    titulo + '. ' + n + ' faixas. Maior valor: ' + cheio(maior) + '. Use as setas para percorrer.'
 
   return (
     <figure className={className + ' rounded-md border border-line bg-white px-4 pb-3 pt-4 sm:px-5'}>
@@ -115,16 +126,16 @@ export default function Grafico({ serie, titulo, acoes, className = 'mt-6' }) {
               const y = MARGEM_TOPO + areaH - (g / teto) * areaH
               return (
                 <g key={g}>
-                  <line x1={MARGEM_ESQ} x2={largura} y1={y} y2={y} stroke="#E0E2E6" strokeWidth="1" />
-                  <text x={MARGEM_ESQ - 8} y={y + 4} textAnchor="end" fontSize="11.5" fill="#5C5C5C" className="figs">
-                    {moedaCurta(g)}
+                  <line x1={MARGEM_ESQ} x2={largura} y1={y} y2={y} className="stroke-line" strokeWidth="1" />
+                  <text x={MARGEM_ESQ - 8} y={y + 4} textAnchor="end" fontSize="11.5" className="figs fill-ink-muted">
+                    {curto(g)}
                   </text>
                 </g>
               )
             })}
 
             {serie.map((s, i) => {
-              const h = (s.centavos / teto) * areaH
+              const h = (valorDe(s) / teto) * areaH
               if (h <= 0) return null
               const x = MARGEM_ESQ + i * faixa + (faixa - barraW) / 2
               const y = MARGEM_TOPO + areaH - h
@@ -132,8 +143,7 @@ export default function Grafico({ serie, titulo, acoes, className = 'mt-6' }) {
                 <path
                   key={s.chave}
                   d={barra(x, y, barraW, h)}
-                  fill={i === ativo ? '#E5152D' : '#0D0D0D'}
-                  className="transition-[fill] duration-150"
+                  className={(i === ativo ? 'fill-signal' : 'fill-ink') + ' transition-[fill] duration-150'}
                 />
               )
             })}
@@ -144,7 +154,7 @@ export default function Grafico({ serie, titulo, acoes, className = 'mt-6' }) {
                 x2={centroX}
                 y1={MARGEM_TOPO}
                 y2={MARGEM_TOPO + areaH}
-                stroke="#DADCE0"
+                className="stroke-mist-deep"
                 strokeWidth="1"
                 strokeDasharray="3 3"
               />
@@ -158,7 +168,7 @@ export default function Grafico({ serie, titulo, acoes, className = 'mt-6' }) {
                   y={ALTURA - 8}
                   textAnchor="middle"
                   fontSize="11.5"
-                  fill="#5C5C5C"
+                  className="fill-ink-muted"
                 >
                   {s.rotulo}
                 </text>
@@ -176,15 +186,21 @@ export default function Grafico({ serie, titulo, acoes, className = 'mt-6' }) {
             }}
           >
             <p className="font-semibold text-ink">{ponto.rotulo}</p>
-            <p className="figs text-ink">{moeda(ponto.centavos)}</p>
-            <p className="figs text-ink-muted">
-              {numero(ponto.compras)} {ponto.compras === 1 ? 'compra' : 'compras'}
-            </p>
+            <p className="figs text-ink">{cheio(valorDe(ponto))}</p>
+            {inteiro ? (
+              unidade && <p className="figs text-ink-muted">{unidade}</p>
+            ) : (
+              <p className="figs text-ink-muted">
+                {numero(ponto.compras)} {ponto.compras === 1 ? 'compra' : 'compras'}
+              </p>
+            )}
           </div>
         )}
       </div>
       <p className="sr-only" aria-live="polite">
-        {ponto ? ponto.rotulo + ': ' + moeda(ponto.centavos) + ', ' + ponto.compras + ' compras' : ''}
+        {ponto
+          ? ponto.rotulo + ': ' + cheio(valorDe(ponto)) + (inteiro ? (unidade ? ' ' + unidade : '') : ', ' + ponto.compras + ' compras')
+          : ''}
       </p>
     </figure>
   )

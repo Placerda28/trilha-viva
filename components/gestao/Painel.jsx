@@ -1,22 +1,22 @@
 'use client'
 
 import Link from 'next/link'
-import Atividade from './Atividade'
+import Atividade, { itensDaAtividade } from './Atividade'
 import Avisos, { avisosDaApi } from './Avisos'
 import BarrasHorizontais from './BarrasHorizontais'
 import { CabecalhoPagina } from './Casca'
+import { useDetalhe } from './DetalheCliente'
 import Grafico from './Grafico'
 import Kpi, { variacao } from './Kpi'
 import Segmentos from './Segmentos'
-import { dataHora, moeda, numero } from './formato'
+import { FORMAS, dataHora, diaPorExtenso, moeda, numero } from './formato'
 
-// O Painel (plano 3.1, linhas 1 a 4). Recebe tudo por props, no formato do
-// plano 4.1 e 4.2; quem busca os dados (Fase 3) só liga a resposta de
-// /api/gestao/painel e /api/gestao/avisos aqui.
+// O Painel (plano 3.1, linhas 1 a 4). Recebe tudo por props, no formato das
+// rotas /api/gestao/painel e /api/gestao/avisos (PainelTela busca e entrega):
 //
-//   painel: { atual, anterior, serie[], fontes[], ultimas_vendas[], atividade[] }
-//   avisos: o JSON de /api/gestao/avisos
-//   hoje:   'AAAA-MM-DD' de Brasília; agora: ISO do instante da leitura
+//   painel: o JSON de /api/gestao/painel
+//   avisos: o JSON de /api/gestao/avisos (undefined enquanto carrega, null se falhou)
+//   agora:  ISO do instante da leitura (hora relativa e dias que faltam)
 
 const AGRUPAR = [
   { id: 'dia', rotulo: 'Dia' },
@@ -24,8 +24,6 @@ const AGRUPAR = [
   { id: 'mes', rotulo: 'Mês' },
 ]
 const NOME_AGRUPAR = { dia: 'dia', semana: 'semana', mes: 'mês' }
-const FORMAS = { pix: 'Pix', cartao: 'Cartão', outro: 'Outro' }
-
 // Valor cheio, sem centavos: cabe no cartão de 176 px da tela de 1024 px.
 const REAIS = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 const reais = (centavos) => REAIS.format((Number(centavos) || 0) / 100)
@@ -45,7 +43,8 @@ function Cartao({ id, titulo, acao, children }) {
   )
 }
 
-function UltimasVendas({ vendas }) {
+function UltimasVendas({ vendas, aoMudar }) {
+  const detalhe = useDetalhe()
   return (
     <Cartao
       id="ultimas-vendas"
@@ -56,21 +55,24 @@ function UltimasVendas({ vendas }) {
         </Link>
       }
     >
+      {vendas.length === 0 && <p className="mt-3 text-[14.5px] text-ink-muted">Ainda não há vendas pagas.</p>}
       <ul className="-mx-4 mt-3 sm:-mx-5">
         {vendas.map((v) => (
           <li key={v.id} className="border-t border-line">
-            {/* Na Fase 3 a linha abre o Detalhe do cliente. */}
             <button
               type="button"
+              onClick={() => detalhe.abrir(v.cliente.id, aoMudar)}
               className="flex min-h-[56px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-paper/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink sm:px-5"
             >
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14.5px] font-semibold text-ink">{v.nome}</span>
+                <span className="block truncate text-[14.5px] font-semibold text-ink">
+                  {v.cliente.nome || v.cliente.email}
+                </span>
                 <span className="figs block truncate text-[13px] text-ink-muted">
-                  {dataHora(v.em).replace(/\/\d{4}/, '')}, {FORMAS[v.forma] || v.forma}, {v.origem}
+                  {dataHora(v.em).replace(/\/\d{4}/, '')}, {FORMAS[v.forma] || 'sem forma'}, {v.fonte}
                 </span>
               </span>
-              <span className="figs shrink-0 text-[14.5px] font-semibold text-ink">{moeda(v.centavos)}</span>
+              <span className="figs shrink-0 text-[14.5px] font-semibold text-ink">{moeda(v.valor_centavos)}</span>
             </button>
           </li>
         ))}
@@ -79,7 +81,7 @@ function UltimasVendas({ vendas }) {
   )
 }
 
-export default function Painel({ painel, avisos, hoje, agora, agrupar = 'dia', onAgrupar, intervalo }) {
+export default function Painel({ painel, avisos, agora, agrupar = 'dia', onAgrupar, aoMudar }) {
   const { atual, anterior, serie, fontes, ultimas_vendas: vendas, atividade } = painel
   const porDia = serie.map((s) => s.centavos)
   const porDiaCompras = serie.map((s) => s.compras)
@@ -88,16 +90,20 @@ export default function Painel({ painel, avisos, hoje, agora, agrupar = 'dia', o
     <>
       <CabecalhoPagina
         titulo="Painel"
-        texto="O que vendeu, de onde veio e o que precisa de você. As setas comparam com o período anterior."
+        texto={
+          'O que vendeu, de onde veio e o que precisa de você. As setas comparam com o período anterior (' +
+          diaPorExtenso(painel.anterior_de) +
+          (painel.anterior_de === painel.anterior_ate ? '' : ' a ' + diaPorExtenso(painel.anterior_ate)) +
+          ').'
+        }
         comPeriodo
-        intervalo={intervalo}
       />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Kpi
           rotulo="Faturamento"
-          valor={reais(atual.faturamento)}
-          variacao={variacao(atual.faturamento, anterior.faturamento)}
+          valor={reais(atual.faturamento_centavos)}
+          variacao={variacao(atual.faturamento_centavos, anterior.faturamento_centavos)}
           serie={porDia}
           rotuloSerie="Faturamento por dia"
         />
@@ -111,14 +117,17 @@ export default function Painel({ painel, avisos, hoje, agora, agrupar = 'dia', o
         />
         <Kpi
           rotulo="Ticket médio"
-          valor={moeda(atual.ticket)}
-          variacao={variacao(atual.ticket, anterior.ticket)}
+          valor={moeda(atual.ticket_centavos)}
+          variacao={variacao(atual.ticket_centavos, anterior.ticket_centavos)}
         />
         <Kpi
           rotulo="Carrinho para compra"
-          valor={PCT.format(atual.conversao)}
+          valor={PCT.format(atual.conversao / 100)}
           variacao={variacao(atual.conversao, anterior.conversao)}
-          detalhe={numero(atual.carrinhos) + ' carrinhos, ' + numero(atual.recuperados) + ' recuperados'}
+          detalhe={
+            numero(atual.carrinhos) + (atual.carrinhos === 1 ? ' carrinho, ' : ' carrinhos, ') +
+            numero(atual.recuperados) + (atual.recuperados === 1 ? ' recuperado' : ' recuperados')
+          }
         />
       </div>
 
@@ -149,26 +158,33 @@ export default function Painel({ painel, avisos, hoje, agora, agrupar = 'dia', o
           }
         >
           <div className="mt-4">
-            <BarrasHorizontais
-              rotuloLista="Vendas por fonte"
-              itens={fontes.map((f) => ({
-                id: f.fonte,
-                rotulo: f.fonte,
-                valor: f.centavos,
-                texto: numero(f.vendas) + (f.vendas === 1 ? ' venda, ' : ' vendas, ') + reais(f.centavos),
-              }))}
-            />
+            {fontes.length === 0 ? (
+              <p className="text-[14.5px] text-ink-muted">Nenhuma venda paga neste período.</p>
+            ) : (
+              <BarrasHorizontais
+                rotuloLista="Vendas por fonte"
+                itens={fontes.map((f) => ({
+                  id: f.fonte,
+                  rotulo: f.fonte,
+                  valor: f.centavos,
+                  texto: numero(f.vendas) + (f.vendas === 1 ? ' venda, ' : ' vendas, ') + reais(f.centavos),
+                }))}
+              />
+            )}
           </div>
         </Cartao>
       </div>
 
       <div className="mt-4">
-        <Avisos avisos={avisosDaApi(avisos, hoje)} />
+        <Avisos
+          avisos={avisosDaApi(avisos, agora)}
+          estado={avisos === undefined ? 'carregando' : avisos === null ? 'erro' : 'ok'}
+        />
       </div>
 
       <div className="mt-4 grid items-start gap-4 xl:grid-cols-2">
-        <UltimasVendas vendas={vendas} />
-        <Atividade itens={atividade} agora={agora} />
+        <UltimasVendas vendas={vendas} aoMudar={aoMudar} />
+        <Atividade itens={itensDaAtividade(atividade)} agora={agora} />
       </div>
     </>
   )

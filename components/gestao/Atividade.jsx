@@ -1,4 +1,6 @@
 import Icone from './Icone'
+import { ACOES } from './Registro'
+import { moeda } from './formato'
 
 // Hora relativa ("há 12 min"). `agora` entra de fora para o servidor e o
 // navegador contarem a partir do mesmo instante.
@@ -12,10 +14,24 @@ export function haQuanto(em, agora) {
   return d === 1 ? 'ontem' : 'há ' + d + ' dias'
 }
 
+// Transforma os acontecimentos de /api/gestao/painel (tipo compra, lead,
+// recuperado ou equipe) em frases para a lista.
+export function itensDaAtividade(lista) {
+  return lista.map((a, i) => {
+    const quem = a.nome || a.email || 'Alguém'
+    let texto
+    if (a.tipo === 'compra') texto = quem + ' comprou' + (a.valor_centavos == null ? '' : ' por ' + moeda(a.valor_centavos))
+    else if (a.tipo === 'lead') texto = quem + ' pediu a VS grátis'
+    else if (a.tipo === 'recuperado') texto = 'Carrinho de ' + quem + ' recuperado: comprou depois do lembrete'
+    else texto = (a.quem || 'A equipe').split('@')[0] + ' ' + (ACOES[a.acao] || a.acao || 'fez uma ação') + (a.alvo && a.acao !== 'senha_trocada' ? ' ' + a.alvo : '')
+    return { id: a.tipo + '-' + a.em + '-' + i, tipo: a.tipo, texto, em: a.em }
+  })
+}
+
 const ICONES = { compra: 'vendas', lead: 'leads', recuperado: 'carrinhos', equipe: 'equipe' }
 
 // Os últimos acontecimentos misturados: compra paga, lead novo, carrinho
-// recuperado e ação da equipe. itens: [{ id, tipo, texto, em }].
+// recuperado e ação da equipe. itens: [{ id, tipo, texto, em }] (veja itensDaAtividade).
 export default function Atividade({ itens, agora }) {
   return (
     <section aria-labelledby="atividade-recente" className="rounded-md border border-line bg-white">

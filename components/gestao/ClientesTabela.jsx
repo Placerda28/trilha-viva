@@ -1,13 +1,12 @@
 import { dataHora, moeda, numero, FORMAS } from './formato'
 import { formatarCelular } from '@/lib/gestao/csv'
-import CorrigirEmail from './CorrigirEmail'
-import AcoesCliente from './AcoesCliente'
 import { SeloTeste } from './AcaoGestao'
 import { rotuloOrigem } from '@/lib/rastreio'
 
 // Uma linha por cliente (ou por compra, na tela de período). No computador é
 // uma tabela; no celular, uma lista em que cada cliente é um bloco — sete
-// colunas não cabem em 375 px sem rolar de lado.
+// colunas não cabem em 375 px sem rolar de lado. Um clique na linha abre o
+// Detalhe do cliente (`onAbrir(id)`), onde ficam as ações.
 
 function Forma({ forma }) {
   if (!forma) return <span className="text-ink-faint">—</span>
@@ -40,7 +39,8 @@ function Whatsapp({ telefone }) {
       href={'https://wa.me/55' + telefone}
       target="_blank"
       rel="noopener noreferrer"
-      className="figs block w-fit text-[13.5px] text-ink-muted underline decoration-line underline-offset-2 hover:text-ink"
+      onClick={(e) => e.stopPropagation()}
+      className="figs block min-h-[32px] w-fit text-[13.5px] text-ink-muted underline decoration-line underline-offset-2 hover:text-ink"
       aria-label={'Abrir conversa no WhatsApp com ' + formatarCelular(telefone)}
     >
       {formatarCelular(telefone)}
@@ -48,17 +48,31 @@ function Whatsapp({ telefone }) {
   )
 }
 
-function Nome({ c, whatsapp, onMudou }) {
-  return (
+function Nome({ c, whatsapp, onAbrir }) {
+  const conteudo = (
     <>
       <span className="flex flex-wrap items-center gap-2">
         <span className="font-semibold text-ink">{c.nome || 'Sem nome'}</span>
         <Marcas c={c} />
       </span>
       <span className="block break-all text-[13.5px] text-ink-muted">{c.email}</span>
+    </>
+  )
+  return (
+    <>
+      {onAbrir ? (
+        <button
+          type="button"
+          onClick={() => onAbrir(c.id)}
+          aria-label={'Abrir o detalhe de ' + (c.nome || c.email)}
+          className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+        >
+          {conteudo}
+        </button>
+      ) : (
+        conteudo
+      )}
       {whatsapp && <Whatsapp telefone={c.telefone} />}
-      {onMudou && <CorrigirEmail c={c} onMudou={onMudou} />}
-      {onMudou && <AcoesCliente c={c} onMudou={onMudou} />}
     </>
   )
 }
@@ -87,9 +101,9 @@ function MetaCompra({ meta }) {
 
 const chave = (c, i) => (c.compra?.id || 'c') + '-' + c.id + '-' + i
 
-// onMudou: só a aba Clientes passa (mostra "Corrigir e-mail").
+// onAbrir: abre o Detalhe do cliente (clique na linha). Sem ele a linha não clica.
 // rastreio: só a aba Período passa (colunas Origem e Meta).
-export default function ClientesTabela({ itens, whatsapp = false, onMudou, rastreio = false }) {
+export default function ClientesTabela({ itens, whatsapp = false, onAbrir, rastreio = false }) {
   return (
     <>
       <div className="mt-6 hidden overflow-hidden rounded border border-line bg-white md:block">
@@ -109,9 +123,13 @@ export default function ClientesTabela({ itens, whatsapp = false, onMudou, rastr
           </thead>
           <tbody className="divide-y divide-line">
             {itens.map((c, i) => (
-              <tr key={chave(c, i)} className="align-top">
+              <tr
+                key={chave(c, i)}
+                onClick={onAbrir ? () => onAbrir(c.id) : undefined}
+                className={'align-top ' + (onAbrir ? 'cursor-pointer transition-colors duration-150 hover:bg-paper/50' : '')}
+              >
                 <td className="max-w-[320px] px-4 py-3.5">
-                  <Nome c={c} whatsapp={whatsapp} onMudou={onMudou} />
+                  <Nome c={c} whatsapp={whatsapp} onAbrir={onAbrir} />
                 </td>
                 <td className="figs whitespace-nowrap px-4 py-3.5 text-ink-muted">{dataHora(c.compra?.em)}</td>
                 <td className="figs whitespace-nowrap px-4 py-3.5 text-right text-ink">
@@ -149,8 +167,12 @@ export default function ClientesTabela({ itens, whatsapp = false, onMudou, rastr
 
       <ul className="mt-6 divide-y divide-line rounded border border-line bg-white md:hidden">
         {itens.map((c, i) => (
-          <li key={chave(c, i)} className="px-4 py-4">
-            <Nome c={c} whatsapp={whatsapp} onMudou={onMudou} />
+          <li
+            key={chave(c, i)}
+            onClick={onAbrir ? () => onAbrir(c.id) : undefined}
+            className={'px-4 py-4 ' + (onAbrir ? 'cursor-pointer' : '')}
+          >
+            <Nome c={c} whatsapp={whatsapp} onAbrir={onAbrir} />
             <dl className="figs mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5 text-[13.5px]">
               <div>
                 <dt className="text-ink-muted">Compra</dt>

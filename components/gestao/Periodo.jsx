@@ -6,8 +6,9 @@ import Grafico from './Grafico'
 import Segmentos from './Segmentos'
 import ClientesTabela from './ClientesTabela'
 import { MostrarTestes } from './AcaoGestao'
+import { useDetalhe } from './DetalheCliente'
 import { Aviso, Esqueleto, Vazio, Paginacao, BaixarPlanilha } from './Estados'
-import { ATALHOS, intervaloDoAtalho, diasEntre, diaPorExtenso, moeda, numero } from './formato'
+import { ATALHOS, agruparPara, intervaloDoAtalho, diasEntre, diaPorExtenso, moeda, numero } from './formato'
 
 const POR_PAGINA = 25
 const AGRUPAR = [
@@ -108,16 +109,8 @@ function Origens({ linhas }) {
   )
 }
 
-// Período longo demais para barras diárias vira semana (e depois mês): 300
-// barras de 1 px não dizem nada.
-function agruparPara(de, ate, atual) {
-  const dias = diasEntre(de, ate)
-  if (dias > 400 && atual !== 'mes') return 'mes'
-  if (dias > 92 && atual === 'dia') return 'semana'
-  return atual
-}
-
 export default function Periodo() {
+  const detalhe = useDetalhe()
   const inicial = intervaloDoAtalho('30d')
   const [atalho, setAtalho] = useState('30d')
   const [de, setDe] = useState(inicial.de)
@@ -275,7 +268,7 @@ export default function Periodo() {
             />
           ) : (
             <>
-              <ClientesTabela itens={dados.itens} rastreio />
+              <ClientesTabela itens={dados.itens} rastreio onAbrir={(id) => detalhe.abrir(id, () => setTentativa((n) => n + 1))} />
               <Paginacao pagina={pagina} porPagina={POR_PAGINA} total={dados.total_itens} onIr={setPagina} />
             </>
           )}

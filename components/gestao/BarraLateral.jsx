@@ -12,13 +12,16 @@ import Icone from './Icone'
 // `contador` é a chave do objeto de /api/gestao/avisos que vira o número
 // vermelho; sem número (ou zero), o quadradinho some.
 //
-// Fase 1 (telas atuais dentro da casca): `soDepois` esconde o item que ainda
+// Enquanto faltam telas (menu `parcial`): `soDepois` esconde o item que ainda
 // não tem página, e `agora` é o endereço que já existe para ele. As duas
-// chaves somem quando a tela nova entra.
+// chaves somem quando a tela nova entra (Campanhas e Downloads: Fase 5; Vendas: Fase 4).
+//
+// `consulta` ('de=...&ate=...') é o período global: os links o levam junto,
+// para Painel, Vendas, Campanhas, Leads e Downloads mostrarem o mesmo período.
 export const MENU = [
   {
     grupo: 'Visão geral',
-    itens: [{ href: '/gestao', rotulo: 'Painel', icone: 'painel', soDepois: true }],
+    itens: [{ href: '/gestao', rotulo: 'Painel', icone: 'painel' }],
   },
   {
     grupo: 'Vendas',
@@ -70,14 +73,14 @@ export const PAPEL = { master: 'Administrador master', membro: 'Equipe de gestã
 
 // Esconder o item do membro é conforto, não segurança: a rota da Equipe recusa
 // quem não é master por conta própria.
-// `fase1` troca o mapa final pelo que já existe: sem os itens `soDepois` e com
+// `parcial` troca o mapa final pelo que já existe: sem os itens `soDepois` e com
 // o endereço `agora` no lugar do definitivo.
-export function menuDoPapel(papel, fase1 = false) {
+export function menuDoPapel(papel, parcial = false) {
   return MENU.map((g) => ({
     ...g,
     itens: g.itens
-      .filter((i) => (!i.soMaster || papel === 'master') && !(fase1 && i.soDepois))
-      .map((i) => (fase1 && i.agora ? { ...i, href: i.agora } : i)),
+      .filter((i) => (!i.soMaster || papel === 'master') && !(parcial && i.soDepois))
+      .map((i) => (parcial && i.agora ? { ...i, href: i.agora } : i)),
   })).filter((g) => g.itens.length)
 }
 
@@ -133,12 +136,15 @@ function Contador({ n, recolhida, grande }) {
   )
 }
 
-function Item({ item, ativo, n, recolhida, grande, onEscolher }) {
+// O endereço do item com o período global, se houver.
+export const comPeriodo = (href, consulta) => (consulta ? href + '?' + consulta : href)
+
+function Item({ item, ativo, n, recolhida, grande, consulta, onEscolher }) {
   const rotuloCls = grande ? '' : recolhida ? 'hidden' : 'hidden lg:inline'
   const alinha = grande ? 'px-3' : recolhida ? 'justify-center' : 'justify-center lg:justify-start lg:px-3'
   const link = (
     <Link
-      href={item.href}
+      href={comPeriodo(item.href, consulta)}
       prefetch={false}
       aria-current={ativo ? 'page' : undefined}
       onClick={onEscolher}
@@ -177,7 +183,7 @@ function Item({ item, ativo, n, recolhida, grande, onEscolher }) {
 }
 
 // A lista de grupos e itens. É a mesma na barra lateral e na gaveta do celular.
-export function ListaMenu({ menu, ativo, avisos, recolhida = false, grande = false, onEscolher }) {
+export function ListaMenu({ menu, ativo, avisos, consulta = '', recolhida = false, grande = false, onEscolher }) {
   return (
     <nav aria-label="Gestão" className="flex flex-col">
       {menu.map((g, gi) => (
@@ -206,6 +212,7 @@ export function ListaMenu({ menu, ativo, avisos, recolhida = false, grande = fal
                   n={i.contador && avisos ? avisos[i.contador] : 0}
                   recolhida={recolhida}
                   grande={grande}
+                  consulta={consulta}
                   onEscolher={onEscolher}
                 />
               </li>
@@ -245,7 +252,7 @@ export function Conta({ email, papel, recolhida = false, grande = false, onSair 
 // A barra lateral do computador. Na faixa de 768 a 1023 px ela já nasce
 // recolhida (64 px) só por CSS; de 1024 px em diante abre em 248 px, a menos
 // que a pessoa tenha recolhido (`recolhida`, guardado no navegador pela Casca).
-export default function BarraLateral({ menu, ativo, avisos, papel, email, recolhida = false, onSair, onEscolher }) {
+export default function BarraLateral({ menu, ativo, avisos, consulta = '', papel, email, recolhida = false, onSair, onEscolher }) {
   return (
     <aside
       className={
@@ -269,7 +276,7 @@ export default function BarraLateral({ menu, ativo, avisos, papel, email, recolh
 
         <Tooltip.Provider>
           <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
-            <ListaMenu menu={menu} ativo={ativo} avisos={avisos} recolhida={recolhida} onEscolher={onEscolher} />
+            <ListaMenu menu={menu} ativo={ativo} avisos={avisos} consulta={consulta} recolhida={recolhida} onEscolher={onEscolher} />
           </div>
         </Tooltip.Provider>
 

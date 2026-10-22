@@ -93,3 +93,12 @@ export function intervaloDoAtalho(id, hoje = hojeBrasilia()) {
   const fimPassado = somarDias(inicioDoMes, -1)
   return { de: fimPassado.slice(0, 8) + '01', ate: fimPassado }
 }
+
+// Período longo demais para barras diárias vira semana (e depois mês): 300
+// barras de 1 px não dizem nada.
+export function agruparPara(de, ate, atual) {
+  const dias = diasEntre(de, ate)
+  if (dias > 400 && atual !== 'mes') return 'mes'
+  if (dias > 92 && atual === 'dia') return 'semana'
+  return atual
+}

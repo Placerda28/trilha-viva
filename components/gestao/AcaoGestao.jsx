@@ -25,8 +25,19 @@ export async function postarGestao(url, corpo) {
 export const linkAcao =
   'min-h-[32px] text-[13px] font-semibold text-ink-muted underline decoration-line underline-offset-2 hover:text-ink disabled:opacity-60'
 
-export default function AcaoGestao({ rotulo, explicacao, confirmar = 'Confirmar', url, corpo, onFeito }) {
-  const [aberto, setAberto] = useState(false)
+// `iniciaAberta` + `onFechar`: usados pelo menu "Ações" do Detalhe do cliente, em
+// que a escolha no menu já é o primeiro toque e a confirmação abre direto.
+export default function AcaoGestao({
+  rotulo,
+  explicacao,
+  confirmar = 'Confirmar',
+  url,
+  corpo,
+  onFeito,
+  iniciaAberta = false,
+  onFechar,
+}) {
+  const [aberto, setAberto] = useState(iniciaAberta)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -38,6 +49,7 @@ export default function AcaoGestao({ rotulo, explicacao, confirmar = 'Confirmar'
     if (!r.ok) return setErro(r.erro)
     setAberto(false)
     onFeito?.(r)
+    onFechar?.()
   }
 
   if (!aberto) {
@@ -57,7 +69,10 @@ export default function AcaoGestao({ rotulo, explicacao, confirmar = 'Confirmar'
         </button>
         <button
           type="button"
-          onClick={() => setAberto(false)}
+          onClick={() => {
+            setAberto(false)
+            onFechar?.()
+          }}
           disabled={enviando}
           className="btn-quiet !px-4 !py-2 !text-[13.5px] disabled:opacity-60"
         >

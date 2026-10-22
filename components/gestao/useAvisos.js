@@ -5,9 +5,9 @@ import { useEffect, useState } from 'react'
 // Os avisos da casca (o número do WhatsApp na barra lateral). Lê
 // /api/gestao/avisos quando a casca abre e a cada 60 s, só com a aba à vista.
 // Tolerante de propósito: 404, erro ou resposta torta deixam `null`, e a barra
-// simplesmente não mostra número.
+// simplesmente não mostra número. `undefined` = ainda não respondeu; `null` = falhou.
 export function useAvisos(ligado = true, intervalo = 60000) {
-  const [avisos, setAvisos] = useState(null)
+  const [avisos, setAvisos] = useState(undefined)
 
   useEffect(() => {
     if (!ligado) return undefined

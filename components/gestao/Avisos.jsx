@@ -8,15 +8,14 @@ function plural(n, um, varios) {
   return n + ' ' + (n === 1 ? um : varios)
 }
 
-function diasAte(dia, hoje) {
-  const a = new Date(dia + 'T12:00:00Z').getTime()
-  const b = new Date(hoje + 'T12:00:00Z').getTime()
-  return Math.round((a - b) / 86400000)
+// Dias que faltam até `fim` (ISO, como vem da rota) contados de `agora` (ISO), arredondando para cima.
+function diasAte(fim, agora) {
+  return Math.ceil((Date.parse(fim) - Date.parse(agora)) / 86400000)
 }
 
 // Transforma o JSON de /api/gestao/avisos (plano 4.1) na lista da tela.
-// `hoje` é 'AAAA-MM-DD' no dia de Brasília. A ordem é a de urgência.
-export function avisosDaApi(d, hoje) {
+// `agora` é o instante da leitura (ISO). A ordem é a de urgência.
+export function avisosDaApi(d, agora) {
   if (!d) return []
   const lista = []
   if (d.whatsapp_esperando > 0) {
@@ -28,11 +27,17 @@ export function avisosDaApi(d, hoje) {
       href: '/gestao/recuperacao/whatsapp',
     })
   }
-  // Os valores de `estado` e `modelo_status` são os de whatsapp_estado; confirmar na Fase 3.
-  if (d.robo && d.robo.estado && d.robo.estado !== 'ligado') {
-    lista.push({ id: 'robo', icone: 'robo', texto: 'O robô do WhatsApp está pausado', acao: 'Ver o robô', href: '/gestao/recuperacao/whatsapp' })
-  } else if (d.robo && d.robo.modelo_status && d.robo.modelo_status !== 'aprovado') {
-    lista.push({ id: 'modelo', icone: 'robo', texto: 'A Meta não aprovou o modelo de mensagem do robô', acao: 'Ver o robô', href: '/gestao/recuperacao/whatsapp' })
+  // estado vem de whatsapp_estado (aguardando_modelo, teste_enviado, ativo, pausado) e
+  // modelo_status é o da Meta (PENDING, APPROVED, REJECTED...). Esperar a Meta
+  // aprovar não pede ação do Paulo; recusa, pausa e "falta ligar" pedem.
+  const robo = d.robo || {}
+  const link = '/gestao/recuperacao/whatsapp'
+  if (['REJECTED', 'DISABLED', 'PAUSED'].includes(String(robo.modelo_status || '').toUpperCase())) {
+    lista.push({ id: 'modelo', icone: 'robo', texto: 'A Meta recusou o modelo de mensagem do robô', acao: 'Ver o robô', href: link })
+  } else if (robo.estado === 'pausado') {
+    lista.push({ id: 'robo', icone: 'robo', texto: 'O robô do WhatsApp está pausado', acao: 'Ver o robô', href: link })
+  } else if (robo.estado === 'teste_enviado') {
+    lista.push({ id: 'robo', icone: 'robo', texto: 'O teste do robô do WhatsApp foi enviado: falta ligar', acao: 'Ver o robô', href: link })
   }
   if (d.sem_senha_48h > 0) {
     lista.push({
@@ -53,7 +58,7 @@ export function avisosDaApi(d, hoje) {
     })
   }
   for (const c of d.cupons_vencendo || []) {
-    const dias = diasAte(c.valido_ate, hoje)
+    const dias = diasAte(c.valido_ate, agora)
     lista.push({
       id: 'vence-' + c.codigo,
       icone: 'cupons',
@@ -83,7 +88,9 @@ export function avisosDaApi(d, hoje) {
   return lista
 }
 
-export default function Avisos({ avisos }) {
+// `estado`: 'ok' mostra a lista; 'carregando' e 'erro' avisam por que não há lista
+// (sem isso, "Nada pendente" apareceria antes de os avisos chegarem).
+export default function Avisos({ avisos, estado = 'ok' }) {
   return (
     <section aria-labelledby="precisa-de-voce" className="rounded-md border border-line bg-white">
       <div className="flex items-center gap-2.5 px-4 pb-1 pt-4 sm:px-5 sm:pt-5">
@@ -97,7 +104,16 @@ export default function Avisos({ avisos }) {
         )}
       </div>
 
-      {avisos.length === 0 ? (
+      {estado === 'carregando' ? (
+        <div aria-hidden="true" className="space-y-2.5 px-4 pb-5 pt-3 sm:px-5">
+          <div className="h-4 w-3/5 rounded-sm bg-mist" />
+          <div className="h-4 w-2/5 rounded-sm bg-mist/70" />
+        </div>
+      ) : estado === 'erro' ? (
+        <p role="alert" className="px-4 pb-5 pt-2 text-[14.5px] text-ink-muted sm:px-5">
+          Não consegui ver os avisos agora. Atualize a página para tentar de novo.
+        </p>
+      ) : avisos.length === 0 ? (
         <p className="px-4 pb-5 pt-2 text-[14.5px] text-ink-muted sm:px-5">Nada pendente.</p>
       ) : (
         <ul className="mt-2">

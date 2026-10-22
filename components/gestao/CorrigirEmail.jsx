@@ -1,30 +1,16 @@
 'use client'
 
 import { useId, useState } from 'react'
+import { postarGestao } from './AcaoGestao'
 
 // "Corrigir e-mail" de um cliente (e-mail digitado errado na compra) e, logo
 // depois, "Reenviar acesso" para o endereço novo. O servidor troca o e-mail
 // em tudo que é do cliente e recusa e-mail que já é de outra pessoa.
 
-async function postar(url, corpo) {
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(corpo),
-    })
-    const dados = await res.json().catch(() => null)
-    if (res.status === 404) return { ok: false, erro: 'Sua sessão acabou. Entre de novo.' }
-    if (!res.ok || !dados?.ok) return { ok: false, erro: dados?.erro || 'Não consegui agora. Tente de novo.' }
-    return dados
-  } catch {
-    return { ok: false, erro: 'Falha de conexão. Confira a internet e tente de novo.' }
-  }
-}
-
-export default function CorrigirEmail({ c, onMudou }) {
+// `iniciaAberto` + `onFechar`: o menu "Ações" do Detalhe do cliente abre o formulário direto.
+export default function CorrigirEmail({ c, onMudou, iniciaAberto = false, onFechar }) {
   const id = useId()
-  const [aberto, setAberto] = useState(false)
+  const [aberto, setAberto] = useState(iniciaAberto)
   const [email, setEmail] = useState(c.email)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
@@ -35,7 +21,7 @@ export default function CorrigirEmail({ c, onMudou }) {
     e.preventDefault()
     setErro('')
     setSalvando(true)
-    const r = await postar('/api/gestao/clientes/email', { id: c.id, email })
+    const r = await postarGestao('/api/gestao/clientes/email', { id: c.id, email })
     setSalvando(false)
     if (!r.ok) return setErro(r.erro)
     setCorrigido(r.email)
@@ -46,7 +32,7 @@ export default function CorrigirEmail({ c, onMudou }) {
   async function reenviar() {
     setErro('')
     setEnvio({ estado: 'enviando', texto: '' })
-    const r = await postar('/api/gestao/clientes/acesso', { id: c.id })
+    const r = await postarGestao('/api/gestao/clientes/acesso', { id: c.id })
     setEnvio(
       r.ok
         ? { estado: 'ok', texto: 'Acesso enviado para ' + r.para + (r.tipo === 'redefinir_senha' ? ' (link de redefinir a senha).' : ' (link de criar a senha).') }
@@ -125,7 +111,10 @@ export default function CorrigirEmail({ c, onMudou }) {
         </button>
         <button
           type="button"
-          onClick={() => setAberto(false)}
+          onClick={() => {
+            setAberto(false)
+            onFechar?.()
+          }}
           disabled={salvando}
           className="btn-quiet !px-4 !py-2 !text-[13.5px] disabled:opacity-60"
         >

@@ -8,7 +8,7 @@ import { dataHora, numero } from './formato'
 const POR_PAGINA = 50
 
 // Frase de cada ação, para a lista ler como um diário e não como um log.
-const ACOES = {
+export const ACOES = {
   cupom_criado: 'criou o cupom',
   cupom_desativado: 'desativou o cupom',
   membro_adicionado: 'adicionou à equipe',

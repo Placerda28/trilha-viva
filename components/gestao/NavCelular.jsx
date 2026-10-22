@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 import { LogoMark } from '../Logo'
 import Icone from './Icone'
-import { Conta, ListaMenu } from './BarraLateral'
+import { Conta, ListaMenu, comPeriodo } from './BarraLateral'
 
 // Celular (< 768 px): barra de baixo com 4 atalhos e "Mais", e a gaveta com o
 // menu inteiro (a mesma lista da barra lateral). O "Mais" e o ☰ do topo abrem
@@ -21,7 +21,7 @@ function achaItem(menu, icone) {
 
 const FOCO = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-inset'
 
-export default function NavCelular({ menu, ativo, avisos, papel, email, aberta, aoMudar, onSair }) {
+export default function NavCelular({ menu, ativo, avisos, consulta = '', papel, email, aberta, aoMudar, onSair }) {
   const itens = ATALHOS.map((h) => achaItem(menu, h)).filter(Boolean)
   const fechar = () => aoMudar(false)
 
@@ -39,7 +39,7 @@ export default function NavCelular({ menu, ativo, avisos, papel, email, aberta, 
             return (
               <li key={i.href} className="relative">
                 <Link
-                  href={i.href}
+                  href={comPeriodo(i.href, consulta)}
                   prefetch={false}
                   aria-current={marcado ? 'page' : undefined}
                   className={
@@ -104,7 +104,7 @@ export default function NavCelular({ menu, ativo, avisos, papel, email, aberta, 
               </DialogPrimitive.Close>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-2 py-4">
-              <ListaMenu menu={menu} ativo={ativo} avisos={avisos} grande onEscolher={fechar} />
+              <ListaMenu menu={menu} ativo={ativo} avisos={avisos} consulta={consulta} grande onEscolher={fechar} />
             </div>
             <Conta email={email} papel={papel} grande onSair={onSair} />
           </DialogPrimitive.Content>

@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { Suspense, createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { LogoMark } from '../Logo'
 import BarraLateral, { achaAtivo, menuDoPapel, sairDaConta } from './BarraLateral'
-import BarraTopo, { SeletorPeriodo } from './BarraTopo'
+import BarraTopo from './BarraTopo'
+import { DetalheProvider } from './DetalheCliente'
 import NavCelular from './NavCelular'
+import PeriodoGlobal from './PeriodoGlobal'
 import { useAvisos } from './useAvisos'
 
 // A casca da gestão: barra lateral (computador), barra do topo, e no celular a
@@ -15,28 +17,59 @@ import { useAvisos } from './useAvisos'
 // `ativo` força o endereço marcado no menu (o protótipo usa); sem ele, vale o
 // caminho da página.
 //
-// `fase1`: a gestão de verdade, com as telas atuais dentro. O menu só tem o que
-// existe, e a busca e o período globais (que ainda não têm dados) ficam de fora.
-// Sem `avisos` na chamada, a casca busca /api/gestao/avisos sozinha.
+// `parcial`: a gestão de verdade enquanto faltam telas (Campanhas e Downloads
+// são da Fase 5). O menu só tem o que existe; a busca e o período valem sempre.
+// Sem `avisos` na chamada, a casca busca /api/gestao/avisos sozinha e a entrega
+// às telas por `useAvisosDaCasca()`.
+//
+// O período vive na URL (?de&ate): a casca o lê para que os links do menu o
+// levem junto, e o seletor do topo só aparece nas telas que usam data.
 //
 // `semMenu`: a pessoa com senha provisória só vê a troca de senha, sem navegação.
 const CHAVE = 'gestao-barra-recolhida'
 
-export default function Casca({
+// As telas que filtram por data (o resto não mostra o seletor). Cada tela nova
+// com período entra aqui quando ganha o ?de&ate.
+const COM_PERIODO = new Set(['/gestao'])
+
+const AvisosContexto = createContext(undefined)
+// Os avisos que a casca já busca (undefined = carregando, null = falhou), para o
+// Painel não repetir a consulta.
+export const useAvisosDaCasca = () => useContext(AvisosContexto)
+
+// useSearchParams precisa de Suspense. Se ele alguma vez suspender, a casca
+// aparece sem o período nos links, em vez de a tela inteira sumir.
+export default function Casca(props) {
+  return (
+    <Suspense fallback={<CascaInterna {...props} consulta="" />}>
+      <ComPeriodoNaUrl {...props} />
+    </Suspense>
+  )
+}
+
+function ComPeriodoNaUrl(props) {
+  const p = useSearchParams()
+  const de = p.get('de')
+  const ate = p.get('ate')
+  const consulta = de && ate && /^\d{4}-\d{2}-\d{2}$/.test(de) && /^\d{4}-\d{2}-\d{2}$/.test(ate) ? 'de=' + de + '&ate=' + ate : ''
+  return <CascaInterna {...props} consulta={consulta} />
+}
+
+function CascaInterna({
   papel,
   email,
   avisos: avisosDados,
   ativo,
   titulo,
-  intervalo,
-  fase1 = false,
+  consulta = '',
+  parcial = false,
   semMenu = false,
   onSair = sairDaConta,
   children,
 }) {
   // O middleware reescreve /gestao para /interno/gestao; compara sem o prefixo.
   const caminho = (usePathname() || '').replace(/^\/interno(?=\/)/, '')
-  const menu = useMemo(() => menuDoPapel(papel, fase1), [papel, fase1])
+  const menu = useMemo(() => menuDoPapel(papel, parcial), [papel, parcial])
   const achado = achaAtivo(menu, ativo || caminho)
   const buscados = useAvisos(avisosDados === undefined && !semMenu)
   const avisos = avisosDados === undefined ? buscados : avisosDados
@@ -90,10 +123,13 @@ export default function Casca({
   }
 
   return (
+    <AvisosContexto.Provider value={avisos}>
+    <DetalheProvider>
     <div className="flex min-h-dvh bg-paper font-sans text-ink">
       <BarraLateral
         menu={menu}
         ativo={achado?.item.href}
+        consulta={consulta}
         avisos={avisos}
         papel={papel}
         email={email}
@@ -106,12 +142,10 @@ export default function Casca({
           titulo={titulo || achado?.item.rotulo}
           email={email}
           papel={papel}
-          intervalo={intervalo}
           recolhida={recolhida}
           onRecolher={alternar}
           onMenu={() => setGaveta(true)}
-          comPeriodo={!fase1}
-          comBusca={!fase1}
+          comPeriodo={COM_PERIODO.has(achado?.item.href)}
           onSair={onSair}
         />
         {/* Sem <main> aqui: o layout raiz do site já entrega um (id="conteudo"). */}
@@ -124,6 +158,7 @@ export default function Casca({
       <NavCelular
         menu={menu}
         ativo={achado?.item.href}
+        consulta={consulta}
         avisos={avisos}
         papel={papel}
         email={email}
@@ -132,19 +167,21 @@ export default function Casca({
         onSair={onSair}
       />
     </div>
+    </DetalheProvider>
+    </AvisosContexto.Provider>
   )
 }
 
 // Título da página e uma linha curta de explicação. No celular, o seletor de
 // período vem logo abaixo (no computador ele já está na barra do topo).
-export function CabecalhoPagina({ titulo, texto, comPeriodo = false, intervalo }) {
+export function CabecalhoPagina({ titulo, texto, comPeriodo = false }) {
   return (
     <div className="mb-5 md:mb-6">
       <h1 className="text-[24px] font-bold leading-[1.15] tracking-[-0.015em] text-ink">{titulo}</h1>
       {texto && <p className="mt-1 text-[14.5px] text-ink-muted">{texto}</p>}
       {comPeriodo && (
         <div className="mt-4 md:hidden">
-          <SeletorPeriodo cheio intervalo={intervalo} />
+          <PeriodoGlobal cheio />
         </div>
       )}
     </div>

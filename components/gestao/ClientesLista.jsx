@@ -6,10 +6,12 @@ import ClientesTabela from './ClientesTabela'
 import { Aviso, Esqueleto, Vazio, Paginacao, BaixarPlanilha } from './Estados'
 import { numero } from './formato'
 import { MostrarTestes } from './AcaoGestao'
+import { useDetalhe } from './DetalheCliente'
 
 const POR_PAGINA = 25
 
 export default function ClientesLista() {
+  const detalhe = useDetalhe()
   const [texto, setTexto] = useState('')
   const [q, setQ] = useState('')
   const [pagina, setPagina] = useState(1)
@@ -81,7 +83,11 @@ export default function ClientesLista() {
         )
       ) : (
         <div className={carregando ? 'opacity-60 transition-opacity duration-150' : 'transition-opacity duration-150'}>
-          <ClientesTabela itens={dados.itens} whatsapp onMudou={() => setTentativa((n) => n + 1)} />
+          <ClientesTabela
+            itens={dados.itens}
+            whatsapp
+            onAbrir={(id) => detalhe.abrir(id, () => setTentativa((n) => n + 1))}
+          />
           <Paginacao pagina={pagina} porPagina={POR_PAGINA} total={total} onIr={setPagina} />
         </div>
       )}

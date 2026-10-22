@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useGestao } from './useGestao'
 import Segmentos from './Segmentos'
 import { Aviso, Esqueleto, Vazio, BaixarPlanilha } from './Estados'
@@ -47,6 +48,12 @@ export default function Recuperacao() {
   const [pagina, setPagina] = useState(1)
   const [tentativa, setTentativa] = useState(0)
   const [testes, setTestes] = useState(false)
+
+  // A busca do topo leva até aqui com ?q=: a caixa já abre preenchida.
+  const qDaUrl = useSearchParams().get('q')
+  useEffect(() => {
+    if (qDaUrl) setTexto(qDaUrl.slice(0, 80))
+  }, [qDaUrl])
 
   // Espera parar de digitar antes de consultar o banco.
   useEffect(() => {
