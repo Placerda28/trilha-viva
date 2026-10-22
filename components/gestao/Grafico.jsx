@@ -37,7 +37,7 @@ function barra(x, y, w, h) {
   )
 }
 
-export default function Grafico({ serie, titulo }) {
+export default function Grafico({ serie, titulo, acoes, className = 'mt-6' }) {
   const caixa = useRef(null)
   const [largura, setLargura] = useState(0)
   const [ativo, setAtivo] = useState(null)
@@ -90,8 +90,11 @@ export default function Grafico({ serie, titulo }) {
     titulo + '. ' + n + ' faixas. Maior valor: ' + moeda(maior) + '. Use as setas para percorrer.'
 
   return (
-    <figure className="mt-6 rounded border border-line bg-white px-4 pb-3 pt-4 sm:px-5">
-      <figcaption className="text-[14.5px] font-semibold text-ink">{titulo}</figcaption>
+    <figure className={className + ' rounded-md border border-line bg-white px-4 pb-3 pt-4 sm:px-5'}>
+      <figcaption className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[14.5px] font-semibold text-ink">
+        {titulo}
+        {acoes}
+      </figcaption>
 
       <div
         ref={caixa}

@@ -16,7 +16,7 @@ export default function Segmentos({ opcoes, valor, onEscolher, rotulo, tamanho =
             aria-pressed={marcado}
             onClick={() => onEscolher(o.id)}
             className={
-              'rounded border font-semibold transition-colors duration-150 ' +
+              'min-h-[44px] rounded border font-semibold transition-colors duration-150 md:min-h-0 ' +
               medida +
               ' ' +
               (marcado ? 'border-ink bg-ink text-white' : 'border-line bg-white text-ink hover:border-ink')
