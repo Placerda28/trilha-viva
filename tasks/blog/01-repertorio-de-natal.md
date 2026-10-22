@@ -56,6 +56,18 @@ Tem baterista e tecladista, mas não tem quem toque cordas? Mute a bateria e o t
 - **Monte a cantata num projeto só.** Coloque as músicas na ordem do setlist dentro de um único projeto. Na hora, é só seguir em frente, sem abrir arquivo no meio da apresentação.
 - **Leve um backup num pendrive.** Copie o projeto e as trilhas para um pendrive. Se o computador travar, você troca de máquina e segue.
 
+## O que cada pessoa da equipe precisa saber na noite
+
+Cantata boa é cantata em que cada um sabe o próprio papel. Combine isto antes do último ensaio:
+
+- **Quem opera a VS** (no computador ou no tablet) fica perto da banda e tem o setlist impresso, com o nome de cada música e o que vem depois. É essa pessoa que dá o play, e ela não deve ser a mesma que canta.
+- **O baterista** ouve o clique e a guia no fone, sempre. Combine o volume do clique no ensaio: alto o bastante para ser ouvido em cima da bateria, sem incomodar.
+- **Quem conduz o louvor** também ouve a guia, para saber quando entra o refrão e quando a música termina. Se houver fala entre uma música e outra, deixe espaço no projeto para isso.
+- **O operador de som** recebe só os instrumentos da trilha na mesa. Clique e guia nunca vão para o som da igreja. Antes do culto, peça silêncio e confira se o clique não está vazando.
+- **O coral** ensaia pelo menos uma vez com a trilha, no tom final, e não só com o piano. A sensação de cantar com a banda completa é outra.
+
+Se der, faça um ensaio geral no próprio templo, com o som ligado como vai ficar na noite. É nele que aparecem os problemas de volume e de retorno.
+
 ## Quer testar antes de montar o repertório?
 
 Se a sua equipe nunca tocou com VS, comece por uma música só. A [VS grátis](/vs-gratis) é uma multitrack completa, com clique, guia e canais separados, para vocês ensaiarem e verem como funciona.
