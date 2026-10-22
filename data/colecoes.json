@@ -4,7 +4,7 @@
     "descricao": "VS de Natal com clique e guia: Ó Noite Santa, Maria Tu Sabias, Nasceu em Belém e mais. Monte a cantata da igreja. Todas no pacote por R$ 89,90.",
     "nome": "Multitracks de Natal",
     "h1": "Multitracks de Natal para a sua igreja",
-    "abertura": "O Natal é a época em que a equipe de louvor mais precisa de repertório especial: tem cantata, culto de véspera e apresentação no domingo. Com VS, até uma banda pequena faz uma cantata completa, com cordas, sinos e coro saindo da trilha enquanto os músicos da igreja tocam o resto. Abaixo estão as multitracks de Natal do acervo, com o BPM e o tom de cada uma, e uma sugestão de setlist para montar a noite.",
+    "abertura": "O Natal é a época em que a equipe de louvor mais precisa de repertório especial: tem cantata, culto de véspera e apresentação no domingo. Com VS, até uma banda pequena faz uma cantata completa, com cordas, órgão e backing vocals saindo da trilha enquanto os músicos da igreja tocam o resto. Abaixo estão as multitracks de Natal do acervo, com o BPM e o tom de cada uma, e uma sugestão de setlist para montar a noite.",
     "musicas": [
       "vem-que-esta-chegando-o-natal-aline-barros",
       "jesus-nasceu-jemima",
@@ -32,7 +32,7 @@
       { "slug": "o-come-all-ye-faithful-planetshakers", "motivo": "O hino clássico, que a igreja canta junto." },
       { "slug": "nasceu-em-belem-israel-salazar", "motivo": "Conta a história do nascimento e prepara a transição." },
       { "slug": "maria-tu-sabias-fhop-music", "motivo": "O momento de reflexão, bom para um solista." },
-      { "slug": "o-vem-o-vem-emanuel-fhop-music", "motivo": "A adoração mais profunda, com cordas e coro." },
+      { "slug": "o-vem-o-vem-emanuel-fhop-music", "motivo": "A adoração mais profunda, para a igreja cantar devagar." },
       { "slug": "o-noite-santa-fhop-music", "motivo": "O ponto alto da cantata." },
       { "slug": "gloria-e-aleluia-christmas-gabriel-guedes", "motivo": "Fecha com a igreja inteira cantando." }
     ],
