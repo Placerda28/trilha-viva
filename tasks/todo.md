@@ -63,6 +63,9 @@ Branch `seo-fase-a`. Uma fase de cada vez, com prova e OK do Paulo antes de segu
 - O Product da home e da `/assinar` vem de um lugar só (`lib/produto-ld.js`), com `sku`, `brand`, `image`, `priceValidUntil` 2027-12-31 e `hasMerchantReturnPolicy` (7 dias, BR, devolução grátis). Sem aggregateRating e review, como o plano manda. ItemList na página de cada artista. BlogPosting com `image` e `dateModified` de `updated`.
 - **Achado fora do plano (Paulo decide):** só a home tem `og:image`; música, assinar e blog saem sem imagem ao compartilhar.
 
+### Adiado pelo Paulo (22/10)
+- **Prévia de áudio (2.3)** e **BPM e tom que faltam** (RAR pelo clique, tom pelo áudio): ficam para depois. Fatos para quando voltar: o acervo tem 657 GB (544 em ZIP, 113 em RAR) e o disco tem 9 GB livres. O ZIP com WAV guardado sem compressão pode ser lido só no trecho de 30 s (cerca de 50 MB por música); o RAR precisa ser baixado inteiro e exige 7-Zip; o tom pelo áudio exige librosa. Para as prévias, a proposta é um balde B2 novo e público só para elas (`trilha-viva-previas`), já que o B2 não abre só uma pasta. Há um rascunho incompleto do script na branch `seo-fase-c2` (commit "wip"). Piloto escolhido: Galileu, Ó Noite Santa e Aqui Vou Eu.
+
 ### Fase G (em andamento)
 - **`/bpm` (4.2):** tabela com as 1.175 músicas com BPM, com busca e filtro de andamento no navegador (a tabela inteira vai no HTML). O título diz "1.100+", e não "1.500+", que seria mais do que existe. Link no rodapé, em "Aprender", e no sitemap.
 - [ ] **Paulo: coleções (4.3, PARE E MOSTRE):** listas em `tasks/colecoes-candidatas.md`, com 12 sugestões de tirar e uma lista proposta de "artistas atuais" para o culto de jovens.
