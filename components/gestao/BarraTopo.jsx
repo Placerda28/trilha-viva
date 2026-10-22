@@ -141,7 +141,7 @@ function BuscaCelular() {
   )
 }
 
-export default function BarraTopo({ grupo, titulo, email, papel, intervalo, recolhida, onRecolher, onMenu, comPeriodo = true, onSair }) {
+export default function BarraTopo({ grupo, titulo, email, papel, intervalo, recolhida, onRecolher, onMenu, comPeriodo = true, comBusca = true, onSair }) {
   const busca = useRef(null)
   const [atalho, setAtalho] = useState('Ctrl K')
 
@@ -149,9 +149,10 @@ export default function BarraTopo({ grupo, titulo, email, papel, intervalo, reco
   useEffect(() => {
     if (/Mac|iPhone|iPad/.test(navigator.platform || '')) setAtalho('⌘ K')
     const tecla = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      // Sem caixa de busca na tela, o atalho fica com o navegador.
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && busca.current) {
         e.preventDefault()
-        busca.current?.focus()
+        busca.current.focus()
       }
     }
     window.addEventListener('keydown', tecla)
@@ -171,7 +172,7 @@ export default function BarraTopo({ grupo, titulo, email, papel, intervalo, reco
           <Icone nome="menu" tamanho={22} />
         </button>
         <p className="truncate px-2 text-[16px] font-bold tracking-[-0.01em] text-ink">{titulo}</p>
-        <BuscaCelular />
+        {comBusca ? <BuscaCelular /> : <span className="h-11 w-11" aria-hidden="true" />}
       </div>
 
       {/* Tablet e computador. */}
@@ -192,20 +193,24 @@ export default function BarraTopo({ grupo, titulo, email, papel, intervalo, reco
           <span className="font-bold tracking-[-0.01em] text-ink">{titulo}</span>
         </p>
 
-        <div className="relative mx-auto min-w-0 max-w-[440px] flex-1">
-          <Icone nome="lupa" tamanho={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-          <input
-            ref={busca}
-            type="search"
-            aria-label="Buscar pessoa por nome, e-mail ou celular"
-            aria-keyshortcuts="Control+K Meta+K"
-            placeholder="Buscar nome, e-mail ou celular"
-            className="h-10 w-full rounded border border-transparent bg-paper pl-10 pr-3 text-[14px] text-ink placeholder:text-ink-muted focus:border-ink focus:bg-white focus:outline-none lg:pr-16"
-          />
-          <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-sm border border-line bg-white px-1.5 py-0.5 font-sans text-[12px] text-ink-muted lg:block">
-            {atalho}
-          </kbd>
-        </div>
+        {comBusca ? (
+          <div className="relative mx-auto min-w-0 max-w-[440px] flex-1">
+            <Icone nome="lupa" tamanho={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
+            <input
+              ref={busca}
+              type="search"
+              aria-label="Buscar pessoa por nome, e-mail ou celular"
+              aria-keyshortcuts="Control+K Meta+K"
+              placeholder="Buscar nome, e-mail ou celular"
+              className="h-10 w-full rounded border border-transparent bg-paper pl-10 pr-3 text-[14px] text-ink placeholder:text-ink-muted focus:border-ink focus:bg-white focus:outline-none lg:pr-16"
+            />
+            <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-sm border border-line bg-white px-1.5 py-0.5 font-sans text-[12px] text-ink-muted lg:block">
+              {atalho}
+            </kbd>
+          </div>
+        ) : (
+          <div className="flex-1" />
+        )}
 
         {comPeriodo && <SeletorPeriodo intervalo={intervalo} />}
         <MenuConta email={email} papel={papel} onSair={onSair} />

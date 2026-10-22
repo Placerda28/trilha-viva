@@ -11,15 +11,19 @@ import Icone from './Icone'
 //
 // `contador` é a chave do objeto de /api/gestao/avisos que vira o número
 // vermelho; sem número (ou zero), o quadradinho some.
+//
+// Fase 1 (telas atuais dentro da casca): `soDepois` esconde o item que ainda
+// não tem página, e `agora` é o endereço que já existe para ele. As duas
+// chaves somem quando a tela nova entra.
 export const MENU = [
   {
     grupo: 'Visão geral',
-    itens: [{ href: '/gestao', rotulo: 'Painel', icone: 'painel' }],
+    itens: [{ href: '/gestao', rotulo: 'Painel', icone: 'painel', soDepois: true }],
   },
   {
     grupo: 'Vendas',
     itens: [
-      { href: '/gestao/vendas', rotulo: 'Vendas', icone: 'vendas' },
+      { href: '/gestao/vendas', rotulo: 'Vendas', icone: 'vendas', agora: '/gestao/periodo' },
       { href: '/gestao/clientes', rotulo: 'Clientes', icone: 'clientes' },
       { href: '/gestao/cupons', rotulo: 'Cupons', icone: 'cupons' },
     ],
@@ -34,13 +38,13 @@ export const MENU = [
   {
     grupo: 'Marketing',
     itens: [
-      { href: '/gestao/campanhas', rotulo: 'Campanhas', icone: 'campanhas' },
+      { href: '/gestao/campanhas', rotulo: 'Campanhas', icone: 'campanhas', soDepois: true },
       { href: '/gestao/leads', rotulo: 'Leads VS grátis', icone: 'leads' },
     ],
   },
   {
     grupo: 'Acervo',
-    itens: [{ href: '/gestao/downloads', rotulo: 'Downloads', icone: 'downloads' }],
+    itens: [{ href: '/gestao/downloads', rotulo: 'Downloads', icone: 'downloads', soDepois: true }],
   },
   {
     grupo: 'Sistema',
@@ -66,10 +70,15 @@ export const PAPEL = { master: 'Administrador master', membro: 'Equipe de gestã
 
 // Esconder o item do membro é conforto, não segurança: a rota da Equipe recusa
 // quem não é master por conta própria.
-export function menuDoPapel(papel) {
-  return MENU.map((g) => ({ ...g, itens: g.itens.filter((i) => !i.soMaster || papel === 'master') })).filter(
-    (g) => g.itens.length
-  )
+// `fase1` troca o mapa final pelo que já existe: sem os itens `soDepois` e com
+// o endereço `agora` no lugar do definitivo.
+export function menuDoPapel(papel, fase1 = false) {
+  return MENU.map((g) => ({
+    ...g,
+    itens: g.itens
+      .filter((i) => (!i.soMaster || papel === 'master') && !(fase1 && i.soDepois))
+      .map((i) => (fase1 && i.agora ? { ...i, href: i.agora } : i)),
+  })).filter((g) => g.itens.length)
 }
 
 // Item ativo = o de endereço mais longo que abre o caminho atual. Assim

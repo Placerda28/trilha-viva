@@ -39,7 +39,7 @@ const columns = [
 
 export default function Footer() {
   return (
-    <footer className="mt-24 bg-ink text-white">
+    <footer data-site-chrome="" className="mt-24 bg-ink text-white">
       <div className="shell py-16 sm:py-20">
         <div className="grid gap-12 md:grid-cols-[1.5fr_repeat(3,1fr)]">
           <div>

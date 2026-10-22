@@ -27,7 +27,7 @@ export default function Header() {
   }, [open])
 
   return (
-    <header className="sticky top-0 z-50 bg-ink text-white">
+    <header data-site-chrome="" className="sticky top-0 z-50 bg-ink text-white">
       <div className="flex h-[68px] w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         {/* inline-flex items-center no proprio link: sem isso, o "a" vira uma
             caixa de linha comum, que soma a entrelinha do texto por cima do

@@ -5,7 +5,6 @@ import { useGestao } from './useGestao'
 import Segmentos from './Segmentos'
 import { Aviso, Esqueleto, Vazio, BaixarPlanilha } from './Estados'
 import { moeda, numero } from './formato'
-import SubAbasRecuperacao from './SubAbasRecuperacao'
 import Tabela from './RecuperacaoTabela'
 import { MostrarTestes } from './AcaoGestao'
 
@@ -67,7 +66,6 @@ export default function Recuperacao() {
 
   return (
     <section aria-labelledby="titulo-recuperacao" className="mt-8">
-      <SubAbasRecuperacao />
       <h2 id="titulo-recuperacao" className="sr-only">
         Recuperação de vendas
       </h2>

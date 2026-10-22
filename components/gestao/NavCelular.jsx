@@ -10,10 +10,12 @@ import { Conta, ListaMenu } from './BarraLateral'
 // menu inteiro (a mesma lista da barra lateral). O "Mais" e o ☰ do topo abrem
 // a mesma gaveta, que é controlada pela Casca.
 
-const ATALHOS = ['/gestao', '/gestao/vendas', '/gestao/clientes', '/gestao/recuperacao/whatsapp']
+// Achados pelo ícone, que não muda quando o endereço muda (Vendas, na Fase 1,
+// ainda mora em /gestao/periodo). Item que não existe no menu fica de fora.
+const ATALHOS = ['painel', 'vendas', 'clientes', 'whatsapp']
 
-function achaItem(menu, href) {
-  for (const g of menu) for (const i of g.itens) if (i.href === href) return i
+function achaItem(menu, icone) {
+  for (const g of menu) for (const i of g.itens) if (i.icone === icone) return i
   return null
 }
 
@@ -30,7 +32,7 @@ export default function NavCelular({ menu, ativo, avisos, papel, email, aberta, 
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <ul className="grid h-16 grid-cols-5">
+        <ul className="grid h-16" style={{ gridTemplateColumns: `repeat(${itens.length + 1}, minmax(0, 1fr))` }}>
           {itens.map((i) => {
             const marcado = ativo === i.href
             const n = i.contador && avisos ? avisos[i.contador] : 0

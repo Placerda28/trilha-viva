@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useGestao } from './useGestao'
-import SubAbasRecuperacao from './SubAbasRecuperacao'
 import { Aviso, Esqueleto, Vazio } from './Estados'
 import { moeda, numero } from './formato'
 import SequenciaWhatsapp from './SequenciaWhatsapp'
@@ -109,7 +108,6 @@ export default function WhatsappConversas() {
 
   return (
     <section aria-labelledby="titulo-whatsapp" className="mt-8">
-      <SubAbasRecuperacao />
       <h2 id="titulo-whatsapp" className="sr-only">
         WhatsApp
       </h2>
