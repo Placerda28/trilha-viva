@@ -5,14 +5,14 @@ import { Breadcrumbs, SectionHead, Faq, Check } from '@/components/ui'
 import MudarTomBpm from '@/components/MudarTomBpm'
 import { tools, steps, usos } from '@/lib/tools'
 import { faq } from '@/lib/faq'
-import { site, priceBRL } from '@/lib/site'
+import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
 
 export const metadata = {
   title: 'Como usar multitrack na igreja: guia completo (Reaper, Ableton e tablet)',
   description:
     'Guia prático de como tocar com multitrack gospel na igreja: qual programa usar, como separar clique e guia do mix da banda, que interface de áudio comprar e como rodar tudo no tablet.',
   alternates: { canonical: '/como-usar' },
-  openGraph: {
+  openGraph: { images: OG_IMAGEM,
     title: 'Como usar multitrack na igreja — guia completo',
     description:
       'Reaper, Ableton Live, Prime no iPad, roteamento de clique e guia, interface de áudio e passo a passo até o domingo.',

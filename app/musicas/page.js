@@ -3,7 +3,7 @@ import CatalogBrowser from '@/components/CatalogBrowser'
 import { Breadcrumbs } from '@/components/ui'
 import { songs } from '@/lib/catalog'
 import { artistList } from '@/lib/artists'
-import { site, priceBRL } from '@/lib/site'
+import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 
 export const metadata = {
@@ -11,7 +11,7 @@ export const metadata = {
   description:
     'Navegue pelo acervo Trilha Viva: multitracks gospel com clique, guia e canais separados, de dezenas de artistas e ministérios. Pacote único por R$ 89,90.',
   alternates: { canonical: '/musicas' },
-  openGraph: {
+  openGraph: { images: OG_IMAGEM,
     title: 'Acervo de Multitracks Gospel — Trilha Viva',
     description: 'Multitracks gospel com clique, guia e canais separados. Mais de 2.000 VS.',
     url: `${site.url}/musicas`,

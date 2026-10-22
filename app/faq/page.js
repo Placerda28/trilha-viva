@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Breadcrumbs, Faq } from '@/components/ui'
 import { faq } from '@/lib/faq'
-import { site, priceBRL } from '@/lib/site'
+import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
 
 const title = 'Dúvidas frequentes sobre multitracks gospel'
 const description =
@@ -11,7 +11,7 @@ export const metadata = {
   title,
   description,
   alternates: { canonical: '/faq' },
-  openGraph: { title, description, url: `${site.url}/faq` },
+  openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/faq` },
 }
 
 const ld = {

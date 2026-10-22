@@ -5,7 +5,7 @@ import AvisoCancelado from '@/components/AvisoCancelado'
 import { SessionMini } from '@/components/Track'
 import { Breadcrumbs, Check, Faq, Icone } from '@/components/ui'
 import { destaques } from '@/lib/catalog'
-import { site, priceBRL, discountPct } from '@/lib/site'
+import { OG_IMAGEM, site, priceBRL, discountPct } from '@/lib/site'
 import { productLd } from '@/lib/produto-ld'
 import { ldJson } from '@/lib/safe'
 
@@ -14,7 +14,7 @@ export const metadata = {
   description:
     'Pagamento único de R$ 89,90 (de R$ 899,00) no Pix ou no cartão. Acesso vitalício a mais de 2.000 multitracks gospel com clique, guia e canais separados. Liberação imediata.',
   alternates: { canonical: '/assinar' },
-  openGraph: {
+  openGraph: { images: OG_IMAGEM,
     title: 'Pacote único — 2.000 Multitracks Gospel | Trilha Viva',
     description: 'R$ 89,90 no Pix ou no cartão. Acesso vitalício e liberação imediata.',
     url: `${site.url}/assinar`,

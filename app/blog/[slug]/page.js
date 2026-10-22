@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Breadcrumbs } from '@/components/ui'
+import { Breadcrumbs, Faq } from '@/components/ui'
+import Texto, { textoPuro } from '@/components/Texto'
 import { posts, getPost } from '@/lib/posts'
 import { site, priceBRL } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
@@ -18,6 +19,7 @@ export async function generateMetadata({ params }) {
     description: post.description,
     alternates: { canonical: `/blog/${post.slug}` },
     openGraph: {
+      images: [`/blog/${post.slug}/opengraph-image`],
       title: post.title,
       description: post.description,
       url: `${site.url}/blog/${post.slug}`,
@@ -48,8 +50,7 @@ export default async function PostPage({ params }) {
     datePublished: post.date,
     dateModified: post.updated || post.date,
     inLanguage: 'pt-BR',
-    // Os artigos ainda não têm capa própria: vai a imagem da marca até ganharem.
-    image: [`${site.url}/opengraph-image`],
+    image: [`${site.url}/blog/${post.slug}/opengraph-image`],
     mainEntityOfPage: `${site.url}/blog/${post.slug}`,
     author: { '@type': 'Organization', name: 'Trilha Viva' },
     publisher: {
@@ -59,9 +60,21 @@ export default async function PostPage({ params }) {
     },
   }
 
+  const faqLd = post.faq?.length
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: post.faq.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: textoPuro(f.a) },
+        })),
+      }
+    : null
+
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(ld) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(faqLd ? [ld, faqLd] : ld) }} />
       <article className="shell max-w-3xl pt-12">
         <Breadcrumbs
           items={[
@@ -86,17 +99,33 @@ export default async function PostPage({ params }) {
         <div className="prose-tv pb-6">
           {post.body.map((block, i) => {
             if (block.h2) return <h2 key={i}>{block.h2}</h2>
-            if (block.ul)
+            if (block.h3) return <h3 key={i}>{block.h3}</h3>
+            if (block.ul || block.ol) {
+              const Lista = block.ol ? 'ol' : 'ul'
               return (
-                <ul key={i}>
-                  {block.ul.map((li) => (
-                    <li key={li}>{li}</li>
+                <Lista key={i}>
+                  {(block.ul || block.ol).map((li) => (
+                    <li key={li}>
+                      <Texto>{li}</Texto>
+                    </li>
                   ))}
-                </ul>
+                </Lista>
               )
-            return <p key={i}>{block.p}</p>
+            }
+            return (
+              <p key={i}>
+                <Texto>{block.p}</Texto>
+              </p>
+            )
           })}
         </div>
+
+        {post.faq?.length > 0 && (
+          <section className="mt-6 border-t border-line pt-10">
+            <h2 className="text-[26px] font-bold leading-[1.18] text-ink sm:text-[30px]">Perguntas frequentes</h2>
+            <Faq items={post.faq.map((f) => ({ q: f.q, a: <Texto>{f.a}</Texto> }))} className="mt-6" />
+          </section>
+        )}
 
         <aside className="mt-16 bg-ink p-9 text-white sm:p-12">
           <h2 className="font-bold text-[26px] leading-[1.18] sm:text-[32px]">

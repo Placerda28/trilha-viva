@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Breadcrumbs, SongGrid } from '@/components/ui'
 import { artistList, getArtist } from '@/lib/artists'
-import { site, priceBRL } from '@/lib/site'
+import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 
 export function generateStaticParams() {
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }) {
     title,
     description,
     alternates: { canonical: `/artistas/${artist.slug}` },
-    openGraph: { title, description, url: `${site.url}/artistas/${artist.slug}` },
+    openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/artistas/${artist.slug}` },
   }
 }
 

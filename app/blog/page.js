@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Breadcrumbs } from '@/components/ui'
 import { posts } from '@/lib/posts'
-import { site } from '@/lib/site'
+import { OG_IMAGEM, site } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 
 const title = 'Blog — multitrack, clique e guia para ministérios de louvor'
@@ -12,7 +12,7 @@ export const metadata = {
   title,
   description,
   alternates: { canonical: '/blog' },
-  openGraph: { title, description, url: `${site.url}/blog` },
+  openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/blog` },
 }
 
 const fmt = (d) =>

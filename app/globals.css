@@ -166,6 +166,20 @@ body {
     content: '';
     @apply absolute left-0 top-[14px] h-[6px] w-[6px] bg-signal;
   }
+  /* Lista numerada (sequência de verdade, como um setlist): número no lugar do quadrado. */
+  .prose-tv ol {
+    @apply mt-5 space-y-2.5 text-[18px] leading-[1.7] text-ink-muted;
+    counter-reset: item;
+  }
+  .prose-tv ol > li {
+    counter-increment: item;
+    @apply pl-8;
+  }
+  .prose-tv ol > li::before {
+    content: counter(item) '.';
+    @apply top-0 h-auto w-auto bg-transparent font-bold text-ink;
+    font-variant-numeric: tabular-nums;
+  }
   .prose-tv strong {
     @apply font-semibold text-ink;
   }

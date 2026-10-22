@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Breadcrumbs } from '@/components/ui'
-import { site } from '@/lib/site'
+import { OG_IMAGEM, site } from '@/lib/site'
 import colecoes from '@/data/colecoes.json'
 
 const title = 'Coleções de multitracks por momento do culto'
@@ -10,7 +10,7 @@ export const metadata = {
   title,
   description,
   alternates: { canonical: '/colecoes' },
-  openGraph: { title, description, url: `${site.url}/colecoes` },
+  openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/colecoes` },
 }
 
 export default function ColecoesPage() {

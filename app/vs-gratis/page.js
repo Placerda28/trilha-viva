@@ -4,7 +4,7 @@ import VsGratisForm from '@/components/VsGratisForm'
 import { getSong } from '@/lib/catalog'
 import { getFicha } from '@/lib/ficha'
 import { linhaDaFicha } from '@/lib/textos-musica'
-import { site, priceBRL } from '@/lib/site'
+import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 
 // A VS grátis do site (item 5 do plano de SEO). É a mesma música que o Zorcha
@@ -19,7 +19,7 @@ export const metadata = {
   title: { absolute: title },
   description,
   alternates: { canonical: '/vs-gratis' },
-  openGraph: { title, description, url: `${site.url}/vs-gratis` },
+  openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/vs-gratis` },
 }
 
 const perguntas = [

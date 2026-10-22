@@ -1,5 +1,5 @@
 import { Breadcrumbs } from '@/components/ui'
-import { site } from '@/lib/site'
+import { OG_IMAGEM, site } from '@/lib/site'
 
 const title = 'Política de privacidade'
 const description = 'Como a Trilha Viva trata os seus dados pessoais.'
@@ -8,7 +8,7 @@ export const metadata = {
   title,
   description,
   alternates: { canonical: '/privacidade' },
-  openGraph: { title, description, url: `${site.url}/privacidade` },
+  openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/privacidade` },
 }
 
 export default function PrivacidadePage() {

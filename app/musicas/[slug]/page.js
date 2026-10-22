@@ -4,7 +4,7 @@ import { Breadcrumbs, SongGrid, Check } from '@/components/ui'
 import { SessionPanel } from '@/components/Track'
 import { songs, getSong, relatedSongs } from '@/lib/catalog'
 import { artistSlug } from '@/lib/artists'
-import { site, priceBRL, discountPct } from '@/lib/site'
+import { OG_IMAGEM, site, priceBRL, discountPct } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 import { EventoAoAbrir } from '@/components/MetaPixel'
 import { getFicha } from '@/lib/ficha'
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }) {
     title: ehVs ? title : { absolute: title },
     description,
     alternates: { canonical: `/musicas/${song.slug}` },
-    openGraph: { title, description, url: `${site.url}/musicas/${song.slug}`, type: 'music.song' },
+    openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/musicas/${song.slug}`, type: 'music.song' },
   }
 }
 

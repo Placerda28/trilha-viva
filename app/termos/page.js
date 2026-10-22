@@ -1,5 +1,5 @@
 import { Breadcrumbs } from '@/components/ui'
-import { site, priceBRL } from '@/lib/site'
+import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
 
 const title = 'Termos de uso'
 const description = 'Condições de uso do acervo Trilha Viva — Multitracks Gospel.'
@@ -8,7 +8,7 @@ export const metadata = {
   title,
   description,
   alternates: { canonical: '/termos' },
-  openGraph: { title, description, url: `${site.url}/termos` },
+  openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/termos` },
 }
 
 export default function TermosPage() {

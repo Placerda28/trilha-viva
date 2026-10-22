@@ -4,7 +4,7 @@ import { Breadcrumbs, Faq, Check } from '@/components/ui'
 import { getSong } from '@/lib/catalog'
 import { getFicha } from '@/lib/ficha'
 import { linhaDaFicha } from '@/lib/textos-musica'
-import { site, priceBRL, discountPct } from '@/lib/site'
+import { OG_IMAGEM, site, priceBRL, discountPct } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 import colecoes from '@/data/colecoes.json'
 
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }) {
     title: { absolute: c.titulo },
     description: c.descricao,
     alternates: { canonical: `/colecoes/${slug}` },
-    openGraph: { title: c.titulo, description: c.descricao, url: `${site.url}/colecoes/${slug}` },
+    openGraph: { images: OG_IMAGEM, title: c.titulo, description: c.descricao, url: `${site.url}/colecoes/${slug}` },
   }
 }
 

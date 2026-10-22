@@ -27,31 +27,462 @@
     "setlistTitulo": "Sugestão de setlist para a cantata",
     "setlistTexto": "Da abertura animada à adoração, com final congregacional. A barra mostra o andamento de cada música: é a curva de energia da noite.",
     "setlist": [
-      { "slug": "vem-que-esta-chegando-o-natal-aline-barros", "motivo": "Abre em festa, e todo mundo conhece." },
-      { "slug": "jesus-nasceu-jemima", "motivo": "Mantém a energia e anuncia o motivo da noite." },
-      { "slug": "o-come-all-ye-faithful-planetshakers", "motivo": "O hino clássico, que a igreja canta junto." },
-      { "slug": "nasceu-em-belem-israel-salazar", "motivo": "Conta a história do nascimento e prepara a transição." },
-      { "slug": "maria-tu-sabias-fhop-music", "motivo": "O momento de reflexão, bom para um solista." },
-      { "slug": "o-vem-o-vem-emanuel-fhop-music", "motivo": "A adoração mais profunda, para a igreja cantar devagar." },
-      { "slug": "o-noite-santa-fhop-music", "motivo": "O ponto alto da cantata." },
-      { "slug": "gloria-e-aleluia-christmas-gabriel-guedes", "motivo": "Fecha com a igreja inteira cantando." }
+      {
+        "slug": "vem-que-esta-chegando-o-natal-aline-barros",
+        "motivo": "Abre em festa, e todo mundo conhece."
+      },
+      {
+        "slug": "jesus-nasceu-jemima",
+        "motivo": "Mantém a energia e anuncia o motivo da noite."
+      },
+      {
+        "slug": "o-come-all-ye-faithful-planetshakers",
+        "motivo": "O hino clássico, que a igreja canta junto."
+      },
+      {
+        "slug": "nasceu-em-belem-israel-salazar",
+        "motivo": "Conta a história do nascimento e prepara a transição."
+      },
+      {
+        "slug": "maria-tu-sabias-fhop-music",
+        "motivo": "O momento de reflexão, bom para um solista."
+      },
+      {
+        "slug": "o-vem-o-vem-emanuel-fhop-music",
+        "motivo": "A adoração mais profunda, para a igreja cantar devagar."
+      },
+      {
+        "slug": "o-noite-santa-fhop-music",
+        "motivo": "O ponto alto da cantata."
+      },
+      {
+        "slug": "gloria-e-aleluia-christmas-gabriel-guedes",
+        "motivo": "Fecha com a igreja inteira cantando."
+      }
     ],
     "dicasTitulo": "Como preparar a cantata com VS",
     "dicas": [
-      { "t": "Ensaie com o clique desde três semanas antes", "d": "A banda e o coral se acostumam com o andamento da trilha cedo, e o último ensaio serve só para ajustar detalhes." },
-      { "t": "Ajuste o tom ao coral", "d": "Se o coral ou o solista canta melhor em outro tom, transponha os instrumentos e as vozes no seu programa, sem mexer no clique e na guia." },
-      { "t": "Mute o vocal da trilha quando houver coral", "d": "Com coral ou solista ao vivo, desligue o vocal principal da multitrack e deixe só o backing, se precisar de reforço." },
-      { "t": "Monte a cantata num projeto só", "d": "Coloque as músicas na ordem do setlist dentro de um único projeto. Na hora, é só seguir em frente, sem abrir arquivo no meio da apresentação." },
-      { "t": "Leve um backup num pendrive", "d": "Copie o projeto e as trilhas para um pendrive. Se o computador travar, você troca de máquina e segue." }
+      {
+        "t": "Ensaie com o clique desde três semanas antes",
+        "d": "A banda e o coral se acostumam com o andamento da trilha cedo, e o último ensaio serve só para ajustar detalhes."
+      },
+      {
+        "t": "Ajuste o tom ao coral",
+        "d": "Se o coral ou o solista canta melhor em outro tom, transponha os instrumentos e as vozes no seu programa, sem mexer no clique e na guia."
+      },
+      {
+        "t": "Mute o vocal da trilha quando houver coral",
+        "d": "Com coral ou solista ao vivo, desligue o vocal principal da multitrack e deixe só o backing, se precisar de reforço."
+      },
+      {
+        "t": "Monte a cantata num projeto só",
+        "d": "Coloque as músicas na ordem do setlist dentro de um único projeto. Na hora, é só seguir em frente, sem abrir arquivo no meio da apresentação."
+      },
+      {
+        "t": "Leve um backup num pendrive",
+        "d": "Copie o projeto e as trilhas para um pendrive. Se o computador travar, você troca de máquina e segue."
+      }
     ],
     "pacoteTexto": "Pagamento único, acesso vitalício e o repertório de Natal pronto para o ensaio desta semana.",
     "faqTitulo": "Perguntas sobre VS de Natal",
     "faq": [
-      { "q": "Posso mudar o tom para o coral?", "a": "Pode. O tom e o andamento de cada música são os da versão original, e os dois mudam no programa que roda a VS (REAPER, Ableton, Prime e outros). Transponha os instrumentos e as vozes, mas não o clique nem a guia, e prefira até 2 ou 3 semitons." },
-      { "q": "Tem música de Natal infantil?", "a": "O acervo é voltado ao louvor da igreja e não tem uma coleção infantil de Natal. Para um coral de crianças, as músicas mais conhecidas da lista, como Vem Que Está Chegando o Natal e Jesus Nasceu, funcionam bem com o tom ajustado para as vozes infantis no seu programa." },
-      { "q": "As VS de Natal estão no pacote?", "a": "Estão. Todas as músicas desta página fazem parte do pacote com mais de 2.000 multitracks, por R$ 89,90, em pagamento único. Não há cobrança separada por música." }
+      {
+        "q": "Posso mudar o tom para o coral?",
+        "a": "Pode. O tom e o andamento de cada música são os da versão original, e os dois mudam no programa que roda a VS (REAPER, Ableton, Prime e outros). Transponha os instrumentos e as vozes, mas não o clique nem a guia, e prefira até 2 ou 3 semitons."
+      },
+      {
+        "q": "Tem música de Natal infantil?",
+        "a": "O acervo é voltado ao louvor da igreja e não tem uma coleção infantil de Natal. Para um coral de crianças, as músicas mais conhecidas da lista, como Vem Que Está Chegando o Natal e Jesus Nasceu, funcionam bem com o tom ajustado para as vozes infantis no seu programa."
+      },
+      {
+        "q": "As VS de Natal estão no pacote?",
+        "a": "Estão. Todas as músicas desta página fazem parte do pacote com mais de 2.000 multitracks, por R$ 89,90, em pagamento único. Não há cobrança separada por música."
+      }
     ],
-    "faixaHome": { "de": "11-01", "ate": "12-25", "texto": "Natal chegando: veja as VS para a cantata →" },
+    "faixaHome": {
+      "de": "11-01",
+      "ate": "12-25",
+      "texto": "Natal chegando: veja as VS para a cantata →"
+    },
     "atualizada": "2026-10-21"
+  },
+  "santa-ceia": {
+    "titulo": "Multitracks para Santa Ceia: VS para a ceia do Senhor | Trilha Viva",
+    "descricao": "VS para o momento da Santa Ceia: músicas sobre a cruz, o sangue e o Cordeiro, com BPM, tom e canais separados. Todas no pacote por R$ 89,90.",
+    "nome": "Multitracks para Santa Ceia",
+    "h1": "Multitracks para Santa Ceia",
+    "abertura": "A Santa Ceia pede música que ajude a igreja a lembrar da cruz sem pressa. Aqui estão as multitracks do acervo que falam do sangue, da cruz e do Cordeiro, com o BPM e o tom de cada uma. A maioria é calma, boa para tocar baixinho enquanto os elementos são servidos, e algumas servem para fechar o momento com a igreja cantando.",
+    "dicasTitulo": "Como usar VS na Santa Ceia",
+    "dicas": [
+      {
+        "t": "Escolha músicas que a igreja já conhece",
+        "d": "Na hora da ceia, a igreja canta de olhos fechados. Música conhecida deixa todo mundo concentrado no momento, e não na letra."
+      },
+      {
+        "t": "Deixe a trilha mais baixa enquanto os elementos são servidos",
+        "d": "Mute a bateria e deixe teclado, pads e cordas segurando o fundo. Assim, o pastor pode falar por cima sem disputar com a banda."
+      },
+      {
+        "t": "Combine com quem ministra quando a música entra",
+        "d": "A guia avisa as partes da música, mas é o pastor quem conduz a ceia. Combine antes em que momento a música começa e se ela repete."
+      },
+      {
+        "t": "Tenha uma música de reserva",
+        "d": "Se a distribuição demorar mais do que o previsto, já deixe a próxima música carregada no projeto para emendar sem silêncio."
+      }
+    ],
+    "faqTitulo": "Perguntas sobre VS para Santa Ceia",
+    "faq": [
+      {
+        "q": "Que tipo de música combina com a Santa Ceia?",
+        "a": "Músicas mais lentas, que falam da cruz, do sangue de Jesus e do Cordeiro, como as desta página. Elas ajudam a igreja a ficar em silêncio e reflexão enquanto os elementos são servidos."
+      },
+      {
+        "q": "Posso mudar o tom e o andamento?",
+        "a": "Pode. O tom e o BPM de cada música são os da versão original, e os dois mudam no programa que roda a VS (REAPER, Ableton, Prime e outros). Transponha os instrumentos e as vozes, mas não o clique nem a guia."
+      },
+      {
+        "q": "As VS de Santa Ceia estão no pacote?",
+        "a": "Estão. Todas as músicas desta página fazem parte do pacote com mais de 2.000 multitracks, por R$ 89,90, em pagamento único. Não há cobrança separada por música."
+      }
+    ],
+    "musicas": [
+      "a-cruz-vazia-kleber-lucas",
+      "ao-pe-da-cruz-novo-canto",
+      "aos-pes-da-cruz-eli-soares",
+      "calvario-cidade-viva-music",
+      "cancao-ao-cordeiro-gabriel-guedes",
+      "cancao-ao-cordeiro-israel-salazar",
+      "cruz-casa-worship",
+      "cruz-reino-song",
+      "culto-do-calvario-anderson-freire",
+      "depois-da-cruz-aline-barros",
+      "diante-da-cruz-aline-barros",
+      "digno-e-o-cordeiro-diante-do-trono",
+      "digno-e-o-cordeiro-gabi-sampaio",
+      "foi-na-cruz-andre-valadao",
+      "foi-na-cruz-jefferson-e-suellen",
+      "la-na-cruz-gabriel-guedes",
+      "nada-alem-do-sangue-fernandinho",
+      "nao-mais-eu-foi-na-cruz-celebra-sp",
+      "o-cordeiro-e-o-leao-marcus-salles",
+      "pelo-sangue-renascer-praise",
+      "poder-da-cruz-aline-barros",
+      "preco-de-sangue-adai-music",
+      "seu-sangue-fernandinho"
+    ],
+    "pacoteTexto": "Pagamento único, acesso vitalício e o repertório pronto para o próximo ensaio.",
+    "atualizada": "2026-10-22"
+  },
+  "batismo": {
+    "titulo": "Multitracks para culto de batismo: VS com clique e guia | Trilha Viva",
+    "descricao": "VS para culto de batismo: músicas sobre águas, rio e nova vida, com BPM, tom e canais separados. Todas no pacote Trilha Viva por R$ 89,90.",
+    "nome": "Multitracks para batismo",
+    "h1": "Multitracks para culto de batismo",
+    "abertura": "O culto de batismo tem dois momentos de música: o da celebração, quando a igreja recebe quem está descendo às águas, e o da reflexão, enquanto cada pessoa é batizada. Aqui estão as multitracks do acervo que falam de águas, de rio e de nova vida, com o BPM e o tom de cada uma, para você montar os dois momentos.",
+    "dicasTitulo": "Como usar VS no culto de batismo",
+    "dicas": [
+      {
+        "t": "Separe uma música para cada momento",
+        "d": "Uma mais animada para a entrada e a celebração, e outras mais calmas para tocar enquanto as pessoas são batizadas."
+      },
+      {
+        "t": "Deixe a trilha pronta para repetir",
+        "d": "O tempo de cada batismo muda. Combine com a equipe qual parte da música repete até a última pessoa sair da água."
+      },
+      {
+        "t": "Cuidado com o som perto do tanque",
+        "d": "Se a banda ou o computador ficarem perto da água, proteja os cabos e o equipamento. Prefira deixar a VS rodando longe do tanque."
+      },
+      {
+        "t": "Feche com a igreja cantando",
+        "d": "Depois do último batismo, uma música que todo mundo conhece fecha o culto em festa."
+      }
+    ],
+    "faqTitulo": "Perguntas sobre VS para batismo",
+    "faq": [
+      {
+        "q": "Que músicas usar no culto de batismo?",
+        "a": "Músicas que falam de águas, de rio e de nova vida, como as desta página. Use as mais animadas na celebração e as mais calmas enquanto as pessoas são batizadas."
+      },
+      {
+        "q": "Posso mudar o tom e o andamento?",
+        "a": "Pode. O tom e o BPM de cada música são os da versão original, e os dois mudam no programa que roda a VS (REAPER, Ableton, Prime e outros). Transponha os instrumentos e as vozes, mas não o clique nem a guia."
+      },
+      {
+        "q": "As VS de batismo estão no pacote?",
+        "a": "Estão. Todas as músicas desta página fazem parte do pacote com mais de 2.000 multitracks, por R$ 89,90, em pagamento único. Não há cobrança separada por música."
+      }
+    ],
+    "musicas": [
+      "agua-viva-diante-do-trono",
+      "aguas-profundas-david-quinlan",
+      "aguas-purificadoras-diante-do-trono",
+      "aguas-purificadoras-oceanos-isaias-saad",
+      "batiza-me-fernandinho",
+      "ceus-abertos-como-um-rio-hillsong",
+      "existe-um-rio-ana-nobrega",
+      "manancial-de-aguas-vivas-toque-no-altar",
+      "o-rio-central-msc",
+      "rio-nivea-soares",
+      "rio-ezequiel-47-lorens-salcedo",
+      "sobre-as-aguas-dunamis-music",
+      "sobre-as-aguas-felipe-rodrigues",
+      "som-das-aguas-julia-vitoria",
+      "tu-es-aguas-purificadoras-fhop-music",
+      "tuas-aguas-gabriela-rocha",
+      "tuas-aguas-julia-vitoria"
+    ],
+    "pacoteTexto": "Pagamento único, acesso vitalício e o repertório pronto para o próximo ensaio.",
+    "atualizada": "2026-10-22"
+  },
+  "abertura-de-culto": {
+    "titulo": "Multitracks para abrir o culto: VS de celebração | Trilha Viva",
+    "descricao": "VS de celebração para abrir o culto, todas acima de 110 BPM, com clique, guia e canais separados. Todas no pacote Trilha Viva por R$ 89,90.",
+    "nome": "Multitracks para abrir o culto",
+    "h1": "Multitracks para abrir o culto",
+    "abertura": "A primeira música dá o tom do culto inteiro. Aqui estão as multitracks de celebração do acervo com andamento acima de 110 BPM, boas para receber a igreja que está chegando e levantar a energia logo no começo. Cada uma traz o BPM e o tom, para você montar a abertura sem surpresa.",
+    "dicasTitulo": "Como abrir o culto com VS",
+    "dicas": [
+      {
+        "t": "Comece com o que a igreja conhece",
+        "d": "A abertura não é hora de ensinar música nova. Uma música conhecida faz a igreja cantar desde o primeiro refrão."
+      },
+      {
+        "t": "Clique bem alto no fone do baterista",
+        "d": "Música rápida não perdoa atraso. Com o clique alto, a banda segura o andamento do começo ao fim."
+      },
+      {
+        "t": "Emende a segunda música",
+        "d": "Deixe a próxima música logo depois no projeto. A guia avisa o final, e a banda entra na seguinte sem silêncio."
+      },
+      {
+        "t": "Confira o som antes de a igreja chegar",
+        "d": "A abertura é o primeiro som que a igreja ouve. Teste o volume da trilha com o templo vazio e ajuste quando encher."
+      }
+    ],
+    "faqTitulo": "Perguntas sobre VS para abrir o culto",
+    "faq": [
+      {
+        "q": "Qual BPM é bom para abrir o culto?",
+        "a": "As músicas desta página têm todas mais de 110 BPM: é o andamento das músicas de celebração, que levantam a igreja logo no começo do culto."
+      },
+      {
+        "q": "Posso mudar o tom e o andamento?",
+        "a": "Pode. O tom e o BPM de cada música são os da versão original, e os dois mudam no programa que roda a VS (REAPER, Ableton, Prime e outros). Transponha os instrumentos e as vozes, mas não o clique nem a guia."
+      },
+      {
+        "q": "As VS de abertura de culto estão no pacote?",
+        "a": "Estão. Todas as músicas desta página fazem parte do pacote com mais de 2.000 multitracks, por R$ 89,90, em pagamento único. Não há cobrança separada por música."
+      }
+    ],
+    "musicas": [
+      "a-alegria-isadora-pompeo",
+      "a-alegria-do-senhor-fernandinho",
+      "a-alegria-do-senhor-livres-para-adorar",
+      "a-alegria-do-senhor-theo-rubia",
+      "a-gloria-e-tua-anderson-freire",
+      "a-seu-sangue-infinitamente-medley-mineirao-fernandinho",
+      "aleluia-cfamusic",
+      "atos-2-gabriela-rocha",
+      "barulho-de-festa-israel-salazar",
+      "celebrar-vitoria-heloisa-rosa",
+      "cordeiro-e-leao-isaque-valadao-bessa",
+      "deus-reina-diante-do-trono",
+      "ele-reina-jefferson-e-suellen",
+      "eu-celebrarei-4-por-1",
+      "eu-quero-e-deus-celebrai-a-cristo-aquele-que-esta-feliz-morada",
+      "eu-vejo-a-gloria-fred-vieira",
+      "hino-da-vitoria-gabriela-rocha",
+      "intro-a-alegria-mateus-brito",
+      "medley-paz-church",
+      "medley-israel-diante-do-trono",
+      "medley-tempo-de-festa-diante-do-trono",
+      "medley-you-are-good-israel-houghton",
+      "o-escudo-sou-um-milagre-lukas-agustinho",
+      "o-rei-esta-voltando-wesley-santos",
+      "rei-do-meu-coracao-gabi-sampaio",
+      "reina-em-mim-israel-salazar",
+      "reina-o-senhor-nivea-soares",
+      "senhor-te-quero-ele-vem-tudo-diferente-morada",
+      "som-da-alegria-tabernaculos-hino-oficial-antonio-cirilo",
+      "tempo-de-festa-diante-do-trono",
+      "tu-es-o-rei-no-meio-dos-louvores-israel-salazar",
+      "tua-alegria-drops",
+      "um-novo-dia-get-worship",
+      "vem-reinar-com-cristo",
+      "vitoria-na-cruz-israel-salazar"
+    ],
+    "pacoteTexto": "Pagamento único, acesso vitalício e o repertório pronto para o próximo ensaio.",
+    "atualizada": "2026-10-22"
+  },
+  "ministracao": {
+    "titulo": "Multitracks para ministração: VS de adoração até 80 BPM | Trilha Viva",
+    "descricao": "VS para o momento de ministração e adoração, todas até 80 BPM, com pads, clique e guia separados. Todas no pacote Trilha Viva por R$ 89,90.",
+    "nome": "Multitracks para ministração",
+    "h1": "Multitracks para ministração",
+    "abertura": "O momento de ministração pede espaço: música lenta, pad segurando o fundo e uma banda que acompanha o ministro sem pressa. Aqui estão as multitracks de adoração e ministração do acervo com andamento até 80 BPM, com o BPM e o tom de cada uma.",
+    "dicasTitulo": "Como usar VS na ministração",
+    "dicas": [
+      {
+        "t": "Deixe o pad mais presente",
+        "d": "Nas partes mais calmas, é o pad que sustenta o momento. Suba um pouco o pad no PA e baixe a bateria da trilha."
+      },
+      {
+        "t": "Combine as partes livres",
+        "d": "A guia avisa a próxima parte, mas na ministração o ministro pode estender um refrão. Combine no ensaio quem decide a hora de seguir."
+      },
+      {
+        "t": "Use o clique mesmo nas músicas lentas",
+        "d": "Em música lenta, a banda tende a arrastar. O clique no fone do baterista mantém o andamento."
+      },
+      {
+        "t": "Tenha um pad de fundo para as transições",
+        "d": "Entre uma música e outra, um pad no mesmo tom evita o silêncio enquanto o ministro fala."
+      }
+    ],
+    "faqTitulo": "Perguntas sobre VS para ministração",
+    "faq": [
+      {
+        "q": "Qual BPM é bom para ministração?",
+        "a": "As músicas desta página têm todas até 80 BPM. É o andamento mais lento, que dá espaço para o ministro conduzir e para a igreja adorar sem pressa."
+      },
+      {
+        "q": "Posso mudar o tom e o andamento?",
+        "a": "Pode. O tom e o BPM de cada música são os da versão original, e os dois mudam no programa que roda a VS (REAPER, Ableton, Prime e outros). Transponha os instrumentos e as vozes, mas não o clique nem a guia."
+      },
+      {
+        "q": "As VS de ministração estão no pacote?",
+        "a": "Estão. Todas as músicas desta página fazem parte do pacote com mais de 2.000 multitracks, por R$ 89,90, em pagamento único. Não há cobrança separada por música."
+      }
+    ],
+    "musicas": [
+      "acende-o-fogo-eu-me-prostro-nivea-soares",
+      "aguas-purificadoras-diante-do-trono",
+      "altar-seu-worship",
+      "atraidos-pelo-fogo-casa-worship",
+      "batiza-com-teu-fogo-filipe-bruno",
+      "caia-fogo-sarah-oliveira",
+      "caminho-de-milagres-aline-barros",
+      "caminho-no-deserto-soraya-moraes",
+      "digno-de-tudo-fhop-music",
+      "digno-de-tudo-nada-mais-satisfaz-ate-que-nada-mais-importe-gabi-sampaio",
+      "digno-e-o-cordeiro-gabi-sampaio",
+      "digno-e-o-senhor-felipe-rodrigues",
+      "digno-e-o-senhor-gabi-sampaio",
+      "digno-majestade-santa-brasas",
+      "em-espirito-arieta-magrini",
+      "em-tua-presenca-felipe-rodrigues",
+      "em-tua-presenca-nivea-soares",
+      "em-tua-presenca-shek-worship",
+      "espirito-enche-a-minha-vida-gabriela-rocha",
+      "essencia-da-adoracao-david-quinlan",
+      "essencia-da-adoracao-gabi-sampaio",
+      "estou-procurando-fernandinho",
+      "eu-me-rendo-renascer-praise",
+      "eu-me-rendo-i-surrender-hillsong",
+      "fogo-consumidor-fernandinho",
+      "fogo-do-ceu-fernandinho",
+      "fogo-nao-queima-anna-clara-rocha",
+      "holy-forever-bethel-music",
+      "holy-holy-holy-santo-santo-santo-gateway-worship",
+      "holy-spirit-jesus-culture",
+      "holy-holy-holy-savior-and-king-gateway-worship",
+      "jesus-em-tua-presenca-morada",
+      "loucura-mateus-brito",
+      "lugar-secreto-gabriela-rocha",
+      "marca-da-promessa-trazendo-a-arca",
+      "me-atraiu-gabriela-rocha",
+      "me-entrego-a-ti-nivea-soares",
+      "milagres-livres-para-adorar",
+      "minha-morada-isadora-pompeo",
+      "minhas-guerras-gabriel-guedes",
+      "minhas-guerras-renato-mimessi",
+      "o-come-to-the-altar-elevation-worship",
+      "o-mover-do-teu-espirito-renova-me-estrela-da-manha-morada",
+      "santo-gabriel-guedes",
+      "santo-jesus-culture",
+      "santo-deus-heloisa-rosa",
+      "santo-espirito-diante-do-trono",
+      "santo-espirito-jesus-culture",
+      "santo-pra-sempre-ana-nobrega",
+      "seja-o-lugar-de-adoracao-heloisa-rosa",
+      "so-tu-es-santo-morada",
+      "sonda-me-aline-barros",
+      "te-esperamos-salvaon",
+      "teu-amor-e-mais-forte-adai-music",
+      "tu-es-aguas-purificadoras-fhop-music",
+      "tua-presenca-diante-do-trono",
+      "tua-presenca-renovo",
+      "worthy-of-it-all-cece-winans",
+      "worthy-of-it-all-shane-shane",
+      "yeshua-alessandro-vilas-boas",
+      "yeshua-heloisa-rosa",
+      "yeshua-julliany-souza",
+      "yeshua-la-iglesia-que-ruja-el-leon-jordan-mateo"
+    ],
+    "pacoteTexto": "Pagamento único, acesso vitalício e o repertório pronto para o próximo ensaio.",
+    "atualizada": "2026-10-22"
+  },
+  "culto-de-jovens": {
+    "titulo": "Multitracks para culto de jovens: VS de celebração | Trilha Viva",
+    "descricao": "VS para culto de jovens: celebração com andamento acima de 110 BPM, dos artistas que a juventude escuta. Todas no pacote Trilha Viva por R$ 89,90.",
+    "nome": "Multitracks para culto de jovens",
+    "h1": "Multitracks para culto de jovens",
+    "abertura": "Culto de jovens pede repertório atual e com energia. Aqui estão as multitracks de celebração do acervo com andamento a partir de 110 BPM, de artistas como Gabriela Rocha, Isadora Pompeo, Morada e Israel Salazar, com o BPM e o tom de cada uma.",
+    "dicasTitulo": "Como usar VS no culto de jovens",
+    "dicas": [
+      {
+        "t": "Deixe a banda jovem tocar por cima",
+        "d": "Mute na trilha os instrumentos que os jovens já tocam e deixe ligado o resto. É um ótimo jeito de formar músicos novos."
+      },
+      {
+        "t": "Use o clique para treinar a banda",
+        "d": "Ensaiar com clique e guia ensina a banda a tocar junto. O que se aprende no culto de jovens vale para o culto de domingo."
+      },
+      {
+        "t": "Monte blocos de 2 ou 3 músicas",
+        "d": "Junte músicas de andamento parecido num bloco só, sem parar entre elas. A energia não cai."
+      },
+      {
+        "t": "Confira a letra antes",
+        "d": "Repertório novo muda rápido. Antes do culto, confira se a equipe de vozes sabe a letra da versão que está na trilha."
+      }
+    ],
+    "faqTitulo": "Perguntas sobre VS para culto de jovens",
+    "faq": [
+      {
+        "q": "Quais músicas usar no culto de jovens?",
+        "a": "As desta página são de celebração, com andamento a partir de 110 BPM, de artistas que a juventude escuta, como Gabriela Rocha, Isadora Pompeo, Morada e Israel Salazar."
+      },
+      {
+        "q": "Posso mudar o tom e o andamento?",
+        "a": "Pode. O tom e o BPM de cada música são os da versão original, e os dois mudam no programa que roda a VS (REAPER, Ableton, Prime e outros). Transponha os instrumentos e as vozes, mas não o clique nem a guia."
+      },
+      {
+        "q": "As VS de culto de jovens estão no pacote?",
+        "a": "Estão. Todas as músicas desta página fazem parte do pacote com mais de 2.000 multitracks, por R$ 89,90, em pagamento único. Não há cobrança separada por música."
+      }
+    ],
+    "musicas": [
+      "a-alegria-isadora-pompeo",
+      "a-alegria-do-senhor-theo-rubia",
+      "atos-2-gabriela-rocha",
+      "barulho-de-festa-israel-salazar",
+      "eu-quero-e-deus-celebrai-a-cristo-aquele-que-esta-feliz-morada",
+      "hino-da-vitoria-gabriela-rocha",
+      "intro-a-alegria-mateus-brito",
+      "medley-paz-church",
+      "o-escudo-sou-um-milagre-lukas-agustinho",
+      "reina-em-mim-israel-salazar",
+      "senhor-te-quero-ele-vem-tudo-diferente-morada",
+      "tu-es-o-rei-no-meio-dos-louvores-israel-salazar",
+      "tua-alegria-drops",
+      "um-novo-dia-get-worship",
+      "vem-reinar-com-cristo",
+      "vitoria-na-cruz-israel-salazar"
+    ],
+    "pacoteTexto": "Pagamento único, acesso vitalício e o repertório pronto para o próximo ensaio.",
+    "atualizada": "2026-10-22"
   }
 }

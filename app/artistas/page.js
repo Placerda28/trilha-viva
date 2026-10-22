@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ChannelStrip } from '@/components/Track'
 import { Breadcrumbs } from '@/components/ui'
 import { artistList } from '@/lib/artists'
-import { site, priceBRL } from '@/lib/site'
+import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
 
 const title = 'Artistas e ministérios com multitrack gospel'
 const description =
@@ -12,7 +12,7 @@ export const metadata = {
   title,
   description,
   alternates: { canonical: '/artistas' },
-  openGraph: { title, description, url: `${site.url}/artistas` },
+  openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/artistas` },
 }
 
 export default function ArtistasPage() {

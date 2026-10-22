@@ -3,7 +3,7 @@ import { Breadcrumbs } from '@/components/ui'
 import FiltroBpm from '@/components/FiltroBpm'
 import { songs } from '@/lib/catalog'
 import { getFicha } from '@/lib/ficha'
-import { site, priceBRL } from '@/lib/site'
+import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 
 // Tabela de BPM e tom (item 4.2 do plano de SEO). Só entram músicas com BPM
@@ -25,7 +25,7 @@ export const metadata = {
   title: { absolute: title },
   description,
   alternates: { canonical: '/bpm' },
-  openGraph: { title, description, url: `${site.url}/bpm` },
+  openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/bpm` },
 }
 
 const ld = {
