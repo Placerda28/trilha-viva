@@ -4,6 +4,7 @@ import { posts } from '@/lib/posts'
 import { site } from '@/lib/site'
 import lastmod from '@/data/lastmod.json'
 import redirects from '@/data/redirects.json'
+import colecoes from '@/data/colecoes.json'
 
 // Pré-renderizado no build: os agrupamentos abaixo não rodam a cada visita.
 export const dynamic = 'force-static'
@@ -19,6 +20,7 @@ const paginas = {
   '/faq': '2026-09-05',
   '/termos': '2026-09-05',
   '/privacidade': '2026-10-12',
+  '/colecoes': '2026-10-21',
 }
 
 // Data em que o modelo da página de música mudou para todas (ficha técnica real,
@@ -43,5 +45,9 @@ export default function sitemap() {
     url: `${site.url}/blog/${p.slug}`,
     lastModified: p.updated || p.date,
   }))
-  return [...statics, ...songUrls, ...artistUrls, ...postUrls]
+  const colecaoUrls = Object.entries(colecoes).map(([slug, c]) => ({
+    url: `${site.url}/colecoes/${slug}`,
+    lastModified: c.atualizada,
+  }))
+  return [...statics, ...colecaoUrls, ...songUrls, ...artistUrls, ...postUrls]
 }

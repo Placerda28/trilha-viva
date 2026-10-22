@@ -4,6 +4,8 @@ import { SessionPanel, CHANNELS } from '@/components/Track'
 import BarraCompra from '@/components/BarraCompra'
 import HomeAbertura from '@/components/HomeAbertura'
 import HomeProgramasPreco from '@/components/HomeProgramasPreco'
+import FaixaSazonal from '@/components/FaixaSazonal'
+import colecoes from '@/data/colecoes.json'
 import { destaques } from '@/lib/catalog'
 import { artistList } from '@/lib/artists'
 import { site, includes, priceBRL } from '@/lib/site'
@@ -183,6 +185,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Faixa do Natal (01/11 a 25/12), acima do acervo; some sozinha em 26/12. */}
+      <FaixaSazonal href="/colecoes/natal" faixa={colecoes.natal.faixaHome} />
 
       {/* ACERVO */}
       <section className="mt-20 bg-mist py-20 sm:mt-28 sm:py-28">

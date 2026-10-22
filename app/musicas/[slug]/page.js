@@ -9,6 +9,10 @@ import { ldJson } from '@/lib/safe'
 import { EventoAoAbrir } from '@/components/MetaPixel'
 import { getFicha } from '@/lib/ficha'
 import { linhaDaFicha, duracaoIso, metaDaMusica, blocoBpm, frasesDeUso } from '@/lib/textos-musica'
+import colecoes from '@/data/colecoes.json'
+
+// Música que está numa coleção ganha o link para ela (ex.: "Ver todas as VS de Natal").
+const LINK_DA_COLECAO = { natal: 'Ver todas as VS de Natal' }
 
 export function generateStaticParams() {
   return songs.map((s) => ({ slug: s.slug }))
@@ -143,6 +147,13 @@ export default async function SongPage({ params }) {
                 ? `Ver todo o acervo de ${song.artist}`
                 : `Ver todos os multitracks de ${song.artist}`}
             </Link>
+            {Object.entries(LINK_DA_COLECAO)
+              .filter(([c]) => colecoes[c]?.musicas.includes(song.slug))
+              .map(([c, texto]) => (
+                <Link key={c} href={`/colecoes/${c}`} className="link-quiet mt-3 block w-fit text-[14.5px] font-semibold">
+                  {texto}
+                </Link>
+              ))}
           </div>
 
           <div>

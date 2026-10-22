@@ -11,6 +11,7 @@ const columns = [
       { href: '/musicas?cat=Adora%C3%A7%C3%A3o', label: 'Multitracks de adoração' },
       { href: '/musicas?cat=Celebra%C3%A7%C3%A3o', label: 'Multitracks de celebração' },
       { href: '/musicas?cat=Congregacional', label: 'Congregacionais' },
+      { href: '/colecoes/natal', label: 'Multitracks de Natal' },
     ],
   },
   {

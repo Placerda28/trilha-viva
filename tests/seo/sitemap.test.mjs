@@ -9,14 +9,18 @@ import { carregarArtistas, lerJson } from '../../scripts/achar-redirects.mjs'
 const artistList = await carregarArtistas()
 const lastmod = lerJson('lastmod')
 const redirects = lerJson('redirects')
+const colecoes = lerJson('colecoes')
 const codigo = readFileSync(new URL('../../app/sitemap.js', import.meta.url), 'utf8')
 const sitemap = runInNewContext(codigo.replace(/^import .+$/gm, '').replace('export const dynamic', 'const dynamic').replace('export default function', 'function') + '\nsitemap()', {
-  songs, artistList, posts, lastmod, redirects, site: { url: 'https://trilhaviva.org' },
+  songs, artistList, posts, lastmod, redirects, colecoes, site: { url: 'https://trilhaviva.org' },
 })
+// 9 páginas fixas de antes, mais /colecoes, mais uma por coleção.
+const FIXAS = 10 + Object.keys(colecoes).length
 
 test('sitemap estático, completo, sem redirects e abaixo de 2.000 URLs', () => {
   assert.match(codigo, /export const dynamic = 'force-static'/)
-  assert.equal(sitemap.length, songs.length + artistList.length + posts.length + 9)
+  assert.equal(sitemap.length, songs.length + artistList.length + posts.length + FIXAS)
+  assert.ok(sitemap.some((p) => p.url === 'https://trilhaviva.org/colecoes/natal'))
   assert.ok(sitemap.length <= 2000)
   assert.equal(new Set(sitemap.map((p) => p.url)).size, sitemap.length)
   const datas = Object.values(lastmod)
