@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { SessionPanel } from '@/components/Track'
 import { destaques } from '@/lib/catalog'
 import { Breadcrumbs, SectionHead, Faq, Check } from '@/components/ui'
+import MudarTomBpm from '@/components/MudarTomBpm'
 import { tools, steps, usos } from '@/lib/tools'
 import { faq } from '@/lib/faq'
 import { site, priceBRL } from '@/lib/site'
@@ -259,6 +260,8 @@ export default function ComoUsarPage() {
           </div>
         </div>
       </section>
+
+      <MudarTomBpm />
 
       <section id="tablet" className="shell scroll-mt-24 pt-24 sm:pt-32">
         <SectionHead

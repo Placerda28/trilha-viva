@@ -7,18 +7,8 @@ import { artistSlug } from '@/lib/artists'
 import { site, priceBRL, discountPct } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 import { EventoAoAbrir } from '@/components/MetaPixel'
-
-const CANAIS = [
-  'Clique (metrônomo)',
-  'Guia falada',
-  'Bateria',
-  'Baixo',
-  'Teclado / Piano',
-  'Guitarra',
-  'Pads',
-  'Vocal principal',
-  'Backing vocals',
-]
+import { getFicha } from '@/lib/ficha'
+import { linhaDaFicha, duracaoIso, metaDaMusica, blocoBpm, frasesDeUso } from '@/lib/textos-musica'
 
 export function generateStaticParams() {
   return songs.map((s) => ({ slug: s.slug }))
@@ -31,30 +21,46 @@ export async function generateMetadata({ params }) {
   // O titulo e a descricao sao o que aparece no Google. Num VS MP3, prometer
   // "clique e guia" ali seria a mesma promessa falsa que a pagina ja evita.
   const ehVs = song.tipo === 'VS MP3'
-  const title = ehVs
-    ? `VS ${song.title} — ${song.artist} (playback mixado em MP3)`
-    : `Multitrack ${song.title} — ${song.artist} (VS com clique e guia)`
+  const meta = ehVs ? null : metaDaMusica(song, getFicha(song.slug))
+  const title = ehVs ? `VS ${song.title} — ${song.artist} (playback mixado em MP3)` : meta.titulo
   const description = ehVs
     ? `VS de ${song.title}, de ${song.artist}: MP3 já mixado, pronto para tocar, sem canais separados. Incluído no pacote Trilha Viva com mais de 2.000 VS gospel por ${priceBRL(site.price)}.`
-    : `Multitrack de ${song.title}, de ${song.artist}, com clique, guia e canais separados. Incluída no pacote Trilha Viva com mais de 2.000 VS gospel por ${priceBRL(site.price)}.`
+    : meta.descricao
   return {
-    title,
+    // O título novo já traz a marca (ou a corta quando fica longo): sem o modelo do layout.
+    title: ehVs ? title : { absolute: title },
     description,
     alternates: { canonical: `/musicas/${song.slug}` },
     openGraph: { title, description, url: `${site.url}/musicas/${song.slug}`, type: 'music.song' },
   }
 }
 
+// "Quem toca também usa": primeiro as do mesmo artista com BPM parecido (±8),
+// depois a escolha de sempre do catálogo. Roda no build (página estática).
+function relacionadas(song, ficha, n = 6) {
+  const proximas = ficha?.bpm
+    ? songs.filter((s) => {
+        if (s.slug === song.slug || s.artist !== song.artist) return false
+        const bpm = getFicha(s.slug)?.bpm
+        return bpm && Math.abs(bpm - ficha.bpm) <= 8
+      })
+    : []
+  const vistas = new Set(proximas.map((s) => s.slug))
+  return [...proximas, ...relatedSongs(song, n).filter((s) => !vistas.has(s.slug))].slice(0, n)
+}
+
 export default async function SongPage({ params }) {
   const { slug } = await params
   const song = getSong(slug)
   if (!song) notFound()
-  const related = relatedSongs(song, 6)
+  const ehVs = song.tipo === 'VS MP3'
+  const ficha = getFicha(song.slug)
+  const related = relacionadas(song, ficha)
+  const destaque = linhaDaFicha(ficha)
+  const bpmTexto = ehVs ? null : blocoBpm(song, ficha)
+  const usos = ehVs ? [] : frasesDeUso(song, ficha)
+  const artistaHref = `/artistas/${artistSlug(song.artist)}`
 
-  // Tom e BPM saem do proprio arquivo do acervo. Quando o acervo nao traz,
-  // a ficha mostra o que vale para toda musica do pacote, sem inventar.
-  const tons = [...new Set(song.variantes.map((v) => v.tom).filter(Boolean))]
-  const bpms = [...new Set(song.variantes.map((v) => v.bpm).filter(Boolean))]
   // So vale listar as versoes quando cada uma tem como ser identificada.
   // Dois arquivos iguais sem tom, sem BPM e sem rotulo viram "versao 1 e 2",
   // que nao diz nada a ninguem.
@@ -63,13 +69,6 @@ export default async function SongPage({ params }) {
       [v.versao, v.tom && `tom ${v.tom}`, v.bpm && `${v.bpm} BPM`].filter(Boolean).join(', ')
     )
     .filter(Boolean)
-  const ficha = [
-    ['Formato', song.tipo === 'VS MP3' ? 'MP3' : 'WAV + MP3'],
-    ['Tom original', tons.length ? tons.join(' · ') : 'Transponível'],
-    ['Andamento', bpms.length ? `${bpms.join(' · ')} BPM` : 'Do original'],
-    ['Clique e guia', song.tipo === 'VS MP3' ? 'Não' : 'Separados'],
-  ]
-
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'MusicRecording',
@@ -78,6 +77,7 @@ export default async function SongPage({ params }) {
     genre: ['Gospel', 'Música cristã', song.categoria],
     inLanguage: 'pt-BR',
     url: `${site.url}/musicas/${song.slug}`,
+    ...(ficha?.duracaoSeg ? { duration: duracaoIso(ficha.duracaoSeg) } : {}),
     description:
       song.tipo === 'VS MP3'
         ? `VS de ${song.title}, de ${song.artist}: MP3 já mixado, sem canais separados.`
@@ -101,9 +101,10 @@ export default async function SongPage({ params }) {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Início', item: site.url },
       { '@type': 'ListItem', position: 2, name: 'Acervo', item: `${site.url}/musicas` },
+      { '@type': 'ListItem', position: 3, name: song.artist, item: `${site.url}${artistaHref}` },
       {
         '@type': 'ListItem',
-        position: 3,
+        position: 4,
         name: song.title,
         item: `${site.url}/musicas/${song.slug}`,
       },
@@ -126,15 +127,16 @@ export default async function SongPage({ params }) {
           items={[
             { href: '/', label: 'Início' },
             { href: '/musicas', label: 'Acervo' },
+            { href: artistaHref, label: song.artist },
             { label: song.title },
           ]}
         />
 
         <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-16">
           <div className="lg:sticky lg:top-28 lg:self-start">
-            <SessionPanel song={song} />
+            <SessionPanel song={song} canais={ficha?.canais} />
             <Link
-              href={`/artistas/${artistSlug(song.artist)}`}
+              href={artistaHref}
               className="link-quiet mt-6 inline-block text-[14.5px] font-semibold"
             >
               {song.tipo === 'VS MP3'
@@ -149,7 +151,9 @@ export default async function SongPage({ params }) {
             </p>
             <h1 className="text-d1 mt-3 text-ink [text-wrap:balance]">{song.title}</h1>
             <p className="mt-4 text-[20px] text-ink-muted">
-              {song.artist}
+              <Link href={artistaHref} className="link-quiet">
+                {song.artist}
+              </Link>
               {song.part ? (
                 <span className="text-ink-faint"> (part. {song.part})</span>
               ) : null}
@@ -164,19 +168,46 @@ export default async function SongPage({ params }) {
               </p>
             )}
 
-            {song.tipo === 'VS MP3' ? (
-              <p className="mt-7 max-w-2xl text-[16.5px] leading-[1.75] text-ink-muted">
+            {/* Ficha técnica: só o que veio do arquivo ou do MultiTracks. Campo sem dado não aparece. */}
+            {destaque.length > 0 && (
+              <>
+                <p className="figs mt-7 text-[18px] font-bold text-ink">{destaque.join(' · ')}</p>
+                {(ficha.bpm || ficha.tom) && (
+                  <p className="mt-2 text-[13.5px] text-ink-muted">
+                    Tom e BPM podem ser alterados no seu{' '}
+                    <Link href="/como-usar#mudar-tom-e-bpm" className="link-quiet font-semibold">
+                      programa
+                    </Link>{' '}
+                    (REAPER, Ableton, Prime e outros).
+                  </p>
+                )}
+              </>
+            )}
+
+            <div className="mt-8">
+              <Link href="/assinar" className="btn-signal">
+                Liberar acesso vitalício por {priceBRL(site.price)}
+              </Link>
+            </div>
+
+            {ehVs ? (
+              <p className="mt-10 max-w-2xl text-[16.5px] leading-[1.75] text-ink-muted">
                 <strong className="font-semibold text-ink">{song.title}</strong> entra no pacote como
                 VS: um MP3 já mixado, pronto para tocar. Este arquivo não traz os canais separados —
                 é playback, e não multitrack.
               </p>
             ) : (
-              <p className="mt-7 max-w-2xl text-[16.5px] leading-[1.75] text-ink-muted">
-                Multitrack de <strong className="font-semibold text-ink">{song.title}</strong> com o
-                clique e a guia em canais próprios e cada instrumento separado, para a sua banda
-                tocar por cima e o operador mandar só o que interessa para o PA. Preparada para
-                transposição, então você toca no tom em que o seu ministro canta melhor.
-              </p>
+              <section className="mt-12 max-w-2xl">
+                <h2 className="text-[19px] font-bold tracking-[-0.015em] text-ink">{bpmTexto.titulo}</h2>
+                {bpmTexto.paragrafos.map((p) => (
+                  <p key={p.slice(0, 24)} className="mt-4 text-[16.5px] leading-[1.75] text-ink-muted">
+                    {p}
+                  </p>
+                ))}
+                <Link href="/como-usar#mudar-tom-e-bpm" className="link-quiet mt-4 inline-block text-[15px] font-semibold">
+                  Veja como fazer →
+                </Link>
+              </section>
             )}
 
             {song.variantes.length > 1 && (
@@ -192,24 +223,24 @@ export default async function SongPage({ params }) {
               </p>
             )}
 
-            {/* A lista de canais so aparece em multitrack. Num VS MP3 ela
-                seria promessa falsa: o arquivo e uma mixagem so. */}
-            {song.tipo !== 'VS MP3' && (
+            {/* A lista de canais so aparece em multitrack, e só a lista real
+                do arquivo. Num VS MP3 ela seria promessa falsa: o arquivo e uma
+                mixagem so. Sem lista confiável (nomes de faixa ilegíveis), não aparece. */}
+            {!ehVs && ficha?.canais?.length > 0 && (
               <>
                 <h2 className="mt-12 text-[19px] font-bold tracking-[-0.015em] text-ink">
-                  Canais inclusos
+                  Canais desta multitrack
                 </h2>
-                {/* Os dois primeiros canais sao o clique e a guia: e o que
-                    separa multitrack de playback, e o site destaca esses dois
-                    em todo lugar. Aqui eles ganham o contorno vermelho; os
-                    outros sete ficam com o fio cinza, para o vermelho
-                    continuar significando alguma coisa. */}
+                {/* Clique e guia sao o que separa multitrack de playback, e o
+                    site destaca esses dois em todo lugar. Aqui eles ganham o
+                    contorno vermelho; os outros ficam com o fio cinza, para o
+                    vermelho continuar significando alguma coisa. */}
                 <ul className="mt-5 flex max-w-2xl flex-wrap gap-2">
-                  {CANAIS.map((c, i) => (
+                  {ficha.canais.map((c) => (
                     <li
                       key={c}
                       className={
-                        i < 2
+                        c === 'Clique' || c === 'Guia'
                           ? 'border border-signal px-3 py-1.5 text-[14.5px] font-semibold text-signal-deep'
                           : 'border border-line px-3 py-1.5 text-[14.5px] text-ink-muted'
                       }
@@ -221,14 +252,9 @@ export default async function SongPage({ params }) {
               </>
             )}
 
-            <dl className="mt-12 grid grid-cols-2 divide-line border-y border-line sm:grid-cols-4 sm:divide-x">
-              {ficha.map(([k, v]) => (
-                <div key={k} className="py-5 sm:px-5 sm:first:pl-0">
-                  <dt className="text-[13.5px] text-ink-muted">{k}</dt>
-                  <dd className="mt-1.5 text-[17px] font-bold text-ink">{v}</dd>
-                </div>
-              ))}
-            </dl>
+            {usos.length > 0 && (
+              <p className="mt-10 max-w-2xl text-[16.5px] leading-[1.75] text-ink-muted">{usos.join(' ')}</p>
+            )}
 
             <div className="panel mt-12 p-8 sm:p-11">
               <p className="chip">

@@ -32,7 +32,7 @@ export function options(args) {
 }
 
 export async function survey(file,path) {
-  const result={caminho:path,bpm:null,tom:null,duracao_seg:null,canais:[],qtd_arquivos:null,
+  const result={caminho:path,bpm:null,tom:null,duracao_seg:null,canais:[],qtd_arquivos:null,qtd_reconhecidos:null,
     fonte_bpm:null,fonte_tom:null,confianca_bpm:null,bpm_alternativas:[],erro:null}
   const warnings=[],unknown={}, stats={rar_store:0,rar_compactado:0,rar_arquivos_store:0,rar_arquivos_compactados:0,rar_sem_bpm_audio:0}
   let entries,detected=null
@@ -40,6 +40,7 @@ export async function survey(file,path) {
   catch(error) {if(error.code==='CACHE_MISS')throw error;result.erro='erro_indice';return {result,unknown,stats}}
   const audio=audioFiles(entries)
   result.qtd_arquivos=audio.length
+  result.qtd_reconhecidos=audio.filter(e=>channel(e.name)).length
   result.canais=[...new Set(audio.map(e=>channel(e.name)).filter(Boolean))]
   for(const e of audio) if(!channel(e.name)) {
     const name=e.name.split(/[\\/]/).at(-1);unknown[name]=(unknown[name]??0)+1
@@ -90,7 +91,7 @@ async function recanais(file,path,item) {
   const audio=audioFiles((await indexArchive(file.read,file.size,/\.rar$/i.test(path)?'rar':'zip')).entries)
   const unknown={}
   for(const e of audio) if(!channel(e.name)) {const name=e.name.split(/[\\/]/).at(-1);unknown[name]=(unknown[name]??0)+1}
-  return {...item,unknown,result:{...item.result,canais:[...new Set(audio.map(e=>channel(e.name)).filter(Boolean))]}}
+  return {...item,unknown,result:{...item.result,qtd_reconhecidos:audio.filter(e=>channel(e.name)).length,canais:[...new Set(audio.map(e=>channel(e.name)).filter(Boolean))]}}
 }
 
 export function finalizeSong(items) {
@@ -133,7 +134,7 @@ export async function main(args=process.argv.slice(2),directory=checkpointDir,co
     const items=[]
     data[slug]={arquivos:[]}
     if(!map[slug]) {
-      data[slug].arquivos.push({caminho:null,bpm:null,tom:null,duracao_seg:null,canais:[],qtd_arquivos:null,
+      data[slug].arquivos.push({caminho:null,bpm:null,tom:null,duracao_seg:null,canais:[],qtd_arquivos:null,qtd_reconhecidos:null,
         fonte_bpm:null,fonte_tom:null,confianca_bpm:null,bpm_alternativas:[],erro:'slug_ausente_no_mapa'})
       continue
     }
@@ -153,9 +154,10 @@ export async function main(args=process.argv.slice(2),directory=checkpointDir,co
         if(!opt.reprocess)await cache.setResult(path,structuredClone(item))
       } catch(error) {
         if(error.code==='CACHE_MISS')throw error
-        item={result:{caminho:path,bpm:null,tom:null,duracao_seg:null,canais:[],qtd_arquivos:null,
+        item={result:{caminho:path,bpm:null,tom:null,duracao_seg:null,canais:[],qtd_arquivos:null,qtd_reconhecidos:null,
           fonte_bpm:null,fonte_tom:null,confianca_bpm:null,bpm_alternativas:[],erro:'erro_acesso'},unknown:{},stats:{}}
       }
+      item.result.qtd_reconhecidos??=null
       items.push(item)
       data[slug].arquivos.push(item.result)
       for(const [name,n] of Object.entries(item.unknown))unknown[name]=(unknown[name]??0)+n

@@ -21,6 +21,11 @@ const paginas = {
   '/privacidade': '2026-10-12',
 }
 
+// Data em que o modelo da página de música mudou para todas (ficha técnica real,
+// Fase C do plano de SEO). Atualizar quando o modelo mudar de novo.
+const MODELO_DA_MUSICA = '2026-10-21'
+const dataDaMusica = (slug) => (lastmod[slug] > MODELO_DA_MUSICA ? lastmod[slug] : MODELO_DA_MUSICA)
+
 export default function sitemap() {
   const statics = Object.entries(paginas).map(([caminho, data]) => ({
     url: `${site.url}${caminho}`,
@@ -28,7 +33,7 @@ export default function sitemap() {
   }))
   const songUrls = songs.filter((s) => !Object.hasOwn(redirects, s.slug)).map((s) => ({
     url: `${site.url}/musicas/${s.slug}`,
-    lastModified: lastmod[s.slug],
+    lastModified: dataDaMusica(s.slug),
   }))
   const artistUrls = artistList.map((a) => ({
     url: `${site.url}/artistas/${a.slug}`,

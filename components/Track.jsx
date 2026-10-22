@@ -15,9 +15,21 @@ export const CHANNELS = [
 ]
 
 // Alturas estáveis por música: mesma faixa, mesmo desenho, sempre.
-function heights(seed) {
-  return CHANNELS.map((_, i) => 0.35 + (((seed >> (i * 2)) % 9) / 9) * 0.65)
+function heights(seed, n = CHANNELS.length) {
+  return Array.from({ length: n }, (_, i) => 0.35 + (((seed >> ((i * 2) % 30)) % 9) / 9) * 0.65)
 }
+
+// Nome curto do canal da ficha real (lib/ficha.js), no tamanho da coluna do painel.
+const CURTO = {
+  'Guitarra / Violão': 'guitarra',
+  'Teclado / Piano': 'teclado',
+  'Vocal principal': 'vocal',
+  'Backing vocals': 'backing',
+}
+const canalDaFicha = (nome) => ({
+  name: CURTO[nome] ?? nome.toLowerCase(),
+  cue: nome === 'Clique' || nome === 'Guia',
+})
 
 // Cada canal tem um desenho próprio, porque na vida real ele é diferente:
 // o clique é uma batida seca e regular, a guia são frases faladas soltas no meio
@@ -117,12 +129,16 @@ export function TrackList({ songs, tone = 'ink', className = '', start = 0 }) {
   )
 }
 
-/** Bloco da sessão aberta: os nove canais com nome, como no programa. */
-export function SessionPanel({ song, className = '' }) {
-  const hs = heights(song?.seed ?? 11)
+/**
+ * Bloco da sessão aberta, como no programa. Com `canais` (a lista real da
+ * ficha), mostra os canais daquele arquivo; sem ela, os nove de sempre.
+ */
+export function SessionPanel({ song, canais: reais, className = '' }) {
   // Um VS em MP3 e uma mixagem so. Mostrar os nove canais em cima dele seria
   // prometer o que o arquivo nao tem, entao o painel mostra a faixa unica.
-  const canais = song?.tipo === 'VS MP3' ? [{ name: 'mixagem' }] : CHANNELS
+  const canais =
+    song?.tipo === 'VS MP3' ? [{ name: 'mixagem' }] : reais?.length ? reais.map(canalDaFicha) : CHANNELS
+  const hs = heights(song?.seed ?? 11, canais.length)
   return (
     <div className={`panel overflow-hidden ${className}`}>
       <div className="flex items-baseline justify-between gap-4 border-b border-white/10 px-5 py-4">
@@ -131,7 +147,7 @@ export function SessionPanel({ song, className = '' }) {
           <p className="mt-1 truncate text-[13.5px] text-white/50">{song.artist}</p>
         </div>
         <p className="figs shrink-0 text-[13px] text-white/55">
-          {song?.tipo === 'VS MP3' ? 'faixa única' : `${CHANNELS.length} canais`}
+          {song?.tipo === 'VS MP3' ? 'faixa única' : `${canais.length} canais`}
         </p>
       </div>
 
@@ -144,7 +160,7 @@ export function SessionPanel({ song, className = '' }) {
               } ${c.name === 'clique' ? 'animate-tick' : ''}`}
             />
             <span
-              className={`w-[76px] shrink-0 text-[13.5px] ${
+              className={`w-[92px] shrink-0 truncate text-[13.5px] ${
                 c.cue ? 'font-semibold text-signal-lite' : 'text-white/70'
               }`}
             >

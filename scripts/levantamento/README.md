@@ -55,7 +55,21 @@ Estimativa para o acervo inteiro é extrapolação simples por arquivo, não pro
 - MP3 usa ffmpeg em pipe. Duração exige Xing/VBRI ou CBR comprovável; início uniforme sozinho não prova CBR. Sem evidência, duração vazia. AIF/FLAC/M4A contam como canais; áudio desses formatos não é analisado nesta rodada.
 - Não extrai tom pelo áudio. Não usa catálogo como fonte dos valores.
 
-## Verificação
+## Gerar a ficha técnica do site
+
+Depois de atualizar o levantamento e a pesquisa, execute na raiz, sem rede:
+
+```powershell
+node scripts/levantamento/gerar-ficha.mjs
+```
+
+Gera `lib/ficha.js` compacto (e `lib/ficha-dados-*.js` caso ultrapasse 90 KB). O site importa somente esse módulo, nunca os JSON de origem. `getFicha(slug)` devolve a ficha ou `null`; `CANAIS` contém os nomes na ordem de exibição.
+
+O principal prioriza presença de BPM, tom, canais e duração, nessa ordem; empates mantêm o primeiro arquivo. BPM e tom ausentes vêm do primeiro outro arquivo com o campo, depois da pesquisa. Duração vem somente do principal; compasso, somente do MultiTracks. BPM e segundos são arredondados para inteiros.
+
+`qtd_reconhecidos` conta faixas de áudio reconhecidas, inclusive várias faixas do mesmo canal, tanto na análise quanto no reuso do cache. Canais só aparecem com pelo menos 80% das faixas reconhecidas e nunca em VS MP3. Resultados antigos sem essa contagem ocultam os canais: reexecute o levantamento com o cache e depois gere a ficha novamente.
+
+## Testes
 
 ```powershell
 node --test tests/seo/levantamento*.test.mjs
