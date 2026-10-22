@@ -21,11 +21,18 @@ export default function FiltroBpm({ tabelaId }) {
   const [visiveis, setVisiveis] = useState(null)
 
   useEffect(() => {
+    const linhas = document.querySelectorAll(`#${tabelaId} tbody tr`)
     const termo = plano(busca.trim())
+    // Sem filtro, nada a esconder: não percorre as linhas ao abrir a página.
+    if (!termo && !faixa) {
+      for (const tr of linhas) if (tr.hidden) tr.hidden = false
+      setVisiveis(linhas.length)
+      return
+    }
     let n = 0
-    for (const tr of document.querySelectorAll(`#${tabelaId} tbody tr`)) {
+    for (const tr of linhas) {
       const mostra = naFaixa(Number(tr.dataset.bpm), faixa) && (!termo || tr.dataset.busca.includes(termo))
-      tr.hidden = !mostra
+      if (tr.hidden === mostra) tr.hidden = !mostra
       if (mostra) n++
     }
     setVisiveis(n)

@@ -4,7 +4,7 @@ import FiltroBpm from '@/components/FiltroBpm'
 import { songs } from '@/lib/catalog'
 import { getFicha } from '@/lib/ficha'
 import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
-import { ldJson } from '@/lib/safe'
+import { ldJson, escapeHtml } from '@/lib/safe'
 
 // Tabela de BPM e tom (item 4.2 do plano de SEO). Só entram músicas com BPM
 // confirmado na ficha (arquivo do acervo ou MultiTracks). Página estática: a
@@ -15,6 +15,18 @@ const linhas = songs
   .map((s) => ({ s, f: getFicha(s.slug) }))
   .filter(({ f }) => f?.bpm)
   .sort((a, b) => ordem.compare(a.s.title, b.s.title))
+
+const CORPO = linhas
+  .map(
+    ({ s, f }) =>
+      `<tr data-bpm="${f.bpm}" data-busca="${escapeHtml(plano(`${s.title} ${s.artist}`))}">` +
+      `<td>${escapeHtml(s.title)}</td>` +
+      `<td>${escapeHtml(s.artist)}</td>` +
+      `<td>${Number(f.bpm)}</td>` +
+      `<td>${escapeHtml(f.tom || '')}</td>` +
+      `<td><a href="/musicas/${encodeURIComponent(s.slug)}">Ver VS</a></td></tr>`
+  )
+  .join('')
 
 // Arredonda para baixo na centena: "1.100+" só enquanto houver pelo menos 1.100.
 const marca = `${(Math.floor(linhas.length / 100) * 100).toLocaleString('pt-BR')}+`
@@ -63,7 +75,7 @@ export default function BpmPage() {
         </div>
 
         <div className="mt-6 overflow-x-auto border-t-2 border-ink">
-          <table id="tabela-bpm" className="w-full min-w-[640px] text-left text-[15px]">
+          <table id="tabela-bpm" className="tabela-bpm w-full min-w-[640px] text-left text-[15px]">
             <thead>
               <tr className="border-b border-line text-[13px] text-ink-muted">
                 <th scope="col" className="py-3 pr-4 font-semibold">Música</th>
@@ -73,21 +85,9 @@ export default function BpmPage() {
                 <th scope="col" className="py-3 font-semibold"><span className="sr-only">Link</span></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
-              {linhas.map(({ s, f }) => (
-                <tr key={s.slug} data-bpm={f.bpm} data-busca={plano(`${s.title} ${s.artist}`)}>
-                  <td className="py-2.5 pr-4 font-semibold text-ink">{s.title}</td>
-                  <td className="py-2.5 pr-4 text-ink-muted">{s.artist}</td>
-                  <td className="figs py-2.5 pr-4 text-ink">{f.bpm}</td>
-                  <td className="py-2.5 pr-4 text-ink">{f.tom || ''}</td>
-                  <td className="py-2.5 text-right">
-                    <Link href={`/musicas/${s.slug}`} className="link-quiet text-[14px] font-semibold">
-                      Ver VS
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+            {/* As 1.100+ linhas vão como HTML pronto: o React não hidrata linha por
+                linha (eram 1,8 s de travamento no celular). Todo texto passa por escapeHtml. */}
+            <tbody className="divide-y divide-line" dangerouslySetInnerHTML={{ __html: CORPO }} />
           </table>
         </div>
 

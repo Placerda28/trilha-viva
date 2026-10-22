@@ -166,6 +166,26 @@ body {
     content: '';
     @apply absolute left-0 top-[14px] h-[6px] w-[6px] bg-signal;
   }
+  /* Tabela da /bpm: o estilo das células fica aqui, e não repetido em cada uma das 1.100+ linhas. */
+  .tabela-bpm tbody td {
+    @apply py-2.5 pr-4 text-ink;
+  }
+  .tabela-bpm tbody td:nth-child(1) {
+    @apply font-semibold;
+  }
+  .tabela-bpm tbody td:nth-child(2) {
+    @apply text-ink-muted;
+  }
+  .tabela-bpm tbody td:nth-child(3) {
+    font-variant-numeric: tabular-nums;
+  }
+  .tabela-bpm tbody td:last-child {
+    @apply pr-0 text-right;
+  }
+  .tabela-bpm tbody a {
+    @apply link-quiet text-[14px] font-semibold;
+  }
+
   /* Lista numerada (sequência de verdade, como um setlist): número no lugar do quadrado. */
   .prose-tv ol {
     @apply mt-5 space-y-2.5 text-[18px] leading-[1.7] text-ink-muted;
