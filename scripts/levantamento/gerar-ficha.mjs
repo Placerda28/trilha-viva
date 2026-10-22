@@ -21,7 +21,10 @@ export function gerarDados(levantamento, pesquisa, catalogo) {
     const bpmArquivo = positivo(principal.bpm) ? principal.bpm : arquivos.find(a => positivo(a.bpm))?.bpm
     const tomArquivo = principal.tom || arquivos.find(a => a.tom)?.tom
     const fonte = extra.fonte === 'multitracks' ? 1 : extra.fonte === 'pesquisa' ? 2 : null
-    const bpm = bpmArquivo ?? (fonte !== null && positivo(extra.bpm) ? extra.bpm : null)
+    // Mesma faixa do levantamento (50 a 200). O MultiTracks conta colcheias em 12/8
+    // (Morada deu 219): fora da faixa, fica sem BPM em vez de mostrar número enganoso.
+    const bpmPesquisa = fonte !== null && positivo(extra.bpm) && extra.bpm >= 50 && extra.bpm <= 200 ? extra.bpm : null
+    const bpm = bpmArquivo ?? bpmPesquisa
     const tom = tomArquivo || (fonte !== null ? extra.tom : null) || null
     const compasso = extra.fonte === 'multitracks' ? extra.compasso ?? null : null
     const duracao = positivo(principal.duracao_seg) ? Math.round(principal.duracao_seg) : null

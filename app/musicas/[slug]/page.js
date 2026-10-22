@@ -13,6 +13,8 @@ import colecoes from '@/data/colecoes.json'
 
 // Música que está numa coleção ganha o link para ela (ex.: "Ver todas as VS de Natal").
 const LINK_DA_COLECAO = { natal: 'Ver todas as VS de Natal' }
+// A mesma da página /vs-gratis.
+const SLUG_GRATIS = 'a-alegria-o-exercito-de-deus-caiam-por-terra-autoridade-e-poder-morada'
 
 export function generateStaticParams() {
   return songs.map((s) => ({ slug: s.slug }))
@@ -195,11 +197,23 @@ export default async function SongPage({ params }) {
               </>
             )}
 
-            <div className="mt-8">
-              <Link href="/assinar" className="btn-signal">
-                Liberar acesso vitalício por {priceBRL(site.price)}
-              </Link>
-            </div>
+            {/* A música grátis troca o botão principal por "Baixar grátis"; o pacote vira o secundário. */}
+            {song.slug === SLUG_GRATIS ? (
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <Link href="/vs-gratis" className="btn-signal">
+                  Baixar grátis
+                </Link>
+                <Link href="/assinar" className="btn-ink">
+                  Liberar o acervo por {priceBRL(site.price)}
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-8">
+                <Link href="/assinar" className="btn-signal">
+                  Liberar acesso vitalício por {priceBRL(site.price)}
+                </Link>
+              </div>
+            )}
 
             {ehVs ? (
               <p className="mt-10 max-w-2xl text-[16.5px] leading-[1.75] text-ink-muted">

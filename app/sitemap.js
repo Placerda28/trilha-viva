@@ -21,6 +21,7 @@ const paginas = {
   '/termos': '2026-09-05',
   '/privacidade': '2026-10-12',
   '/colecoes': '2026-10-21',
+  '/vs-gratis': '2026-10-21',
 }
 
 // Data em que o modelo da página de música mudou para todas (ficha técnica real,

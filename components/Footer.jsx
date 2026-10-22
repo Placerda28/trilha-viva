@@ -28,6 +28,7 @@ const columns = [
     title: 'Trilha Viva',
     links: [
       { href: '/assinar', label: 'Pacote único' },
+      { href: '/vs-gratis', label: 'VS grátis' },
       { href: '/faq#garantia', label: 'Garantia de 7 dias' },
       { href: '/termos', label: 'Termos de uso' },
       { href: '/privacidade', label: 'Privacidade' },

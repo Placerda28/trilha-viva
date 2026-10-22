@@ -67,6 +67,12 @@ test('pesquisa preenche ausências; compasso só do MultiTracks e duração nunc
   assert.equal(await ficha([], { duracao_seg: 999, fonte: 'multitracks' }), null)
 })
 
+test('BPM da pesquisa fora de 50 a 200 não entra (MultiTracks conta colcheias em 12/8)', async () => {
+  assert.equal((await ficha([], { bpm: 219, tom: 'A', compasso: '12/8', fonte: 'multitracks' })).bpm, null)
+  assert.equal((await ficha([], { bpm: 49, tom: 'A', fonte: 'multitracks' })).bpm, null)
+  assert.equal((await ficha([], { bpm: 200, fonte: 'multitracks' })).bpm, 200)
+})
+
 test('canais exigem 80%, seguem ordem fixa e nunca aparecem em VS MP3', async () => {
   const a = { bpm: 70, canais: ['Efeitos', 'Baixo', 'Clique', 'Baixo'], qtd_arquivos: 10, qtd_reconhecidos: 8 }
   assert.deepEqual((await ficha([a])).canais, ['Clique', 'Baixo', 'Efeitos'])

@@ -8,6 +8,7 @@ import { site } from '@/lib/site'
 import { getDB } from '@/lib/d1'
 import { cancelarReservaCupom, desfazerEnvioAcesso, estenderReservaCupom, reservarEnvioAcesso } from '@/lib/gestao/cupons'
 import { marcarCarrinhosPagos } from '@/lib/carrinhos'
+import { marcarLeadComprou } from '@/lib/leads'
 import { gravarRastreioCompra } from '@/lib/rastreio-compra'
 import { ehTeste, enviarMetaSeReal } from '@/lib/teste'
 import { enviarAcessoLiberado } from '@/lib/whatsapp-acesso'
@@ -45,6 +46,12 @@ async function liberarAcesso(r, teste) {
     referencia: r.referencia,
     teste,
   })
+  try {
+    await marcarLeadComprou(getDB(), email, teste, r.compraId)
+  } catch (err) {
+    // Acompanhamento do lead nunca pode impedir a entrega da compra.
+    console.error('mp marcar lead comprado', r.pagamentoId, err?.message)
+  }
   if (!(await reservarEnvioAcesso(getDB(), r.compraId))) return true
 
   let saiu = false

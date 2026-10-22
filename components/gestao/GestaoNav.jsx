@@ -9,6 +9,7 @@ const ABAS = [
   { href: '/gestao/clientes', rotulo: 'Clientes' },
   { href: '/gestao/periodo', rotulo: 'Por período' },
   { href: '/gestao/recuperacao', rotulo: 'Recuperação' },
+  { href: '/gestao/leads', rotulo: 'Leads' },
   { href: '/gestao/cupons', rotulo: 'Cupons' },
   { href: '/gestao/registro', rotulo: 'Registro' },
   { href: '/gestao/equipe', rotulo: 'Equipe', soMaster: true },

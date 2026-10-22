@@ -75,6 +75,16 @@ export default function HomeProgramasPreco() {
         </div>
       </section>
 
+      {/* VS grátis: para quem quer testar antes de comprar (item 5.5 do plano de SEO). */}
+      <div className="shell pt-20 sm:pt-28">
+        <Link
+          href="/vs-gratis"
+          className="block border-y-2 border-ink py-4 text-[16px] font-semibold text-ink hover:underline"
+        >
+          Quer testar antes? Baixe uma VS grátis →
+        </Link>
+      </div>
+
       {/* PREÇO */}
       <section id="preco" className="shell pt-20 sm:pt-28">
         <div className="panel overflow-hidden">

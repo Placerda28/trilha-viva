@@ -34,6 +34,14 @@ const nextConfig = {
           { key: 'Referrer-Policy', value: 'no-referrer' },
         ],
       },
+      {
+        source: '/vs-gratis/baixar',
+        // O endereço traz o token do download da VS grátis: não pode vazar como referrer.
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+        ],
+      },
     ]
   },
 }
