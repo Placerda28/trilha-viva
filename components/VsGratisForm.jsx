@@ -64,7 +64,9 @@ export default function VsGratisForm() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setErro('Confira o e-mail.')
     if (!celularValido(celular)) return setErro('Informe o WhatsApp com DDD.')
     if (!aceite) return setErro('Marque a caixa de consentimento para receber a VS.')
-    if (CHAVE && !token) return setErro('Aguarde a verificação anti-robô terminar e tente de novo.')
+    if (CHAVE && !token) {
+      return setErro('Falta a verificação anti-robô: se apareceu a caixa "Confirme que é humano", marque e envie de novo.')
+    }
     setEnviando(true)
     try {
       const origem = origemDaVisita()
