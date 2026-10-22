@@ -10,6 +10,7 @@ import { EventoAoAbrir } from '@/components/MetaPixel'
 import { getFicha } from '@/lib/ficha'
 import { linhaDaFicha, duracaoIso, metaDaMusica, blocoBpm, frasesDeUso } from '@/lib/textos-musica'
 import colecoes from '@/data/colecoes.json'
+import { produtoAninhado } from '@/lib/produto-ld'
 
 // Música que está numa coleção ganha o link para ela (ex.: "Ver todas as VS de Natal").
 const LINK_DA_COLECAO = { natal: 'Ver todas as VS de Natal' }
@@ -88,17 +89,8 @@ export default async function SongPage({ params }) {
       song.tipo === 'VS MP3'
         ? `VS de ${song.title}, de ${song.artist}: MP3 já mixado, sem canais separados.`
         : `Multitrack (VS) de ${song.title}, de ${song.artist}, com clique, guia e canais separados.`,
-    isPartOf: {
-      '@type': 'Product',
-      name: 'Trilha Viva — Pacote Completo com 2.000 Multitracks Gospel',
-      offers: {
-        '@type': 'Offer',
-        price: site.price.toFixed(2),
-        priceCurrency: 'BRL',
-        availability: 'https://schema.org/InStock',
-        url: `${site.url}/assinar`,
-      },
-    },
+    // O mesmo Product completo da home e da /assinar.
+    isPartOf: produtoAninhado,
   }
 
   const crumbLd = {

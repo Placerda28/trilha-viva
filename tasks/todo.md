@@ -61,6 +61,7 @@ Branch `seo-fase-a`. Uma fase de cada vez, com prova e OK do Paulo antes de segu
 
 ### Fase F: dados estruturados (na branch `seo-fase-d`, junto da D)
 - O Product da home e da `/assinar` vem de um lugar só (`lib/produto-ld.js`), com `sku`, `brand`, `image`, `priceValidUntil` 2027-12-31 e `hasMerchantReturnPolicy` (7 dias, BR, devolução grátis). Sem aggregateRating e review, como o plano manda. ItemList na página de cada artista. BlogPosting com `image` e `dateModified` de `updated`.
+- **Teste de pesquisa aprimorada (Paulo, 22/10):** home, `/assinar` e `/artistas/fernandinho` válidos. A música saía INVÁLIDA em "Listagens do comerciante": o Product do `isPartOf` não tinha image, description, brand nem política de devolução. Corrigido: o `isPartOf` usa `produtoAninhado` de `lib/produto-ld.js`, o mesmo objeto da home, sem o `@context`. O BlogPosting passou a ter data em ISO com fuso (`dataIsoPost`, `T08:00:00-03:00`) e `url` no `author`, em todos os artigos. [ ] Paulo roda o teste de novo na música depois do deploy.
 - **Achado fora do plano (Paulo decide):** só a home tem `og:image`; música, assinar e blog saem sem imagem ao compartilhar.
 
 ### Adiado pelo Paulo (22/10)

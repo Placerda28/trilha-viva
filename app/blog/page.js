@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Breadcrumbs } from '@/components/ui'
-import { posts } from '@/lib/posts'
+import { posts, dataIsoPost } from '@/lib/posts'
 import { OG_IMAGEM, site } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 
@@ -33,7 +33,7 @@ export default function BlogPage() {
       '@type': 'BlogPosting',
       headline: p.title,
       url: `${site.url}/blog/${p.slug}`,
-      datePublished: p.date,
+      datePublished: dataIsoPost(p.date),
       description: p.description,
     })),
   }

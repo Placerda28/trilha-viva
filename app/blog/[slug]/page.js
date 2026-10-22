@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Breadcrumbs, Faq } from '@/components/ui'
 import Texto, { textoPuro } from '@/components/Texto'
-import { posts, getPost } from '@/lib/posts'
+import { posts, getPost, dataIsoPost } from '@/lib/posts'
 import { site, priceBRL } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 
@@ -47,12 +47,12 @@ export default async function PostPage({ params }) {
     '@type': 'BlogPosting',
     headline: post.title,
     description: post.description,
-    datePublished: post.date,
-    dateModified: post.updated || post.date,
+    datePublished: dataIsoPost(post.date),
+    dateModified: dataIsoPost(post.updated || post.date),
     inLanguage: 'pt-BR',
     image: [`${site.url}/blog/${post.slug}/opengraph-image`],
     mainEntityOfPage: `${site.url}/blog/${post.slug}`,
-    author: { '@type': 'Organization', name: 'Trilha Viva' },
+    author: { '@type': 'Organization', name: 'Trilha Viva', url: site.url },
     publisher: {
       '@type': 'Organization',
       name: 'Trilha Viva',
