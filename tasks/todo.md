@@ -4,7 +4,18 @@ Só o que ainda está aberto. O detalhe de cada frente fica em `tasks/arquivo/`,
 
 Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido resolvidos por trabalho posterior. Confirme antes de agir e apague o que já estiver feito.
 
-## Próxima sessão: comece por aqui (deixado em 21/10/2026)
+## Próxima sessão: comece por aqui (deixado em 22/10/2026)
+
+**Plano de SEO:** as fases A a G estão no ar (detalhe nas seções abaixo). Último commit do dia: `977cfc5`; robô `a8e5e93a`. O Paulo rodou de novo o Teste de pesquisa aprimorada e está tudo certo.
+- **Próximo trabalho:** artigo 2 do blog, "Como usar VS na igreja: guia para quem está começando" (1 por semana, rascunho em `tasks/blog/` para o Paulo aprovar). O renderizador já aceita `[link](/x)`, `**negrito**`, `h3`, `ol` e `faq` (com FAQPage). Cada artigo novo fica num arquivo em `lib/posts/` e entra no topo de `posts` em `lib/posts.js`. Ao publicar, atualizar a data de `/blog` no `app/sitemap.js`.
+- **Conferir em 24/10:** o lead 1 (Paulo) recebeu o e-mail 2 da VS grátis (`etapa_email = 2` no D1).
+- **Conferir em 01/11:** a faixa de Natal aparece na home; em 26/12, some.
+- **Adiado pelo Paulo:** prévias de áudio e BPM e tom que faltam (veja "Adiado pelo Paulo").
+- **Paulo:** descadastro pelo link do e-mail; no Search Console, pedir indexação das páginas novas (`/vs-gratis`, `/bpm`, `/colecoes/*`, o artigo de Natal e as 5 músicas da Fase C).
+- **Medir 4 e 8 semanas depois** das publicações (tabela "Como vamos medir" do plano).
+- A chave B2 só de leitura (`levantamento-local`) continua no `.env.local` deste PC. Se não for mais usar o levantamento, dá para apagar a chave no Backblaze.
+
+## Deixado em 21/10/2026
 
 O roteiro de 19/10 foi concluído em 20 e 21/10 (detalhe no `HISTORICO.md` do Drive). No ar: site `df79b202`, robô `7b99c0c1`, Palco `1e310dd8`.
 
@@ -61,7 +72,7 @@ Branch `seo-fase-a`. Uma fase de cada vez, com prova e OK do Paulo antes de segu
 
 ### Fase F: dados estruturados (na branch `seo-fase-d`, junto da D)
 - O Product da home e da `/assinar` vem de um lugar só (`lib/produto-ld.js`), com `sku`, `brand`, `image`, `priceValidUntil` 2027-12-31 e `hasMerchantReturnPolicy` (7 dias, BR, devolução grátis). Sem aggregateRating e review, como o plano manda. ItemList na página de cada artista. BlogPosting com `image` e `dateModified` de `updated`.
-- **Teste de pesquisa aprimorada (Paulo, 22/10):** home, `/assinar` e `/artistas/fernandinho` válidos. A música saía INVÁLIDA em "Listagens do comerciante": o Product do `isPartOf` não tinha image, description, brand nem política de devolução. Corrigido: o `isPartOf` usa `produtoAninhado` de `lib/produto-ld.js`, o mesmo objeto da home, sem o `@context`. O BlogPosting passou a ter data em ISO com fuso (`dataIsoPost`, `T08:00:00-03:00`) e `url` no `author`, em todos os artigos. [ ] Paulo roda o teste de novo na música depois do deploy.
+- **Teste de pesquisa aprimorada (Paulo, 22/10):** home, `/assinar` e `/artistas/fernandinho` válidos. A música saía INVÁLIDA em "Listagens do comerciante": o Product do `isPartOf` não tinha image, description, brand nem política de devolução. Corrigido: o `isPartOf` usa `produtoAninhado` de `lib/produto-ld.js`, o mesmo objeto da home, sem o `@context`. O BlogPosting passou a ter data em ISO com fuso (`dataIsoPost`, `T08:00:00-03:00`) e `url` no `author`, em todos os artigos. [x] Paulo rodou o teste de novo depois do deploy (22/10): tudo certo.
 - **Achado fora do plano (Paulo decide):** só a home tem `og:image`; música, assinar e blog saem sem imagem ao compartilhar.
 
 ### Adiado pelo Paulo (22/10)
