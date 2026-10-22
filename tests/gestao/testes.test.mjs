@@ -56,14 +56,15 @@ test('marcar e desmarcar muda listas e totais; mostrar testes nunca contamina re
   await marcarTeste(db, { email: 'pessoa@example.com', teste: true, quem: 'admin@example.com' })
   assert.equal((await consultarClientes(db, {})).total, 1)
   const lista = await consultarClientes(db, { mostrarTestes: true })
-  assert.equal(lista.total, 1)
+  // O total acompanha o "Mostrar testes" (conserto 4.7).
+  assert.equal(lista.total, 2)
   assert.equal(lista.linhas.length, 2)
   assert.equal(clienteDaLinha(lista.linhas.find((l) => l.id === 1)).teste, true)
   assert.equal(clienteDaLinha(lista.linhas.find((l) => l.id === 1)).compras, 0)
   assert.equal((await consultarItensPeriodo(db, periodo)).linhas.length, 1)
   const itens = await consultarItensPeriodo(db, { ...periodo, mostrarTestes: true })
   assert.equal(itens.linhas.length, 2)
-  assert.equal(itens.total, 1)
+  assert.equal(itens.total, 2)
   assert.equal((await consultarResumoPeriodo(db, { ...periodo, mostrarTestes: true })).totais.bruto_centavos, 1000)
   assert.equal((await consultarOrigensPeriodo(db, periodo))[0].compras, 1)
   assert.equal((await consultarClientesCsv(db, '')).length, 1)
@@ -91,10 +92,12 @@ test('recuperação exclui testes dos totais de pessoas, mensagens e CSV mesmo a
   assert.equal((await consultarRecuperacao(db)).itens.length, 1)
   const lista = await consultarRecuperacao(db, { mostrarTestes: true })
   assert.equal(lista.itens.length, 2)
-  assert.equal(lista.itens.find((i) => i.email === 'pessoa@example.com').teste, true)
-  assert.equal(lista.totais.pessoas, 1)
-  assert.equal(lista.totais.emails_enviados, 0)
-  assert.equal(lista.totais.whatsapp_enviados, 0)
+  // Com "Mostrar testes" os totais também incluem os testes (conserto 4.7); sem ele, não.
+  assert.equal(lista.totais.pessoas, 2)
+  assert.equal(lista.totais.emails_enviados, 1)
+  assert.equal(lista.totais.whatsapp_enviados, 1)
+  assert.equal((await consultarRecuperacao(db)).totais.pessoas, 1)
+  assert.equal((await consultarRecuperacao(db)).totais.emails_enviados, 0)
   assert.equal((await consultarRecuperacaoCsv(db)).length, 1)
   b.close()
 })
@@ -174,13 +177,14 @@ test('bloqueio protege master e equipe, e permite bloquear e liberar cliente com
   b.close()
 })
 
-test('cupom perde o faturamento de teste mas mantém a vaga usada', async () => {
+test('cupom de teste não conta como uso nem faturamento, mas mantém a vaga ocupada', async () => {
   const { b, db } = banco()
   b.exec(`INSERT INTO cupons (codigo, tipo, valor, valido_ate, limite_usos, criado_por)
     VALUES ('TESTE', 'percentual', 10, '2099-01-01', 1, 'admin');
     UPDATE compras SET cupom = 'TESTE', teste = 1 WHERE cliente_id = 1;`)
   const cupom = (await listarCupons(db))[0]
-  assert.equal(Number(cupom.usos), 1)
+  assert.equal(Number(cupom.usos), 0)
+  assert.equal(cupom.esgotado, true)
   assert.equal(Number(cupom.faturamento_centavos), 0)
   b.close()
 })

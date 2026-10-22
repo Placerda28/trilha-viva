@@ -45,6 +45,7 @@ function bancoGestao() {
   banco.exec(readFileSync('migrations/0009_whatsapp_estado.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0010_whatsapp_sequencia.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0011_whatsapp_anexos.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0012_rastreio.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0013_testes.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0015_whatsapp_aviso_acesso.sql', 'utf8'))
   return banco
@@ -149,6 +150,8 @@ test('gestão respeita prioridade, escolhe uma linha por pessoa e calcula totais
     pessoas: 5,
     andamento: 2,
     recuperados: 1,
+    recuperados_email: 1,
+    recuperados_whatsapp: 0,
     finalizados: 1,
     sem_envio: 1,
     comprou_sem_lembrete: 1,

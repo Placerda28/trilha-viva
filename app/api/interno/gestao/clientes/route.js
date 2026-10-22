@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDB } from '@/lib/d1'
-import { consultarClientes, clienteDaLinha } from '@/lib/gestao/clientes'
+import { consultarClientes, clienteDaLinha, filtroClientesValido } from '@/lib/gestao/clientes'
 import { preencherFormas } from '@/lib/gestao/forma'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
 
@@ -20,6 +20,7 @@ const get = async (req) => {
   const resultado = await consultarClientes(db, {
     q: url.searchParams.get('q'),
     pagina: url.searchParams.get('pagina'),
+    filtro: url.searchParams.get('filtro'),
     mostrarTestes: url.searchParams.get('testes') === '1',
   })
   await preencherFormas(resultado.linhas)
@@ -30,6 +31,7 @@ const get = async (req) => {
       pagina: resultado.pagina,
       por_pagina: resultado.por_pagina,
       total: resultado.total,
+      filtro: filtroClientesValido(url.searchParams.get('filtro')),
       itens: resultado.linhas.map(clienteDaLinha),
     },
     { headers: cabecalhosPrivados }

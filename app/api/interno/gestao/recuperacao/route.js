@@ -5,6 +5,7 @@ import {
   consultarRecuperacao,
   filtroRecuperacaoValido,
 } from '@/lib/gestao/recuperacao'
+import { validarPeriodo } from '@/lib/gestao/datas'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
 
 export const runtime = 'nodejs'
@@ -16,6 +17,17 @@ const get = async (req) => {
   if (!filtroRecuperacaoValido(filtro)) {
     return NextResponse.json(
       { ok: false, erro: 'Filtro de recuperação inválido.' },
+      { status: 400, headers: cabecalhosPrivados }
+    )
+  }
+
+  // De/até são opcionais: sem nenhum, os totais são de todo o histórico.
+  const de = url.searchParams.get('de')
+  const ate = url.searchParams.get('ate')
+  const periodo = de || ate ? validarPeriodo(de, ate) : null
+  if (periodo && !periodo.ok) {
+    return NextResponse.json(
+      { ok: false, erro: periodo.erro },
       { status: 400, headers: cabecalhosPrivados }
     )
   }
@@ -32,10 +44,11 @@ const get = async (req) => {
     filtro,
     busca: url.searchParams.get('busca'),
     pagina: url.searchParams.get('pagina'),
+    periodo,
     mostrarTestes: url.searchParams.get('testes') === '1',
     whatsappAtivo: (await lerEstadoWhatsapp(db)).estado === 'ativo',
   })
-  return NextResponse.json({ ok: true, ...resultado }, { headers: cabecalhosPrivados })
+  return NextResponse.json({ ok: true, de: periodo?.de || null, ate: periodo?.ate || null, ...resultado }, { headers: cabecalhosPrivados })
 }
 
 export const GET = soAdmin(get)

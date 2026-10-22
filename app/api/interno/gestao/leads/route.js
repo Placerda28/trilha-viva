@@ -16,7 +16,7 @@ const get = async (req) => {
   if (!db) {
     return Response.json({ ok: false, erro: 'Banco indisponível no momento.' }, { status: 503, headers: cabecalhosPrivados })
   }
-  const resultado = await consultarLeads(db, { ...periodo, pagina: url.searchParams.get('pagina') })
+  const resultado = await consultarLeads(db, { ...periodo, pagina: url.searchParams.get('pagina'), q: url.searchParams.get('q') })
   return Response.json({ ok: true, de: periodo.de, ate: periodo.ate, ...resultado }, { headers: cabecalhosPrivados })
 }
 

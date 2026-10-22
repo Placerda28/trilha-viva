@@ -4,6 +4,7 @@ import { mesmaOrigem } from '@/lib/origem'
 import {
   criarCupom,
   listarCupons,
+  situacaoCupomValida,
   validarCriacaoCupom,
 } from '@/lib/gestao/cupons'
 import {
@@ -22,11 +23,12 @@ const indisponivel = () => NextResponse.json(
   { status: 503, headers: cabecalhosPrivados }
 )
 
-const get = async () => {
+const get = async (req) => {
   const db = getDB()
   if (!db) return indisponivel()
+  const situacao = situacaoCupomValida(new URL(req.url).searchParams.get('situacao'))
   return NextResponse.json(
-    { ok: true, itens: await listarCupons(db) },
+    { ok: true, situacao, itens: await listarCupons(db, { situacao }) },
     { headers: cabecalhosPrivados }
   )
 }
