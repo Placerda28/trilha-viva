@@ -6,6 +6,8 @@ import { SessionMini } from '@/components/Track'
 import { Breadcrumbs, Check, Faq, Icone } from '@/components/ui'
 import { destaques } from '@/lib/catalog'
 import { site, priceBRL, discountPct } from '@/lib/site'
+import { productLd } from '@/lib/produto-ld'
+import { ldJson } from '@/lib/safe'
 
 export const metadata = {
   title: 'Liberar acesso ao pacote de 2.000 Multitracks Gospel',
@@ -135,6 +137,7 @@ function CardPreco({ id }) {
 export default function AssinarPage() {
   return (
     <div className="shell pb-12 pt-3 sm:pt-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(productLd) }} />
       <EventoAoAbrir
         evento="ViewContent"
         dados={{ content_name: 'Pacote Trilha Viva', content_type: 'product', value: site.price, currency: site.currency }}

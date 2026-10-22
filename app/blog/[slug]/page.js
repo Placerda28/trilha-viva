@@ -46,8 +46,10 @@ export default async function PostPage({ params }) {
     headline: post.title,
     description: post.description,
     datePublished: post.date,
-    dateModified: post.date,
+    dateModified: post.updated || post.date,
     inLanguage: 'pt-BR',
+    // Os artigos ainda não têm capa própria: vai a imagem da marca até ganharem.
+    image: [`${site.url}/opengraph-image`],
     mainEntityOfPage: `${site.url}/blog/${post.slug}`,
     author: { '@type': 'Organization', name: 'Trilha Viva' },
     publisher: {

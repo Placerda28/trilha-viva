@@ -6,6 +6,7 @@ import HomeAbertura from '@/components/HomeAbertura'
 import HomeProgramasPreco from '@/components/HomeProgramasPreco'
 import FaixaSazonal from '@/components/FaixaSazonal'
 import colecoes from '@/data/colecoes.json'
+import { productLd } from '@/lib/produto-ld'
 import { destaques } from '@/lib/catalog'
 import { artistList } from '@/lib/artists'
 import { site, includes, priceBRL } from '@/lib/site'
@@ -26,26 +27,6 @@ const aberta = destaques[0]
 // Os artistas com mais músicas no acervo, lidos do catálogo (a lista já vem
 // ordenada por quantidade). Nada escrito à mão: se o acervo mudar, muda aqui.
 const topArtistas = artistList.slice(0, 12)
-
-const productLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Product',
-  name: 'Trilha Viva — Pacote Completo com 2.000 Multitracks Gospel',
-  description: site.description,
-  brand: { '@type': 'Brand', name: 'Trilha Viva' },
-  category: 'Multitracks Gospel',
-  image: [`${site.url}/opengraph-image`],
-  offers: {
-    '@type': 'Offer',
-    url: `${site.url}/assinar`,
-    price: site.price.toFixed(2),
-    priceCurrency: 'BRL',
-    availability: 'https://schema.org/InStock',
-    itemCondition: 'https://schema.org/NewCondition',
-    priceValidUntil: '2027-12-31',
-    seller: { '@type': 'Organization', name: 'Trilha Viva' },
-  },
-}
 
 const faqLd = {
   '@context': 'https://schema.org',

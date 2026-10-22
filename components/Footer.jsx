@@ -20,6 +20,7 @@ const columns = [
       { href: '/como-usar', label: 'Como usar multitrack' },
       { href: '/como-usar#reaper', label: 'Multitrack no Reaper' },
       { href: '/como-usar#tablet', label: 'Multitrack no tablet' },
+      { href: '/bpm', label: 'BPM e tom das músicas' },
       { href: '/blog', label: 'Blog' },
       { href: '/faq', label: 'Dúvidas frequentes' },
     ],

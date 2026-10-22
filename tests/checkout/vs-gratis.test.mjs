@@ -194,3 +194,88 @@ test('compra real marca o lead e para agendamento; teste não marca', async () =
   assert.ok(lead(banco).comprou_em)
   assert.equal(lead(banco).proximo_email_em, null)
 })
+
+test('cadastro envia o link absoluto, texto e descadastro assinado sem cópia oculta', async () => {
+  const { db, banco } = montar()
+  const mensagens = []
+  const r = await cadastro(db, { ...dados, nome: '<Ana>' }, {
+    emailEnv: { RESEND_API_KEY: 'teste', EMAIL_FROM: 'Trilha Viva <acesso@trilhaviva.org>',
+      EMAIL_REPLY_TO: 'contato@trilhaviva.org', LEMBRETE_SEGREDO: 'teste' },
+    buscarEmail: async (url, opcoes) => {
+      assert.equal(url, 'https://api.resend.com/emails')
+      assert.equal(banco.prepare("SELECT proximo_email_em > datetime('now') AS reservado FROM leads").get().reservado, 1)
+      mensagens.push({ ...JSON.parse(opcoes.body), chave: opcoes.headers['Idempotency-Key'] })
+      return Response.json({ id: 'envio' })
+    },
+  })
+  const resposta = await r.json()
+  assert.equal(resposta.ok, true)
+  assert.equal(mensagens.length, 1)
+  const mensagem = mensagens[0]
+  assert.ok(mensagem.html.includes('https://trilhaviva.org' + resposta.link))
+  assert.ok(mensagem.text.includes('https://trilhaviva.org' + resposta.link))
+  assert.match(mensagem.html, /&lt;Ana&gt;/)
+  assert.match(mensagem.text, /7 dias/)
+  assert.match(mensagem.text, /3 downloads/)
+  assert.match(mensagem.text, /https:\/\/trilhaviva.org\/como-usar/)
+  assert.equal(mensagem.bcc, undefined)
+  const cancelamento = 'https://trilhaviva.org' + await linkDescadastroLead(dados.email, 'teste')
+  assert.equal(mensagem.headers['List-Unsubscribe'], `<${cancelamento}>`)
+  assert.equal(mensagem.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click')
+  assert.ok(mensagem.text.includes(cancelamento))
+  assert.ok(mensagem.chave)
+  const l = lead(banco)
+  assert.equal(l.etapa_email, 1)
+  assert.equal(l.envios, 1)
+  assert.ok(l.ultimo_envio_em)
+  assert.equal(Date.parse(l.proximo_email_em + 'Z') - Date.parse(l.consentimento_em + 'Z'), 2 * 86400000)
+})
+
+test('falha no Resend mantém cadastro e link, com etapa zero disponível para o robô', async () => {
+  const { db, banco } = montar()
+  let tentativas = 0
+  const r = await cadastro(db, dados, {
+    emailEnv: { RESEND_API_KEY: 'teste', EMAIL_FROM: 'teste@example.com', LEMBRETE_SEGREDO: 'teste' },
+    buscarEmail: async () => { tentativas++; return new Response('', { status: 503 }) },
+  })
+  assert.equal(r.status, 200)
+  assert.ok((await r.json()).link)
+  assert.equal(tentativas, 1)
+  assert.equal(lead(banco).etapa_email, 0)
+  assert.equal(lead(banco).envios, 0)
+  assert.equal(lead(banco).ultimo_envio_em, null)
+  assert.equal(banco.prepare("SELECT proximo_email_em <= datetime('now') AS pronto FROM leads").get().pronto, 1)
+})
+
+test('e-mail imediato não reativa comprador nem descadastro ocorrido durante o envio', async () => {
+  for (const bloqueio of ['comprou', 'descadastrado']) {
+    const { db, banco } = montar()
+    const r = await cadastro(db, dados, {
+      emailEnv: { RESEND_API_KEY: 'teste', EMAIL_FROM: 'teste@example.com', LEMBRETE_SEGREDO: 'teste' },
+      buscarEmail: async () => {
+        banco.exec(`UPDATE leads SET ${bloqueio} = 1, proximo_email_em = NULL`)
+        return Response.json({ id: 'envio' })
+      },
+    })
+    assert.equal(r.status, 200)
+    assert.equal(lead(banco).envios, 1)
+    assert.equal(lead(banco).proximo_email_em, null)
+    assert.equal(lead(banco)[bloqueio], 1)
+  }
+})
+
+test('recadastro durante envio preserva a fila nova e conta o e-mail já aceito', async () => {
+  const { db, banco } = montar()
+  let novo
+  await cadastro(db, dados, {
+    emailEnv: { RESEND_API_KEY: 'teste', EMAIL_FROM: 'teste@example.com', LEMBRETE_SEGREDO: 'teste' },
+    buscarEmail: async () => {
+      novo = await gravarLead(db, dados)
+      return Response.json({ id: 'envio' })
+    },
+  })
+  const token = new URL(novo.link, 'https://trilhaviva.org').searchParams.get('t')
+  assert.equal(lead(banco).token_hash, createHash('sha256').update(token).digest('hex'))
+  assert.equal(lead(banco).etapa_email, 0)
+  assert.equal(lead(banco).envios, 1)
+})

@@ -44,6 +44,7 @@ function bancoRobo() {
   banco.exec(readFileSync('migrations/0005_recuperacao_v2.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0006_whatsapp.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0013_testes.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0017_leads.sql', 'utf8'))
   return banco
 }
 
@@ -139,6 +140,7 @@ test('e-mail 1 mantém conteúdo, bloqueios e dados do envio atual', async () =>
     enviados: 1,
     ignorados: 3,
     apenasLog: 0,
+    leads: { enviados: 0, compradores: 0, falhas: 0 },
     whatsapp: { enviados: 0, ignorados: 0, falhas: 0 },
   })
   assert.equal(pedidos.length, 1)
@@ -282,6 +284,7 @@ test('modo teste não altera protocolos de outros e-mails', async () => {
     enviados: 0,
     ignorados: 0,
     apenasLog: 1,
+    leads: { enviados: 0, compradores: 0, falhas: 0 },
     whatsapp: { enviados: 0, ignorados: 0, falhas: 0 },
   })
   assert.match(logs[0], /c\*\*\*@e\*\*\*\.com/)

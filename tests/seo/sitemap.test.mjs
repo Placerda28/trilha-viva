@@ -14,8 +14,8 @@ const codigo = readFileSync(new URL('../../app/sitemap.js', import.meta.url), 'u
 const sitemap = runInNewContext(codigo.replace(/^import .+$/gm, '').replace('export const dynamic', 'const dynamic').replace('export default function', 'function') + '\nsitemap()', {
   songs, artistList, posts, lastmod, redirects, colecoes, site: { url: 'https://trilhaviva.org' },
 })
-// 9 páginas fixas de antes, mais /colecoes e /vs-gratis, mais uma por coleção.
-const FIXAS = 11 + Object.keys(colecoes).length
+// 9 páginas fixas de antes, mais /colecoes, /vs-gratis e /bpm, mais uma por coleção.
+const FIXAS = 12 + Object.keys(colecoes).length
 
 test('sitemap estático, completo, sem redirects e abaixo de 2.000 URLs', () => {
   assert.match(codigo, /export const dynamic = 'force-static'/)

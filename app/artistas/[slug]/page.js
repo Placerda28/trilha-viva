@@ -40,10 +40,23 @@ export default async function ArtistPage({ params }) {
       url: `${site.url}/musicas/${s.slug}`,
     })),
   }
+  // Lista ordenada das músicas mostradas na página (item 3.2 do plano de SEO).
+  const listaLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Multitracks de ${artist.name}`,
+    numberOfItems: artist.songs.length,
+    itemListElement: artist.songs.map((s, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${site.url}/musicas/${s.slug}`,
+      name: s.title,
+    })),
+  }
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(ld) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson([ld, listaLd]) }} />
       <div className="shell pt-12">
         <Breadcrumbs
           items={[
