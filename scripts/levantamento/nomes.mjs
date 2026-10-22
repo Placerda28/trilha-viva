@@ -1,18 +1,26 @@
 const plain = s => s.normalize('NFC').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 const rules = [
   ['Clique', 'clic clik click clique metronome metronomo met'], ['Guia', 'guide guia cues'],
-  ['Bateria', 'drums drum drumm bateria bat kick snare overhead cx caixa hat hihat chimbal virada viradas batera tom toms room rooms oh cymbal cymbals prato pratos'], ['Baixo', 'bass baixo synthbass sub'],
-  ['Teclado / Piano', 'keys piano acpiano teclado rhodes synth sinthy synths arp arps organ orgao wurli bel bell bells sinos'],
+  ['Bateria', 'drums drum drumm bateria bat kick snare overhead cx caixa hat hihat chimbal virada viradas batera tom toms room rooms oh cymbal cymbals prato pratos kit'], ['Baixo', 'bass baixo bajo synthbass sub'],
+  ['Teclado / Piano', 'keys piano acpiano teclado rhodes arp arps wurli bel bell bells sinos'],
+  // Decisão do Paulo (21/10): estes instrumentos aparecem separados, cada um com o próprio nome.
+  ['Órgão', 'organ orgao hammond'], ['Sintetizador', 'synth synths sinthy synt'], ['Mellotron', 'mellotron'],
+  ['Banjo', 'banjo'], ['Bandolim', 'mandolin bandolim'], ['Dulcimer', 'dulcimer'], ['Lap Steel', 'lap'],
   ['Guitarra / Violão', 'gt gtr guitar guitars guitarra eg ag violao ac acg acoustic nylon egt elec electric'], ['Pads', 'pad pads softpad'],
   ['Cordas', 'strings cordas sting stings violin violino violinos cello'], ['Sopros', 'brass horns sopros metais sax trompete trombone'],
-  ['Percussão', 'perc percussion percussao shaker tambourine pandeiro conga ganza meia'],
-  ['Backing vocals', 'bv bvs bgv bgvs backs backing backings oohs coral coro choir alto soprano tenor gang'], ['Vocal principal', 'vox vocal vocals lead voz vozes'],
+  ['Percussão', 'perc percussion percussao shaker tambourine pandeiro conga ganza meia tambores'],
+  ['Backing vocals', 'bv bvs bgv bgvs backs backing backings oohs harmony coral coro choir alto soprano tenor gang'], ['Vocal principal', 'vox vocal vocals lead voz vozes'],
+  // Por último: "Backs fx" é backing vocal, não efeito.
+  ['Loops', 'loop loops'], ['Efeitos', 'fx efeito efeitos'],
 ]
 export function channel(name) {
   const base = plain(name.split(/[\\/]/).at(-1).replace(/\.[^.]+$/, ''))
     .replace(/\b(?:tom|key)\s*[:=]?\s*(?:[a-g][#b]?|do|re|mi|fa|sol|la|si)(?:m|\s+menor|\s+maior)?(?=$|[^a-z#])/g, '')
   const tokens = base.split(/[^a-z]+/).filter(Boolean)
-  if (/^(?:loops?|fx|efeitos?|vocoder|stems|mix|full)$/.test(tokens[0])) return null
+  if (/^(?:vocoder|stems|mix|full)$/.test(tokens[0])) return null
+  // "Loop synth", "FX guitar": a faixa é o loop/efeito, não o instrumento.
+  if (/^loops?$/.test(tokens[0])) return 'Loops'
+  if (/^(?:fx|efeitos?)$/.test(tokens[0])) return 'Efeitos'
   // Bip como sufixo marca a versão da faixa, não o instrumento (ACG_bip, LOOP_bip).
   const found = list => rules.find(([, words]) => words.split(' ').some(w => list.includes(w)))?.[0]
   // Plural/singular solto ("1CLICKS", "2GUIAS", "STRING") só depois do casamento exato.

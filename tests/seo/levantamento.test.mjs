@@ -32,7 +32,16 @@ test('canais usam tokens inteiros e ignoram o título das pastas', () => {
   assert.equal(channel('2GUIAS.wav'), 'Guia')
   assert.equal(channel('STRING.mp3'), 'Cordas')
   assert.equal(channel('Meia Lua-Ganza.mp3'), 'Percussão')
-  assert.equal(channel('Loop1.mp3'), null)
+  assert.equal(channel('Loop1.mp3'), 'Loops')
+  assert.equal(channel('FX 2.mp3'), 'Efeitos')
+  assert.equal(channel('Backs fx.mp3'), 'Backing vocals')
+  assert.equal(channel('Hammond.wav'), 'Órgão')
+  assert.equal(channel('Sinthy 1_1.mp3'), 'Sintetizador')
+  assert.equal(channel('SYNTHBASS.wav'), 'Baixo')
+  assert.equal(channel('Lap Steel.wav'), 'Lap Steel')
+  assert.equal(channel('Mandolin.wav'), 'Bandolim')
+  assert.equal(channel('Bajo.mp3'), 'Baixo')
+  assert.equal(channel('Master.wav'), null)
   assert.equal(channel('CYMBALS.wav'), 'Bateria')
   assert.equal(channel('METRONOMO.mp3'), 'Clique')
   assert.equal(channel('ACPIANO_bip_137bpm.wav'), 'Teclado / Piano')
@@ -57,7 +66,8 @@ test('aliases de canais respeitam tokens e bip secundário', () => {
     'Clique': 'clic clik click bip',
     'Guitarra / Violão': 'ac acg acoustic nylon eg egt elec electric',
     'Baixo': 'synthbass sub',
-    'Teclado / Piano': 'arp arps organ orgao wurli bell bells sinos',
+    'Teclado / Piano': 'arp arps wurli bell bells sinos',
+    'Órgão': 'organ orgao hammond',
     'Cordas': 'sting stings violin cello',
   }
   for (const [expected, words] of Object.entries(aliases)) {
@@ -66,16 +76,19 @@ test('aliases de canais respeitam tokens e bip secundário', () => {
   assert.equal(channel('ac gt.wav'), 'Guitarra / Violão')
   assert.equal(channel('ACG_bip_137bpm.wav'), 'Guitarra / Violão')
   assert.equal(channel('01 Percussa\u0303o.wav'), 'Percussão')
-  for (const word of ['loop', 'fx', 'efeitos', 'vocoder', 'stems', 'mix', 'full', 'bipolar', 'tomate', 'choralista']) {
+  for (const word of ['vocoder', 'stems', 'mix', 'full', 'bipolar', 'tomate', 'choralista']) {
     assert.equal(channel(`${word}.wav`), null, word)
   }
-  for (const name of ['LOOP_bip_137bpm.wav', 'tom C.wav', 'tom: F#m.wav', 'Faixa - tom Lá menor.wav']) {
+  for (const name of ['tom C.wav', 'tom: F#m.wav', 'Faixa - tom Lá menor.wav']) {
     assert.equal(channel(name), null, name)
   }
   assert.equal(channel('Piano - tom C.wav'), 'Teclado / Piano')
-  for (const name of ['Vocoder lead.wav', 'Loop synth.wav', 'FX guitar.wav', 'Full vocal.wav', '02 loops drums.wav', 'efeito piano.wav', 'efeitos piano.wav', 'stems bass.wav', 'mix vocal.wav']) {
+  for (const name of ['Vocoder lead.wav', 'Full vocal.wav', 'stems bass.wav', 'mix vocal.wav']) {
     assert.equal(channel(name), null, name)
   }
+  // Decisão do Paulo (21/10): loop e efeito viram categorias próprias.
+  for (const name of ['loop.wav', 'LOOP_bip_137bpm.wav', 'Loop synth.wav', '02 loops drums.wav']) assert.equal(channel(name), 'Loops', name)
+  for (const name of ['fx.wav', 'efeitos.wav', 'FX guitar.wav', 'efeito piano.wav']) assert.equal(channel(name), 'Efeitos', name)
   assert.equal(channel('Piano loop.wav'), 'Teclado / Piano')
   assert.equal(channel('Minha música full - guitar.wav'), 'Guitarra / Violão')
   assert.equal(channel('tom.wav'), 'Bateria')
