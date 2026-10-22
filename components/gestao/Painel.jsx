@@ -50,7 +50,7 @@ function UltimasVendas({ vendas, aoMudar }) {
       id="ultimas-vendas"
       titulo="Últimas vendas"
       acao={
-        <Link href="/gestao/vendas" prefetch={false} className="link-signal min-h-11 !text-[14px] md:min-h-0">
+        <Link href="/gestao/periodo" prefetch={false} className="link-signal min-h-11 !text-[14px] md:min-h-0">
           Ver todas
         </Link>
       }
@@ -151,11 +151,6 @@ export default function Painel({ painel, avisos, agora, agrupar = 'dia', onAgrup
         <Cartao
           id="de-onde-vieram"
           titulo="De onde vieram as vendas"
-          acao={
-            <Link href="/gestao/campanhas" prefetch={false} className="link-signal min-h-11 !text-[14px] md:min-h-0">
-              Ver campanhas
-            </Link>
-          }
         >
           <div className="mt-4">
             {fontes.length === 0 ? (
