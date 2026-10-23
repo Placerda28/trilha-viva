@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useGestao } from './useGestao'
 import Segmentos from './Segmentos'
 import { Aviso, Esqueleto, Vazio, Paginacao, BaixarPlanilha } from './Estados'
@@ -23,6 +24,16 @@ const sim = (v) => (v ? 'Sim' : 'Não')
 const origemTexto = (l) => [l.origem, l.meio, l.campanha].filter(Boolean).join(' / ') || 'Direto'
 
 export default function Leads() {
+  return <Suspense fallback={<Esqueleto linhas={5} />}><LeadsComBusca /></Suspense>
+}
+
+function LeadsComBusca() {
+  const params = useSearchParams()
+  const q = params.get('q') || ''
+  return <ListaLeads key={q} q={q} />
+}
+
+function ListaLeads({ q }) {
   const inicial = intervaloDoAtalho('30d')
   const [atalho, setAtalho] = useState('30d')
   const [de, setDe] = useState(inicial.de)
@@ -31,7 +42,7 @@ export default function Leads() {
   const [tentativa, setTentativa] = useState(0)
 
   const valido = /^\d{4}-\d{2}-\d{2}$/.test(de) && /^\d{4}-\d{2}-\d{2}$/.test(ate) && de <= ate
-  const busca = 'de=' + de + '&ate=' + ate
+  const busca = 'de=' + de + '&ate=' + ate + '&q=' + encodeURIComponent(q)
   const { dados, erro, carregando } = useGestao(valido ? '/api/gestao/leads?' + busca + '&pagina=' + pagina : null, tentativa)
 
   function aplicar(novoDe, novoAte) {
@@ -53,6 +64,7 @@ export default function Leads() {
         Quem pediu a VS grátis no site, no horário de Brasília. O link do Instagram (Drive) não passa por aqui.
       </p>
 
+      {q && <p className="mt-3 break-all text-[14px] text-ink-muted">Busca: {q}. A planilha inclui todos os leads do período.</p>}
       <div className="mt-5 space-y-4">
         <Segmentos
           opcoes={ATALHOS}
@@ -101,8 +113,8 @@ export default function Leads() {
             <Vazio titulo="Nenhum lead no período" texto="Quem preencher o formulário de /vs-gratis aparece aqui." />
           ) : (
             <>
-              <div className="mt-6 overflow-x-auto rounded border border-line bg-white">
-                <table className="w-full min-w-[760px] text-left text-[14px]">
+              <div className="mt-6 hidden rounded border border-line bg-white xl:block">
+                <table className="w-full text-left text-[14px]">
                   <thead>
                     <tr className="border-b border-line bg-paper/60 text-[12.5px] text-ink-muted">
                       <th scope="col" className="px-4 py-3 font-semibold">Nome</th>
@@ -132,6 +144,16 @@ export default function Leads() {
                   </tbody>
                 </table>
               </div>
+              <ul className="mt-6 divide-y divide-line rounded border border-line bg-white xl:hidden">
+                {dados.itens.map((l) => <li key={l.id} className="space-y-2 break-words p-4">
+                  <p className="font-semibold">{l.nome}</p>
+                  <p className="break-all text-[14px]">{l.email}</p>
+                  <p className="text-[14px]">{l.whatsapp}</p>
+                  <p className="text-[13px] text-ink-muted">{origemTexto(l)} · {dataHora(l.criado_em)}</p>
+                  <p className="text-[14px]">Baixou: {sim(l.primeiro_download_em)} · Comprou: {sim(l.comprou)}</p>
+                  {l.descadastrado && <p className="text-[13px] text-ink-muted">Descadastrado</p>}
+                </li>)}
+              </ul>
               <Paginacao pagina={pagina} porPagina={dados.por_pagina} total={dados.total_itens} onIr={setPagina} />
             </>
           )}

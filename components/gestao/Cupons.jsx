@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { Dialog } from 'radix-ui'
+import { CabecalhoPagina } from './Casca'
 import { useGestao } from './useGestao'
 import Segmentos from './Segmentos'
 import { Aviso, Esqueleto, Vazio } from './Estados'
@@ -11,6 +13,13 @@ import Lista from './CuponsLista'
 const TIPOS = [
   { id: 'percentual', rotulo: '% do preço' },
   { id: 'valor', rotulo: 'R$ de desconto' },
+]
+
+const SITUACOES = [
+  { id: 'ativos', rotulo: 'Ativos' },
+  { id: 'vencidos', rotulo: 'Vencidos/esgotados' },
+  { id: 'desativados', rotulo: 'Desativados' },
+  { id: 'todos', rotulo: 'Todos' },
 ]
 
 const formVazio = () => ({
@@ -105,13 +114,12 @@ function NovoCupom({ onCriado }) {
   const erroDe = (nome) => (erro.campo === nome ? erro.msg : '')
 
   return (
-    <form onSubmit={criar} noValidate className="mt-8 rounded border border-line bg-white px-4 py-5 sm:px-6">
-      <h2 className="text-[17px] font-bold text-ink">Novo cupom</h2>
+    <form onSubmit={criar} noValidate>
       <p className="mt-1 text-[14px] text-ink-muted">
         Todo cupom tem data de validade e limite de usos. O preço nunca fica abaixo de {moeda(MINIMO)}.
       </p>
 
-      <div className="mt-5 grid gap-x-4 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-5 grid gap-x-4 gap-y-5 sm:grid-cols-2">
         <Campo id="c-codigo" rotulo="Código" erro={erroDe('codigo')} dica="Letras, números, - e _. De 4 a 40.">
           <input
             id="c-codigo"
@@ -120,7 +128,7 @@ function NovoCupom({ onCriado }) {
             maxLength={40}
             autoComplete="off"
             spellCheck={false}
-            placeholder="EX.: ENSAIO30"
+            placeholder="Ex.: ENSAIO30"
             aria-invalid={erro.campo === 'codigo'}
             aria-describedby={erro.campo === 'codigo' ? 'c-codigo-erro' : undefined}
             className={classeCampo('codigo') + ' font-semibold tracking-[0.02em]'}
@@ -215,30 +223,50 @@ function NovoCupom({ onCriado }) {
 
 export default function Cupons() {
   const [tentativa, setTentativa] = useState(0)
-  const { dados, erro } = useGestao('/api/gestao/cupons', tentativa)
+  const [situacao, setSituacao] = useState('ativos')
+  const { dados, erro, carregando } = useGestao('/api/gestao/cupons?situacao=' + (situacao === 'vencidos' ? 'todos' : situacao), tentativa)
+  const itens = dados?.itens.filter((c) => situacao !== 'vencidos' || (c.ativo && (c.vencido || c.esgotado))) || []
   const recarregar = () => setTentativa((n) => n + 1)
 
   return (
-    <section aria-labelledby="titulo-cupons">
-      <h2 id="titulo-cupons" className="sr-only">
-        Cupons
-      </h2>
-      <NovoCupom onCriado={recarregar} />
-
-      <h3 className="mt-10 text-[17px] font-bold text-ink">
-        Cupons {dados && <span className="figs font-normal text-ink-muted">({numero(dados.itens.length)})</span>}
-      </h3>
+    <section aria-label="Cupons">
+      <CabecalhoPagina titulo="Cupons" texto="Descontos, usos e validade dos cupons." />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-[17px] font-bold text-ink">
+          Cupons {dados && !carregando && <span className="figs font-normal text-ink-muted">({numero(itens.length)})</span>}
+        </h3>
+        <Dialog.Root>
+          <Dialog.Trigger asChild>
+            <button type="button" className="btn-ink min-h-[44px] !px-4 !py-2 !text-[14px]">Novo cupom</button>
+          </Dialog.Trigger>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 z-[80] bg-ink/40" />
+            <Dialog.Content aria-describedby={undefined} className="fixed left-1/2 top-1/2 z-[81] max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded border border-line bg-white p-4 sm:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <Dialog.Title className="text-[20px] font-bold text-ink">Novo cupom</Dialog.Title>
+                <Dialog.Close asChild>
+                  <button type="button" className="btn-quiet min-h-[44px] !px-3 !py-2 !text-[14px]">Fechar</button>
+                </Dialog.Close>
+              </div>
+              <NovoCupom onCriado={recarregar} />
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+      </div>
+      <div className="mt-4">
+        <Segmentos opcoes={SITUACOES} valor={situacao} onEscolher={setSituacao} rotulo="Situação dos cupons" />
+      </div>
       {erro ? (
         <Aviso erro={erro} onTentar={recarregar} />
-      ) : !dados ? (
+      ) : !dados || carregando ? (
         <Esqueleto linhas={3} />
-      ) : dados.itens.length === 0 ? (
+      ) : itens.length === 0 ? (
         <Vazio
-          titulo="Nenhum cupom ainda"
-          texto="Crie o primeiro acima. Dá para divulgar pelo código ou pelo link pronto, que já abre a compra com o desconto."
+          titulo="Nenhum cupom nesta situação"
+          texto="Escolha outro filtro ou use Novo cupom. Dá para divulgar pelo código ou pelo link pronto, que já abre a compra com o desconto."
         />
       ) : (
-        <Lista itens={dados.itens} onMudou={recarregar} />
+        <Lista itens={itens} onMudou={recarregar} />
       )}
     </section>
   )

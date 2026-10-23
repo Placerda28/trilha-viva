@@ -54,7 +54,7 @@ export function avisosDaApi(d, agora) {
       icone: 'alerta',
       texto: plural(d.meta_falhou_30d, 'compra não chegou', 'compras não chegaram') + ' à Meta',
       acao: 'Ver vendas',
-      href: '/gestao/periodo',
+      href: '/gestao/vendas',
     })
   }
   for (const c of d.cupons_vencendo || []) {

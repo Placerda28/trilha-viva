@@ -1,7 +1,10 @@
-import Periodo from '@/components/gestao/Periodo'
+import { redirect } from 'next/navigation'
 
-// A permissão é conferida no layout (app/gestao/layout.js). Os dados chegam
-// pelo navegador, de /api/gestao/periodo, que confere de novo.
-export default function PeriodoPage() {
-  return <Periodo />
+export default async function PeriodoPage({ searchParams }) {
+  const parametros = await searchParams
+  const consulta = new URLSearchParams()
+  for (const chave of ['de', 'ate']) {
+    if (typeof parametros?.[chave] === 'string') consulta.set(chave, parametros[chave])
+  }
+  redirect('/gestao/vendas' + (consulta.size ? '?' + consulta.toString() : ''))
 }

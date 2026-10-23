@@ -1,11 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Dialog } from 'radix-ui'
+import { CabecalhoPagina } from './Casca'
 import { useGestao } from './useGestao'
 import ClientesTabela from './ClientesTabela'
 import { Aviso, Esqueleto, Vazio, Paginacao, BaixarPlanilha } from './Estados'
 import { numero } from './formato'
-import { MostrarTestes } from './AcaoGestao'
+import Segmentos from './Segmentos'
+import { PainelAcao } from './MenuAcoes'
 import { useDetalhe } from './DetalheCliente'
 
 const POR_PAGINA = 25
@@ -16,7 +19,9 @@ export default function ClientesLista() {
   const [q, setQ] = useState('')
   const [pagina, setPagina] = useState(1)
   const [tentativa, setTentativa] = useState(0)
-  const [testes, setTestes] = useState(false)
+  const [filtro, setFiltro] = useState('todos')
+  const [acao, setAcao] = useState(null)
+  const [aviso, setAviso] = useState('')
 
   // Espera a pessoa parar de digitar antes de buscar: sem isso, "maria" vira
   // cinco consultas ao banco.
@@ -28,15 +33,13 @@ export default function ClientesLista() {
     return () => clearTimeout(t)
   }, [texto])
 
-  const url = '/api/gestao/clientes?q=' + encodeURIComponent(q) + '&pagina=' + pagina + (testes ? '&testes=1' : '')
+  const url = '/api/gestao/clientes?q=' + encodeURIComponent(q) + '&pagina=' + pagina + '&filtro=' + filtro + (filtro === 'testes' ? '&testes=1' : '')
   const { dados, erro, carregando } = useGestao(url, tentativa)
   const total = dados?.total ?? 0
 
   return (
-    <section aria-labelledby="titulo-clientes" className="mt-8">
-      <h2 id="titulo-clientes" className="sr-only">
-        Clientes
-      </h2>
+    <section aria-label="Clientes" className="[&_button]:min-h-11 [&_a]:min-h-11">
+      <CabecalhoPagina titulo="Clientes" texto="Quem comprou, de onde veio e como está o acesso." />
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
           type="search"
@@ -51,14 +54,40 @@ export default function ClientesLista() {
       </div>
 
       <div className="mt-3">
-        <MostrarTestes
-          valor={testes}
-          onMudar={(v) => {
-            setTestes(v)
+        <Segmentos
+          rotulo="Filtrar clientes"
+          opcoes={[{ id: 'todos', rotulo: 'Todos' }, { id: 'sem_senha', rotulo: 'Sem senha' }, { id: 'bloqueados', rotulo: 'Bloqueados' }, { id: 'testes', rotulo: 'Testes' }]}
+          valor={filtro}
+          onEscolher={(v) => {
+            setFiltro(v)
             setPagina(1)
           }}
         />
       </div>
+      {filtro === 'testes' && <p className="mt-2 text-[13px] text-ink-muted">Inclui compras de teste junto aos clientes reais.</p>}
+      {filtro !== 'todos' && <p className="mt-2 text-[13px] text-ink-muted">A planilha respeita a busca, mas inclui todas as situações e exclui testes.</p>}
+      {aviso && <p role="status" className="mt-3 text-[14px] text-ink">{aviso}</p>}
+      {acao && (
+        <Dialog.Root open onOpenChange={(aberto) => { if (!aberto) setAcao(null) }}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 z-[75] bg-ink/60" />
+            <Dialog.Content aria-describedby={undefined} className="fixed left-1/2 top-1/2 z-[80] max-h-[90dvh] w-[calc(100%-32px)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-md border border-line bg-white p-4 [&_button]:min-h-11">
+              <div className="flex items-center justify-between gap-2">
+                <Dialog.Title className="min-w-0 break-all font-semibold">{acao.c.nome || acao.c.email}</Dialog.Title>
+                <Dialog.Close aria-label="Fechar ação" className="btn-quiet min-w-11">×</Dialog.Close>
+              </div>
+          <PainelAcao
+            key={acao.c.id + acao.id}
+            acao={acao.id}
+            c={acao.c}
+            aoFechar={() => setAcao(null)}
+            aoFeito={(mensagem) => { setAviso(mensagem); setAcao(null); setTentativa((n) => n + 1) }}
+            aoCorrigir={() => { setAcao(null); setTentativa((n) => n + 1) }}
+          />
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+      )}
 
       <p className="figs mt-2 min-h-[20px] text-[13.5px] text-ink-muted" aria-live="polite">
         {dados
@@ -86,6 +115,7 @@ export default function ClientesLista() {
           <ClientesTabela
             itens={dados.itens}
             whatsapp
+            onEscolherAcao={(c, id) => { setAviso(''); setAcao({ c, id }) }}
             onAbrir={(id) => detalhe.abrir(id, () => setTentativa((n) => n + 1))}
           />
           <Paginacao pagina={pagina} porPagina={POR_PAGINA} total={total} onIr={setPagina} />

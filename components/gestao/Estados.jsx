@@ -19,7 +19,7 @@ export function Aviso({ erro, onTentar }) {
       className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded border border-signal/40 bg-white px-5 py-4"
     >
       <p className="text-[14.5px] text-ink">{erro}</p>
-      <button type="button" onClick={onTentar} className="btn-quiet !px-4 !py-2.5 !text-[14px]">
+      <button type="button" onClick={onTentar} className="btn-quiet min-h-11 !px-4 !py-2.5 !text-[14px]">
         Tentar de novo
       </button>
     </div>
@@ -62,7 +62,7 @@ export function Paginacao({ pagina, porPagina, total, onIr }) {
         type="button"
         onClick={() => onIr(pagina - 1)}
         disabled={pagina <= 1}
-        className="btn-quiet !px-4 !py-2.5 !text-[14px] disabled:pointer-events-none disabled:opacity-40"
+        className="btn-quiet min-h-11 !px-4 !py-2.5 !text-[14px] disabled:pointer-events-none disabled:opacity-40"
       >
         Anterior
       </button>
@@ -73,7 +73,7 @@ export function Paginacao({ pagina, porPagina, total, onIr }) {
         type="button"
         onClick={() => onIr(pagina + 1)}
         disabled={pagina >= paginas}
-        className="btn-quiet !px-4 !py-2.5 !text-[14px] disabled:pointer-events-none disabled:opacity-40"
+        className="btn-quiet min-h-11 !px-4 !py-2.5 !text-[14px] disabled:pointer-events-none disabled:opacity-40"
       >
         Próxima
       </button>
@@ -85,7 +85,7 @@ export function Paginacao({ pagina, porPagina, total, onIr }) {
 // com o cookie da sessão, sem passar por JavaScript.
 export function BaixarPlanilha({ href }) {
   return (
-    <a href={href} download className="btn-quiet !px-4 !py-3 !text-[14.5px] whitespace-nowrap">
+    <a href={href} download className="btn-quiet min-h-11 !px-4 !py-3 !text-[14.5px] whitespace-nowrap">
       Baixar planilha
     </a>
   )

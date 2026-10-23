@@ -22,19 +22,25 @@ export function acoesDoCliente(c) {
   ]
 }
 
-export default function MenuAcoes({ cliente, onEscolher }) {
+export default function MenuAcoes({ cliente, onEscolher, compacto = false }) {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <button type="button" className="btn-quiet h-11 shrink-0 !gap-1.5 !px-4 !py-0 !text-[14px]">
-          Ações
-          <Icone nome="baixo" tamanho={16} />
+        <button
+          type="button"
+          aria-label={compacto ? 'Ações de ' + (cliente.nome || cliente.email) : undefined}
+          onClick={(e) => e.stopPropagation()}
+          className="btn-quiet h-11 min-w-11 shrink-0 !gap-1.5 !px-3 !py-0 !text-[14px]"
+        >
+          {compacto ? '⋯' : <>Ações <Icone nome="baixo" tamanho={16} /></>}
         </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           align="end"
           sideOffset={6}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
           className="z-[70] min-w-[210px] rounded-md border border-line bg-white p-1"
         >
           {acoesDoCliente(cliente).map((a) => (

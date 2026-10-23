@@ -9,6 +9,13 @@ const POR_PAGINA = 50
 
 // Frase de cada ação, para a lista ler como um diário e não como um log.
 export const ACOES = {
+  compra_teste_marcada: 'marcou como teste as compras de',
+  compra_teste_desmarcada: 'desmarcou como teste as compras de',
+  carrinho_teste_marcado: 'marcou como teste o carrinho de',
+  carrinho_teste_desmarcado: 'desmarcou como teste o carrinho de',
+  lembretes_parados: 'parou os lembretes de',
+  contato_teste_adicionado: 'adicionou o contato de teste',
+  contato_teste_removido: 'removeu o contato de teste',
   cupom_criado: 'criou o cupom',
   cupom_desativado: 'desativou o cupom',
   membro_adicionado: 'adicionou à equipe',
@@ -31,7 +38,7 @@ export const ACOES = {
 }
 
 function Linha({ r }) {
-  const frase = ACOES[r.acao] || r.acao
+  const frase = ACOES[r.acao] || 'fez uma ação na gestão'
   const mostrarAlvo = r.alvo && r.acao !== 'senha_trocada'
   return (
     <li className="flex flex-col gap-1 px-4 py-3.5 sm:flex-row sm:items-baseline sm:gap-6">
@@ -67,7 +74,7 @@ export default function Registro() {
         {dados && <span className="figs font-normal text-ink-muted">({numero(dados.total)})</span>}
       </h2>
       <p className="mt-1 text-[14px] text-ink-muted">
-        Quem mexeu em cupons e na equipe, e quando. Mais recente primeiro, no horário de Brasília.
+        Tudo que a equipe mexeu na gestão. Mais recente primeiro, no horário de Brasília.
       </p>
 
       {erro ? (

@@ -26,7 +26,7 @@ export const MENU = [
   {
     grupo: 'Vendas',
     itens: [
-      { href: '/gestao/vendas', rotulo: 'Vendas', icone: 'vendas', agora: '/gestao/periodo' },
+      { href: '/gestao/vendas', rotulo: 'Vendas', icone: 'vendas' },
       { href: '/gestao/clientes', rotulo: 'Clientes', icone: 'clientes' },
       { href: '/gestao/cupons', rotulo: 'Cupons', icone: 'cupons' },
     ],

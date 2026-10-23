@@ -23,7 +23,7 @@ export async function postarGestao(url, corpo) {
 }
 
 export const linkAcao =
-  'min-h-[32px] text-[13px] font-semibold text-ink-muted underline decoration-line underline-offset-2 hover:text-ink disabled:opacity-60'
+  'min-h-[44px] text-[13px] font-semibold text-ink-muted underline decoration-line underline-offset-2 hover:text-ink disabled:opacity-60'
 
 // `iniciaAberta` + `onFechar`: usados pelo menu "Ações" do Detalhe do cliente, em
 // que a escolha no menu já é o primeiro toque e a confirmação abre direto.
@@ -64,7 +64,7 @@ export default function AcaoGestao({
     <div className="mt-1.5 w-full space-y-2 rounded border border-line bg-paper/60 px-3 py-2.5 text-[13px]">
       <p className="leading-relaxed text-ink">{explicacao}</p>
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={fazer} disabled={enviando} className="btn-ink !px-4 !py-2 !text-[13.5px] disabled:opacity-60">
+        <button type="button" onClick={fazer} disabled={enviando} className="btn-ink min-h-11 !px-4 !py-2 !text-[13.5px] disabled:opacity-60">
           {enviando ? 'Salvando…' : confirmar}
         </button>
         <button
@@ -74,7 +74,7 @@ export default function AcaoGestao({
             onFechar?.()
           }}
           disabled={enviando}
-          className="btn-quiet !px-4 !py-2 !text-[13.5px] disabled:opacity-60"
+          className="btn-quiet min-h-11 !px-4 !py-2 !text-[13.5px] disabled:opacity-60"
         >
           Cancelar
         </button>
@@ -92,7 +92,7 @@ export default function AcaoGestao({
 export function SeloTeste() {
   return (
     <span className="rounded-sm bg-ink px-1.5 py-0.5 text-[11.5px] font-semibold tracking-[0.04em] text-white">
-      TESTE
+      Teste
     </span>
   )
 }
@@ -100,7 +100,7 @@ export function SeloTeste() {
 // "Mostrar testes": por padrão as listas escondem o que foi marcado como teste.
 export function MostrarTestes({ valor, onMudar }) {
   return (
-    <label className="flex min-h-[32px] w-fit cursor-pointer items-center gap-2 text-[13.5px] text-ink-muted">
+    <label className="flex min-h-[44px] w-fit cursor-pointer items-center gap-2 text-[13.5px] text-ink-muted">
       <input
         type="checkbox"
         checked={valor}

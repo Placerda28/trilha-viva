@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { DropdownMenu } from 'radix-ui'
 import { dataHora, moeda, numero } from './formato'
 import { site } from '@/lib/site'
 import { precoFinal } from './cuponsPreco'
@@ -25,8 +26,7 @@ const soDia = (iso) => dataHora(iso).slice(0, 10)
 
 // Desativar é definitivo, então pede confirmação ali mesmo, na linha, sem
 // janela por cima da tela.
-function Desativar({ cupom, onFeito }) {
-  const [confirmando, setConfirmando] = useState(false)
+function Desativar({ cupom, onFeito, onCancelar }) {
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -52,28 +52,21 @@ function Desativar({ cupom, onFeito }) {
     }
   }
 
-  if (!confirmando) {
-    return (
-      <button type="button" onClick={() => setConfirmando(true)} className="link-quiet text-[13.5px] font-semibold">
-        Desativar
-      </button>
-    )
-  }
   return (
-    <span className="inline-flex flex-wrap items-center gap-2">
+    <span className="inline-flex max-w-[190px] flex-wrap items-center gap-2">
       <span className="text-[13px] text-ink-muted">Desativar de vez?</span>
       <button
         type="button"
         onClick={desativar}
         disabled={enviando}
-        className="rounded border border-signal-deep px-2.5 py-1 text-[13px] font-semibold text-signal-deep transition-colors duration-150 hover:bg-signal-deep hover:text-white disabled:opacity-60"
+        className="min-h-[44px] rounded border border-line px-2.5 py-1 text-[13px] font-semibold text-ink transition-colors duration-150 hover:bg-mist disabled:opacity-60"
       >
         {enviando ? 'Desativando...' : 'Sim, desativar'}
       </button>
-      <button type="button" onClick={() => setConfirmando(false)} className="text-[13px] text-ink-muted hover:text-ink">
+      <button type="button" disabled={enviando} onClick={onCancelar} className="min-h-[44px] px-2 text-[13px] text-ink-muted hover:text-ink disabled:opacity-60">
         Cancelar
       </button>
-      {erro && <span className="text-[13px] text-signal-deep">{erro}</span>}
+      {erro && <span role="alert" className="text-[13px] text-signal-deep">{erro}</span>}
     </span>
   )
 }
@@ -83,9 +76,9 @@ function CopiarLink({ codigo }) {
   const [copiado, setCopiado] = useState(false)
   const link = site.url + '/assinar?cupom=' + encodeURIComponent(codigo)
   return (
-    <button
-      type="button"
-      onClick={async () => {
+    <DropdownMenu.Item
+      onSelect={async (e) => {
+        e.preventDefault()
         try {
           await navigator.clipboard.writeText(link)
           setCopiado(true)
@@ -94,10 +87,10 @@ function CopiarLink({ codigo }) {
           window.prompt('Copie o link:', link)
         }
       }}
-      className="link-quiet text-[13.5px] font-semibold"
+      className="flex min-h-[44px] cursor-default items-center rounded-sm px-3 text-[14px] text-ink outline-none data-[highlighted]:bg-mist"
     >
       {copiado ? 'Link copiado' : 'Copiar link'}
-    </button>
+    </DropdownMenu.Item>
   )
 }
 
@@ -112,6 +105,9 @@ function Usos({ c }) {
       <span className="text-ink">
         {numero(c.usos)} de {numero(c.limite_usos)}
       </span>
+      <span aria-hidden="true" className="my-1 block h-1 w-full min-w-[60px] max-w-[120px] overflow-hidden rounded-sm bg-mist">
+        <span className="block h-full bg-ink" style={{ width: Math.min(100, c.limite_usos > 0 ? c.usos / c.limite_usos * 100 : 0) + '%' }} />
+      </span>
       {c.reservas_ativas > 0 && (
         <span className="block text-[12.5px] text-ink-muted">{numero(c.reservas_ativas)} pagando agora</span>
       )}
@@ -120,19 +116,34 @@ function Usos({ c }) {
 }
 
 function Acoes({ c, onMudou }) {
-  const valendo = c.ativo && !c.vencido && !c.esgotado
+  const [confirmando, setConfirmando] = useState(false)
   return (
-    <span className="flex flex-wrap items-center gap-x-4 gap-y-2 md:justify-end">
-      {valendo && <CopiarLink codigo={c.codigo} />}
-      {c.ativo ? <Desativar cupom={c} onFeito={onMudou} /> : null}
-    </span>
+    <div className="flex flex-col items-end gap-2">
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          <button type="button" aria-label={'Ações do cupom ' + c.codigo} className="flex h-11 w-11 shrink-0 items-center justify-center rounded border border-line text-xl text-ink hover:bg-mist">⋯</button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content align="end" sideOffset={6} className="z-[70] min-w-[180px] rounded border border-line bg-white p-1">
+            <CopiarLink codigo={c.codigo} />
+            {c.ativo && <DropdownMenu.Item onSelect={() => setConfirmando(true)} className="flex min-h-[44px] cursor-default items-center rounded-sm px-3 text-[14px] text-ink outline-none data-[highlighted]:bg-mist">Desativar</DropdownMenu.Item>}
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+      {confirmando && c.ativo && <Desativar cupom={c} onCancelar={() => setConfirmando(false)} onFeito={() => { setConfirmando(false); onMudou() }} />}
+    </div>
   )
+}
+
+function Desativado({ c }) {
+  if (c.ativo) return null
+  return <span className="block break-words text-[12.5px] text-ink-muted">Desativado por {c.desativado_por || 'não informado'} em {c.desativado_em ? soDia(c.desativado_em).slice(0, 5) : 'data não informada'}</span>
 }
 
 export default function Lista({ itens, onMudou }) {
   return (
     <>
-      <div className="mt-6 hidden overflow-hidden rounded border border-line bg-white md:block">
+      <div className="mt-6 hidden overflow-hidden rounded border border-line bg-white xl:block">
         <table className="w-full text-left text-[14.5px]">
           <thead>
             <tr className="border-b border-line bg-paper/60 text-[12.5px] text-ink-muted">
@@ -151,9 +162,10 @@ export default function Lista({ itens, onMudou }) {
               <tr key={c.id} className="align-top">
                 <td className="px-4 py-3.5">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold tracking-[0.02em] text-ink">{c.codigo}</span>
+                    <span className="break-all font-semibold tracking-[0.02em] text-ink">{c.codigo}</span>
                     <Etiqueta c={c} />
                   </span>
+                  <Desativado c={c} />
                   <span className="block text-[12.5px] text-ink-muted">
                     criado por {c.criado_por} · {soDia(c.criado_em)}
                   </span>
@@ -176,13 +188,17 @@ export default function Lista({ itens, onMudou }) {
         </table>
       </div>
 
-      <ul className="mt-6 divide-y divide-line rounded border border-line bg-white md:hidden">
+      <ul className="mt-6 divide-y divide-line rounded border border-line bg-white xl:hidden">
         {itens.map((c) => (
           <li key={c.id} className="px-4 py-4">
-            <span className="flex flex-wrap items-center gap-2">
-              <span className="font-semibold tracking-[0.02em] text-ink">{c.codigo}</span>
-              <Etiqueta c={c} />
-            </span>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+              <span className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="break-all font-semibold tracking-[0.02em] text-ink">{c.codigo}</span>
+                <Etiqueta c={c} />
+              </span>
+              <Acoes c={c} onMudou={onMudou} />
+            </div>
+            <Desativado c={c} />
             <dl className="figs mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5 text-[13.5px]">
               <div>
                 <dt className="text-ink-muted">Desconto</dt>
@@ -205,9 +221,6 @@ export default function Lista({ itens, onMudou }) {
                 <dd className="text-ink">{soDia(c.valido_ate)}</dd>
               </div>
             </dl>
-            <div className="mt-3">
-              <Acoes c={c} onMudou={onMudou} />
-            </div>
           </li>
         ))}
       </ul>

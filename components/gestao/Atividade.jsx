@@ -23,7 +23,7 @@ export function itensDaAtividade(lista) {
     if (a.tipo === 'compra') texto = quem + ' comprou' + (a.valor_centavos == null ? '' : ' por ' + moeda(a.valor_centavos))
     else if (a.tipo === 'lead') texto = quem + ' pediu a VS grátis'
     else if (a.tipo === 'recuperado') texto = 'Carrinho de ' + quem + ' recuperado: comprou depois do lembrete'
-    else texto = (a.quem || 'A equipe').split('@')[0] + ' ' + (ACOES[a.acao] || a.acao || 'fez uma ação') + (a.alvo && a.acao !== 'senha_trocada' ? ' ' + a.alvo : '')
+    else texto = (a.quem || 'A equipe').split('@')[0] + ' ' + (ACOES[a.acao] || 'fez uma ação na gestão') + (a.alvo && a.acao !== 'senha_trocada' ? ' ' + a.alvo : '')
     return { id: a.tipo + '-' + a.em + '-' + i, tipo: a.tipo, texto, em: a.em }
   })
 }

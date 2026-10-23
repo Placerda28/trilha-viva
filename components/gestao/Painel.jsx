@@ -50,7 +50,7 @@ function UltimasVendas({ vendas, aoMudar }) {
       id="ultimas-vendas"
       titulo="Últimas vendas"
       acao={
-        <Link href="/gestao/periodo" prefetch={false} className="link-signal min-h-11 !text-[14px] md:min-h-0">
+        <Link href="/gestao/vendas" prefetch={false} className="link-signal min-h-11 !text-[14px] md:min-h-0">
           Ver todas
         </Link>
       }

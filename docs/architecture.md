@@ -12,7 +12,7 @@
 
 ## Pastas
 - `app/`: páginas e rotas. As públicas são home, `musicas/`, `artistas/`, `blog/`, `como-usar/`, `faq/`, `assinar/`, `sucesso/`, `entrar/`, `criar-senha/`, `primeiro-acesso/`, `recuperar/`, `redefinir/`, `acervo/`, `privacidade/` e `termos/`.
-- `app/interno/gestao/`: menu de gestão (Clientes, Período, Cupons, Recuperação — com as conversas de WhatsApp em `recuperacao/whatsapp` —, Equipe, Registro). Só admin entra.
+- `app/interno/gestao/`: menu de gestão (Painel, Vendas, Clientes, Cupons, Recuperação — com as conversas de WhatsApp em `recuperacao/whatsapp` —, Equipe, Registro). Só admin entra.
 - `app/api/`: `checkout`, `mercadopago`, `webhook`, `acesso`, `baixar`, `carrinho`, `conta`, `cupom`, `descadastrar` e `interno` (a gestão).
 - `components/`: componentes do site. `components/gestao/` reúne as telas da gestão.
 - `lib/`: regras do negócio. `lib/gestao/` guarda o backend da gestão (permissão em `permissao.js`).
