@@ -151,6 +151,7 @@ export default function Painel({ painel, avisos, agora, agrupar = 'dia', onAgrup
         <Cartao
           id="de-onde-vieram"
           titulo="De onde vieram as vendas"
+          acao={<Link href={'/gestao/campanhas' + (painel.de && painel.ate ? '?de=' + painel.de + '&ate=' + painel.ate : '')} prefetch={false} className="link-signal min-h-11 !text-[14px]">Ver campanhas</Link>}
         >
           <div className="mt-4">
             {fontes.length === 0 ? (

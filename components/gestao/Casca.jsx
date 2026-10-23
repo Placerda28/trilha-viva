@@ -30,7 +30,7 @@ const CHAVE = 'gestao-barra-recolhida'
 
 // As telas que filtram por data (o resto não mostra o seletor). Cada tela nova
 // com período entra aqui quando ganha o ?de&ate.
-const COM_PERIODO = new Set(['/gestao', '/gestao/vendas', '/gestao/recuperacao', '/gestao/leads', '/gestao/registro'])
+const COM_PERIODO = new Set(['/gestao', '/gestao/vendas', '/gestao/recuperacao', '/gestao/leads', '/gestao/registro', '/gestao/campanhas', '/gestao/downloads'])
 
 const AvisosContexto = createContext(undefined)
 // Os avisos que a casca já busca (undefined = carregando, null = falhou), para o

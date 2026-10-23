@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { usePeriodo } from './usePeriodo'
+import { CabecalhoPagina } from './Casca'
 import { useGestao } from './useGestao'
 import { Aviso, Esqueleto, Vazio, Paginacao } from './Estados'
 import { dataHora, numero } from './formato'
@@ -62,25 +64,60 @@ function Linha({ r }) {
   )
 }
 
+const GRUPOS = [
+  ['Cupons', ['cupom_criado', 'cupom_desativado']],
+  ['Clientes', ['cliente_bloqueado', 'cliente_liberado', 'cliente_email_corrigido', 'acesso_reenviado']],
+  ['Carrinhos', ['lembretes_parados']],
+  ['Equipe', ['membro_adicionado', 'membro_removido', 'acervo_liberado', 'acervo_retirado', 'senha_trocada']],
+  ['Testes', ['compra_teste_marcada', 'compra_teste_desmarcada', 'carrinho_teste_marcado', 'carrinho_teste_desmarcado', 'contato_teste_adicionado', 'contato_teste_removido']],
+  ['WhatsApp', ['whatsapp_respondido', 'whatsapp_anexo', 'whatsapp_retomado', 'whatsapp_pausar', 'whatsapp_retomar', 'whatsapp_ligar', 'whatsapp_sequencia_parar', 'whatsapp_sequencia_retomar']],
+]
+
 export default function Registro() {
+  return <Suspense fallback={<Esqueleto linhas={5} />}><RegistroComPeriodo /></Suspense>
+}
+
+function RegistroComPeriodo() {
+  const periodo = usePeriodo()
+  return <ListaRegistro key={periodo.de + periodo.ate} periodo={periodo} />
+}
+
+function ListaRegistro({ periodo }) {
   const [pagina, setPagina] = useState(1)
   const [tentativa, setTentativa] = useState(0)
-  const { dados, erro, carregando } = useGestao('/api/gestao/registro?pagina=' + pagina, tentativa)
+  const [quem, setQuem] = useState('')
+  const [tipo, setTipo] = useState('')
+  const consulta = new URLSearchParams({ pagina, quem, tipo, de: periodo.de, ate: periodo.ate })
+  const { dados, erro, carregando } = useGestao(periodo.valido ? '/api/gestao/registro?' + consulta : null, tentativa)
+  const campo = 'mt-1 min-h-[44px] w-full rounded border border-line bg-white px-3 text-[14px] text-ink'
+
 
   return (
-    <section aria-labelledby="titulo-registro" className="mt-8">
-      <h2 id="titulo-registro" className="text-[17px] font-bold text-ink">
-        Registro de ações{' '}
-        {dados && <span className="figs font-normal text-ink-muted">({numero(dados.total)})</span>}
-      </h2>
-      <p className="mt-1 text-[14px] text-ink-muted">
-        Tudo que a equipe mexeu na gestão. Mais recente primeiro, no horário de Brasília.
-      </p>
+    <section aria-label="Registro de ações">
+      <CabecalhoPagina titulo="Registro de ações" texto="Tudo que a equipe mexeu na gestão." comPeriodo />
+      {dados && <p className="figs text-[14px] text-ink-muted">{numero(dados.total)} ações no período</p>}
 
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <label className="min-w-0 text-[13px] text-ink-muted">Quem
+          <select className={campo} value={quem} onChange={(e) => { setQuem(e.target.value); setPagina(1) }}>
+            <option value="">Toda a equipe</option>
+            {(dados?.quem_opcoes || []).map((email) => <option key={email} value={email}>{email}</option>)}
+          </select>
+        </label>
+        <label className="min-w-0 text-[13px] text-ink-muted">Tipo
+          <select className={campo} value={tipo} onChange={(e) => { setTipo(e.target.value); setPagina(1) }}>
+            <option value="">Todas as ações</option>
+            {GRUPOS.map(([grupo, acoes]) => <optgroup key={grupo} label={grupo}>
+              {acoes.map((acao) => <option key={acao} value={acao}>{ACOES[acao]}</option>)}
+            </optgroup>)}
+          </select>
+        </label>
+      </div>
+      {!periodo.valido && <p role="alert" className="mt-3 text-[14px] text-signal-deep">{periodo.erro}</p>}
       {erro ? (
         <Aviso erro={erro} onTentar={() => setTentativa((n) => n + 1)} />
       ) : !dados ? (
-        <Esqueleto linhas={5} />
+        periodo.valido && <Esqueleto linhas={5} />
       ) : dados.itens.length === 0 ? (
         <Vazio titulo="Nada registrado ainda" texto="Criar ou desativar um cupom, ou mexer na equipe, aparece aqui." />
       ) : (

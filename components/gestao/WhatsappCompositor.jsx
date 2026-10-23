@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { TIPOS_DE_ARQUIVO, textoRetomar, tipoDaMidia } from '@/lib/whatsapp-meta'
 import { HORA, PRECO, data, diaChave, nomeDe, tamanhoLegivel } from './whatsappUtil'
 import { IconeArquivo } from './WhatsappMensagens'
+import AcaoGestao from './AcaoGestao'
 
 // Onde a equipe escreve na conversa aberta: texto e anexo dentro da janela de
 // 24 h; fora dela, o "Chamar de novo".
@@ -132,7 +133,7 @@ export default function Compositor({ c, configurado, onEnviado }) {
             onClick={() => setArquivo(null)}
             disabled={enviando}
             aria-label="Tirar o anexo"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-white hover:text-ink"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-white hover:text-ink"
           >
             <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M6 6l12 12M18 6L6 18" />
@@ -175,7 +176,7 @@ export default function Compositor({ c, configurado, onEnviado }) {
           onPaste={colar}
           maxLength={LIMITE}
           rows={1}
-          className="max-h-[150px] min-h-[44px] flex-1 resize-none rounded-[22px] border border-line bg-paper px-4 py-2.5 focus-visible:rounded-[22px] text-[15px] leading-snug text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
+          className="max-h-[150px] min-h-[44px] min-w-0 flex-1 resize-none rounded-[22px] border border-line bg-paper px-4 py-2.5 focus-visible:rounded-[22px] text-[15px] leading-snug text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
           placeholder={arquivo ? 'Legenda (opcional)' : 'Mensagem'}
         />
         <button
@@ -206,34 +207,9 @@ export default function Compositor({ c, configurado, onEnviado }) {
 // Fora da janela de 24 h só vai um modelo aprovado pela Meta, pago. A última
 // chamada nas últimas 24 h trava o botão (o servidor confere de novo).
 function ChamarDeNovo({ c, onEnviado }) {
-  const [enviando, setEnviando] = useState(false)
-  const [erro, setErro] = useState('')
-  useEffect(() => setErro(''), [c.telefone])
-
   const chamada = [...c.mensagens].reverse().find((m) => m.direcao === 'saida' && m.modelo)
   const quando = data(chamada?.em)
   const recente = quando && Date.now() - quando.getTime() < 86400000
-
-  async function chamar() {
-    const previa = textoRetomar(c.nome || c.nome_perfil || '')
-    if (!window.confirm('Enviar esta mensagem para ' + nomeDe(c) + '?' + String.fromCharCode(10, 10) + previa + String.fromCharCode(10, 10) + 'Custo: cerca de ' + PRECO + ' (cobrado pela Meta).')) return
-    setErro('')
-    setEnviando(true)
-    try {
-      const res = await fetch('/api/gestao/whatsapp/retomar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefone: c.telefone }),
-      })
-      const dados = await res.json().catch(() => null)
-      if (res.status === 404) setErro('Sua sessão acabou. Entre de novo.')
-      else if (!res.ok || !dados?.ok) setErro(dados?.erro || 'Não consegui enviar agora. Tente de novo.')
-      else onEnviado()
-    } catch {
-      setErro('Falha de conexão. Confira a internet e tente de novo.')
-    }
-    setEnviando(false)
-  }
 
   return (
     <div className="border-t border-line bg-white px-4 py-3 text-center">
@@ -244,20 +220,16 @@ function ChamarDeNovo({ c, onEnviado }) {
       ) : (
         <>
           <p className="text-[13.5px] text-ink-muted">Passaram 24 h da última mensagem do cliente. Para falar de novo, mande um convite para ele responder.</p>
-          <button
-            type="button"
-            onClick={chamar}
-            disabled={enviando}
-            className="btn-ink mt-2.5 !px-5 !py-2.5 !text-[14.5px] disabled:opacity-60"
-          >
-            {enviando ? 'Enviando…' : 'Chamar de novo · ' + PRECO}
-          </button>
+          <AcaoGestao
+            key={c.telefone}
+            rotulo={'Chamar de novo · ' + PRECO}
+            explicacao={'Enviar esta mensagem para ' + nomeDe(c) + '? ' + textoRetomar(c.nome || c.nome_perfil || '') + ' Custo: cerca de ' + PRECO + ' (cobrado pela Meta).'}
+            confirmar={'Enviar convite · ' + PRECO}
+            url="/api/gestao/whatsapp/retomar"
+            corpo={{ telefone: c.telefone }}
+            onFeito={onEnviado}
+          />
         </>
-      )}
-      {erro && (
-        <p role="alert" className="mt-2 rounded border border-signal px-3 py-2 text-left text-[13.5px] font-medium text-signal-deep">
-          {erro}
-        </p>
       )}
     </div>
   )

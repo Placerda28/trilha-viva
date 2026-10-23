@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useGestao } from './useGestao'
 import { postarGestao, linkAcao } from './AcaoGestao'
 import { Aviso, Esqueleto } from './Estados'
+import { dataHora } from './formato'
 import { formatarCelular } from '@/lib/gestao/csv'
 
 // Lista de e-mails e celulares de teste. Carrinho e compra que vierem deles já
@@ -89,6 +90,9 @@ export default function ContatosTeste() {
                   {c.tipo === 'telefone' ? formatarCelular(c.valor) : c.valor}
                 </span>
                 <span className="text-[12.5px] text-ink-muted">{c.tipo === 'telefone' ? 'Celular' : 'E-mail'}</span>
+                {c.criado_por && <span className="block break-all text-[12.5px] text-ink-muted">
+                  Adicionado por {c.criado_por}{c.criado_em ? ' em ' + dataHora(c.criado_em.replace(' ', 'T') + (c.criado_em.endsWith('Z') ? '' : 'Z')).slice(0, 5) : ''}
+                </span>}
               </span>
               <button type="button" onClick={() => enviar('remover', c.valor)} disabled={salvando} className={linkAcao}>
                 Remover

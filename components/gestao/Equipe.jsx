@@ -1,15 +1,12 @@
 'use client'
-
 import { useState } from 'react'
+import { Dialog } from 'radix-ui'
 import { useGestao } from './useGestao'
 import { Aviso, Esqueleto, Vazio } from './Estados'
 import { dataHora, numero } from './formato'
-
 // Só o master chega aqui: a rota da página e as rotas de dados recusam o
 // resto. Esconder a aba no menu é conforto; a trava de verdade é no servidor.
-
 const MINIMO = 10
-
 // Senha provisória legível (sem 0/O, 1/l/I), para ser ditada ou copiada sem
 // confusão. crypto.getRandomValues, nunca Math.random.
 function gerarSenha(tamanho = 14) {
@@ -19,7 +16,6 @@ function gerarSenha(tamanho = 14) {
   for (const b of bytes) s += letras[b % letras.length]
   return s
 }
-
 async function enviar(url, corpo) {
   const res = await fetch(url, {
     method: 'POST',
@@ -29,7 +25,6 @@ async function enviar(url, corpo) {
   const dados = await res.json().catch(() => null)
   return { res, dados }
 }
-
 function NovoMembro({ onMudou }) {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -37,7 +32,6 @@ function NovoMembro({ onMudou }) {
   const [enviando, setEnviando] = useState(false)
   const [resultado, setResultado] = useState(null) // { email, senha, contaExistente }
   const [copiado, setCopiado] = useState(false)
-
   async function adicionar(e) {
     e.preventDefault()
     setErro({ campo: '', msg: '' })
@@ -62,19 +56,15 @@ function NovoMembro({ onMudou }) {
       setEnviando(false)
     }
   }
-
   const campo = (nome) =>
-    'w-full rounded border bg-white px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none ' +
+    'min-w-0 w-full rounded border bg-white px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none ' +
     (erro.campo === nome ? 'border-signal-deep' : 'border-line')
-
   return (
-    <form onSubmit={adicionar} noValidate className="mt-8 rounded border border-line bg-white px-4 py-5 sm:px-6">
-      <h2 className="text-[17px] font-bold text-ink">Adicionar à equipe</h2>
+    <form onSubmit={adicionar} noValidate className="mt-4">
       <p className="mt-1 text-[14px] text-ink-muted">
         A pessoa vê toda a gestão, menos esta aba. No primeiro acesso ela é obrigada a trocar a senha provisória.
         O acervo fica desligado até você liberar.
       </p>
-
       <div className="mt-5 grid gap-x-4 gap-y-5 sm:grid-cols-2">
         <div>
           <label htmlFor="m-email" className="text-[13px] text-ink-muted">
@@ -125,19 +115,16 @@ function NovoMembro({ onMudou }) {
           {erro.campo === 'senha' && <p className="mt-1 text-[13px] text-signal-deep">{erro.msg}</p>}
         </div>
       </div>
-
       <div className="mt-5 flex flex-wrap items-center justify-end gap-4 border-t border-line pt-4">
         <button type="submit" disabled={enviando} className="btn-ink !px-5 !py-3 !text-[14.5px] disabled:opacity-60">
           {enviando ? 'Adicionando...' : 'Adicionar'}
         </button>
       </div>
-
       {erro.msg && !erro.campo && (
         <p role="alert" className="mt-3 text-[14px] text-signal-deep">
           {erro.msg}
         </p>
       )}
-
       {resultado && (
         <div role="status" className="mt-4 rounded border border-ink px-4 py-4">
           {resultado.contaExistente ? (
@@ -167,7 +154,7 @@ function NovoMembro({ onMudou }) {
                       /* a senha continua visível para copiar à mão */
                     }
                   }}
-                  className="link-quiet text-[13.5px] font-semibold"
+                  className="link-quiet min-h-[44px] px-2 text-[13.5px] font-semibold"
                 >
                   {copiado ? 'Copiada' : 'Copiar senha'}
                 </button>
@@ -182,7 +169,6 @@ function NovoMembro({ onMudou }) {
     </form>
   )
 }
-
 function Etiquetas({ m }) {
   return (
     <>
@@ -199,7 +185,6 @@ function Etiquetas({ m }) {
     </>
   )
 }
-
 // Liga/desliga o acervo do membro. É um botão com aria-pressed, não um
 // interruptor inventado: a mesma cara dos outros botões da gestão.
 function Acervo({ m, onMudou }) {
@@ -228,7 +213,7 @@ function Acervo({ m, onMudou }) {
         aria-pressed={m.libera_acervo}
         aria-label={(m.libera_acervo ? 'Tirar' : 'Liberar') + ' o acervo de ' + m.email}
         className={
-          'rounded border px-3 py-1.5 text-[13.5px] font-semibold transition-colors duration-150 disabled:opacity-60 ' +
+          'min-h-[44px] rounded border px-3 py-1.5 text-[13.5px] font-semibold transition-colors duration-150 disabled:opacity-60 ' +
           (m.libera_acervo ? 'border-ink bg-ink text-white' : 'border-line bg-white text-ink hover:border-ink')
         }
       >
@@ -238,13 +223,11 @@ function Acervo({ m, onMudou }) {
     </span>
   )
 }
-
 function Remover({ m, onMudou }) {
   const [confirmando, setConfirmando] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
   if (!m.ativo) return null
-
   async function remover() {
     setEnviando(true)
     setErro('')
@@ -261,7 +244,7 @@ function Remover({ m, onMudou }) {
 
   if (!confirmando) {
     return (
-      <button type="button" onClick={() => setConfirmando(true)} className="link-quiet text-[13.5px] font-semibold">
+      <button type="button" onClick={() => setConfirmando(true)} className="link-quiet min-h-[44px] px-2 text-[13.5px] font-semibold">
         Remover
       </button>
     )
@@ -273,11 +256,11 @@ function Remover({ m, onMudou }) {
         type="button"
         onClick={remover}
         disabled={enviando}
-        className="rounded border border-signal-deep px-2.5 py-1 text-[13px] font-semibold text-signal-deep transition-colors duration-150 hover:bg-signal-deep hover:text-white disabled:opacity-60"
+        className="min-h-[44px] rounded border border-signal-deep px-2.5 py-1 text-[13px] font-semibold text-signal-deep transition-colors duration-150 hover:bg-signal-deep hover:text-white disabled:opacity-60"
       >
         {enviando ? 'Removendo...' : 'Sim, remover'}
       </button>
-      <button type="button" onClick={() => setConfirmando(false)} className="text-[13px] text-ink-muted hover:text-ink">
+      <button type="button" onClick={() => setConfirmando(false)} className="min-h-[44px] px-2 text-[13px] text-ink-muted hover:text-ink">
         Cancelar
       </button>
       {erro && <span className="text-[13px] text-signal-deep">{erro}</span>}
@@ -301,6 +284,7 @@ function Lista({ itens, onMudou }) {
                 ? 'adicionado por ' + m.criado_por + ' em ' + dataHora(m.criado_em).slice(0, 10)
                 : 'removido por ' + (m.removido_por || '—') + ' em ' + dataHora(m.removido_em).slice(0, 10)}
             </span>
+            <span className="block text-[12.5px] text-ink-muted">Último acesso: {m.ultimo_acesso ? dataHora(m.ultimo_acesso) : 'Ainda não entrou'}</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <Acervo m={m} onMudou={onMudou} />
@@ -323,11 +307,28 @@ export default function Equipe() {
       <h2 id="titulo-equipe" className="sr-only">
         Equipe
       </h2>
-      <NovoMembro onMudou={recarregar} />
-
-      <h3 className="mt-10 text-[17px] font-bold text-ink">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+      <h3 className="text-[17px] font-bold text-ink">
         Equipe {dados && <span className="figs font-normal text-ink-muted">({numero(ativos)} com acesso)</span>}
       </h3>
+      <Dialog.Root>
+        <Dialog.Trigger asChild>
+          <button type="button" className="btn-ink min-h-[44px] !px-4 !py-2 !text-[14px]">Adicionar à equipe</button>
+        </Dialog.Trigger>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-[80] bg-ink/40" />
+          <Dialog.Content aria-describedby={undefined} className="fixed left-1/2 top-1/2 z-[81] max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded border border-line bg-white p-4 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <Dialog.Title className="text-[20px] font-bold text-ink">Adicionar à equipe</Dialog.Title>
+              <Dialog.Close asChild>
+                <button type="button" className="btn-quiet min-h-[44px] !px-3 !py-2 !text-[14px]">Fechar</button>
+              </Dialog.Close>
+            </div>
+            <NovoMembro onMudou={recarregar} />
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+      </div>
       <p className="mt-1 text-[14px] text-ink-muted">
         Você, como administrador master, não aparece aqui: esse papel vem da configuração do site e não pode ser
         tirado nem dado por esta tela.
@@ -337,7 +338,7 @@ export default function Equipe() {
       ) : !dados ? (
         <Esqueleto linhas={2} />
       ) : dados.itens.length === 0 ? (
-        <Vazio titulo="Ninguém na equipe ainda" texto="Adicione alguém acima para dividir o trabalho da gestão." />
+        <Vazio titulo="Ninguém na equipe ainda" texto="Use Adicionar à equipe para dividir o trabalho da gestão." />
       ) : (
         <Lista itens={dados.itens} onMudou={recarregar} />
       )}

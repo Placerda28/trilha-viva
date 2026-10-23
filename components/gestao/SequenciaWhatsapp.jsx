@@ -51,7 +51,7 @@ export default function SequenciaWhatsapp({ w }) {
 
   return (
     <div>
-      <ol className="flex gap-1" aria-label={(w.enviadas || 0) + ' de ' + total + ' mensagens de WhatsApp enviadas'}>
+      <ol className="flex flex-wrap gap-1" aria-label={(w.enviadas || 0) + ' de ' + total + ' mensagens de WhatsApp enviadas'}>
         {Array.from({ length: total }, (_, i) => {
           const numero = i + 1
           const m = porNumero.get(numero)
@@ -64,7 +64,7 @@ export default function SequenciaWhatsapp({ w }) {
                   onClick={() => setAberta(aberta === numero ? null : numero)}
                   aria-expanded={aberta === numero}
                   title={numero + 'ª não entregue' + (m.erro ? ' · código ' + m.erro : '')}
-                  className={base + CASA.falhou}
+                  className={base + ' min-h-11 min-w-11 ' + CASA.falhou}
                 >
                   {numero}
                 </button>

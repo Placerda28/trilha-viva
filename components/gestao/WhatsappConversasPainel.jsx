@@ -89,7 +89,7 @@ function ConversaAberta({ c, configurado, onEnviado, onVoltar }) {
           type="button"
           onClick={onVoltar}
           aria-label="Voltar para as conversas"
-          className="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink hover:bg-paper md:hidden"
+          className="-ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink hover:bg-paper md:hidden"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 18l-6-6 6-6" />
@@ -129,8 +129,8 @@ export default function Conversas({ conversas, configurado, onEnviado }) {
   const esperando = conversas.filter(aguardandoVoce).length
 
   return (
-    <div className="mt-5 grid h-[min(80vh,760px)] min-h-[480px] overflow-hidden rounded border border-line bg-white md:grid-cols-[340px_1fr]">
-      <div className={'min-h-0 flex-col md:flex md:border-r md:border-line ' + (atual ? 'hidden' : 'flex')}>
+    <div className="mt-5 grid h-[calc(100dvh-9rem-5.5rem-env(safe-area-inset-bottom))] min-h-0 overflow-hidden rounded border border-line bg-white md:h-[calc(100dvh-9.5rem-2.5rem)] md:grid-cols-[minmax(220px,340px)_minmax(0,1fr)]">
+      <div className={'min-h-0 min-w-0 flex-col md:flex md:border-r md:border-line ' + (atual ? 'hidden' : 'flex')}>
         <div className="border-b border-line px-3.5 py-3">
           <p className="figs text-[13px] text-ink-muted">
             {numero(conversas.length)} {conversas.length === 1 ? 'conversa' : 'conversas'}
@@ -145,7 +145,7 @@ export default function Conversas({ conversas, configurado, onEnviado }) {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar nome ou número"
-            className="mt-2 w-full rounded-full border border-line bg-paper px-4 py-2 text-[14px] focus-visible:rounded-full text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
+            className="mt-2 min-h-11 w-full rounded-full border border-line bg-paper px-4 py-2 text-[14px] focus-visible:rounded-full text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
           />
         </div>
         {filtradas.length === 0 ? (
@@ -158,7 +158,7 @@ export default function Conversas({ conversas, configurado, onEnviado }) {
           </ul>
         )}
       </div>
-      <div className={'min-h-0 ' + (atual ? 'block' : 'hidden md:block')}>
+      <div className={'min-h-0 min-w-0 ' + (atual ? 'block' : 'hidden md:block')}>
         {atual ? (
           <ConversaAberta c={atual} configurado={configurado} onEnviado={onEnviado} onVoltar={() => setAberta(null)} />
         ) : (

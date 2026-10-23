@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { dataHora } from './formato'
 
-// Parte "Resultado" da sub-aba WhatsApp: o estado (ligar, pausar, retomar) e
+// Parte "Robô" da sub-aba WhatsApp: o estado (ligar, pausar, retomar) e
 // os quadros de números.
 
 const ESTADOS = {
@@ -54,7 +54,7 @@ export function EstadoWhatsapp({ estado, onMudou }) {
       type="button"
       onClick={() => mudar(acao)}
       disabled={Boolean(enviando)}
-      className={(principal ? 'btn-ink' : 'btn-quiet') + ' !px-5 !py-2.5 !text-[14.5px] disabled:opacity-60'}
+      className={(principal ? 'btn-ink' : 'btn-quiet') + ' min-h-11 !px-5 !py-2.5 !text-[14.5px] disabled:opacity-60'}
     >
       {enviando === acao ? 'Aguarde…' : rotulo}
     </button>
@@ -65,6 +65,12 @@ export function EstadoWhatsapp({ estado, onMudou }) {
       <p className="text-[13px] text-ink-muted">WhatsApp</p>
       <p className="mt-0.5 text-[17px] font-bold text-ink">{info.titulo}</p>
       <p className="mt-1 text-[13.5px] text-ink-muted">{info.texto}</p>
+      <p className="mt-2 text-[13px] text-ink-muted">
+        Modelo na Meta: {estado.modelo_status || 'Sem informação'}
+      </p>
+      {estado.ligado_em && (
+        <p className="figs mt-1 text-[13px] text-ink-muted">Ligado em {dataHora(estado.ligado_em)}</p>
+      )}
       {estado.atualizado_por && estado.atualizado_em && (
         <p className="figs mt-1 text-[12.5px] text-ink-faint">
           Última mudança: {dataHora(estado.atualizado_em)} · {estado.atualizado_por}

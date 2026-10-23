@@ -1,5 +1,8 @@
 'use client'
 
+import { useRef, useState } from 'react'
+import { DropdownMenu } from 'radix-ui'
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { dataHora } from './formato'
 import SequenciaWhatsapp from './SequenciaWhatsapp'
 import AcaoGestao, { SeloTeste } from './AcaoGestao'
@@ -131,48 +134,63 @@ function Whatsapp({ p }) {
 // Na Recuperação: marcar o carrinho como teste (sai dos números e para os
 // lembretes) ou só parar os lembretes de uma pessoa real (continua contando).
 function AcoesCarrinho({ p, onMudou }) {
+  const [acao, setAcao] = useState(null)
+  const gatilho = useRef(null)
   const andando = p.situacao === 'andamento' || p.situacao === 'aguardando' || (p.whatsapp?.proximo_em && !p.pago_em)
+  const teste = p.teste ? 'Desmarcar teste' : 'Marcar como teste'
   return (
-    <span className="mt-0.5 flex flex-wrap gap-x-4">
-      {p.teste ? (
-        <AcaoGestao
-          rotulo="Desmarcar teste"
-          explicacao="O carrinho volta a contar. Os lembretes que já pararam não voltam."
-          confirmar="Desmarcar teste"
-          url="/api/gestao/recuperacao/teste"
-          corpo={{ email: p.email, teste: false }}
-          onFeito={onMudou}
-        />
-      ) : (
-        <AcaoGestao
-          rotulo="Marcar como teste"
-          explicacao="Os carrinhos e compras deste e-mail saem dos números e todos os lembretes (e-mail e WhatsApp) param."
-          confirmar="Marcar como teste"
-          url="/api/gestao/recuperacao/teste"
-          corpo={{ email: p.email, teste: true }}
-          onFeito={onMudou}
-        />
-      )}
-      {!p.teste && andando && (
-        <AcaoGestao
-          rotulo="Parar lembretes"
-          explicacao="Esta pessoa não recebe mais nenhum e-mail nem WhatsApp de lembrete. Ela continua contando nos números."
-          confirmar="Parar lembretes"
-          url="/api/gestao/recuperacao/parar"
-          corpo={{ email: p.email }}
-          onFeito={onMudou}
-        />
-      )}
-    </span>
+    <>
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild><button ref={gatilho} type="button" aria-label={'Ações de ' + p.email} className="btn-quiet h-11 min-w-11 !px-3 !py-0">⋯</button></DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content align="end" sideOffset={6} className="z-[70] rounded-md border border-line bg-white p-1">
+            <DropdownMenu.Item onSelect={() => setAcao('teste')} className="flex min-h-11 cursor-default items-center px-3 text-sm outline-none data-[highlighted]:bg-mist">{teste}</DropdownMenu.Item>
+            {!p.teste && andando && <DropdownMenu.Item onSelect={() => setAcao('parar')} className="flex min-h-11 cursor-default items-center px-3 text-sm outline-none data-[highlighted]:bg-mist">Parar lembretes</DropdownMenu.Item>}
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+      <Dialog open={Boolean(acao)} onOpenChange={(aberto) => { if (!aberto) setAcao(null) }}>
+        <DialogContent onCloseAutoFocus={(e) => { e.preventDefault(); gatilho.current?.focus() }} className="max-h-[85dvh] w-[calc(100%-2rem)] overflow-y-auto [&>button]:h-11 [&>button]:w-11">
+          <DialogTitle>{acao === 'parar' ? 'Parar lembretes' : teste}</DialogTitle>
+          <DialogDescription className="break-all">{p.email}</DialogDescription>
+          {acao && <AcaoGestao key={acao} iniciaAberta rotulo={acao === 'parar' ? 'Parar lembretes' : teste}
+            explicacao={acao === 'parar' ? 'Esta pessoa não recebe mais nenhum e-mail nem WhatsApp de lembrete. Ela continua contando nos números.' : p.teste ? 'O carrinho volta a contar. Os lembretes que já pararam não voltam.' : 'Os carrinhos e compras deste e-mail saem dos números e todos os lembretes (e-mail e WhatsApp) param.'}
+            confirmar={acao === 'parar' ? 'Parar lembretes' : teste}
+            url={'/api/gestao/recuperacao/' + (acao === 'parar' ? 'parar' : 'teste')}
+            corpo={acao === 'parar' ? { email: p.email } : { email: p.email, teste: !p.teste }}
+            onFechar={() => setAcao(null)} onFeito={onMudou} />}
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
-function Pessoa({ p, onMudou }) {
+function Lembretes({ p }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild><button type="button" className="min-h-11 text-left text-[13px] underline decoration-line underline-offset-4">
+        E-mail {(p.emails || []).length}/4 · WhatsApp {p.whatsapp?.enviadas || 0}/{p.whatsapp?.total || 9}
+      </button></DialogTrigger>
+      <DialogContent className="max-h-[85dvh] w-[calc(100%-2rem)] overflow-y-auto [&>button]:h-11 [&>button]:w-11">
+        <DialogTitle>Lembretes</DialogTitle>
+        <DialogDescription className="break-all">{p.nome || p.email}</DialogDescription>
+        <h3 className="font-semibold">E-mail</h3><Emails p={p} />
+        <h3 className="font-semibold">WhatsApp</h3><Whatsapp p={p} />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function Origem({ p }) {
+  return <span className="break-all text-[13px] text-ink-muted">{[p.utm_source, p.utm_campaign].filter(Boolean).join(' / ') || 'Sem registro'}</span>
+}
+
+function Pessoa({ p }) {
   const tel = celular(p.telefone)
   return (
     <>
       <span className="flex flex-wrap items-center gap-2">
-        <span className="font-semibold text-ink">{p.nome || 'Sem nome'}</span>
+        <span className="break-all font-semibold text-ink">{p.nome || 'Sem nome'}</span>
         {p.teste && <SeloTeste />}
       </span>
       <span className="block break-all text-[13.5px] text-ink-muted">{p.email}</span>
@@ -181,7 +199,7 @@ function Pessoa({ p, onMudou }) {
           href={'https://wa.me/55' + p.telefone}
           target="_blank"
           rel="noopener noreferrer"
-          className="figs mt-0.5 inline-block text-[13.5px] text-ink underline decoration-line underline-offset-4 hover:decoration-ink"
+          className="figs mt-0.5 inline-flex min-h-11 items-center text-[13.5px] text-ink underline decoration-line underline-offset-4 hover:decoration-ink"
           title="Abrir conversa no WhatsApp"
         >
           {tel}
@@ -189,7 +207,6 @@ function Pessoa({ p, onMudou }) {
       ) : (
         <span className="mt-0.5 block text-[13px] text-ink-faint">Sem celular</span>
       )}
-      {onMudou && <AcoesCarrinho p={p} onMudou={onMudou} />}
     </>
   )
 }
@@ -197,15 +214,16 @@ function Pessoa({ p, onMudou }) {
 export default function Tabela({ itens, onMudou }) {
   return (
     <>
-      <div className="mt-6 hidden overflow-hidden rounded border border-line bg-white md:block">
-        <table className="w-full text-left text-[14.5px]">
+      <div className="mt-6 hidden rounded border border-line bg-white xl:block">
+        <table className="w-full table-fixed text-left text-[14px]">
           <thead>
             <tr className="border-b border-line bg-paper/60 text-[12.5px] text-ink-muted">
               <th scope="col" className="px-4 py-3 font-semibold">Pessoa</th>
               <th scope="col" className="px-4 py-3 font-semibold">Carrinho</th>
-              <th scope="col" className="px-4 py-3 font-semibold">E-mails</th>
-              <th scope="col" className="px-4 py-3 font-semibold">WhatsApp</th>
+              <th scope="col" className="px-4 py-3 font-semibold">Origem</th>
+              <th scope="col" className="px-4 py-3 font-semibold">Lembretes</th>
               <th scope="col" className="px-4 py-3 font-semibold">Situação</th>
+              <th scope="col" className="w-20 px-4 py-3 font-semibold">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -214,46 +232,46 @@ export default function Tabela({ itens, onMudou }) {
                 <td className="max-w-[300px] px-4 py-3.5">
                   <Pessoa p={p} onMudou={onMudou} />
                 </td>
-                <td className="figs whitespace-nowrap px-4 py-3.5 text-ink-muted">{dataHora(p.criado_em)}</td>
+                <td className="figs px-4 py-3.5 text-ink-muted">{dataHora(p.criado_em)}</td>
                 <td className="px-4 py-3.5">
-                  <Emails p={p} />
+                  <Origem p={p} />
                 </td>
-                <td className="whitespace-nowrap px-4 py-3.5">
-                  <Whatsapp p={p} />
+                <td className="px-4 py-3.5">
+                  <Lembretes p={p} />
                 </td>
                 <td className="max-w-[240px] px-4 py-3.5">
                   <Situacao p={p} />
                   <DetalheSituacao p={p} />
                 </td>
+                <td className="px-4 py-3.5"><AcoesCarrinho p={p} onMudou={onMudou} /></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <ul className="mt-6 divide-y divide-line rounded border border-line bg-white md:hidden">
+      <ul className="mt-6 divide-y divide-line rounded border border-line bg-white xl:hidden">
         {itens.map((p) => (
           <li key={p.email} className="px-4 py-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <Pessoa p={p} onMudou={onMudou} />
               </div>
-              <div className="shrink-0 text-right">
-                <Situacao p={p} />
-              </div>
+              <AcoesCarrinho p={p} onMudou={onMudou} />
             </div>
+            <Situacao p={p} />
             <DetalheSituacao p={p} />
             <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5 text-[13.5px]">
               <div className="col-span-2">
-                <dt className="mb-1 text-ink-muted">E-mails</dt>
+                <dt className="mb-1 text-ink-muted">Lembretes</dt>
                 <dd>
-                  <Emails p={p} />
+                  <Lembretes p={p} />
                 </dd>
               </div>
               <div className="col-span-2">
-                <dt className="mb-1 text-ink-muted">WhatsApp</dt>
+                <dt className="mb-1 text-ink-muted">Origem</dt>
                 <dd>
-                  <Whatsapp p={p} />
+                  <Origem p={p} />
                 </dd>
               </div>
               <div>

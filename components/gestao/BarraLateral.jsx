@@ -41,13 +41,13 @@ export const MENU = [
   {
     grupo: 'Marketing',
     itens: [
-      { href: '/gestao/campanhas', rotulo: 'Campanhas', icone: 'campanhas', soDepois: true },
+      { href: '/gestao/campanhas', rotulo: 'Campanhas', icone: 'campanhas' },
       { href: '/gestao/leads', rotulo: 'Leads VS grátis', icone: 'leads' },
     ],
   },
   {
     grupo: 'Acervo',
-    itens: [{ href: '/gestao/downloads', rotulo: 'Downloads', icone: 'downloads', soDepois: true }],
+    itens: [{ href: '/gestao/downloads', rotulo: 'Downloads', icone: 'downloads' }],
   },
   {
     grupo: 'Sistema',
