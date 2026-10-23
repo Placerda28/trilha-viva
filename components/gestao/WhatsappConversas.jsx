@@ -5,6 +5,7 @@ import { useGestao } from './useGestao'
 import { Aviso, Esqueleto, Vazio } from './Estados'
 import { moeda, numero } from './formato'
 import SequenciaWhatsapp from './SequenciaWhatsapp'
+import AcaoGestao from './AcaoGestao'
 import { EstadoWhatsapp, Total, porcentagem } from './WhatsappEstado'
 import Conversas from './WhatsappConversasPainel'
 import { PRECO, aguardandoVoce, celular } from './whatsappUtil'
@@ -23,7 +24,6 @@ function Sequencia({ s, onMudou }) {
   const quem = s.nome || celular(s.telefone)
 
   async function mudar(acao) {
-    if (acao === 'parar' && !window.confirm('Parar a sequência de ' + quem + '? Ela não recebe mais nenhuma mensagem de lembrete.')) return
     setErro('')
     setEnviando(true)
     try {
@@ -53,16 +53,25 @@ function Sequencia({ s, onMudou }) {
           Mensagem {s.enviadas} de {s.total}
         </p>
       </div>
-      <div className="flex flex-col gap-2 sm:items-end">
+      <div className="flex min-w-0 flex-col gap-2 sm:max-w-[55%] sm:items-end">
         <SequenciaWhatsapp w={s} />
-        {(s.pode_parar || s.pode_retomar) && (
+        {s.pode_parar ? (
+          <AcaoGestao
+            rotulo="Parar lembretes"
+            explicacao={'Parar os lembretes de WhatsApp de ' + quem + '? Essa pessoa não receberá mais mensagens desta sequência.'}
+            confirmar="Parar lembretes"
+            url="/api/gestao/whatsapp/sequencia"
+            corpo={{ telefone: s.telefone, acao: 'parar' }}
+            onFeito={onMudou}
+          />
+        ) : s.pode_retomar && (
           <button
             type="button"
-            onClick={() => mudar(s.pode_parar ? 'parar' : 'retomar')}
+            onClick={() => mudar('retomar')}
             disabled={enviando}
-            className="btn-quiet !px-4 !py-2 !text-[13.5px] disabled:opacity-60 sm:self-end"
+            className="btn-quiet min-h-11 !px-4 !py-2 !text-[13.5px] disabled:opacity-60 sm:self-end"
           >
-            {enviando ? 'Aguarde…' : s.pode_parar ? 'Parar sequência' : 'Retomar sequência'}
+            {enviando ? 'Aguarde…' : 'Retomar sequência'}
           </button>
         )}
         {erro && (
@@ -82,7 +91,7 @@ const ATUALIZAR_MS = 30000
 const PARTES = [
   { id: 'conversas', rotulo: 'Conversas' },
   { id: 'sequencias', rotulo: 'Sequências' },
-  { id: 'resultado', rotulo: 'Resultado' },
+  { id: 'robo', rotulo: 'Robô' },
 ]
 
 export default function WhatsappConversas() {
@@ -103,7 +112,6 @@ export default function WhatsappConversas() {
 
   const contagem = {
     conversas: dados ? (dados.conversas || []).filter(aguardandoVoce).length : 0,
-    sequencias: dados ? (dados.sequencias || []).length : 0,
   }
 
   return (
@@ -118,7 +126,7 @@ export default function WhatsappConversas() {
         </p>
       )}
 
-      <div role="tablist" aria-label="WhatsApp" className="flex gap-1 overflow-x-auto border-b border-line">
+      <div role="tablist" aria-label="WhatsApp" className="flex flex-wrap gap-1 border-b border-line">
         {PARTES.map((p) => {
           const ativa = parte === p.id
           const n = contagem[p.id]
@@ -132,19 +140,14 @@ export default function WhatsappConversas() {
               aria-controls={'painel-' + p.id}
               onClick={() => setParte(p.id)}
               className={
-                '-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-[14.5px] font-semibold transition-colors duration-150 ' +
+                '-mb-px flex min-h-11 items-center gap-1.5 border-b-2 px-2.5 py-2.5 text-[14.5px] font-semibold transition-colors duration-150 sm:px-3.5 ' +
                 (ativa ? 'border-ink text-ink' : 'border-transparent text-ink-muted hover:text-ink')
               }
             >
               {p.rotulo}
-              {n > 0 && (
-                <span
-                  className={
-                    'figs rounded-full px-1.5 text-[11.5px] leading-[18px] ' +
-                    (p.id === 'conversas' ? 'bg-signal-deep text-white' : 'bg-mist text-ink')
-                  }
-                >
-                  {numero(n)}
+              {p.id === 'conversas' && (
+                <span className="figs text-[12px] text-ink-muted">
+                  [{numero(n)}]
                 </span>
               )}
             </button>
@@ -195,7 +198,7 @@ export default function WhatsappConversas() {
             </>
           )}
 
-          {parte === 'resultado' && (
+          {parte === 'robo' && (
             <div className="mt-5">
               {dados.estado && <EstadoWhatsapp estado={dados.estado} onMudou={recarregar} />}
               {t && (

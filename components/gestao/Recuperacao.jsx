@@ -8,6 +8,10 @@ import { Aviso, Esqueleto, Vazio, BaixarPlanilha } from './Estados'
 import { moeda, numero } from './formato'
 import Tabela from './RecuperacaoTabela'
 import { MostrarTestes } from './AcaoGestao'
+import { Collapsible } from 'radix-ui'
+import Kpi from './Kpi'
+import { usePeriodo } from './usePeriodo'
+import { CabecalhoPagina } from './Casca'
 
 // Aba Recuperação: uma linha por pessoa que deixou nome, e-mail e celular no
 // checkout e não pagou na hora. Mostra em que ponto da sequência de e-mails
@@ -23,16 +27,6 @@ const FILTROS = [
   { id: 'sem_envio', rotulo: 'Sem envio' },
 ]
 
-function Total({ rotulo, valor, detalhe }) {
-  return (
-    <div className="bg-white px-4 py-4 sm:px-5">
-      <dt className="text-[13px] text-ink-muted">{rotulo}</dt>
-      <dd className="figs mt-1 text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink">{valor}</dd>
-      {detalhe && <dd className="figs mt-0.5 text-[13px] text-ink-muted">{detalhe}</dd>}
-    </div>
-  )
-}
-
 const VAZIO = {
   todos: ['Ninguém por aqui ainda', 'Quem preencher o formulário de compra e não pagar aparece aqui.'],
   andamento: ['Ninguém em recuperação agora', 'Quem está esperando ou recebendo a sequência de e-mails aparece aqui.'],
@@ -42,6 +36,7 @@ const VAZIO = {
 }
 
 export default function Recuperacao() {
+  const periodo = usePeriodo()
   const [filtro, setFiltro] = useState('todos')
   const [texto, setTexto] = useState('')
   const [q, setQ] = useState('')
@@ -66,31 +61,34 @@ export default function Recuperacao() {
 
   const busca = 'filtro=' + filtro + '&busca=' + encodeURIComponent(q)
   const { dados, erro, carregando } = useGestao(
-    '/api/gestao/recuperacao?' + busca + '&pagina=' + pagina + (testes ? '&testes=1' : ''),
+    periodo.valido ? '/api/gestao/recuperacao?' + busca + '&de=' + periodo.de + '&ate=' + periodo.ate + '&pagina=' + pagina + (testes ? '&testes=1' : '') : null,
     tentativa
   )
   const t = dados?.totais
 
+  if (!periodo.valido) return <><CabecalhoPagina titulo="Carrinhos" comPeriodo /><Aviso erro={periodo.erro} /></>
+
   return (
-    <section aria-labelledby="titulo-recuperacao" className="mt-8">
+    <section aria-labelledby="titulo-recuperacao">
+      <CabecalhoPagina titulo="Carrinhos" texto="Acompanhe quem deixou a compra para depois." comPeriodo />
       <h2 id="titulo-recuperacao" className="sr-only">
         Recuperação de vendas
       </h2>
 
       {t && (
-        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded border border-line bg-line lg:grid-cols-4">
-          <Total
-            rotulo="Não pagaram na hora"
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <Kpi
+            rotulo="Carrinhos abertos"
             valor={numero(t.pessoas)}
             detalhe={numero(t.comprou_sem_lembrete) + ' pagaram antes do lembrete'}
           />
-          <Total rotulo="Em recuperação" valor={numero(t.andamento)} detalhe={numero(t.finalizados) + ' finalizados'} />
-          <Total
-            rotulo="Compraram após o e-mail"
+          <Kpi rotulo="Em recuperação" valor={numero(t.andamento)} detalhe={numero(t.finalizados) + ' finalizados'} />
+          <Kpi
+            rotulo="Recuperados"
             valor={numero(t.recuperados)}
-            detalhe={Math.round((t.taxa || 0) * 100) + '% de quem recebeu'}
+            detalhe={numero(t.recuperados_email) + ' pelo e-mail · ' + numero(t.recuperados_whatsapp) + ' pelo WhatsApp'}
           />
-          <Total
+          <Kpi
             rotulo="Valor recuperado"
             valor={moeda(t.valor_recuperado_centavos)}
             detalhe={
@@ -101,16 +99,20 @@ export default function Recuperacao() {
               ' WhatsApp'
             }
           />
-        </dl>
+        </div>
       )}
 
-      <p className="mt-4 text-[13.5px] leading-relaxed text-ink-muted">
+      <Collapsible.Root className="mt-4">
+      <Collapsible.Trigger className="min-h-11 text-[14px] font-semibold underline underline-offset-4">Como funciona</Collapsible.Trigger>
+      <Collapsible.Content className="text-[13.5px] leading-relaxed text-ink-muted">
         Sequência por e-mail: 1º com 1 hora, 2º 7 dias depois, 3º 15 dias depois, 4º 30 dias depois. Sem compra em
         mais 30 dias, o protocolo é finalizado. WhatsApp: 1ª 3 horas depois do carrinho, depois 1 por semana até 9,
         das 9h às 20h e nunca no mesmo dia de um e-mail. Para se a pessoa comprar, pedir para sair, responder ou não
         receber / não ler as últimas
         {t && !t.whatsapp_ativo ? ' (desligado no momento)' : ''}.
-      </p>
+      </Collapsible.Content>
+      </Collapsible.Root>
+      <p className="mt-2 text-[13px] text-ink-muted">O período filtra os cartões. A lista e a planilha mostram todo o histórico; a planilha não inclui testes.</p>
 
       <div className="mt-6 space-y-4">
         <Segmentos
