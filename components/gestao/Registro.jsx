@@ -18,6 +18,7 @@ export const ACOES = {
   lembretes_parados: 'parou os lembretes de',
   contato_teste_adicionado: 'adicionou o contato de teste',
   contato_teste_removido: 'removeu o contato de teste',
+  afiliado_cadastro: 'cadastrou-se como afiliado com o código',
   cupom_criado: 'criou o cupom',
   cupom_desativado: 'desativou o cupom',
   membro_adicionado: 'adicionou à equipe',

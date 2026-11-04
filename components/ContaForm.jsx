@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { CHAVE_EMAIL_ENTRAR } from '@/lib/pos-pagamento'
+import { voltaPermitida } from '@/lib/afiliados-campos'
 
 // Uma peça para as quatro telas de conta. O que muda entre elas é pouco —
 // quais campos aparecem, para onde o formulário vai e o que dizer depois —
@@ -70,6 +71,9 @@ export default function ContaForm({ modo, emailFixo = '' }) {
   const [sessionId, setSessionId] = useState('')
   const [paymentId, setPaymentId] = useState('')
   const [ref, setRef] = useState('')
+  // Para onde ir depois de entrar ou criar a senha. Só passa um caminho da
+  // lista fechada de lib/afiliados-campos.js; qualquer outro vira o acervo.
+  const [volta, setVolta] = useState('')
 
   // O endereço é lido no navegador, e não no servidor, de propósito: ler
   // parâmetro no servidor obrigaria a montar a página a cada visita, e essas
@@ -80,6 +84,7 @@ export default function ContaForm({ modo, emailFixo = '' }) {
     setSessionId(p.get('session_id') || p.get('s') || '')
     setPaymentId(p.get('payment_id') || '')
     setRef(p.get('external_reference') || '')
+    setVolta(voltaPermitida(p.get('volta')))
     if (p.get('criada')) setAviso('Senha criada. Entre com ela abaixo.')
     if (p.get('expirou')) setAviso('Sua sessão expirou. Entre de novo para continuar.')
     // Vindo da /sucesso de quem já tem senha: o e-mail chega pela memória da
@@ -135,7 +140,7 @@ export default function ContaForm({ modo, emailFixo = '' }) {
 
       if (!res.ok || !dados.ok) {
         if (dados.jaExiste) {
-          window.location.href = '/entrar?criada=1'
+          window.location.href = '/entrar?criada=1' + (volta ? '&volta=' + encodeURIComponent(volta) : '')
           return
         }
         setErro(dados.erro || 'Não consegui concluir agora. Tente de novo.')
@@ -143,7 +148,7 @@ export default function ContaForm({ modo, emailFixo = '' }) {
         return
       }
 
-      window.location.href = '/acervo'
+      window.location.href = volta || '/acervo'
     } catch {
       setErro('Falha de conexão. Confira sua internet e tente de novo.')
       setEnviando(false)

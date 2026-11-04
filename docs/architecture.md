@@ -77,7 +77,16 @@
 - Fechamento: o bônus nasce por `INSERT ... SELECT` da linha gravada em `afiliados_fechamentos` (rodadas concorrentes não divergem). `fecharMes` recusa mês ainda não liberado (`mes > mesParaFechar(agora, dia_fechamento)`), também no botão manual.
 - Venda aprovada depois do fechamento do seu mês continua sendo desse mês: recebe o valor por venda do nível fechado (sem recalcular nível nem contagem) e libera após a carência normal.
 - Saque: o INSERT condicional repete `afiliado ativo` e `Pix cadastrado`, para suspensão no meio do caminho.
-- Ainda não ligado a rota, checkout nem webhook (Fases 3 e 4).
+- Ainda não ligado ao checkout nem ao webhook (Fase 4).
+
+### Afiliados (Fase 3: rotas de cadastro e cliques)
+- A 0018 ganhou (ainda não aplicada): coluna `afiliados_cliques.utm_content` e a tabela `afiliados_conta_tentativas` (limite por IP).
+- Todas as rotas respondem com `Cache-Control: no-store`, `runtime = 'nodejs'` e `dynamic = 'force-dynamic'`. Erros: `{ ok: false, erro, campo? }`.
+- `lib/afiliados/conta.js`: `afiliadoDoCliente(db, clienteId)` devolve `{ id, codigo, status, nome }` ou `null`; `consultarCodigo` (formato, reservados, `cupons.codigo` e `afiliados.codigo`); `lib/afiliados/cpf.js`: `validarCpf`, `limparCpf`; `lib/afiliados/clique.js`: hash, dispositivo, `registrarClique`.
+- `POST /api/afiliados/conta` (público): `{ nome, email, turnstile }`. Exige `mesmaOrigem`, Turnstile (`verificarTurnstile` de `lib/leads.js`) e no máximo 5 pedidos por IP por hora. Acha ou cria o cliente. Sem senha: token `criar_senha` de 72 h e e-mail com `/criar-senha?t=...&volta=/minha-conta/afiliado`; com senha (`supabase_id`): e-mail "entre com sua senha". Sempre `200 { ok: true }` (bloqueado e pedido repetido em 1 min também). `400` dados/Turnstile, `403` origem, `429` limite, `503` indisponível ou e-mail não enviado. **A conta não libera o acervo:** só `temCompra()` decide (teste em `tests/afiliados/rotas.test.mjs`).
+- `GET /api/afiliados/codigo?c=XXX` (login, senão 401): `{ ok, codigo, disponivel, motivo? }`. Recusa formato ruim, reservados (`CODIGOS_RESERVADOS` em `conta.js`), código que existe em `cupons.codigo` e código de outro afiliado.
+- `POST /api/afiliados/cadastro` (login + `mesmaOrigem`): `{ nome, cpf, telefone, canal, codigo, aceite: true, avisar_cada_venda? }`. `200 { ok, codigo, link, status }` (link = URL do site + `/?ref=CODIGO`). `403` programa fechado, `409` cliente já afiliado ou código em uso (`campo: 'codigo'`), `400` com `campo` (`nome`, `cpf`, `telefone`, `aceite`, `codigo`), `401` sem login. Status `ativo` ou `pendente` conforme `aprovacao_automatica`. Grava `registro` (`afiliado_cadastro`, sem CPF) e manda `enviarBoasVindasAfiliado` (falha só gera log).
+- `POST /api/afiliados/clique` (público, `sendBeacon`): sempre `204`. Grava só com afiliado `ativo`, 1 clique por visitante e afiliado a cada 24 h, num único INSERT condicional. `visitante_hash` = HMAC-SHA256 (`LEMBRETE_SEGREDO`, prefixo `afiliado-clique:`) de IP + user-agent; o IP puro nunca é gravado. `caminho` sem query, até 200 caracteres; UTMs por `limparUtm`. Sem `LEMBRETE_SEGREDO` não grava.
 
 ## Publicação
 

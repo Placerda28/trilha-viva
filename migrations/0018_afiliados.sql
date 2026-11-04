@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS afiliados_cliques (
   utm_source TEXT,
   utm_medium TEXT,
   utm_campaign TEXT,
+  utm_content TEXT,
   visitante_hash TEXT NOT NULL,
   dispositivo TEXT
 );
@@ -161,3 +162,11 @@ ALTER TABLE compras ADD COLUMN bruto_centavos INTEGER;
 ALTER TABLE compras ADD COLUMN taxa_mp_centavos INTEGER;
 ALTER TABLE compras ADD COLUMN liquido_centavos INTEGER;
 CREATE INDEX IF NOT EXISTS idx_compras_afiliado ON compras(afiliado_id);
+
+-- Limite de pedidos de conta de afiliado por IP (mesmo padrão de leads_tentativas).
+CREATE TABLE IF NOT EXISTS afiliados_conta_tentativas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ip TEXT NOT NULL,
+  criado_em TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_afiliados_conta_tent_ip ON afiliados_conta_tentativas(ip, criado_em);

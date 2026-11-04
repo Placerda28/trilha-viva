@@ -157,3 +157,75 @@ test('venda aprovada depois do fechamento do mês recebe o valor do nível fecha
   assert.equal(s.vendasValidas, 20)
   assert.equal(s.nivel.nome, 'Prata')
 })
+
+// db que roda `acao` dentro do lote (depois das leituras, antes do INSERT), nas primeiras `vezes` chamadas.
+function comInterferencia(db, acao, vezes) {
+  let n = 0
+  return {
+    prepare: (sql) => db.prepare(sql),
+    batch: async (lista) => {
+      if (n < vezes) {
+        n += 1
+        await acao()
+      }
+      return db.batch(lista)
+    },
+  }
+}
+
+test('fechamento: venda cancelada dentro do intervalo não gera bônus errado', async () => {
+  const db = novoDb()
+  const af = novoAfiliado(db)
+  const ids = await vendas(db, af, 20)
+  const cancela = () => estornarVenda(db, ids[0], new Date('2026-12-01T12:00:00Z'))
+  const r = await fecharMes(comInterferencia(db, cancela, 1), '2026-11', FECHA)
+  assert.equal(r.pendentes.length, 0)
+  const f = db.banco.prepare('SELECT * FROM afiliados_fechamentos').get()
+  assert.equal(f.vendas_validas, 19)
+  assert.equal(f.total_centavos, 28500)
+  assert.equal(contar(db, BONUS), 0)
+  assert.equal((await statusDoMes(db, af.id, '2026-11', FECHA)).saldos.disponivel, 28500)
+})
+
+test('fechamento: venda nova dentro do intervalo entra na contagem do bônus', async () => {
+  const db = novoDb()
+  const af = novoAfiliado(db)
+  await vendas(db, af, 20)
+  const nova = () => novaVenda(db, af, new Date('2026-11-30T12:00:00Z'))
+  await fecharMes(comInterferencia(db, nova, 1), '2026-11', FECHA)
+  const f = db.banco.prepare('SELECT * FROM afiliados_fechamentos').get()
+  assert.equal(f.vendas_validas, 21)
+  assert.equal(f.bonus_centavos, 21 * 500)
+  assert.equal(db.banco.prepare("SELECT valor_centavos v FROM afiliados_lancamentos WHERE tipo = 'bonus_nivel'").get().v, 10500)
+})
+
+test('fechamento: mudança contínua esgota as 3 tentativas e vai para pendentes', async () => {
+  const db = novoDb()
+  const af = novoAfiliado(db)
+  await vendas(db, af, 3)
+  const nova = () => novaVenda(db, af, new Date('2026-11-30T12:00:00Z'))
+  const r = await fecharMes(comInterferencia(db, nova, 99), '2026-11', FECHA)
+  assert.equal(r.fechados.length, 0)
+  assert.equal(r.pendentes.length, 1)
+  assert.match(r.pendentes[0].motivo, /Repita o fechamento/)
+  assert.equal(contar(db, 'SELECT COUNT(*) n FROM afiliados_fechamentos'), 0)
+  assert.equal((await fecharMes(db, '2026-11', FECHA)).fechados.length, 1) // botão manual repete
+})
+
+test('estornos concorrentes: só quem agiu recebe acao/criado exatos', async () => {
+  for (const preso of [false, true]) {
+    const db = novoDb()
+    const af = novoAfiliado(db)
+    const [id] = await vendas(db, af, 1)
+    if (preso) db.banco.prepare("UPDATE afiliados_lancamentos SET status = 'em_saque'").run()
+    const agora = new Date('2026-11-20T12:00:00Z')
+    const rs = await Promise.all([estornarVenda(db, id, agora), estornarVenda(db, id, agora), estornarVenda(db, id, agora)])
+    if (preso) {
+      assert.equal(rs.filter((r) => r.acao === 'estorno' && r.criado === true).length, 1)
+      assert.equal(rs.filter((r) => r.acao === 'estorno' && r.criado === false).length, 2)
+    } else {
+      assert.equal(rs.filter((r) => r.acao === 'cancelada').length, 1)
+      assert.equal(rs.filter((r) => r.acao === 'ja_cancelada').length, 2)
+    }
+  }
+})

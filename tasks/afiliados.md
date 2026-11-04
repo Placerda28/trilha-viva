@@ -95,6 +95,7 @@ O `metadata` do Mercado Pago já leva `cupom` e `referencia` (UUID = `external_r
 - Código: maiúsculo, 4 a 15 letras e números, único. Na Fase 4, `compras.codigo_afiliado` e `compras.afiliado_id` guardam a atribuição.
 - Eventos de checkout: `codigo_recusado_proprio` e `codigo_recusado_inativo`.
 - A Fase 2 foi revisada (Fase 2b) depois do Codex achar 6 bugs; todos corrigidos com teste (ver `tests/afiliados/`).
+- Fase 2c (2ª revisão do Codex): o INSERT do fechamento só grava se as vendas do mês (válidas e total) continuam iguais dentro do lote; senão recalcula e tenta de novo (3 vezes) e, esgotado, devolve o afiliado em `pendentes` para o botão manual repetir. `estornarVenda` devolve `acao`/`criado` exatos pelos resultados do lote (`RETURNING`). Testes novos em `tests/afiliados/fechamento.test.mjs`.
 
 ## Decisões do Paulo (04/11/2026, 2ª rodada)
 1. **Pedido de reembolso tira o acesso ao acervo.** Na Fase 4:
@@ -136,7 +137,12 @@ O `metadata` do Mercado Pago já leva `cupom` e `referencia` (UUID = `external_r
     - 20 vendas com 1 reembolso dão 19, que é Bronze;
     - o saque é barrado quando há outro em aberto, quando faltam menos de 15 dias desde o último pedido e quando falta o Pix;
     - um afiliado não lê os dados de outro.
-- [ ] **3. Cadastro, cupom, link `?ref=` (cookie de 30 dias) e cliques.**
+- [ ] **3. Cadastro, código, link `?ref=` (cookie de 30 dias) e cliques.** Backend feito em 04/11/2026 (rotas `/api/afiliados/{conta,codigo,cadastro,clique}`, CPF, e-mails; `npm test` 381 passando).
+  - [x] **Frontend (04/11/2026, só local):**
+    - `components/RefCaptura.jsx` montado em `app/layout.js` (cookie `tv_ref`, 30 dias, clique por `sendBeacon`); regras puras em `lib/afiliados-ref.js`.
+    - `/minha-conta/afiliado` com 3 estados (visitante, cadastro, já afiliado); peças em `components/afiliados/`, regras de tela em `lib/afiliados-campos.js`.
+    - `?volta=` em `/entrar` e `/criar-senha` (`components/ContaForm.jsx`), lista fechada de caminhos.
+    - Protótipo temporário para print: `app/prototipo-afiliado/[estado]` (404 em produção; apagar na aprovação). Testes: `tests/afiliados/campos-ui.test.mjs`.
 - [ ] **4. Checkout e webhook:**
   - comissão base de R$ 15 dentro de `registrarCompra`;
   - bloqueio do próprio cupom;

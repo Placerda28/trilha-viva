@@ -5,6 +5,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import MetaPixel from '@/components/MetaPixel'
 import Origem from '@/components/Origem'
+import RefCaptura from '@/components/RefCaptura'
 import { site } from '@/lib/site'
 
 export const metadata = {
@@ -111,6 +112,7 @@ export default function RootLayout({ children }) {
         <Footer />
         <MetaPixel />
         <Origem />
+        <RefCaptura />
       </body>
     </html>
   )
