@@ -2,6 +2,7 @@ import { normalizarEmailLembrete } from '../../lib/lembrete-assinatura.js'
 import { atenderWebhook, executarWhatsapp } from './whatsapp.js'
 import { acompanharAcessoLiberado } from './acesso-liberado.js'
 import { executarLeads } from './leads.js'
+import { executarAfiliados } from './afiliados.js'
 import { mascararEmail, montarEmail } from './email-lembrete.js'
 import {
   buscarCandidatosIniciais,
@@ -196,6 +197,13 @@ export async function executarRodada(env, opcoes = {}) {
     resultado.leads = await executarLeads(env, opcoes)
   } catch (erro) {
     logger.error('Falha na sequência de e-mails da VS grátis:', erro)
+  }
+
+  // Fechamento mensal dos afiliados, resumo por e-mail e "faltam X vendas". Etapa própria.
+  try {
+    await executarAfiliados(env, opcoes)
+  } catch (erro) {
+    logger.error('Falha na etapa de afiliados da rodada:', erro)
   }
 
   resultado.whatsapp = { enviados: 0, ignorados: 0, falhas: 0 }

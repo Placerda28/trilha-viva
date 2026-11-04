@@ -45,6 +45,8 @@ function bancoRobo() {
   banco.exec(readFileSync('migrations/0006_whatsapp.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0013_testes.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0017_leads.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0018_afiliados.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0019_afiliados_resumo.sql', 'utf8'))
   return banco
 }
 

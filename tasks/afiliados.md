@@ -164,7 +164,8 @@ O `metadata` do Mercado Pago já leva `cupom` e `referencia` (UUID = `external_r
     - Protótipo temporário: `/prototipo-afiliado/painel-{bronze,prata,ouro,vazio,avisos,semvalor,sem15dias,sempix,analise,pendente,suspenso}` e as abas por `#vendas`, `#ganhos`, `#saques`, `#pix`, `#como`. Apagar na aprovação.
     - Falta a prova no navegador com o backend de verdade (login real).
   - [x] **Backend (04/11/2026, só local):** `lib/afiliados/painel.js` + rotas `/api/afiliados/{vendas,ganhos,saques,saque,pix,avisos,preferencias}` (contrato em `docs/architecture.md`, "Fase 5"). Sem migração nova. `npm test` 418 -> 446.
-- [ ] **6. Fechamento mensal:** etapa no robô, botão manual e e-mails de resumo e de subida de nível.
+  - [x] **Fase 5b (revisão do Codex, 4 falhas):** chave Pix do tipo CPF só do próprio CPF; snapshot do Pix dentro do INSERT do saque; próxima liberação só com `disponivel_em > agora`; `bonusAReceber` em partes por mês. `npm test` 446 -> 450 (commit 162cf00).
+- [x] **6. Fechamento mensal (backend, 04/11/2026, só local):** etapa `executarAfiliados` no robô (fecha a partir do dia 8, até 25 por rodada, resumo por e-mail idempotente com 3 tentativas, "faltam X vendas" nos últimos 5 dias), migração `0019_afiliados_resumo.sql`, `lib/emails-afiliado.js`, rotas `GET/POST /api/interno/gestao/afiliados/fechamento`. `npm test` 446 -> 464. Pendente: aplicar a 0019 no remoto ANTES de publicar o robô; a tela do botão é da Fase 8. Detalhes em `docs/architecture.md` (Fase 6).
 - [ ] **7. Saques e Gestão:** fila, comprovante, pago/recusado e e-mails.
 - [ ] **8. Dashboard, Metas, Financeiro e Alertas da Gestão:** dados de teste conferidos numa planilha; os dados de teste são apagados depois.
 - [ ] **9. Estorno e chargeback** antes e depois do fechamento.
