@@ -96,3 +96,23 @@ test('afiliado A não enxerga lançamentos nem saques de B', async () => {
   assert.equal(sa.saldos.emSaque, 0)
   assert.ok((await lancamentosDoAfiliado(db, a.id)).every((l) => l.saque_id === null))
 })
+
+test('suspensão ou Pix removido entre a conferência e a gravação barra o saque', async () => {
+  for (const motivo of ['suspender', 'sem-pix']) {
+    const db = novoDb()
+    const af = novoAfiliado(db)
+    await vendas(db, af, 2)
+    const corrida = {
+      prepare: (sql) => db.prepare(sql),
+      batch: async (lista) => {
+        if (motivo === 'suspender') db.banco.prepare("UPDATE afiliados SET status = 'suspenso'").run()
+        else db.banco.prepare('DELETE FROM afiliados_pix').run()
+        return db.batch(lista)
+      },
+    }
+    const r = await pedirSaque(corrida, af.id, FECHA)
+    assert.equal(r.ok, false)
+    assert.equal(contar(db, 'SELECT COUNT(*) n FROM afiliados_saques'), 0)
+    assert.equal(contar(db, "SELECT COUNT(*) n FROM afiliados_lancamentos WHERE status = 'em_saque'"), 0)
+  }
+})

@@ -4,7 +4,6 @@
 
 CREATE TABLE IF NOT EXISTS afiliados_config (
   id INTEGER PRIMARY KEY CHECK (id = 1),
-  desconto_centavos INTEGER NOT NULL DEFAULT 1000 CHECK (desconto_centavos >= 0),
   carencia_dias INTEGER NOT NULL DEFAULT 7 CHECK (carencia_dias >= 0),
   dia_fechamento INTEGER NOT NULL DEFAULT 8 CHECK (dia_fechamento BETWEEN 1 AND 28),
   intervalo_saque_dias INTEGER NOT NULL DEFAULT 15 CHECK (intervalo_saque_dias >= 0),
@@ -36,7 +35,8 @@ INSERT OR IGNORE INTO afiliados_niveis (nome, vendas_minimas, valor_por_venda_ce
 CREATE TABLE IF NOT EXISTS afiliados (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   cliente_id INTEGER NOT NULL UNIQUE REFERENCES clientes(id),
-  cupom_id INTEGER NOT NULL UNIQUE REFERENCES cupons(id),
+  -- Código do afiliado: só registra a venda (sem desconto, independente da tabela cupons).
+  codigo TEXT NOT NULL UNIQUE CHECK (codigo = upper(codigo) AND length(codigo) BETWEEN 4 AND 15 AND codigo NOT GLOB '*[^A-Z0-9]*'),
   status TEXT NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'ativo', 'suspenso')),
   nivel_fixo_id INTEGER REFERENCES afiliados_niveis(id),
   nome TEXT NOT NULL,
@@ -134,8 +134,8 @@ CREATE INDEX IF NOT EXISTS idx_afiliados_cliques_visitante
 CREATE TABLE IF NOT EXISTS afiliados_eventos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   afiliado_id INTEGER NOT NULL REFERENCES afiliados(id),
-  evento TEXT NOT NULL CHECK (evento IN ('checkout_iniciado', 'cupom_recusado_proprio',
-    'cupom_recusado_inativo', 'pagamento_aprovado', 'reembolso', 'chargeback')),
+  evento TEXT NOT NULL CHECK (evento IN ('checkout_iniciado', 'codigo_recusado_proprio',
+    'codigo_recusado_inativo', 'pagamento_aprovado', 'reembolso', 'chargeback')),
   compra_id INTEGER REFERENCES compras(id),
   criado_em TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -156,8 +156,8 @@ CREATE INDEX IF NOT EXISTS idx_afiliados_avisos_afiliado ON afiliados_avisos(afi
 -- Auditoria: reaproveita a tabela `registro` (migração 0003). Nada novo aqui.
 
 ALTER TABLE compras ADD COLUMN afiliado_id INTEGER REFERENCES afiliados(id);
-ALTER TABLE compras ADD COLUMN desconto_centavos INTEGER;
+ALTER TABLE compras ADD COLUMN codigo_afiliado TEXT;
 ALTER TABLE compras ADD COLUMN bruto_centavos INTEGER;
 ALTER TABLE compras ADD COLUMN taxa_mp_centavos INTEGER;
 ALTER TABLE compras ADD COLUMN liquido_centavos INTEGER;
-CREATE INDEX IF NOT EXISTS idx_compras_afiliado ON compras(afiliado_id, criado_em);
+CREATE INDEX IF NOT EXISTS idx_compras_afiliado ON compras(afiliado_id);

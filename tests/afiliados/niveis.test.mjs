@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { calcularNivel, niveisDoMes } from '../../lib/afiliados/niveis.js'
 import { statusDoMes } from '../../lib/afiliados/status.js'
+import { normalizarCodigoAfiliado, validarFormatoCodigo } from '../../lib/afiliados/codigo.js'
 import { mesDe, mesParaFechar } from '../../lib/afiliados/datas.js'
 import { FECHA, NOV, novoAfiliado, novoDb, vendas } from './_base.mjs'
 
@@ -67,4 +68,24 @@ test('mês do negócio segue Brasília', () => {
   assert.equal(mesDe('2026-11-30 23:00:00'), '2026-11')
   assert.equal(mesParaFechar(new Date('2026-12-08T12:00:00Z'), 8), '2026-11')
   assert.equal(mesParaFechar(new Date('2026-12-07T12:00:00Z'), 8), '2026-10')
+})
+
+test('código do afiliado: normaliza e valida o formato', () => {
+  assert.equal(normalizarCodigoAfiliado('  maria10 '), 'MARIA10')
+  assert.equal(validarFormatoCodigo(' maria10 '), true)
+  assert.equal(validarFormatoCodigo('ABC'), false)
+  assert.equal(validarFormatoCodigo('A'.repeat(15)), true)
+  assert.equal(validarFormatoCodigo('A'.repeat(16)), false)
+  for (const ruim of ['MA-RIA', 'maria 10', 'JOÃO10', '', null]) assert.equal(validarFormatoCodigo(ruim), false)
+})
+
+test('o banco recusa código fora do formato', () => {
+  const db = novoDb()
+  const cli = db.banco.prepare("INSERT INTO clientes (email) VALUES ('x@t.com') RETURNING id").get().id
+  const ins = (codigo) =>
+    db.banco.prepare("INSERT INTO afiliados (cliente_id, codigo, nome, cpf) VALUES (?, ?, 'n', 'c')").run(cli, codigo)
+  assert.throws(() => ins('abcd'))
+  assert.throws(() => ins('AB-CD'))
+  assert.throws(() => ins('ABC'))
+  assert.doesNotThrow(() => ins('ABCD'))
 })

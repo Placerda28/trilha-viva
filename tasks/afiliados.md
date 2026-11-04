@@ -26,7 +26,7 @@ Pedido original: `PROMPT-AFILIADOS-TRILHA-VIVA.md` (Downloads do Paulo, 04/11/20
   - `consultarCupomValido`, `reservarCupom` (35 min), `estenderReservaCupom` (+96 h quando o pagamento fica pendente) e `cancelarReservaCupom`;
   - tabelas `cupons` e `cupom_reservas` (`migrations/0002`).
 - Já existe só **1 cupom por compra**: a coluna é `compras.cupom`.
-- O cupom de afiliado entra como **tipo de cupom do sistema atual**, ligado a `afiliados.cupom_id`. Não é um sistema paralelo.
+- **Atualizado em 04/11 (sem desconto):** o afiliado NÃO usa cupom. Tem um código (`afiliados.codigo`) que só registra a venda; o comprador paga R$ 89,90 cheio, e pode usar cupom de campanha e código na mesma compra.
 
 ### Checkout
 `app/api/checkout/route.js:105-184` faz, em ordem:
@@ -89,6 +89,12 @@ O `metadata` do Mercado Pago já leva `cupom` e `referencia` (UUID = `external_r
 - 10 ms de CPU por visita, consultas sempre com `LIMIT`, datas UTC no D1 e o dia do negócio em Brasília.
 - A migração vai ANTES do deploy e quem aplica no remoto é o Paulo.
 - Não mexer em `app/api/baixar`, `lib/b2.js` e `lib/cota.js`.
+
+## Decisão do Paulo (04/11/2026): sem desconto, código só registra
+- Não há desconto do afiliado nem cupom. O link `?ref=CODIGO` leva o código aplicado (cookie de 30 dias) e o checkout mantém o preço cheio.
+- Código: maiúsculo, 4 a 15 letras e números, único. Na Fase 4, `compras.codigo_afiliado` e `compras.afiliado_id` guardam a atribuição.
+- Eventos de checkout: `codigo_recusado_proprio` e `codigo_recusado_inativo`.
+- A Fase 2 foi revisada (Fase 2b) depois do Codex achar 6 bugs; todos corrigidos com teste (ver `tests/afiliados/`).
 
 ## Decisões do Paulo (04/11/2026, 2ª rodada)
 1. **Pedido de reembolso tira o acesso ao acervo.** Na Fase 4:

@@ -9,16 +9,13 @@ export function novoDb() {
 }
 
 let seq = 0
-// Cria cliente + cupom + afiliado (com Pix, se pedido). Devolve ids.
+// Cria cliente + afiliado (com código) (com Pix, se pedido). Devolve ids.
 export function novoAfiliado(db, { pix = true, nivelFixoId = null, status = 'ativo' } = {}) {
   seq += 1
   const cli = db.banco.prepare('INSERT INTO clientes (email) VALUES (?) RETURNING id').get(`a${seq}@t.com`)
-  const cup = db.banco
-    .prepare("INSERT INTO cupons (codigo, tipo, valor, valido_ate, limite_usos, criado_por) VALUES (?, 'valor', 1000, '2027-01-01', 1000, 't') RETURNING id")
-    .get(`AFI${seq}XX`)
   const a = db.banco
-    .prepare('INSERT INTO afiliados (cliente_id, cupom_id, status, nivel_fixo_id, nome, cpf) VALUES (?, ?, ?, ?, ?, ?) RETURNING id')
-    .get(cli.id, cup.id, status, nivelFixoId, `Afiliado ${seq}`, '00000000000')
+    .prepare('INSERT INTO afiliados (cliente_id, codigo, status, nivel_fixo_id, nome, cpf) VALUES (?, ?, ?, ?, ?, ?) RETURNING id')
+    .get(cli.id, `AFI${seq}XX`, status, nivelFixoId, `Afiliado ${seq}`, '00000000000')
   if (pix) comPix(db, { id: Number(a.id) })
   return { id: Number(a.id), clienteId: Number(cli.id) }
 }
