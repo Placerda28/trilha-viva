@@ -4,6 +4,7 @@ import { site } from '@/lib/site'
 import { linkDoAfiliado } from '@/lib/afiliados-campos'
 import { mesDe } from '@/lib/afiliados/datas'
 import { afiliadoDoCliente } from '@/lib/afiliados/conta'
+import { dadosDoPainel } from '@/lib/afiliados/painel'
 import { configuracao, niveisDoMes } from '@/lib/afiliados/niveis'
 import AfiliadoTela from '@/components/afiliados/AfiliadoTela'
 
@@ -30,9 +31,22 @@ export default async function AfiliadoPage() {
   const aberto = config ? Number(config.programa_aberto) === 1 : false
 
   if (afiliado) {
+    // Pendente ainda não tem venda: não monta o painel (e não gasta consulta).
+    const painel = afiliado.status === 'pendente' ? null : await dadosDoPainel(db, afiliado.id)
+    const pref = await db.prepare('SELECT avisar_cada_venda AS v FROM afiliados WHERE id = ?').bind(afiliado.id).first()
     return (
       <AfiliadoTela
         estado="afiliado"
+        painel={{
+          dados: painel,
+          niveis,
+          avisarCadaVenda: Number(pref?.v) === 1,
+          config: config && {
+            carenciaDias: config.carencia_dias,
+            diaFechamento: config.dia_fechamento,
+            intervaloSaqueDias: config.intervalo_saque_dias,
+          },
+        }}
         nome={afiliado.nome || cliente.nome}
         afiliado={{
           codigo: afiliado.codigo,

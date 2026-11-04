@@ -19,6 +19,8 @@ export const ACOES = {
   contato_teste_adicionado: 'adicionou o contato de teste',
   contato_teste_removido: 'removeu o contato de teste',
   afiliado_cadastro: 'cadastrou-se como afiliado com o código',
+  afiliado_pix: 'trocou a chave Pix do afiliado',
+  afiliado_saque: 'pediu saque como afiliado, código',
   cupom_criado: 'criou o cupom',
   cupom_desativado: 'desativou o cupom',
   membro_adicionado: 'adicionou à equipe',

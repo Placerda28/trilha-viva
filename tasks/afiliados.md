@@ -157,6 +157,13 @@ O `metadata` do Mercado Pago já leva `cupom` e `referencia` (UUID = `external_r
   - taxa do Mercado Pago lida do pagamento;
   - prova de que o webhook repetido não duplica.
 - [ ] **5. Área do afiliado** `/minha-conta/afiliado` (seção 6.3 do prompt), com estado vazio e versão de celular.
+  - [x] **Frontend (04/11/2026, só local):** abas Início, Minhas vendas, Meus ganhos, Saques, Dados Pix e Como funciona (`components/afiliados/painel/`, regras puras em `lib/afiliados-painel.js`, testes em `tests/afiliados/painel-ui.test.mjs`).
+    - Os 11 elementos do Início; selo de metal por `nivel.cor` (`Medalha.jsx`); gráfico em SVG à mão com tabela alternativa; ⓘ em janela curta (`Ajuda.jsx`).
+    - A tela só formata: dinheiro, nível e ritmo vêm de `dadosDoPainel` e das rotas `/api/afiliados/*`. As abas buscam os dados pelo `useDados` (`painel/api.jsx`); o protótipo troca o `fetch` por `ApiFalsa`.
+    - Comprovante: botão desligado ("disponível em breve") até a Fase 7.
+    - Protótipo temporário: `/prototipo-afiliado/painel-{bronze,prata,ouro,vazio,avisos,semvalor,sem15dias,sempix,analise,pendente,suspenso}` e as abas por `#vendas`, `#ganhos`, `#saques`, `#pix`, `#como`. Apagar na aprovação.
+    - Falta a prova no navegador com o backend de verdade (login real).
+  - [x] **Backend (04/11/2026, só local):** `lib/afiliados/painel.js` + rotas `/api/afiliados/{vendas,ganhos,saques,saque,pix,avisos,preferencias}` (contrato em `docs/architecture.md`, "Fase 5"). Sem migração nova. `npm test` 418 -> 446.
 - [ ] **6. Fechamento mensal:** etapa no robô, botão manual e e-mails de resumo e de subida de nível.
 - [ ] **7. Saques e Gestão:** fila, comprovante, pago/recusado e e-mails.
 - [ ] **8. Dashboard, Metas, Financeiro e Alertas da Gestão:** dados de teste conferidos numa planilha; os dados de teste são apagados depois.

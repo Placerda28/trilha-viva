@@ -60,7 +60,7 @@ export function Faq({ items, className = '' }) {
     <div className={`border-t border-line ${className}`}>
       {items.map((item) => (
         <details key={item.q} className="group border-b border-line py-6">
-          <summary className="flex cursor-pointer list-none items-start gap-4 marker:hidden">
+          <summary className="flex min-h-11 cursor-pointer list-none items-start gap-4 marker:hidden">
             <span
               aria-hidden="true"
               className="mt-2.5 h-[9px] w-[9px] shrink-0 bg-line transition-colors group-open:bg-signal"

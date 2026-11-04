@@ -27,7 +27,7 @@ async function copiar(texto) {
   }
 }
 
-function BotaoCopiar({ texto, rotulo }) {
+export function BotaoCopiar({ texto, rotulo, titulo = 'Copiar', claro = false, className = '' }) {
   const [estado, setEstado] = useState('')
   const timer = useRef(null)
 
@@ -43,9 +43,11 @@ function BotaoCopiar({ texto, rotulo }) {
       type="button"
       onClick={clicar}
       aria-label={`Copiar ${rotulo}`}
-      className="btn min-h-11 shrink-0 bg-white px-5 py-3 text-[14.5px] text-ink hover:bg-mist"
+      className={`btn min-h-11 shrink-0 px-5 py-3 text-[14.5px] text-ink ${
+        claro ? 'border border-line bg-white hover:border-signal' : 'bg-white hover:bg-mist'
+      } ${className}`}
     >
-      <span aria-live="polite">{estado === 'copiado' ? 'Copiado' : estado === 'falhou' ? 'Não copiou' : 'Copiar'}</span>
+      <span aria-live="polite">{estado === 'copiado' ? 'Copiado' : estado === 'falhou' ? 'Não copiou' : titulo}</span>
     </button>
   )
 }

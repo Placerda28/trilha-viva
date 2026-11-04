@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import AfiliadoTela from '@/components/afiliados/AfiliadoTela'
 import CadastroConcluido from '@/components/afiliados/CadastroConcluido'
+import ApiFalsa from './ApiFalsa'
+import { CONFIG, painel } from './fixtures'
 
 // PROTÓTIPO TEMPORÁRIO (Fase 3 de afiliados): mostra os estados da tela com
 // dados falsos, sem banco nem login, para tirar print antes de o backend
@@ -14,7 +16,8 @@ const NIVEIS = [
   { nome: 'Ouro', vendas_minimas: 50, valor_por_venda_centavos: 3000, cor: '#ffd700' },
 ]
 const LINK = 'https://trilhaviva.org/?ref=JOAO27'
-const ESTADOS = ['visitante', 'visitante-fechado', 'cadastro', 'cadastro-fechado', 'sucesso', 'sucesso-pendente', 'afiliado', 'afiliado-pendente', 'afiliado-suspenso']
+const ESTADOS = ['visitante', 'visitante-fechado', 'cadastro', 'cadastro-fechado', 'sucesso', 'sucesso-pendente', 'afiliado', 'afiliado-pendente', 'afiliado-suspenso',
+  'painel-bronze', 'painel-prata', 'painel-ouro', 'painel-vazio', 'painel-avisos', 'painel-semvalor', 'painel-sem15dias', 'painel-sempix', 'painel-analise', 'painel-pendente', 'painel-suspenso']
 
 export function generateStaticParams() {
   return ESTADOS.map((estado) => ({ estado }))
@@ -32,6 +35,22 @@ export default async function Prototipo({ params }) {
       <div className="shell max-w-5xl pb-24 pt-14">
         <CadastroConcluido codigo="JOAO27" link={LINK} status={estado === 'sucesso-pendente' ? 'pendente' : 'ativo'} niveis={NIVEIS} />
       </div>
+    )
+  }
+  if (base === 'painel') {
+    const variante = estado.slice('painel-'.length)
+    const status = variante === 'pendente' ? 'pendente' : variante === 'suspenso' ? 'suspenso' : 'ativo'
+    const dados = painel(variante === 'pendente' || variante === 'suspenso' ? 'prata' : variante)
+    return (
+      <ApiFalsa variante={variante === 'pendente' || variante === 'suspenso' ? 'prata' : variante}>
+        <AfiliadoTela
+          estado="afiliado"
+          nome="João da Silva"
+          afiliado={afiliado(status)}
+          emailSuporte="contato@trilhaviva.org"
+          painel={{ dados: status === 'pendente' ? null : dados, niveis: dados.niveis, config: CONFIG, avisarCadaVenda: false }}
+        />
+      </ApiFalsa>
     )
   }
   if (base === 'afiliado') {

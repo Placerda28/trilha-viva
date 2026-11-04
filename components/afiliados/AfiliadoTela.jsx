@@ -77,14 +77,12 @@ function Visitante({ niveis, aberto }) {
 // A tela inteira de /minha-conta/afiliado. A página só busca os dados e escolhe
 // o estado; o protótipo monta esta mesma peça com dados falsos.
 //   visitante: sem login   cadastro: logado, ainda não é afiliado   afiliado: já é
-export default function AfiliadoTela({ estado, niveis = [], aberto = true, nome = '', afiliado = null, emailSuporte = '' }) {
+export default function AfiliadoTela({ estado, niveis = [], aberto = true, nome = '', afiliado = null, emailSuporte = '', painel = {} }) {
   if (estado === 'visitante') return <Visitante niveis={niveis} aberto={aberto} />
   return (
-    <div className="shell max-w-5xl pb-24 pt-14">
+    <div className={`shell max-w-5xl pb-24 ${estado === 'afiliado' ? 'pt-10 sm:pt-14' : 'pt-14'}`}>
       {estado === 'afiliado' ? (
-        <div className="max-w-3xl">
-          <AfiliadoPainel nome={nome} {...afiliado} emailSuporte={emailSuporte} />
-        </div>
+        <AfiliadoPainel nome={nome} {...afiliado} emailSuporte={emailSuporte} {...painel} />
       ) : (
         <CadastroAfiliado nomeInicial={nome} niveis={niveis} aberto={aberto} />
       )}
