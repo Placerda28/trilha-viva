@@ -7,8 +7,9 @@ import { useDados } from './api'
 import { Carregando, Falhou } from './Carregando'
 import { ROTULO_SAQUE, Selo } from './Situacao'
 
-// O download do comprovante só existe a partir da Fase 7. Até lá `temComprovante`
-// vem sempre falso e o botão fica desligado, dizendo por quê.
+// `temComprovante` vem do servidor: com ele, o botão é um link para a rota que
+// entrega o comprovante (só do próprio afiliado). Pagamentos feitos sem anexo
+// (antes da Fase 7) ficam com o botão desligado, dizendo por quê.
 function Comprovante({ s }) {
   if (s.status !== 'pago') return null
   if (s.temComprovante) {
@@ -20,7 +21,7 @@ function Comprovante({ s }) {
   }
   return (
     <button type="button" disabled className="btn mt-3 min-h-11 cursor-not-allowed border border-line bg-paper px-5 py-3 text-[14.5px] text-ink-muted">
-      Baixar comprovante: disponível em breve
+      Comprovante não disponível para este pagamento
     </button>
   )
 }

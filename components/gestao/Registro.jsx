@@ -22,6 +22,9 @@ export const ACOES = {
   afiliado_pix: 'trocou a chave Pix do afiliado',
   afiliado_saque: 'pediu saque como afiliado, código',
   afiliados_fechamento: 'fechou o mês dos afiliados',
+  afiliado_comprovante: 'anexou o comprovante do saque do afiliado',
+  afiliado_saque_pago: 'marcou como pago o saque do afiliado',
+  afiliado_saque_recusado: 'recusou o saque do afiliado',
   cupom_criado: 'criou o cupom',
   cupom_desativado: 'desativou o cupom',
   membro_adicionado: 'adicionou à equipe',
@@ -69,7 +72,7 @@ function Linha({ r }) {
 }
 
 const GRUPOS = [
-  ['Afiliados', ['afiliados_fechamento']],
+  ['Afiliados', ['afiliados_fechamento', 'afiliado_comprovante', 'afiliado_saque_pago', 'afiliado_saque_recusado']],
   ['Cupons', ['cupom_criado', 'cupom_desativado']],
   ['Clientes', ['cliente_bloqueado', 'cliente_liberado', 'cliente_email_corrigido', 'acesso_reenviado']],
   ['Carrinhos', ['lembretes_parados']],

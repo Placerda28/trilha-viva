@@ -114,15 +114,44 @@
 - Testes: `tests/afiliados/painel.test.mjs` (lógica) e `tests/afiliados/painel-rotas.test.mjs` (rotas, com módulos falsos).
 
 ### Afiliados (Fase 6: fechamento automático e e-mails)
-- Migração `0019_afiliados_resumo.sql` (só acrescenta): `afiliados_fechamentos.resumo_enviado_em` e `resumo_tentativas`.
-- Robô: `executarAfiliados` (`workers/recuperacao-carrinho/afiliados.js`), chamado em `executarRodada` com try/catch próprio (o resultado não entra no retorno da rodada). Três partes, cada uma com teto de 25 por rodada:
-  - **Fechamento:** em vez das 03:00 da especificação, vale "a partir do `dia_fechamento` (padrão 8, Brasília), na primeira rodada" (cron `*/10`). Sem nada a fechar, custa 1 consulta (`fecharPendentes` olha o dia e os dois meses possíveis de uma vez). `fecharMes(db, mes, agora, { limite })` fecha até N e devolve `restam`; a rodada seguinte continua. `pendentes` (contagem mudou no meio) ficam para a próxima.
-  - **Resumo do mês:** para cada fechamento sem `resumo_enviado_em` (últimos 10 dias, afiliado `ativo`, até 3 tentativas): reserva atômica (`resumo_tentativas + 1`), aviso `fechamento:AAAA-MM` no painel (INSERT condicional), e-mail pelo Resend com `Idempotency-Key`, e só então `resumo_enviado_em`. Falha: outra rodada tenta de novo, até 3.
-  - **"Faltam X vendas":** só nos últimos 5 dias do mês de Brasília, com faltam entre 1 e 5, sem nível fixo, ativo e abaixo do nível máximo. Aviso `faltam:AAAA-MM` gravado ANTES do e-mail: no máximo 1 aviso e 1 e-mail por mês (se o e-mail falhar, não repete).
-  - `MODO` diferente de `ativo`: e-mail só para `TESTE_PARA` (o fechamento em si roda sempre). Em modo ativo, e-mail em `contatos_teste` não recebe. Sem `RESEND_API_KEY`/`EMAIL_FROM`, só o fechamento roda.
+- Migração `0019_afiliados_resumo.sql` (só acrescenta): em `afiliados_fechamentos`, `resumo_enviado_em`, `resumo_tentativas`, `resumo_primeira_tentativa_em`, `resumo_saldo_centavos`; em `afiliados_avisos`, `email_dados`, `email_enviado_em`, `email_tentativas`, `email_primeira_tentativa_em` e o índice por `tipo`.
+- Robô: `executarAfiliados` (`workers/recuperacao-carrinho/afiliados.js`), chamado em `executarRodada` com try/catch próprio (o resultado não entra no retorno da rodada).
+- **Orçamento de consultas (D1 grátis = 50 por invocação, divididas com e-mail, leads e WhatsApp):** a etapa gasta no máximo 16 por rodada. `comOrcamento` conta cada `prepare` (= 1 statement, inclusive os de um `db.batch`) e recusa passar do teto. Contas: checagem do fechamento 1; `fecharMes` 3 fixas + 4 por afiliado (3 afiliados = 16); resumo 1 de lista + 4 por e-mail na 1ª tentativa (saldo, reserva, aviso, marcar) ou 2 nas repetições; "faltam" só nos 5 últimos dias: 2 + 1 por aviso novo + 1 de fila + 2 por e-mail. Ordem: fechamento, resumo, faltam; cada parte só começa se sobrar orçamento. Limites: 3 fechamentos, 5 resumos, 5 "faltam" por rodada (cron `*/10`: até 18 fechamentos por hora).
+- **Fechamento:** em vez das 03:00 da especificação, vale "a partir do `dia_fechamento` (padrão 8, Brasília), na primeira rodada". 1 consulta acha o mês MAIS ANTIGO com afiliado com venda e sem fechamento; se já foi liberado, `fecharMes(db, mes, agora, { limite })` fecha até N e a rodada seguinte continua (pendência antiga nunca fica para trás). Sem nada a fechar, custa 1 consulta. `pendentes` ficam para a próxima.
+- **Resumo do mês:** fechamento sem `resumo_enviado_em` (últimos 10 dias, afiliado `ativo`, até 3 tentativas): reserva atômica (`resumo_tentativas + 1`), aviso `fechamento:AAAA-MM` no painel (INSERT condicional, só na 1ª tentativa), e-mail com `Idempotency-Key`. O saldo disponível é congelado na 1ª tentativa (`resumo_saldo_centavos`), então o corpo é sempre igual e o Resend não dá 409 por conteúdo; 409 com a mesma chave conta como já enviado. A chave do Resend vale 24 h: só repete até 20 h depois de `resumo_primeira_tentativa_em`; passado isso desiste e registra no log.
+- **"Faltam X vendas":** só nos últimos 5 dias do mês de Brasília, faltam entre 1 e 5, sem nível fixo, ativo e abaixo do nível máximo. O aviso `faltam:AAAA-MM` (1 só) guarda os dados congelados em `email_dados`; o e-mail tem entrega própria (até 3 tentativas, dentro de 20 h da 1ª, só no mês do aviso). Falha de envio não perde o e-mail.
+- `MODO` diferente de `ativo`: e-mail só para `TESTE_PARA` (o fechamento roda sempre). Em modo ativo, e-mail em `contatos_teste` não recebe. Sem `RESEND_API_KEY`/`EMAIL_FROM`, só o fechamento roda.
 - `lib/emails-afiliado.js` (sem `@/`): `montarResumoFechamento` e `montarFaltamVendas` (HTML e texto, `escapeHtml`, link `SITE_URL/minha-conta/afiliado`, sem cópia oculta). Os e-mails de venda e de subida de nível da Fase 4 ficaram em `lib/email.js` (eles usam `enviar()` do site; mover não traria ganho).
 - Gestão (botão manual, a tela é da Fase 8): `GET /api/interno/gestao/afiliados/fechamento?mes=AAAA-MM` (`soAdmin`) devolve `status` (`pendente`, `parcial`, `rodado`), `faltam`, `liberado`, `rodou_em` e o relatório (`por_nivel`, totais base, bônus e mês), via `lib/afiliados/relatorio.js`. `POST` com `{mes}` (`soMaster`, `mesmaOrigem`) roda `fecharMes` com limite 200, grava `registro` (`afiliados_fechamento`) e devolve `fechados`, `pendentes`, `restam` e o relatório; mês não liberado dá 400 com o texto de `fecharMes`. Os e-mails do fechamento manual saem na próxima rodada do robô (até 10 min), pela mesma regra idempotente.
 - Testes: `tests/afiliados/robo.test.mjs` e `tests/afiliados/fechamento-rota.test.mjs`.
+
+### Afiliados (Fase 7: saques e comprovante na Gestão)
+- Sem migração nova. Estados: saque `solicitado` -> `pago` (com `comprovante_caminho`, `pago_em`, `pago_por`) ou `recusado` (`nota` = motivo, `pago_por` = quem decidiu; `pago_em` fica vazio). Saque tratado não muda mais.
+- `lib/afiliados/saques-gestao.js` (sem `@/`): `listarSaques` (20 por página, no máximo 300 créditos por resposta; Pix inteiro, `dias_esperando`, `creditos`, `comprovante: bool`; `resumo` com pendentes, pagos e recusados dos últimos 30 dias e `tempo_medio_horas`), `marcarPago` e `recusar`. Os dois rodam num `db.batch` condicional a `status = 'solicitado'` (saque, lançamentos e aviso); o sucesso é conferido relendo o saque. Repetir, ou tratar de novo um saque já pago/recusado, devolve `jaTratado` e não muda nada. Pago: lançamentos `em_saque` viram `paga`. Recusado: voltam a `pendente` com `saque_id NULL` (o intervalo de 15 dias não conta recusado).
+- Avisos do painel (`afiliados_avisos`): `saque_pago` ("Seu saque de R$ X foi pago") e `saque_recusado` (com o motivo), link `/minha-conta/afiliado#saques`, no máximo um por saque.
+- `lib/b2-envio.js` (sem `@/`): envio ao B2 com a API nativa (`b2_authorize_account` v3, `b2_get_upload_url`, `b2_upload_file`), com a chave restrita `B2_COMPROVANTES_*`. `X-Bz-Content-Sha1: do_not_verify` e o `ArrayBuffer` vai cru (nada de base64, nada de SHA-1 no Worker). `tipoPelosBytes` confere PDF, JPEG e PNG pelos primeiros bytes. `caminhoValido(id, caminho)` só aceita `afiliados-comprovantes/<id>-<uuid>.(pdf|jpg|png)`. `lib/b2.js` não mudou: a leitura usa `linkDeDownload` (link assinado de 5 min na tela e de 1 h no anexo do e-mail).
+- E-mails: `montarSaquePago` (anexo `attachments: [{ filename, path }]`, por URL; o Resend aceita `path` remoto, confirmado na documentação) e `montarSaqueRecusado`, em `lib/emails-afiliado.js`; envio por `lib/afiliados/saques-email.js`. Falha de e-mail só vira log e `email_enviado: false`; o pagamento fica gravado.
+- Rotas da Gestão (`soAdmin`, `no-store`, POST com `mesmaOrigem`, outros métodos 404; `registro` em cada ação, traduzido em `ACOES`):
+  - `GET /api/interno/gestao/afiliados/saques?status=pendentes|pagos|recusados|todos&pagina=1`
+  - `POST .../saques/[id]/comprovante` (multipart, campo `arquivo`; até 5 MB; só saque `solicitado`): `{ ok, caminho }`. Erros: 400 tipo/vazio, 413 tamanho, 409 já tratado, 404, 502 B2 recusou, **503 "Armazenamento de comprovantes não configurado"** sem as variáveis.
+  - `GET .../saques/[id]/comprovante`: 302 para o link de 5 min (`no-store`).
+  - `POST .../saques/[id]/pagar { caminho }`: confere o prefixo do próprio saque; `{ ok, email_enviado }`; 409 se já tratado.
+  - `POST .../saques/[id]/recusar { motivo }`: motivo de 3 a 500 letras; `{ ok, email_enviado }`.
+- Afiliado: `GET /api/afiliados/saques/[id]/comprovante`: só o próprio saque `pago` (senão 404), 302 com `Referrer-Policy: no-referrer`.
+- `consultarAvisos` ganhou `afiliados_saques_pendentes` (COUNT no mesmo `db.batch`).
+- Comprovante enviado e nunca usado (Gestão desistiu) fica órfão no prefixo; dá para limpar à mão depois.
+- Testes: `tests/afiliados/saques-gestao.test.mjs` (lógica, B2 e e-mail) e `tests/afiliados/saques-gestao-rotas.test.mjs` (rotas, com B2 e Resend falsos).
+
+#### Variáveis novas (Fase 7)
+- `B2_COMPROVANTES_KEY_ID` e `B2_COMPROVANTES_APP_KEY`: segredos do Worker `www` (`npx wrangler secret put NOME`; só valem depois de promover a versão). Sem elas, o envio responde 503 e o resto do site segue normal.
+- Passo a passo no Backblaze (feito pelo Paulo; não mexe na chave do acervo):
+  1. Entre em backblaze.com > **Application Keys** > **Add a New Application Key**.
+  2. Nome: `comprovantes-afiliados`. Balde: **`trilha-viva-acervo`** (o mesmo do site; deixe só ele marcado).
+  3. Tipo de acesso: **Write Only** (só escrita; se a tela não oferecer, use Read and Write). Em **File name prefix** escreva exatamente `afiliados-comprovantes/`.
+  4. Deixe "Allow List All Bucket Names" desmarcado e crie. Copie o **keyID** e a **applicationKey** agora: a segunda aparece uma vez só.
+  5. Rode `npx wrangler secret put B2_COMPROVANTES_KEY_ID` e `npx wrangler secret put B2_COMPROVANTES_APP_KEY`, cole cada valor e promova a versão.
+  6. **Não gere nem apague outra chave do Backblaze** nesse meio tempo: criar chave nova não derruba a do acervo, mas apagar derruba.
+- A chave de leitura do acervo (`B2_KEY_ID`) precisa enxergar o prefixo `afiliados-comprovantes/` (chave do balde inteiro, como hoje). Se ela for restrita a outro prefixo, o comprovante não abre e o e-mail sai sem anexo (`email_enviado: false`).
 
 ## Publicação
 

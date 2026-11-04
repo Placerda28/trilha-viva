@@ -16,6 +16,9 @@ import Icone from './Icone'
 // não tem página, e `agora` é o endereço que já existe para ele. As duas
 // chaves somem quando a tela nova entra (Campanhas e Downloads: Fase 5; Vendas: Fase 4).
 //
+// `contadorTexto` ([singular, plural]) é o que o leitor de tela diz do número;
+// sem ele vale o do WhatsApp.
+//
 // `consulta` ('de=...&ate=...') é o período global: os links o levam junto,
 // para Painel, Vendas, Campanhas, Leads e Downloads mostrarem o mesmo período.
 export const MENU = [
@@ -43,6 +46,13 @@ export const MENU = [
     itens: [
       { href: '/gestao/campanhas', rotulo: 'Campanhas', icone: 'campanhas' },
       { href: '/gestao/leads', rotulo: 'Leads VS grátis', icone: 'leads' },
+      {
+        href: '/gestao/afiliados',
+        rotulo: 'Afiliados',
+        icone: 'afiliados',
+        contador: 'afiliados_saques_pendentes',
+        contadorTexto: ['pedido de saque esperando pagamento', 'pedidos de saque esperando pagamento'],
+      },
     ],
   },
   {
@@ -58,6 +68,14 @@ export const MENU = [
     ],
   },
 ]
+
+const TEXTO_CONTADOR = ['conversa esperando resposta', 'conversas esperando resposta']
+
+// "3 pedidos de saque esperando pagamento", para o leitor de tela.
+export function textoContador(item, n) {
+  const [um, varios] = item.contadorTexto || TEXTO_CONTADOR
+  return n === 1 ? '1 ' + um : n + ' ' + varios
+}
 
 // Mesmo caminho do SairBotao da conta: a saída é um POST, não um link.
 export async function sairDaConta() {
@@ -115,7 +133,7 @@ export function Avatar({ email, className = '' }) {
   )
 }
 
-function Contador({ n, recolhida, grande }) {
+function Contador({ n, texto, recolhida, grande }) {
   if (!n) return null
   // Barra estreita: o número vira um quadradinho no canto do ícone.
   const lugar = grande
@@ -130,7 +148,7 @@ function Contador({ n, recolhida, grande }) {
         lugar
       }
     >
-      <span className="sr-only">{n === 1 ? '1 conversa esperando resposta' : n + ' conversas esperando resposta'}</span>
+      <span className="sr-only">{texto}</span>
       <span aria-hidden="true">{n}</span>
     </span>
   )
@@ -160,7 +178,7 @@ function Item({ item, ativo, n, recolhida, grande, consulta, onEscolher }) {
     >
       <Icone nome={item.icone} tamanho={18} className="shrink-0" />
       <span className={rotuloCls}>{item.rotulo}</span>
-      <Contador n={n} recolhida={recolhida} grande={grande} />
+      <Contador n={n} texto={textoContador(item, n)} recolhida={recolhida} grande={grande} />
     </Link>
   )
   if (grande) return link

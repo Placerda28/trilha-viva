@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 import { LogoMark } from '../Logo'
 import Icone from './Icone'
-import { Conta, ListaMenu, comPeriodo } from './BarraLateral'
+import { Conta, ListaMenu, comPeriodo, textoContador } from './BarraLateral'
 
 // Celular (< 768 px): barra de baixo com 4 atalhos e "Mais", e a gaveta com o
 // menu inteiro (a mesma lista da barra lateral). O "Mais" e o ☰ do topo abrem
@@ -24,6 +24,12 @@ const FOCO = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring
 export default function NavCelular({ menu, ativo, avisos, consulta = '', papel, email, aberta, aoMudar, onSair }) {
   const itens = ATALHOS.map((h) => achaItem(menu, h)).filter(Boolean)
   const fechar = () => aoMudar(false)
+  // Contadores dos itens que não estão na barra de baixo ficam escondidos na
+  // gaveta: um ponto vermelho no "Mais" avisa que há algo esperando lá dentro.
+  const noAtalho = new Set(itens.map((i) => i.href))
+  const escondidos = menu
+    .flatMap((g) => g.itens)
+    .filter((i) => i.contador && !noAtalho.has(i.href) && avisos?.[i.contador] > 0)
 
   return (
     <>
@@ -55,7 +61,7 @@ export default function NavCelular({ menu, ativo, avisos, consulta = '', papel, 
                     <Icone nome={i.icone} tamanho={22} />
                     {n > 0 && (
                       <span className="figs absolute -right-3 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-sm bg-signal px-1 text-[11px] font-bold leading-none text-white">
-                        <span className="sr-only">{n} conversas esperando resposta</span>
+                        <span className="sr-only">{textoContador(i, n)}</span>
                         <span aria-hidden="true">{n}</span>
                       </span>
                     )}
@@ -72,8 +78,18 @@ export default function NavCelular({ menu, ativo, avisos, consulta = '', papel, 
               aria-haspopup="dialog"
               className={'flex h-full w-full flex-col items-center justify-center gap-1 text-[11.5px] font-semibold text-ink-muted ' + FOCO}
             >
-              <Icone nome="mais" tamanho={22} />
+              <span className="relative">
+                <Icone nome="mais" tamanho={22} />
+                {escondidos.length > 0 && (
+                  <span aria-hidden="true" className="absolute -right-2 -top-1 h-2.5 w-2.5 rounded-sm bg-signal" />
+                )}
+              </span>
               Mais
+              {escondidos.map((i) => (
+                <span key={i.href} className="sr-only">
+                  {textoContador(i, avisos[i.contador])}
+                </span>
+              ))}
             </button>
           </li>
         </ul>
