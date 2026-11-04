@@ -116,6 +116,53 @@ body {
     @apply inline-flex items-center gap-1.5 text-[15px] font-semibold text-signal-deep underline decoration-transparent decoration-2 underline-offset-4 transition-colors hover:decoration-signal;
   }
 
+  /* Controle deslizante do simulador de /afiliados (painel preto). A parte já
+     percorrida é branca; o puxador é uma barra branca com o corte vermelho na
+     ponta, como as faixas da escada de metas. Alvo de toque de 44 px de altura. */
+  .range-vendas {
+    @apply block h-11 w-full cursor-pointer appearance-none bg-transparent focus-visible:outline-none;
+    touch-action: pan-y;
+  }
+  .range-vendas::-webkit-slider-runnable-track {
+    height: 6px;
+    background: linear-gradient(to right, #fff var(--pct), rgba(255, 255, 255, 0.24) var(--pct));
+  }
+  .range-vendas::-moz-range-track {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.24);
+  }
+  .range-vendas::-moz-range-progress {
+    height: 6px;
+    background: #fff;
+  }
+  .range-vendas::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 32px;
+    margin-top: -13px;
+    background: #fff;
+    border: 0;
+    border-right: 4px solid #e5152d;
+    border-radius: 0;
+  }
+  .range-vendas::-moz-range-thumb {
+    box-sizing: border-box;
+    width: 16px;
+    height: 32px;
+    background: #fff;
+    border: 0;
+    border-right: 4px solid #e5152d;
+    border-radius: 0;
+  }
+  .range-vendas:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
+  .range-vendas:focus-visible::-moz-range-thumb {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
+
   /* Apelidos herdados do visual antigo. Ficam aqui só para nenhuma página
      ficar sem estilo enquanto o redesenho não chega nela. Remover no fim. */
   .btn-solid {

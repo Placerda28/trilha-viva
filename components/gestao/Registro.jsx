@@ -25,6 +25,18 @@ export const ACOES = {
   afiliado_comprovante: 'anexou o comprovante do saque do afiliado',
   afiliado_saque_pago: 'marcou como pago o saque do afiliado',
   afiliado_saque_recusado: 'recusou o saque do afiliado',
+  afiliado_aprovado: 'aprovou o cadastro do afiliado',
+  afiliado_suspenso: 'suspendeu o afiliado',
+  afiliado_reativado: 'reativou o afiliado',
+  afiliado_nivel_travado: 'mudou o nível travado do afiliado',
+  afiliado_codigo_trocado: 'trocou o código do afiliado, agora',
+  afiliado_ajuste: 'lançou um ajuste de saldo para o afiliado',
+  afiliado_anotacao: 'anotou sobre o afiliado',
+  afiliado_dado_revelado: 'mostrou CPF ou Pix inteiro do afiliado',
+  afiliados_metas: 'mudou a tabela de níveis dos afiliados, valendo a partir de',
+  afiliados_config: 'mudou as configurações dos afiliados',
+  afiliados_exportar: 'Exportou relatório de afiliados',
+  afiliados_alerta_resolvido: 'marcou como resolvido o alerta de afiliados',
   cupom_criado: 'criou o cupom',
   cupom_desativado: 'desativou o cupom',
   membro_adicionado: 'adicionou à equipe',
@@ -72,7 +84,7 @@ function Linha({ r }) {
 }
 
 const GRUPOS = [
-  ['Afiliados', ['afiliados_fechamento', 'afiliado_comprovante', 'afiliado_saque_pago', 'afiliado_saque_recusado']],
+  ['Afiliados', ['afiliados_fechamento', 'afiliado_comprovante', 'afiliado_saque_pago', 'afiliado_saque_recusado', 'afiliado_aprovado', 'afiliado_suspenso', 'afiliado_reativado', 'afiliado_nivel_travado', 'afiliado_codigo_trocado', 'afiliado_ajuste', 'afiliado_anotacao', 'afiliado_dado_revelado', 'afiliados_metas', 'afiliados_config', 'afiliados_exportar', 'afiliados_alerta_resolvido']],
   ['Cupons', ['cupom_criado', 'cupom_desativado']],
   ['Clientes', ['cliente_bloqueado', 'cliente_liberado', 'cliente_email_corrigido', 'acesso_reenviado']],
   ['Carrinhos', ['lembretes_parados']],

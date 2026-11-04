@@ -153,6 +153,138 @@
   6. **Não gere nem apague outra chave do Backblaze** nesse meio tempo: criar chave nova não derruba a do acervo, mas apagar derruba.
 - A chave de leitura do acervo (`B2_KEY_ID`) precisa enxergar o prefixo `afiliados-comprovantes/` (chave do balde inteiro, como hoje). Se ela for restrita a outro prefixo, o comprovante não abre e o e-mail sai sem anexo (`email_enviado: false`).
 
+### Afiliados (Fase 8A: Dashboard, Financeiro e Alertas da Gestão)
+- **Migração `0021_afiliados_alertas.sql` (só acrescenta; o Paulo aplica no remoto ANTES do deploy):** tabela `afiliados_alertas_resolvidos` (`chave` única, `resolvido_em`, `resolvido_por`) e 4 índices (`afiliados_lancamentos(criado_em)`, `afiliados_cliques(criado_em)`, `afiliados_eventos(evento, criado_em)`, `afiliados_saques(status, pedido_em)`). **O contador do menu (`consultarAvisos`) lê a tabela nova: sem a 0021 aplicada, `GET /api/interno/gestao/avisos` dá erro.**
+- Peças em `lib/afiliados/` (sem `@/`): `gestao-painel.js` (`dashboardAfiliados`), `gestao-painel-niveis.js` e `gestao-painel-frase.js` (apoio), `gestao-financeiro.js` (`extrato`, `resumoMensal`, `dadosCsv`), `gestao-alertas.js` (`calcularAlertas`, `resolverAlerta`, `prepararContagemAlertas`), `gestao-periodo.js` (meses, variação, `reais`). `lib/gestao/csv.js` ganhou `numeroCsv(texto)`: número já formatado (`-5,00`) que o sistema gerou não leva aspas simples de proteção; texto de fora continua protegido.
+- Convenções comuns (as de 8B valem aqui): rotas em `/api/interno/gestao/afiliados/`, `nodejs`/`force-dynamic`, `no-store`, `soAdmin` (404 comum para quem não é admin; membro vê tudo e resolve alerta), outros métodos 404, erro `{ ok: false, erro, campo? }` (400 dados, 503 banco). **Período** `?de=AAAA-MM-DD&ate=AAAA-MM-DD`, obrigatório, inclusivo, dia de Brasília, até 731 dias (`validarPeriodo`). Dinheiro em **centavos inteiros**; datas de itens em ISO UTC; contagens são inteiros; porcentagens têm 1 casa (`95.3` = 95,3%) e vêm `null` quando a base é zero.
+- **Fontes dos números:** vendas = `compras_reais` com `status = 'pago'` (reembolso, chargeback e mediação saem da venda e ficam à parte). Receita líquida = `liquido_centavos`; quando é nulo (venda antiga sem taxa do Mercado Pago) vale `valor_centavos` e a venda é contada em `vendas_com_valor_estimado`/`estimadas`. **Não existe desconto**: custo do programa = comissão base (lançamentos `venda` não cancelados, pela data da venda) + bônus (`bonus_nivel`, pelo `mes_referencia`) + ajustes e estornos (pela data do lançamento; estorno é negativo). Lucro = receita líquida − custo.
+
+#### `GET .../dashboard?de&ate`
+```
+{ ok, periodo: { de, ate, dias, anterior: { de, ate } }, gerado_em, frase,
+  compensa: {
+    receita_liquida_afiliados_centavos, vendas_com_valor_estimado,
+    custo_programa: { total_centavos, base_centavos, bonus_centavos, ajustes_centavos, estornos_centavos },
+    lucro_afiliados_centavos, vendas_afiliados, vendas_diretas, vendas_total,
+    pct_vendas_afiliados,                       // null sem vendas
+    cpa_centavos,                               // custo / vendas via afiliado; null sem vendas via afiliado
+    lucro_por_venda: { afiliado_centavos, direta_centavos,   // null sem vendas; direta = receita líquida / vendas diretas (o custo de anúncio não entra)
+      por_nivel: [{ nivel, vendas, receita_liquida_centavos, custo_centavos, lucro_centavos, lucro_por_venda_centavos }] },  // Bronze, Prata, Ouro (tabela do mês atual) + níveis antigos que apareceram; custo = vendas x valor por venda do nível do mês da venda
+    comparacao: { vendas_afiliados, vendas_total, receita_liquida, custo, lucro, cpa, pct_vendas_afiliados }  // cada um { atual, anterior, pct }; pct = variação % (▲ positivo, ▼ negativo), null se anterior = 0
+  },
+  afiliados: { cadastrados, ativos, pendentes, suspensos, novos, venderam, inativos_30d,
+    por_nivel_mes_atual: { mes, niveis: { Bronze: n, Prata: n, Ouro: n }, ativos_sem_vendas }, perto_de_subir },  // perto = faltam 3 ou menos, só ativos
+  dinheiro: { disponivel_centavos, liberando_centavos,
+    bonus_previsto: { total_centavos, partes: [{ mes, valor_centavos, fecha_em: 'AAAA-MM-DD' }] },   // meses ainda sem fechamento (mês anterior se aberto e o atual)
+    previsao_15_dias: { libera_centavos, bonus_centavos, total_centavos },
+    saques_pendentes: { quantidade, valor_centavos }, pago_no_periodo: { quantidade, valor_centavos }, pago_desde_o_inicio: { quantidade, valor_centavos } },
+  series: {
+    vendas_por_dia: [{ dia, rotulo, diretas, afiliados }],                 // um ponto por dia do período, com zeros
+    receita_custo_mensal: [{ mes, vendas, receita_liquida_centavos, custo_centavos, lucro_centavos }],  // 12 meses até o mês de `ate` (até 24 se o período for maior)
+    funil: { cliques, checkouts, vendas, estornos: { reembolsos, chargebacks, total }, taxa_clique_checkout, taxa_checkout_venda },
+    top_afiliados: [{ afiliado_id, nome, codigo, vendas, receita_liquida_centavos }],   // até 10, por vendas
+    distribuicao_niveis: { niveis: [nomes], meses: [{ mes, contagens: { Bronze: n, ... } }] },       // mesma janela de meses; mês fechado vale o fechamento
+    novos_afiliados_por_mes: [{ mes, novos }],
+    origem: { forma_pagamento: { afiliados: { pix, cartao, outro, sem_info }, todas: { pix, cartao, outro, sem_info } }, codigo_digitado_vs_link: null } } }
+```
+- `disponivel_centavos` = soma, por afiliado, do saldo positivo disponível (um ajuste negativo de um não abate o de outro). `liberando_centavos` = pendente ainda na carência. `perto_de_subir` e os níveis do mês usam a mesma regra pura de `niveis.js` (nível retroativo, nível fixo respeitado).
+- **`codigo_digitado_vs_link` é sempre `null`**: o banco não guarda como o código chegou (`afiliados_eventos` não tem a origem). Para ter o dado, o checkout teria que gravar isso num evento novo (não feito).
+- `frase`: texto pronto em português simples (vendas, % do total, receita, custo, lucro ou prejuízo, custo por venda, variação contra o período anterior e aviso de vendas estimadas).
+
+#### `GET .../financeiro?de&ate&tipo&afiliado&pagina`
+- `tipo` (opcional): `venda`, `bonus_nivel`, `ajuste` ou `estorno`; `afiliado` (opcional): id numérico; `pagina` a partir de 1. Valor inválido: 400 com `campo`.
+```
+{ ok, de, ate,
+  extrato: { pagina, por_pagina: 50, total_itens, soma_centavos,   // soma de TODOS os itens do filtro, não só da página
+    itens: [{ id, quando, afiliado: { id, nome, codigo }, tipo, mes_referencia, valor_centavos, status, compra_id, saque_id, descricao }] },  // mais novo primeiro; filtro pela data do lançamento
+  resumo_mensal: { meses: [{ mes, vendas, bruto, taxas, liquido, estimadas, comissoes_base, bonus, ajustes, estornos, custo, lucro }],   // todos em centavos, menos vendas e estimadas
+                   totais: { vendas, bruto, taxas, liquido, estimadas, comissoes_base, bonus, ajustes, estornos, custo, lucro } } }
+```
+- `resumo_mensal` cobre os **meses inteiros** que o período toca (não só os dias). Vendas via afiliado do mês de Brasília; `bruto` = `bruto_centavos` (ou o valor da venda se faltar), `taxas` = `taxa_mp_centavos` (0 se faltar), `liquido` = `liquido_centavos` (ou o valor da venda). `custo` = base + bônus + ajustes + estornos; `lucro` = líquido − custo. Não depende de `tipo`/`afiliado`.
+
+#### `GET .../financeiro/csv?tipo=comissoes|saques_pagos|resumo_mensal&de&ate`
+- `text/csv; charset=utf-8` com BOM, separador `;`, fim de linha CRLF, datas em Brasília, `attachment; filename="afiliados-<tipo>-<de>-a-<ate>.csv"`. Texto de fora com `=`, `+`, `-`, `@` no começo ganha `'` na frente; valores em reais saem como número (`-5,00`).
+- `comissoes` (lançamentos do período): Data; Afiliado; Código; Tipo; Mês de referência; Valor; Status; Compra; Descrição. `saques_pagos` (pago no período): Pago em; Afiliado; CPF do afiliado; Titular da chave Pix; CPF do titular; Tipo da chave; Chave Pix; Valor; Pedido em; Pago por (a chave e o titular vêm do snapshot gravado no saque). `resumo_mensal`: Mês; Vendas via afiliado; Receita bruta; Taxas Mercado Pago; Receita líquida; Comissões base; Bônus de nível; Ajustes; Estornos; Lucro; Vendas sem taxa informada, com uma linha final "Total".
+- `tipo` ou período inválido: 400. **Mais de 5.000 linhas: 400** ("Escolha um período menor"), nunca um arquivo cortado. Cada exportação grava em `registro` a ação `afiliados_exportar` (alvo = o tipo; detalhe `{ tipo, de, ate, linhas }`). Tradução no Registro: `afiliados_exportar` = "Exportou relatório de afiliados".
+
+#### `GET .../alertas`
+```
+{ ok, gerado_em, total, por_gravidade: { alta, media, baixa },
+  alertas: [{ chave, tipo, gravidade: 'alta'|'media'|'baixa', texto, link, afiliado_id }] }   // abertos, mais graves primeiro
+```
+- Calculados na hora (10 consultas num lote, mais 1 para os resolvidos). `chave` é estável; o que se repete por mês leva o mês na chave, então "resolvido" vale só para aquele mês. `link` é um caminho do painel (o frontend decide a tela): `/gestao/afiliados/saques`, `/gestao/afiliados/lista?afiliado=<id>` ou `/gestao/afiliados/metas?mes=AAAA-MM`; `afiliado_id` é `null` nos alertas que não são de uma pessoa.
+
+| `tipo` | `chave` | Regra | Gravidade |
+|---|---|---|---|
+| `saque_atrasado` | `saque_atrasado:<saqueId>` | saque `solicitado` há 3 dias ou mais | media; alta com 7+ dias |
+| `taxa_estorno` | `taxa_estorno:<afiliadoId>:<AAAA-MM>` | últimos 90 dias: 5+ vendas e mais de 20% canceladas ou estornadas | alta |
+| `codigo_proprio` | `codigo_proprio:<afiliadoId>:<AAAA-MM>` | evento `codigo_recusado_proprio` nos últimos 30 dias (1 alerta por afiliado e mês) | media |
+| `pico_vendas` | `pico_vendas:<afiliadoId>:<AAAA-MM-DD>` | 5+ vendas em 1 hora corrida (últimos 30 dias) | alta |
+| `duplicado` | `duplicado:<cpf\|celular\|pix>:<id>-<id>...` | mesmo CPF, celular ou chave Pix em contas diferentes (o texto nunca mostra o dado) | alta |
+| `fim_de_mes` | `fim_mes:<afiliadoId>:<AAAA-MM>` | mês anterior e atual: nível acima do menor, 30%+ das vendas válidas nos 2 últimos dias do mês e, sem elas, o nível seria menor (nível fixo não entra) | media |
+| `cliques_sem_venda` | `cliques_sem_venda:<afiliadoId>:<AAAA-MM>` | ativo com 50+ cliques em 30 dias e nenhuma venda | media |
+| `ativo_sem_venda` | `ativo_sem_venda:<afiliadoId>:<AAAA-MM>` | ativo sem venda (ou criado) há mais de 30 dias | baixa |
+| `fechamento_pendente` | `fechamento_pendente:<AAAA-MM>` | mês com venda de afiliado sem fechamento depois de passar o dia de fechamento (1 dia de folga) | alta |
+
+- Cada consulta tem LIMIT (50 a 200 linhas); com muitos casos o painel mostra os primeiros.
+#### `POST .../alertas/<chave>/resolver`
+- A chave vai no caminho (`encodeURIComponent`; os dois-pontos podem ir codificados). Sem corpo. `mesmaOrigem` + `soAdmin`. `200 { ok: true }`; `404 { ok: false, erro: 'Alerta não encontrado ou já resolvido.' }` (só resolve alerta que está aberto agora; repetir dá 404 e não grava nada); `400` chave com formato inválido; outra origem: 404 comum. Grava a chave em `afiliados_alertas_resolvidos` e `registro` (`afiliados_alerta_resolvido`, alvo = chave). Tradução no Registro: "marcou como resolvido o alerta de afiliados".
+- **Contador do menu:** `GET /api/interno/gestao/avisos` ganhou `afiliados_alertas` (número). Conta só os 3 alertas mais baratos (`saque_atrasado`, `codigo_proprio`, `fechamento_pendente`) numa única consulta (`prepararContagemAlertas`); os outros 6 só aparecem na tela de Alertas, porque cada um agrupa lançamentos, cliques ou eventos. O número do menu pode ser menor que o total da tela.
+- **Custo de CPU / consultas:** o dashboard roda **17 consultas em 1 `db.batch`** (o D1 grátis aceita 50 por invocação), todas agregadas e com LIMIT, sem laço por afiliado; o nível de cada afiliado sai em memória das linhas agrupadas. Alertas: 11 consultas. Contador do menu: +1. **Medido no D1 local** (SQLite em memória; no D1 a consulta roda fora do Worker, então só o JS conta como CPU): cenário de teste, dashboard 1,5 ms de JS e alertas 1,7 ms; carga grande (1.000 afiliados e 30.000 vendas), dashboard de um mês 3,6 ms de JS e de um ano inteiro 7,6 ms (o ponto mais perto dos 10 ms; com dezenas de afiliados fica em ~2 ms), alertas 0,7 ms. Cuidado já tratado: "última venda de cada afiliado" é um `GROUP BY` único; um `MAX` correlacionado por afiliado varria a tabela inteira (1,7 s com 30.000 vendas, 25 vezes mais lento).
+- **Testes e conferência:** `tests/afiliados/gestao-painel.test.mjs`, `gestao-alertas.test.mjs`, `gestao-painel-rotas.test.mjs` (dados em `tests/afiliados/_cenario.mjs`, com a conta feita à mão em cada comentário). `node scripts/afiliados/conferencia.mjs` monta o mesmo cenário num banco em memória e grava `tasks/afiliados-conferencia.csv` (91 números: "calculado à mão" ao lado do "sistema"); sai com código 1 se algum não bater.
+
+### Afiliados (Fase 8B: lista, ficha, ações, Metas e Configurações da Gestão)
+- **Migração `0020_afiliados_gestao.sql` (só acrescenta; o Paulo aplica no remoto ANTES do deploy):** tabelas `afiliados_anotacoes` e `afiliados_codigos_antigos`, colunas `afiliados_niveis.criado_por` e `criado_em`, índice `idx_registro_alvo`. `consultarCodigo` (`lib/afiliados/conta.js`) passou a ler `afiliados_codigos_antigos`: o cadastro público também depende da 0020.
+- Peças em `lib/afiliados/` (sem `@/`): `gestao-lista.js`, `gestao-ficha.js`, `gestao-acoes.js`, `gestao-metas.js`, `gestao-config.js`. `relatorio.js` ganhou `relatoriosDosMeses(db, meses)` (5 consultas para qualquer número de meses); `relatorioDoMes` usa a mesma conta. `painel.js` passou a exportar `buscarVendas`. `lib/emails-afiliado.js` ganhou `montarAfiliadoAprovado`.
+- Todas as rotas abaixo ficam em `/api/interno/gestao/afiliados/`, são `nodejs`/`force-dynamic`, respondem com `Cache-Control: no-store` e `X-Robots-Tag: noindex`. Quem não é admin (ou membro que ainda precisa trocar a senha) recebe o 404 comum do Next; POST de outra origem também (a origem é conferida depois da sessão). Dinheiro em centavos; datas de itens em ISO UTC (`2026-11-04T12:00:00Z`); meses `AAAA-MM`. Erro tem a forma `{ ok: false, erro, campo? }`. Banco ausente: 503.
+- Quem pode o quê: **`soAdmin` = Administrador Master e membros**; **`soMaster` = só o Master**.
+
+#### Lista: `GET .../lista` (`soAdmin`)
+- Parâmetros (todos opcionais): `q` (nome, código ou e-mail, parte do texto), `status` (`pendente|ativo|suspenso`), `nivel` (`id` de um nível do mês, ou `sem`), `vendeu` (`sim|nao`, no mês), `saldo=1` (disponível > 0), `saque=1` (saque pendente), `perto=1` (faltam de 1 a 3 vendas para o próximo nível; quem não vendeu nada entra, pois falta 1 para o Bronze), `ordem`, `dir` (`asc|desc`), `pagina`, `mes` (`AAAA-MM`, padrão o mês de hoje em Brasília).
+- `ordem`: `nome`, `codigo`, `status`, `nivel`, `vendas` (padrão), `faltam`, `cliques`, `conversao`, `receita`, `comissao`, `estornos`, `disponivel`, `pago`, `ultima_venda`, `criado_em`. `dir` padrão: `asc` para nome e código, `desc` nas outras. Valor vazio (sem cliques, sem venda) vai sempre para o fim. Valor desconhecido cai no padrão.
+- Resposta: `{ ok, mes, pagina, por_pagina: 25, total, ordem, dir, truncado, contagem_status: { pendente, ativo, suspenso }, niveis: [{ id, nome, cor, vendas_minimas, valor_por_venda_centavos }], itens }`. `contagem_status` considera só a busca `q`. `truncado: true` se passou de 3.000 afiliados (filtros e ordem rodam em JS até esse teto).
+- Item: `{ id, nome, codigo, email, status, nivel: { id, nome, cor } | null, nivel_travado, vendas_mes, faltam, proximo (nome do próximo nível ou null), cliques_30d, vendas_30d, conversao_pct (vendas_30d ÷ cliques_30d, null sem cliques), receita_centavos (soma paga pelos compradores das vendas válidas do mês), comissao_prevista_centavos (base + bônus, igual a statusDoMes.totalPrevisto), estornos (vendas reembolsadas do mês), disponivel_centavos, total_pago_centavos, ultima_venda (ISO), saque_pendente, criado_em }`.
+- CPU: 1 consulta de níveis + 1 `db.batch` com 7 consultas agregadas (GROUP BY, LIMIT); sem `statusDoMes` por afiliado. Mês fechado (se houver `afiliados_fechamentos` do `mes`) vale o gravado, como em `statusDoMes`. Teste: `gestao-lista.test.mjs` compara 5 afiliados com `statusDoMes`.
+
+#### Ficha: `GET .../ficha?id=` (`soAdmin`)
+- 404 se o id for inválido ou não existir. Resposta `{ ok, afiliado, painel, historico_mensal, vendas_recentes, saques, extrato, anotacoes, historico_acoes }`:
+  - `afiliado`: `{ id, codigo, codigos_antigos: [{ codigo, trocado_em, trocado_por }], status, nome, email, cpf (mascarado `***.456.789-**`), telefone, canal, avisar_cada_venda, termos_aceitos_em, criado_em, nivel_travado: { id, nome } | null, pix: { tipo_chave, chave (mascarada), titular_nome, titular_cpf (mascarado), atualizado_em } | null }`.
+  - `painel`: exatamente `dadosDoPainel(db, id)` (o que o afiliado vê; ver Fase 5).
+  - `historico_mensal`: `historicoMensal(db, id, 12)`. `vendas_recentes`: 30 vendas, comprador mascarado (`jo***@gmail.com`), `{ compraId, data, comprador, valorPagoCentavos, comissaoCentavos, situacao, situacaoEm }`.
+  - `saques` (20): `{ id, valor_centavos, status, pedido_em, pago_em, pago_por, nota, pix: { tipo_chave, chave mascarada }, comprovante }`. `extrato` (100): `{ id, tipo (venda|bonus_nivel|ajuste|estorno), mes, valor_centavos, status, disponivel_em, compra_id, saque_id, descricao, criado_em }`. `anotacoes` (50): `{ id, texto, autor, criado_em }`.
+  - `historico_acoes` (50, do `registro`, `alvo` = código atual ou algum código antigo do afiliado): `{ id, quando, quem, acao, alvo, detalhe }`.
+- Custo: a ficha chama `dadosDoPainel` (~25 consultas) mais 5 consultas e 1 `db.batch`. É uma tela só, aberta uma por vez.
+- **Revelar:** `POST .../ficha/revelar` `{ id, campo: 'cpf' | 'pix' }` (`soAdmin`, `mesmaOrigem`). `200 { ok, campo, cpf: '123.456.789-09' }` ou `{ ok, campo, pix: { tipo_chave, chave, titular_nome, titular_cpf } }`. Grava `registro` (`afiliado_dado_revelado`, `alvo` = código, `detalhe: { campo }`) ANTES de responder; se o registro falhar, `503` e o dado não sai. `400` campo inválido; `404` sem afiliado (ou sem Pix, para `pix`); pedidos recusados não gravam.
+
+#### Ações: `POST .../acao` (`soAdmin`, `mesmaOrigem`)
+- Corpo `{ id, acao, ...campos }`. Sucesso `200 { ok: true, afiliado: { id, codigo, status, nivel_travado_id }, ...extras }`; toda ação com efeito grava `registro` (`quem` = e-mail de quem fez, `alvo` = código do afiliado).
+- Erros: `400` (campo inválido, com `campo`), `403` (membro em ação de master; texto "Só o Administrador Master pode fazer esta ação."), `404` (afiliado inexistente), `409` (estado de partida errado ou repetição).
+- **Só o Master:** `suspender`, `reativar`, `travar_nivel`, `trocar_codigo`, `ajuste`. **Master e membros:** `aprovar`, `anotar`.
+- `aprovar`: `pendente` -> `ativo` (UPDATE condicional; fora de `pendente`, 409). Manda o e-mail "Seu cadastro de afiliado foi aprovado" (`montarAfiliadoAprovado`, sem cópia oculta); resposta traz `email_enviado: true|false` (falha de e-mail não desfaz a aprovação). Registro `afiliado_aprovado`.
+- `suspender { motivo }` (3 a 500 letras): `ativo|pendente` -> `suspenso`; já suspenso, 409. Registro `afiliado_suspenso` com `detalhe.motivo`. Não manda e-mail. Saque que já estava aberto continua na fila de Saques (o Master decide pagar ou recusar).
+- `reativar`: `suspenso` -> `ativo`; senão 409. Registro `afiliado_reativado`.
+- `travar_nivel { nivel_id }` (a chave é obrigatória; `null` destrava): só aceita nível da tabela VIGENTE hoje (400 `campo: 'nivel_id'` para outro). Muda na hora o cálculo do mês em andamento e vale nos próximos fechamentos. Resposta `nivel_travado: { id, nome } | null`. Registro `afiliado_nivel_travado` com `detalhe: { de, para }` (nomes).
+- `trocar_codigo { codigo }`: mesmas regras do cadastro (`consultarCodigo`: formato, reservados, cupom, em uso). `400` formato, reservado ou "já é o código atual"; `409` em uso. O código antigo vai para `afiliados_codigos_antigos` e fica reservado para sempre; as vendas continuam do afiliado (pelo `afiliado_id`). Resposta: `{ codigo, codigo_antigo, link_novo, cliques_30d_com_o_codigo_antigo, aviso }`. O `aviso` é um texto pronto: os links já divulgados com o código antigo deixam de registrar cliques e vendas (o cookie `tv_ref` de quem já clicou também). Registro `afiliado_codigo_trocado` (`alvo` = código novo, `detalhe: { de, para }`).
+- `ajuste { valor_centavos, motivo }`: inteiro diferente de zero, de -10.000.000 a 10.000.000 (R$ 100.000,00); motivo de 3 a 300 letras. Lança `afiliados_lancamentos` `tipo='ajuste'`, `status='pendente'`, `disponivel_em` = agora, `mes_referencia` = mês de hoje, `descricao` = "Ajuste: motivo". Não entra na contagem de vendas nem no nível. O mesmo ajuste (valor e motivo) não entra de novo em 60 s (409, duplo clique). Resposta `{ lancamento_id, disponivel_centavos }` (saldo disponível depois). Ajuste negativo pode deixar o disponível negativo; enquanto não for positivo, o afiliado não saca. Registro `afiliado_ajuste` com `detalhe: { valor_centavos, motivo }`.
+- `anotar { texto }` (1 a 1.000 letras): grava em `afiliados_anotacoes` (só a equipe lê). Resposta `anotacao: { id, texto, autor }`. O registro guarda só o id da anotação.
+
+#### Metas: `GET/POST .../metas`
+- `GET` (`soAdmin`): `{ ok, mes, vigente, proximas, historico, fechamentos, projecao }`.
+  - `vigente`, cada item de `proximas` (conjuntos de `valido_desde_mes` futuro, do mais próximo ao mais distante) e de `historico` (todos, do mais novo ao mais antigo, com `situacao: 'vigente'|'futura'|'anterior'`): `{ valido_desde_mes, criado_por, criado_em, niveis: [{ id, nome, vendas_minimas, valor_por_venda_centavos, cor }], situacao }` (`criado_por` e `criado_em` são null nas linhas anteriores à 0020).
+  - `fechamentos`: os 6 meses ANTERIORES ao mês de hoje, do mais novo ao mais antigo, no formato de `relatorioDoMes`: `{ mes, liberado, status: 'pendente'|'parcial'|'rodado', faltam, rodou_em, afiliados, por_nivel: [{ nivel, afiliados }], total_base_centavos, total_bonus_centavos, total_mes_centavos }`. Mês sem venda aparece como `rodado` com zeros.
+  - `projecao`: `{ mes, dia, dias_no_mes, afiliados_com_venda, vendas_ate_agora, custo_ate_agora_centavos, vendas_projetadas, custo_projetado_centavos, base_projetada_centavos, bonus_projetado_centavos, explicacao }`. A conta: cada afiliado projeta `vendas até hoje ÷ dia do mês × dias do mês` (arredondado), cada projeção passa pela tabela vigente (nível travado vale) e o custo é a soma de base + bônus. `explicacao` é o texto da conta, pronto para mostrar. Estimativa: no começo do mês oscila muito, e o bônus só é pago no fechamento.
+- `POST` (só Master, `mesmaOrigem`): `{ niveis: [{ nome, vendas_minimas, valor_por_venda_centavos, cor? }] }`. Regras: de 1 a 10 níveis; nome de 1 a 30 letras e sem repetir; `vendas_minimas` inteiro de 1 a 100.000 em ordem estritamente crescente; `valor_por_venda_centavos` inteiro de 1 a 1.000.000 e estritamente crescente (o nível mais alto paga mais); `cor` opcional `#RRGGBB`. `400 { erro, campo }` se falhar. Sucesso `200 { ok, valido_desde_mes, niveis, aviso }`: o conjunto novo vale a partir do mês SEGUINTE; gravar de novo no mesmo mês substitui o conjunto futuro anterior (só apaga meses futuros). O mês em andamento e os meses fechados nunca mudam. Registro `afiliados_metas` (`alvo` = `valido_desde_mes`).
+- **Relatório do fechamento (CSV):** `GET .../fechamento/csv?mes=AAAA-MM` (`soAdmin`). `400` mês inválido. CSV com BOM e `;` (`afiliados-fechamento-AAAA-MM.csv`), uma linha por afiliado fechado (até 5.000), colunas: Código, Nome, Vendas válidas, Vendas reembolsadas, Nível, Comissão base (R$), Bônus de nível (R$), Total do mês (R$), Fechado em, Resumo enviado em. Mês sem fechamento: só o cabeçalho. Grava `registro` `afiliados_exportar` (`alvo` = mês, `detalhe: { relatorio: 'fechamento' }`).
+
+#### Configurações: `GET/POST .../config`
+- `GET` (`soAdmin`): `{ ok, carencia_dias, dia_fechamento, intervalo_saque_dias, saque_minimo_centavos, aprovacao_automatica, programa_aberto, atualizado_em, atualizado_por, aviso: 'Mudanças não alteram meses já fechados.' }`.
+- `POST` (só Master, `mesmaOrigem`): qualquer subconjunto desses campos. Limites: `carencia_dias` 0 a 90, `dia_fechamento` 1 a 28, `intervalo_saque_dias` 0 a 90, `saque_minimo_centavos` 0 a 1.000.000 (inteiros); `aprovacao_automatica` e `programa_aberto` booleanos (`true`/`false`, não 0/1). `400 { erro, campo }` se algum campo for inválido (nada é gravado) ou se não vier nenhum campo. Sucesso `200 { ok, alterado, mudou: { campo: [de, para] }, ...config, aviso }`; grava `atualizado_em` e `atualizado_por`. Registro `afiliados_config` (`detalhe` = o que mudou) só se algo mudou. Comissões já lançadas não mudam (a carência é gravada na venda); meses fechados ficam como estão.
+- Não há "desconto do cupom" nas configurações (o código só registra a venda).
+
+#### Registro (aba Registro)
+- Ações novas em `ACOES` (`components/gestao/Registro.jsx`): `afiliado_aprovado`, `afiliado_suspenso`, `afiliado_reativado`, `afiliado_nivel_travado`, `afiliado_codigo_trocado`, `afiliado_ajuste`, `afiliado_anotacao`, `afiliado_dado_revelado`, `afiliados_metas`, `afiliados_config`, `afiliados_exportar` ("Exportou relatório de afiliados") e `afiliados_alerta_resolvido` (da parte A).
+- Testes: `tests/afiliados/gestao-{lista,ficha,acoes,metas,config,rotas}.test.mjs`.
+
 ## Publicação
 
 - O caminho principal é um commit em `main`: a Cloudflare faz o build e publica sozinha.

@@ -30,6 +30,7 @@ const columns = [
     links: [
       { href: '/assinar', label: 'Pacote único' },
       { href: '/vs-gratis', label: 'VS grátis' },
+      { href: '/afiliados', label: 'Seja afiliado' },
       { href: '/faq#garantia', label: 'Garantia de 7 dias' },
       { href: '/termos', label: 'Termos de uso' },
       { href: '/privacidade', label: 'Privacidade' },

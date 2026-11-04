@@ -1,0 +1,92 @@
+﻿Seção;Número;Calculado à mão;Sistema;Confere?
+Dashboard: está compensando? (01/11 a 30/11);Vendas por afiliado;101;101;Sim
+Dashboard: está compensando? (01/11 a 30/11);Vendas diretas;5;5;Sim
+Dashboard: está compensando? (01/11 a 30/11);Vendas no total;106;106;Sim
+Dashboard: está compensando? (01/11 a 30/11);% das vendas vindas de afiliados;95,3;95,3;Sim
+Dashboard: está compensando? (01/11 a 30/11);Receita líquida via afiliados;7579,90;7579,90;Sim
+Dashboard: está compensando? (01/11 a 30/11);Vendas com valor estimado (sem a taxa do Mercado Pago);1;1;Sim
+Dashboard: está compensando? (01/11 a 30/11);Comissões base;1530,00;1530,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Bônus de nível (pelo mês de referência);0,00;0,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Ajustes manuais;-5,00;-5,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Estornos;-15,00;-15,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Custo do programa;1510,00;1510,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Lucro via afiliados;6069,90;6069,90;Sim
+Dashboard: está compensando? (01/11 a 30/11);Custo por venda (CPA);14,95;14,95;Sim
+Dashboard: está compensando? (01/11 a 30/11);Lucro por venda: afiliado;60,10;60,10;Sim
+Dashboard: está compensando? (01/11 a 30/11);Lucro por venda: direta;75,00;75,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Nível Bronze: vendas;3;3;Sim
+Dashboard: está compensando? (01/11 a 30/11);Nível Bronze: receita líquida;229,90;229,90;Sim
+Dashboard: está compensando? (01/11 a 30/11);Nível Bronze: custo (vendas x valor do nível);45,00;45,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Nível Bronze: lucro por venda;61,63;61,63;Sim
+Dashboard: está compensando? (01/11 a 30/11);Nível Prata: vendas;48;48;Sim
+Dashboard: está compensando? (01/11 a 30/11);Nível Prata: receita líquida;3600,00;3600,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Nível Prata: custo (vendas x valor do nível);960,00;960,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Nível Prata: lucro por venda;55,00;55,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Nível Ouro: vendas;50;50;Sim
+Dashboard: está compensando? (01/11 a 30/11);Nível Ouro: receita líquida;3750,00;3750,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Nível Ouro: custo (vendas x valor do nível);1500,00;1500,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Nível Ouro: lucro por venda;45,00;45,00;Sim
+Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Vendas por afiliado;304;304;Sim
+Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Receita líquida;304,3;304,3;Sim
+Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Custo do programa;217,9;217,9;Sim
+Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Lucro;333,6;333,6;Sim
+Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Custo por venda (CPA);-21,3;-21,3;Sim
+Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Período anterior: custo do programa;475,00;475,00;Sim
+Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Período anterior: lucro;1400,00;1400,00;Sim
+Dashboard: afiliados;Cadastrados;6;6;Sim
+Dashboard: afiliados;Ativos;4;4;Sim
+Dashboard: afiliados;Pendentes;1;1;Sim
+Dashboard: afiliados;Suspensos;1;1;Sim
+Dashboard: afiliados;Novos no período;2;2;Sim
+Dashboard: afiliados;Que venderam no período;3;3;Sim
+Dashboard: afiliados;Inativos (30 dias ou mais sem venda);1;1;Sim
+Dashboard: afiliados;Em Bronze no mês atual;1;1;Sim
+Dashboard: afiliados;Em Prata no mês atual;1;1;Sim
+Dashboard: afiliados;Em Ouro no mês atual;1;1;Sim
+Dashboard: afiliados;Ativos sem vendas no mês;1;1;Sim
+Dashboard: afiliados;Perto de subir (faltam 3 ou menos);1;1;Sim
+Dashboard: dinheiro a pagar;Disponível para saque (saldo positivo de cada um);1970,00;1970,00;Sim
+Dashboard: dinheiro a pagar;Liberando (carência);15,00;15,00;Sim
+Dashboard: dinheiro a pagar;Bônus previsto do próximo fechamento (novembro);990,00;990,00;Sim
+Dashboard: dinheiro a pagar;Próximos 15 dias: o que libera;15,00;15,00;Sim
+Dashboard: dinheiro a pagar;Próximos 15 dias: bônus que cai (fecha em 08/12);990,00;990,00;Sim
+Dashboard: dinheiro a pagar;Próximos 15 dias: total;1005,00;1005,00;Sim
+Dashboard: dinheiro a pagar;Saques pendentes: quantidade;1;1;Sim
+Dashboard: dinheiro a pagar;Saques pendentes: valor;123,45;123,45;Sim
+Dashboard: dinheiro a pagar;Pago no período: valor;400,00;400,00;Sim
+Dashboard: dinheiro a pagar;Pago desde o início: quantidade;2;2;Sim
+Dashboard: dinheiro a pagar;Pago desde o início: valor;600,00;600,00;Sim
+Dashboard: gráficos;Funil: cliques;7;7;Sim
+Dashboard: gráficos;Funil: checkouts iniciados;4;4;Sim
+Dashboard: gráficos;Funil: vendas;101;101;Sim
+Dashboard: gráficos;Funil: reembolsos;2;2;Sim
+Dashboard: gráficos;Funil: chargebacks;1;1;Sim
+Dashboard: gráficos;Top 1 (Caio Rocha): vendas;50;50;Sim
+Dashboard: gráficos;Top 2 (Ana Lima): vendas;48;48;Sim
+Dashboard: gráficos;Top 3 (=HYPERLINK(x)): vendas;3;3;Sim
+Dashboard: gráficos;Origem, afiliados: pix;50;50;Sim
+Dashboard: gráficos;Origem, afiliados: cartao;51;51;Sim
+Dashboard: gráficos;Origem, todas as vendas: pix;53;53;Sim
+Dashboard: gráficos;Origem, todas as vendas: cartao;52;52;Sim
+Dashboard: gráficos;Origem, todas as vendas: sem_info;1;1;Sim
+Dashboard: gráficos;Código digitado x link: o banco não guarda esse dado;sem dado;sem dado;Sim
+Dashboard: gráficos;Vendas por dia: soma das de afiliados;101;101;Sim
+Dashboard: gráficos;Vendas por dia: soma das diretas;5;5;Sim
+Resumo mensal do Financeiro;10/2026: vendas via afiliado;25;25;Sim
+Resumo mensal do Financeiro;10/2026: receita bruta;1997,50;1997,50;Sim
+Resumo mensal do Financeiro;10/2026: taxas do Mercado Pago;122,50;122,50;Sim
+Resumo mensal do Financeiro;10/2026: receita líquida;1875,00;1875,00;Sim
+Resumo mensal do Financeiro;10/2026: comissões base;375,00;375,00;Sim
+Resumo mensal do Financeiro;10/2026: bônus de nível;100,00;100,00;Sim
+Resumo mensal do Financeiro;10/2026: ajustes;0,00;0,00;Sim
+Resumo mensal do Financeiro;10/2026: estornos;0,00;0,00;Sim
+Resumo mensal do Financeiro;10/2026: lucro;1400,00;1400,00;Sim
+Resumo mensal do Financeiro;11/2026: vendas via afiliado;101;101;Sim
+Resumo mensal do Financeiro;11/2026: receita bruta;8069,90;8069,90;Sim
+Resumo mensal do Financeiro;11/2026: taxas do Mercado Pago;490,00;490,00;Sim
+Resumo mensal do Financeiro;11/2026: receita líquida;7579,90;7579,90;Sim
+Resumo mensal do Financeiro;11/2026: comissões base;1530,00;1530,00;Sim
+Resumo mensal do Financeiro;11/2026: bônus de nível;0,00;0,00;Sim
+Resumo mensal do Financeiro;11/2026: ajustes;-5,00;-5,00;Sim
+Resumo mensal do Financeiro;11/2026: estornos;-15,00;-15,00;Sim
+Resumo mensal do Financeiro;11/2026: lucro;6069,90;6069,90;Sim
