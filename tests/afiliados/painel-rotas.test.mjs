@@ -242,6 +242,16 @@ test('pix: senha errada 401 (e trava após 10), sem senha na conta 409, CPF de o
   assert.equal(db.banco.prepare('SELECT tipo_chave FROM afiliados_pix WHERE afiliado_id = ?').get(a.id).tipo_chave, 'aleatoria')
 })
 
+test('pix: tipo CPF só aceita o CPF do próprio afiliado', async () => {
+  const { db, a } = montar()
+  db.banco.prepare("UPDATE clientes SET supabase_id = 'sb-1' WHERE id = ?").run(a.clienteId)
+  const antes = db.banco.prepare('SELECT chave FROM afiliados_pix WHERE afiliado_id = ?').get(a.id).chave
+  const r = await post(rPix, { ...PIX, tipo_chave: 'cpf', chave: '111.444.777-35' })
+  assert.deepEqual([r.status, (await r.json()).campo], [400, 'chave'])
+  assert.equal(db.banco.prepare('SELECT chave FROM afiliados_pix WHERE afiliado_id = ?').get(a.id).chave, antes)
+  assert.equal((await post(rPix, { ...PIX, tipo_chave: 'cpf', chave: '529.982.247-25' })).status, 200)
+})
+
 test('pix: 10 senhas erradas seguidas travam (429) e o contador não é o do login', async () => {
   const { db, a } = montar()
   db.banco.prepare("UPDATE clientes SET supabase_id = 'sb-1' WHERE id = ?").run(a.clienteId)

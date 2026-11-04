@@ -54,13 +54,17 @@ export default function CartoesDinheiro({ d, config, irPara, onPedido }) {
 
       <Cartao
         titulo="Bônus a receber"
-        valor={reais(cartoes.bonusAReceber)}
+        valor={reais(cartoes.bonusAReceber.total)}
         ajuda={
           <Ajuda titulo="Bônus a receber">
             <p>É o bônus de nível que ainda não caiu. Ele fica disponível no dia {String(config.diaFechamento).padStart(2, '0')}, quando o mês fecha.</p>
           </Ajuda>
         }
-        nota={cartoes.bonusAReceber > 0 ? `Libera em ${diaMes(cartoes.bonusAReceberEm)}.` : 'Sem bônus à espera.'}
+        nota={
+          cartoes.bonusAReceber.partes.length > 0
+            ? cartoes.bonusAReceber.partes.map((p) => `${reais(p.valor)} em ${diaMes(p.em)}`).join(' · ')
+            : 'Sem bônus à espera.'
+        }
       />
 
       <Cartao

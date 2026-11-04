@@ -63,6 +63,9 @@ export async function POST(req) {
     if (limparCpf(dono?.cpf) !== cpfTitular) {
       return erro('A chave Pix precisa ser do seu próprio CPF.', 400, { campo: 'titular_cpf' })
     }
+    if (tipo === 'cpf' && chave.chave !== cpfTitular) {
+      return erro('Chave Pix do tipo CPF precisa ser o seu próprio CPF.', 400, { campo: 'chave' })
+    }
     if (aberto) return erro(MSG_ABERTO, 409)
 
     const conta = await db.prepare('SELECT supabase_id FROM clientes WHERE id = ?').bind(cliente.id).first()

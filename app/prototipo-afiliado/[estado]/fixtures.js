@@ -7,6 +7,7 @@ const NIVEIS = [
   { id: 3, nome: 'Ouro', cor: '#eab308', vendas_minimas: 50, valor_por_venda_centavos: 3000 },
 ]
 const pad = (n) => String(n).padStart(2, '0')
+const bonus = (valor) => ({ total: valor, partes: valor > 0 ? [{ mes: '2026-11', valor, em: '2026-12-08' }] : [] })
 const COMPRADORES = ['jo***@gmail.com', 'ma***@hotmail.com', 'pe***@outlook.com', 'lu***@gmail.com', 'an***@yahoo.com.br', 'ca***@gmail.com']
 
 export const CONFIG = { carenciaDias: 7, diaFechamento: 8, intervaloSaqueDias: 15 }
@@ -44,7 +45,7 @@ export function painel(variante) {
     ganhos: { garantido, bonusPrevisto: total - garantido, totalPrevisto: total, bonusCaiEm: '2026-12-08' },
     seBaterProximo: proximo ? { total: proximo.vendas_minimas * proximo.valor_por_venda_centavos } : null,
     ritmoNecessario: proximo ? Math.round((faltam / diasRestantes) * 10) / 10 : null,
-    cartoes: { disponivel: 24000, liberando: 16500, proximaLiberacao: { valor: 3000, em: '2026-11-21' }, bonusAReceber: total - garantido, bonusAReceberEm: '2026-12-08', jaRecebido: 90000 },
+    cartoes: { disponivel: 24000, liberando: 16500, proximaLiberacao: { valor: 3000, em: '2026-11-21' }, bonusAReceber: bonus(total - garantido), jaRecebido: 90000 },
     saque: { pode: true, valor: 24000, motivo: null },
     vendasPorDia: dias.map((vendas, i) => ({ dia: `2026-11-${pad(i + 1)}`, vendas })),
     mesPassado: { mes: '2026-10', vendas: 18, nivel: NIVEIS[0], total: 27000 },
@@ -64,11 +65,11 @@ export function painel(variante) {
     base.saque = { pode: false, valor: 0, motivo: 'Ainda não há valor disponível. Sua primeira liberação é em 06/11.' }
   }
   if (v === 'ouro') {
-    Object.assign(base.cartoes, { disponivel: 51000, liberando: 33000, bonusAReceber: total - garantido })
+    Object.assign(base.cartoes, { disponivel: 51000, liberando: 33000, bonusAReceber: bonus(total - garantido) })
     base.saque = { pode: true, valor: 51000, motivo: null }
   }
   if (v === 'vazio') {
-    Object.assign(base.cartoes, { disponivel: 0, liberando: 0, proximaLiberacao: null, bonusAReceber: 0, jaRecebido: 0 })
+    Object.assign(base.cartoes, { disponivel: 0, liberando: 0, proximaLiberacao: null, bonusAReceber: bonus(0), jaRecebido: 0 })
     Object.assign(base, { mesPassado: null, variacaoPct: null, ultimasVendas: [] })
     base.saque = { pode: false, valor: 0, motivo: 'Ainda não há valor disponível. Sua primeira liberação é logo depois da primeira venda.' }
   }

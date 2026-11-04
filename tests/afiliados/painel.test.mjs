@@ -38,7 +38,7 @@ test('painel vazio: sem vendas, tudo zerado e sem erro', async () => {
   assert.deepEqual(p.seBaterProximo, { total: 1500 })
   assert.equal(p.cartoes.disponivel, 0)
   assert.equal(p.cartoes.proximaLiberacao, null)
-  assert.equal(p.cartoes.bonusAReceber, 0)
+  assert.deepEqual(p.cartoes.bonusAReceber, { total: 0, partes: [] })
   assert.equal(p.mesPassado, null)
   assert.equal(p.variacaoPct, null)
   assert.deepEqual(p.ultimasVendas, [])
@@ -69,7 +69,7 @@ test('painel: nível, faltam, dias restantes e ritmo; Prata soma o bônus', asyn
   p = await dadosDoPainel(db, af.id, hoje)
   assert.equal(p.nivel.nome, 'Prata')
   assert.deepEqual([p.ganhos.garantido, p.ganhos.bonusPrevisto, p.ganhos.totalPrevisto], [30000, 10000, 40000])
-  assert.deepEqual(p.cartoes.bonusAReceber, 10000)
+  assert.deepEqual(p.cartoes.bonusAReceber, { total: 10000, partes: [{ mes: '2026-11', valor: 10000, em: '2026-12-08' }] })
   assert.equal(p.ultimasVendas.length, 5)
 })
 
@@ -80,8 +80,7 @@ test('painel: bônus a receber soma o mês passado até o fechamento e depois de
   await varias(db, af, 2, em('2026-11-02T15:00:00'))
   const dia3 = em('2026-11-03T15:00:00')
   let p = await dadosDoPainel(db, af.id, dia3)
-  assert.equal(p.cartoes.bonusAReceber, 10000)
-  assert.equal(p.cartoes.bonusAReceberEm, '2026-11-08')
+  assert.deepEqual(p.cartoes.bonusAReceber, { total: 10000, partes: [{ mes: '2026-10', valor: 10000, em: '2026-11-08' }] })
   assert.equal(p.mesPassado.vendas, 20)
   assert.equal(p.mesPassado.nivel.nome, 'Prata')
   assert.equal(p.mesPassado.total, 40000)
@@ -91,8 +90,7 @@ test('painel: bônus a receber soma o mês passado até o fechamento e depois de
   await fecharMes(db, '2026-10', dia8)
   p = await dadosDoPainel(db, af.id, dia8)
   // o bônus agora é lançamento (disponível); não pode ser contado duas vezes como "a receber"
-  assert.equal(p.cartoes.bonusAReceber, 0)
-  assert.equal(p.cartoes.bonusAReceberEm, '2026-12-08')
+  assert.deepEqual(p.cartoes.bonusAReceber, { total: 0, partes: [] })
   assert.ok(p.cartoes.disponivel >= 10000)
 })
 
@@ -208,4 +206,47 @@ test('isolamento: um afiliado não enxerga vendas, avisos nem saques do outro', 
   const pa = await dadosDoPainel(db, a.id, agora)
   assert.equal(pa.avisos.length, 1)
   assert.equal(pa.ultimasVendas.length, 1)
+})
+
+test('bônus a receber: outubro e novembro viram duas partes, cada uma com a sua data', async () => {
+  const db = novoDb()
+  const af = novoAfiliado(db)
+  await varias(db, af, 20, em('2026-10-10T15:00:00')) // bônus de outubro: 10.000
+  await varias(db, af, 20, em('2026-11-01T15:00:00')) // previsto de novembro: 10.000
+  const p = await dadosDoPainel(db, af.id, em('2026-11-03T15:00:00'))
+  assert.deepEqual(p.cartoes.bonusAReceber, {
+    total: 20000,
+    partes: [
+      { mes: '2026-10', valor: 10000, em: '2026-11-08' },
+      { mes: '2026-11', valor: 10000, em: '2026-12-08' },
+    ],
+  })
+})
+
+test('próxima liberação soma só o que ainda não liberou, mesmo no mesmo dia', async () => {
+  const db = novoDb()
+  const af = novoAfiliado(db)
+  await vendaDe(db, af, 'a@x.com', em('2026-11-10T12:00:00')) // libera 17/11 09h (Brasília)
+  await vendaDe(db, af, 'b@x.com', em('2026-11-10T20:00:00')) // libera 17/11 17h
+  const p = await dadosDoPainel(db, af.id, em('2026-11-17T15:00:00')) // 12h em Brasília
+  assert.equal(p.cartoes.disponivel, 1500)
+  assert.equal(p.cartoes.liberando, 1500)
+  assert.deepEqual(p.cartoes.proximaLiberacao, { valor: 1500, em: '2026-11-17' })
+})
+
+test('saque: o Pix gravado é o do momento do INSERT, mesmo com troca no meio', async () => {
+  const db = novoDb()
+  const af = novoAfiliado(db)
+  await vendaDe(db, af, 'a@x.com', em('2026-11-10T12:00:00'))
+  const original = db.batch.bind(db)
+  db.batch = async (lista) => {
+    // troca de Pix chega depois da conferência e antes do INSERT do saque
+    db.banco.prepare("UPDATE afiliados_pix SET chave = 'chave-nova' WHERE afiliado_id = ?").run(af.id)
+    return original(lista)
+  }
+  const r = await pedirSaque(db, af.id, em('2026-11-20T15:00:00'))
+  assert.equal(r.ok, true)
+  const snap = JSON.parse(db.banco.prepare('SELECT pix_snapshot FROM afiliados_saques WHERE id = ?').get(r.saqueId).pix_snapshot)
+  assert.equal(snap.chave, 'chave-nova')
+  assert.deepEqual(Object.keys(snap), ['tipo_chave', 'chave', 'titular_nome', 'titular_cpf'])
 })
