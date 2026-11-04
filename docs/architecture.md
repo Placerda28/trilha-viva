@@ -66,6 +66,14 @@
 - O robô precisa ser publicado **à parte do site**, após a migração `0017` já prevista. Esta sequência não exige nova migração, segredo nem mudança no `wrangler.jsonc`. A validação local não envia e-mails reais.
 - Pendência de integração verificada em `next start`: a regra global de `next.config.mjs` sobrescreve `Referrer-Policy` da rota com `strict-origin-when-cross-origin`. Antes de publicar, acrescentar uma exceção `no-referrer` para `/vs-gratis/baixar`, como já existe para `/sucesso`, e repetir a prova HTTP. A configuração está fora dos arquivos autorizados desta entrega do backend.
 
+## Afiliados (Fase 2: banco)
+- Migração `0018_afiliados.sql` (aplicar antes de qualquer deploy que use o programa). Tabelas `afiliados_config` (1 linha), `afiliados_niveis`, `afiliados`, `afiliados_pix`, `afiliados_lancamentos` (extrato), `afiliados_fechamentos`, `afiliados_saques`, `afiliados_cliques`, `afiliados_eventos`, `afiliados_avisos`; auditoria reaproveita `registro`. Em `compras`: `afiliado_id`, `desconto_centavos`, `bruto_centavos`, `taxa_mp_centavos`, `liquido_centavos`. Dinheiro em centavos; datas UTC; mês do negócio `AAAA-MM` em Brasília.
+- Trava no banco: índice único parcial por compra nos lançamentos `venda` (webhook repetido não duplica) e `estorno`, por (afiliado, mês) no `bonus_nivel`, e no saque `solicitado` (1 aberto por afiliado).
+- Níveis são versionados: mudar a tabela = inserir linhas com `valido_desde_mes` novo. O mês usa o conjunto de maior `valido_desde_mes <= mês`; o menor nível é o valor base.
+- Regras em `lib/afiliados/` (sem `@/`, para o robô importar): `niveis.js` (regra pura), `status.js` (`statusDoMes`, única fonte dos números), `fechamento.js` (`fecharMes`, idempotente, com cópia da tabela), `saque.js` (`pedirSaque` atômico por `db.batch` + INSERT condicional), `comissao.js` (`gravarComissaoBase`, `estornarVenda`). Toda leitura recebe `afiliadoId` e filtra por ele; a rota (Fase 3) tira o id da sessão.
+- Mês fechado é congelado: `statusDoMes` devolve o que está em `afiliados_fechamentos`. Estorno tardio vira lançamento `estorno` negativo e não muda o nível.
+- Ainda não ligado a rota, checkout nem webhook (Fases 3 e 4).
+
 ## Publicação
 
 - O caminho principal é um commit em `main`: a Cloudflare faz o build e publica sozinha.

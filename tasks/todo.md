@@ -4,6 +4,14 @@ Só o que ainda está aberto. O detalhe de cada frente fica em `tasks/arquivo/`,
 
 Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido resolvidos por trabalho posterior. Confirme antes de agir e apague o que já estiver feito.
 
+## Programa de afiliados (início 04/11/2026, branch `afiliados`, pasta `C:\dev\tv-afiliados`)
+
+Mapa do código, decisões e fases: `tasks/afiliados.md`.
+- [x] Fase 1: mapa e plano.
+- [ ] Fase 2: banco (migração 0018, `lib/afiliados/`, testes de limite). Em andamento.
+- Decidido: pedido de reembolso (refunded, charged_back, in_mediation) tira o acesso; volta se a mediação terminar a favor (Fase 4).
+- Decidido: comprovante no B2 com chave nova só em `afiliados-comprovantes/` (Paulo cria na Fase 7); e-mail de pago leva o comprovante em anexo.
+
 ## Próxima sessão: comece por aqui (deixado em 22/10/2026)
 
 **Plano de SEO:** as fases A a G estão no ar (detalhe nas seções abaixo). Último commit do dia: `977cfc5`; robô `a8e5e93a`. O Paulo rodou de novo o Teste de pesquisa aprimorada e está tudo certo.
