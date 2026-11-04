@@ -22,12 +22,20 @@ import {
   reservarCupom,
 } from '@/lib/gestao/cupons'
 import { ehContatoTeste, enviarMetaSeReal } from '@/lib/teste'
+import { normalizarCodigoAfiliado } from '@/lib/afiliados/codigo'
+import { avaliarCodigo, eventoDaRecusa, registrarEvento } from '@/lib/afiliados/venda'
+import { codigoDoCookie } from '@/lib/afiliados-ref'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const DESCRICAO =
   'Acesso vitalício ao acervo com mais de 2.000 multitracks gospel (VS) com clique, guia e canais separados.'
+
+// O código do afiliado nunca bloqueia a compra: se não vale, a compra segue sem afiliado e a
+// tela pode mostrar este aviso. Código inexistente e inativo têm o mesmo texto de propósito.
+const AVISO_CODIGO = 'O código de afiliado informado não está valendo. Sua compra segue normalmente, pelo preço de sempre.'
+const AVISO_PROPRIO = 'Você não pode usar o seu próprio código de afiliado. Sua compra segue normalmente, sem afiliado.'
 
 const hits = new Map()
 function limited(ip) {
@@ -120,6 +128,25 @@ export async function POST(req) {
       return NextResponse.json({ error: ERRO_CUPOM_PUBLICO }, { status: 400 })
     }
 
+    // Afiliado: código do corpo; vazio, o do cookie tv_ref. Só registra a venda (sem desconto).
+    // A validação final repete no pagamento (registrarCompra).
+    let afiliado = null
+    let avisoAfiliado = null
+    const codigoAfiliado = normalizarCodigoAfiliado(body.codigo_afiliado) || codigoDoCookie(req.headers.get('cookie'))
+    if (codigoAfiliado) {
+      try {
+        const v = await avaliarCodigo(getDB(), { codigo: codigoAfiliado, email, telefone })
+        if (v.ok) afiliado = v.afiliado
+        else {
+          avisoAfiliado = v.motivo === 'proprio' ? AVISO_PROPRIO : AVISO_CODIGO
+          const evento = eventoDaRecusa(v.motivo)
+          if (evento) await registrarEvento(getDB(), v.afiliadoId, evento)
+        }
+      } catch (err) {
+        console.error('checkout afiliado', err?.message)
+      }
+    }
+
     const referencia = crypto.randomUUID()
     const db = getDB()
     if (
@@ -160,6 +187,7 @@ export async function POST(req) {
         descricao: DESCRICAO,
         valorCentavos: cupom?.preco_centavos ?? precoBaseCentavos,
         cupom: cupom?.codigo || null,
+        afiliado: afiliado?.codigo || null,
         // Com cupom, o link de pagamento vence em 30 minutos (ou antes, se o
         // cupom vencer antes): não fica um carrinho com desconto aberto
         // esperando alguém.
@@ -170,7 +198,10 @@ export async function POST(req) {
       })
       if (!url) throw new Error('preferência sem init_point')
       await inicioCheckout((cupom?.preco_centavos ?? precoBaseCentavos) / 100)
-      return NextResponse.json({ url, mode: 'mercadopago' })
+      if (afiliado) {
+        await registrarEvento(db, afiliado.id, 'checkout_iniciado').catch((err) => console.error('checkout evento afiliado', err?.message))
+      }
+      return NextResponse.json({ url, mode: 'mercadopago', ...(avisoAfiliado ? { aviso_afiliado: avisoAfiliado } : {}) })
     } catch (err) {
       // Sem preferência não existe pagamento possível. Liberamos a vaga agora,
       // em vez de obrigar outra pessoa a esperar os 35 minutos da reserva.

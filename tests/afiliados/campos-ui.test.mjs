@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {
   cpfValido, mascaraCpf, sugerirCodigo, limparCodigoDigitado, reais, linkDoAfiliado, voltaPermitida,
 } from '../../lib/afiliados-campos.js'
-import { refDoEndereco, cookieDoRef } from '../../lib/afiliados-ref.js'
+import { refDoEndereco, cookieDoRef, codigoDoCookie, cookieDoRefApagado } from '../../lib/afiliados-ref.js'
 
 test('CPF: dígitos verificadores e máscara', () => {
   assert.equal(cpfValido('529.982.247-25'), true)
@@ -62,4 +62,15 @@ test('?ref=: normaliza, confere formato, o último vale e leva as UTMs', () => {
 test('cookie do ref: 30 dias, path /, Lax, Secure só em https', () => {
   assert.equal(cookieDoRef('JOAO27', true), 'tv_ref=JOAO27; Max-Age=2592000; Path=/; SameSite=Lax; Secure')
   assert.equal(cookieDoRef('JOAO27', false), 'tv_ref=JOAO27; Max-Age=2592000; Path=/; SameSite=Lax')
+})
+
+test('checkout: código do cookie tv_ref e cookie apagado', () => {
+  assert.equal(codigoDoCookie('a=1; tv_ref=JOAO27; b=2'), 'JOAO27')
+  assert.equal(codigoDoCookie('tv_ref=joao27'), 'JOAO27')
+  assert.equal(codigoDoCookie('tv_ref=AB'), '')
+  assert.equal(codigoDoCookie('tv_ref=JOAO-27'), '')
+  assert.equal(codigoDoCookie('outro=JOAO27'), '')
+  assert.equal(codigoDoCookie(''), '')
+  assert.equal(limparCodigoDigitado(' joão-27 !abcdefghijklmnop'), 'JOAO27ABCDEFGHI')
+  assert.match(cookieDoRefApagado(true), /^tv_ref=; Max-Age=0; Path=\/.*; Secure$/)
 })

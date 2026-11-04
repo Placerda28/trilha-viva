@@ -75,7 +75,8 @@ export async function POST(req) {
     whatsapp: acessoPorWhatsappLigado(process.env) && Boolean(r.telefone),
   }
 
-  if (r.status === 'failed') {
+  // 'revertido' (reembolso/mediação) também não é um pagamento em vigor.
+  if (r.status === 'failed' || r.status === 'revertido') {
     return NextResponse.json(
       { status: 'failed', ...avisos, error: 'O pagamento não foi aprovado. Você pode tentar de novo pela página de compra.' },
       { headers: noStore }

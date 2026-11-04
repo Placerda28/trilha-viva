@@ -28,6 +28,8 @@
 2. Depois de pagar, o cliente volta para `/sucesso`, que confere o pagamento a cada 3 s por até 3 min (`lib/pos-pagamento.js`).
 3. O webhook do Mercado Pago (`/api/mercadopago/webhook`) grava a compra e manda o e-mail de criar senha. Se `WA_ACESSO=ativo`, manda também o WhatsApp `acesso_liberado`.
 4. O cliente cria a senha e entra. `/acervo` lista as músicas, e `/api/baixar` devolve o link temporário do B2.
+5. **Afiliado (sem desconto):** o `POST /api/checkout` aceita `codigo_afiliado` (se vazio, o cookie `tv_ref`). O servidor confere (afiliado `ativo` e comprador diferente do afiliado: mesmo e-mail ou telefone). Código ruim NUNCA bloqueia a compra: segue sem afiliado, grava o evento `codigo_recusado_*` e devolve `aviso_afiliado`. Código bom vai em `metadata.afiliado` do Mercado Pago e grava o evento `checkout_iniciado`. A comissão nasce em `registrarCompraNoBanco` (webhook E `/api/conta/criar`), que repete a conferência; ver "Afiliados (Fase 4)".
+6. **Reembolso tira o acesso:** `refunded`, `charged_back` e `in_mediation` viram `status = 'revertido'` em `resumirPagamento` (com `estadoCompra`) e o webhook muda `compras.status` para `reembolsado`, `contestado` ou `em_mediacao`; `temCompra` exige `'pago'`, então o acesso cai. `approved` de novo (mediação a favor da loja) volta para `pago`. Nenhum evento de compra vai à Meta. `rejected` e `cancelled` seguem `failed`.
 
 ## Fatos que não podem ser esquecidos
 - **10 ms de CPU por visita** (plano grátis da Cloudflare). Coisa pesada no carregamento de módulo derruba a página com o Erro 1102, de forma intermitente. Nas telas dinâmicas: consultas enxutas, sempre com `LIMIT`, paginação, nada de listas enormes no servidor. `localeCompare` é caro: reaproveite um `Intl.Collator`. Quase todo o site é estático de propósito, e `/acervo` é a exceção dinâmica.
@@ -77,7 +79,7 @@
 - Fechamento: o bônus nasce por `INSERT ... SELECT` da linha gravada em `afiliados_fechamentos` (rodadas concorrentes não divergem). `fecharMes` recusa mês ainda não liberado (`mes > mesParaFechar(agora, dia_fechamento)`), também no botão manual.
 - Venda aprovada depois do fechamento do seu mês continua sendo desse mês: recebe o valor por venda do nível fechado (sem recalcular nível nem contagem) e libera após a carência normal.
 - Saque: o INSERT condicional repete `afiliado ativo` e `Pix cadastrado`, para suspensão no meio do caminho.
-- Ainda não ligado ao checkout nem ao webhook (Fase 4).
+- Ligado ao checkout e ao webhook na Fase 4 (abaixo).
 
 ### Afiliados (Fase 3: rotas de cadastro e cliques)
 - A 0018 ganhou (ainda não aplicada): coluna `afiliados_cliques.utm_content` e a tabela `afiliados_conta_tentativas` (limite por IP).
@@ -87,6 +89,14 @@
 - `GET /api/afiliados/codigo?c=XXX` (login, senão 401): `{ ok, codigo, disponivel, motivo? }`. Recusa formato ruim, reservados (`CODIGOS_RESERVADOS` em `conta.js`), código que existe em `cupons.codigo` e código de outro afiliado.
 - `POST /api/afiliados/cadastro` (login + `mesmaOrigem`): `{ nome, cpf, telefone, canal, codigo, aceite: true, avisar_cada_venda? }`. `200 { ok, codigo, link, status }` (link = URL do site + `/?ref=CODIGO`). `403` programa fechado, `409` cliente já afiliado ou código em uso (`campo: 'codigo'`), `400` com `campo` (`nome`, `cpf`, `telefone`, `aceite`, `codigo`), `401` sem login. Status `ativo` ou `pendente` conforme `aprovacao_automatica`. Grava `registro` (`afiliado_cadastro`, sem CPF) e manda `enviarBoasVindasAfiliado` (falha só gera log).
 - `POST /api/afiliados/clique` (público, `sendBeacon`): sempre `204`. Grava só com afiliado `ativo`, 1 clique por visitante e afiliado a cada 24 h, num único INSERT condicional. `visitante_hash` = HMAC-SHA256 (`LEMBRETE_SEGREDO`, prefixo `afiliado-clique:`) de IP + user-agent; o IP puro nunca é gravado. `caminho` sem query, até 200 caracteres; UTMs por `limparUtm`. Sem `LEMBRETE_SEGREDO` não grava.
+
+### Afiliados (Fase 4: checkout, comissão e reembolso)
+- Sem migração nova (usa as colunas de `compras` da 0018). **A 0018 PRECISA estar no D1 remoto antes do deploy:** `registrarCompraNoBanco` agora grava `bruto_centavos`, `taxa_mp_centavos`, `liquido_centavos`, `afiliado_id` e `codigo_afiliado` em TODA compra; sem as colunas o INSERT falha e a venda não é registrada.
+- `lib/afiliados/venda.js` (sem `@/`): `avaliarCodigo` (inexistente, inativo ou próprio), `registrarEvento`, `concluirVendaAfiliado`, `reverterCompra`, `restaurarCompra`.
+- `registrarCompraNoBanco(db, dados, { emails })`: `dados` ganhou `afiliado`, `financeiro`, `aprovadoEm`, `telefone` (vêm de `resumirPagamento`). Revalida o código no pagamento. **Compra com `teste = 1` não recebe afiliado, comissão, evento nem e-mail.** Na 1ª inserção: `gravarComissaoBase` + evento `pagamento_aprovado` + aviso de subida de nível (`afiliados_avisos`, único por afiliado, mês e nível; só nível sem fixo e mês aberto) + e-mail "Você subiu para PRATA/OURO!" (com o total do mês) + e-mail "Você fez uma venda!" se `avisar_cada_venda`. Falha em aviso ou e-mail só gera log. Na repetição do aviso, se a comissão não chegou a ser gravada, ela é refeita (índice único: nunca duplica). Os e-mails são injetados por `lib/clientes.js` (`registrarCompra`).
+- Taxa e líquido: soma de `fee_details[].amount` e `transaction_details.net_received_amount` do pagamento bruto (`null` quando o MP não traz).
+- Reembolso (`reverterCompra`): só para compra já gravada (`mp_<id>`); muda `compras.status`, chama `estornarVenda` (cancela antes do fechamento, estorno negativo depois) e grava `reembolso` (reembolso e mediação) ou `chargeback`, uma vez por compra. `restaurarCompra` roda quando o aviso de aprovado chega de novo: volta o status para `pago` e reativa a comissão SÓ se ela foi cancelada (mês aberto, sem estorno). **Limitação:** estorno já gravado (mês fechado) não é desfeito sozinho; mediação ganha pela loja depois do fechamento deixa o acesso de volta e a comissão fora (ajuste manual).
+- Consultas de `compras.status` conferidas: o filtro `status = 'pago'` já existia em todos os números e listas da gestão (`periodo`, `painel`, `campanhas`, `avisos`, `recuperacao`, `clientes`), no robô (e-mail, WhatsApp, leads), em `primeiro-acesso`, `corrigir-email`, `leads.marcarLeadComprou` e em `temCompra`. A única que somava sem filtrar era o faturamento por cupom (`lib/gestao/cupons.js`): corrigida. Seguem contando reembolsadas de propósito: o uso e a vaga do cupom (a vaga foi ocupada) e a contagem "nº de compras" da ficha do cliente.
 
 ## Publicação
 

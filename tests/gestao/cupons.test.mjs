@@ -56,6 +56,7 @@ function bancoCupons() {
   banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0013_testes.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0016_acesso_enviado.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0018_afiliados.sql', 'utf8'))
   banco.exec(`
     INSERT INTO clientes (id, email, nome) VALUES (1, 'ana@example.com', 'Ana');
     INSERT INTO cupons

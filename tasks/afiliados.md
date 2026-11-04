@@ -144,6 +144,12 @@ O `metadata` do Mercado Pago já leva `cupom` e `referencia` (UUID = `external_r
     - `?volta=` em `/entrar` e `/criar-senha` (`components/ContaForm.jsx`), lista fechada de caminhos.
     - Protótipo temporário para print: `app/prototipo-afiliado/[estado]` (404 em produção; apagar na aprovação). Testes: `tests/afiliados/campos-ui.test.mjs`.
 - [ ] **4. Checkout e webhook:**
+  - [x] **Frontend (04/11/2026, só local):** campo opcional "Código de quem te indicou" no `/assinar`, atrás do link "Tem código de quem te indicou?", logo abaixo do cupom (`components/CheckoutIndicacao.jsx`, usado em `CheckoutForm.jsx`).
+    - Vem preenchido e aberto pelo cookie `tv_ref` (ou pelo `?ref=`); a pessoa apaga ou troca, e o que está no campo vale.
+    - Vai no `POST /api/checkout` como `codigo_afiliado` (maiúsculas, só A-Z e 0-9, até 15). Campo apagado de propósito também apaga o cookie.
+    - `aviso_afiliado` da resposta aparece sob o botão e o pagamento abre sozinho depois de 3,5 s ("Ir agora" abre na hora).
+    - Regras puras em `lib/afiliados-ref.js` (`codigoDoCookie`, `cookieDoRefApagado`), testadas em `tests/afiliados/campos-ui.test.mjs`.
+  - [x] **Backend** feito em 04/11/2026 (só local): código no checkout (corpo ou cookie `tv_ref`), validação no servidor, `metadata.afiliado`, comissão base em `registrarCompra` (webhook e `conta/criar`), taxa do MP, avisos de nível, reembolso/mediação/chargeback tirando o acesso e estornando a comissão. `npm test` 386 -> 407. Falta só a prova no navegador com o backend e o frontend juntos.
   - comissão base de R$ 15 dentro de `registrarCompra`;
   - bloqueio do próprio cupom;
   - taxa do Mercado Pago lida do pagamento;

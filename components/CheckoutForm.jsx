@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from 'react'
 import { priceBRL, site } from '@/lib/site'
 import { rastrear } from '@/components/MetaPixel'
 import CheckoutCupom from '@/components/CheckoutCupom'
+import CheckoutIndicacao, { AvisoIndicacao, useIndicacao } from '@/components/CheckoutIndicacao'
 import {
   celularValido,
   digitosCelular,
@@ -55,6 +56,10 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
   const [checando, setChecando] = useState(false)
   const [erroCupom, setErroCupom] = useState('')
 
+  // Código de quem indicou: só registra a venda, não mexe no preço.
+  const indicacao = useIndicacao()
+  const iniciarIndicacao = indicacao.iniciar
+
   async function aplicarCupom(codigo) {
     const limpo = String(codigo || '').trim()
     if (!limpo) return
@@ -89,6 +94,8 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       aplicarCupom(doEndereco)
     }
 
+    iniciarIndicacao(busca)
+
     // A origem da visita (ex.: o e-mail de lembrete) vai junto no checkout.
     const source = busca.get('utm_source')
     const medium = busca.get('utm_medium')
@@ -116,7 +123,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
     } else if (guardado) {
       preencher(null)
     }
-  }, [])
+  }, [iniciarIndicacao])
 
   // /assinar tem dois formulários (topo e fim): "Limpar" em um esvazia os dois.
   useEffect(() => {
@@ -154,6 +161,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
     }
     setTelefone(mascaraCelular(celular))
     guardar({ nome: valores.nome, email: valores.email, telefone: celular })
+    const codigoAfiliado = indicacao.codigoParaEnvio()
     setLoading(true)
     // Mesmo id no Pixel e no servidor: a Meta conta um evento só.
     const eventoId = crypto.randomUUID()
@@ -162,7 +170,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: valores.nome, email: valores.email, telefone: celular, eventoId, cupom: aplicado ? aplicado.cupom : '', utm }),
+        body: JSON.stringify({ nome: valores.nome, email: valores.email, telefone: celular, eventoId, cupom: aplicado ? aplicado.cupom : '', codigo_afiliado: codigoAfiliado, utm }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {
@@ -170,6 +178,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
         setLoading(false)
         return
       }
+      if (indicacao.mostrarAviso(data)) return
       window.location.href = data.url
     } catch {
       setError('Falha de conexão. Verifique sua internet e tente de novo.')
@@ -201,6 +210,17 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
         checando={checando}
         erroCupom={erroCupom}
         aplicarCupom={aplicarCupom}
+      />
+
+      <CheckoutIndicacao
+        id={id}
+        escuro={escuro}
+        rotuloCls={rotuloCls}
+        campoCls={campoCls}
+        aberto={indicacao.aberto}
+        setAberto={indicacao.setAberto}
+        valor={indicacao.valor}
+        setValor={indicacao.setValor}
       />
 
       <div>
@@ -301,6 +321,8 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       >
         {loading ? 'Abrindo pagamento seguro…' : aplicado ? `Pagar ${priceBRL(precoFinal)} e liberar acesso` : rotulo || `Pagar ${priceBRL(site.price)} e liberar acesso`}
       </button>
+
+      <AvisoIndicacao aviso={indicacao.aviso} textoFraco={textoFraco} />
 
       <p className={`text-center text-[12px] leading-relaxed ${textoFraco}`}>
         Usamos seu e-mail e WhatsApp para enviar o acesso e, se a compra não for concluída, um lembrete.

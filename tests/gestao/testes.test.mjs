@@ -40,6 +40,7 @@ function banco() {
     b.exec(readFileSync(`migrations/${arquivo}`, 'utf8'))
   }
   b.exec(readFileSync('migrations/0016_acesso_enviado.sql', 'utf8'))
+  b.exec(readFileSync('migrations/0018_afiliados.sql', 'utf8'))
   b.exec(`INSERT INTO clientes (id, email) VALUES (1, 'pessoa@example.com'), (2, 'real@example.com');
     INSERT INTO compras (cliente_id, stripe_session_id, valor_centavos, criado_em) VALUES
       (1, 'mp_teste', 8990, '2026-10-10 12:00:00'), (2, 'mp_real', 1000, '2026-10-10 12:00:00');

@@ -6,6 +6,7 @@ import { normalizarEmail } from '@/lib/sessao'
 import { enviarEventoMeta } from '@/lib/meta'
 import { site } from '@/lib/site'
 import { getDB } from '@/lib/d1'
+import { reverterCompra } from '@/lib/afiliados/venda'
 import { cancelarReservaCupom, desfazerEnvioAcesso, estenderReservaCupom, reservarEnvioAcesso } from '@/lib/gestao/cupons'
 import { marcarCarrinhosPagos } from '@/lib/carrinhos'
 import { marcarLeadComprou } from '@/lib/leads'
@@ -45,6 +46,10 @@ async function liberarAcesso(r, teste) {
     cupom: r.cupom,
     referencia: r.referencia,
     teste,
+    afiliado: r.afiliado,
+    financeiro: r.financeiro,
+    aprovadoEm: r.aprovadoEm,
+    telefone: r.telefone,
   })
   try {
     await marcarLeadComprou(getDB(), email, teste, r.compraId)
@@ -156,6 +161,10 @@ export async function POST(req) {
       // Pix gerado ou cartão em análise: segura a vaga do cupom até a
       // resposta final.
       await estenderReservaCupom(getDB(), r.referencia)
+    } else if (r.status === 'revertido') {
+      // Reembolso, chargeback ou mediação: tira o acesso e estorna a comissão. Pagamento que
+      // nunca virou compra é ignorado. Sem evento de compra para a Meta.
+      await reverterCompra(getDB(), r.compraId, r.estadoCompra)
     } else if (r.status === 'failed' && r.cupom && r.referencia) {
       // Pagamento recusado ou cancelado: devolve a vaga na hora, para outra
       // pessoa poder usar o cupom sem esperar a reserva vencer.

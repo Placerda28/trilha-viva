@@ -80,6 +80,10 @@ export async function POST(req) {
       cupom: r.cupom,
       referencia: r.referencia,
       teste: await ehTeste(getDB(), r),
+      afiliado: r.afiliado,
+      financeiro: r.financeiro,
+      aprovadoEm: r.aprovadoEm,
+      telefone: r.telefone,
     })
     compraId = r.compraId
   }
