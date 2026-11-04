@@ -76,12 +76,17 @@ function pagamento({ status = 'approved', afiliado = '', email = 'comprador@exam
     transaction_amount: 89.9,
     currency_id: 'BRL',
     date_approved: '2026-11-10T12:00:00.000-03:00',
+    date_last_updated: '2026-11-10T12:00:00.000-03:00',
     fee_details: [{ type: 'mercadopago_fee', amount: 4.5 }, { type: 'financing_fee', amount: 0.5 }],
     transaction_details: { net_received_amount: 84.9 },
     metadata: { referencia: REF, email, nome: 'Comprador', cupom: '', afiliado, telefone },
     payer: { email },
   }
 }
+
+// Nova versão do mesmo pagamento: o Mercado Pago carimba cada mudança com date_last_updated.
+let relogio = Date.parse('2026-11-10T15:00:00.000Z')
+const mudar = (p, status) => ({ ...p, status, date_last_updated: new Date((relogio += 60000)).toISOString() })
 
 function montar({ teste = false, falharEmail = false } = {}) {
   const db = novoDb()
@@ -260,7 +265,7 @@ test('reembolso: muda o status, tira o acesso, cancela a comissão e a venda sai
   assert.equal((await statusDoMes(db, af.id, '2026-11')).nivel.nome, 'Prata')
   const meta = globalThis.__meta.length
 
-  const reembolsado = { ...ps[0], status: 'refunded' }
+  const reembolsado = mudar(ps[0], 'refunded')
   assert.equal((await avisar(reembolsado)).status, 200)
   assert.equal((await avisar(reembolsado)).status, 200) // repetido: sem efeito novo
   assert.equal(compraDe(db, ps[0]).status, 'reembolsado')
@@ -283,20 +288,20 @@ test('acesso cai no reembolso (temCompra = false) e volta quando a mediação te
   const cliente = clienteComprador(db)
   assert.equal(await temCompra(cliente, db), true)
 
-  await avisar({ ...p, status: 'in_mediation' })
+  await avisar(mudar(p, 'in_mediation'))
   assert.equal(compraDe(db, p).status, 'em_mediacao')
   assert.equal(await temCompra(cliente, db), false)
   assert.equal(lancamentos(db, 'venda')[0].status, 'cancelada')
   assert.equal(eventos(db, 'reembolso'), 1)
 
-  await avisar({ ...p, status: 'approved' })
+  await avisar(mudar(p, 'approved'))
   assert.equal(compraDe(db, p).status, 'pago')
   assert.equal(await temCompra(cliente, db), true)
   assert.equal(lancamentos(db, 'venda')[0].status, 'pendente') // mês aberto: a comissão cancelada volta
   assert.equal(contar(db, 'SELECT COUNT(*) AS n FROM compras'), 1)
   assert.equal(lancamentos(db, 'venda').length, 1)
 
-  await avisar({ ...p, status: 'charged_back' })
+  await avisar(mudar(p, 'charged_back'))
   assert.equal(compraDe(db, p).status, 'contestado')
   assert.equal(await temCompra(cliente, db), false)
   assert.equal(eventos(db, 'chargeback'), 1)
@@ -311,13 +316,13 @@ test('reembolso depois do fechamento do mês gera estorno negativo; mediação a
   const fech = await fecharMes(db, '2026-11', new Date(FIM_NOV))
   assert.equal(fech.fechados.length, 1)
 
-  await avisar({ ...p, status: 'refunded' })
+  await avisar(mudar(p, 'refunded'))
   const est = lancamentos(db, 'estorno')
   assert.equal(est.length, 1)
   assert.equal(est[0].valor_centavos, -1500)
   assert.equal(lancamentos(db, 'venda')[0].status, 'pendente')
 
-  await avisar({ ...p, status: 'approved' })
+  await avisar(mudar(p, 'approved'))
   assert.equal(compraDe(db, p).status, 'pago') // o acesso volta
   assert.equal(lancamentos(db, 'estorno').length, 1) // limitação: o estorno fica e a comissão não volta sozinha
 })
@@ -330,7 +335,7 @@ test('reembolso de pagamento que nunca virou compra, de compra sem afiliado e pa
 
   const comum = pagamento()
   await avisar(comum)
-  await avisar({ ...comum, status: 'refunded' })
+  await avisar(mudar(comum, 'refunded'))
   assert.equal(compraDe(db, comum).status, 'reembolsado')
   assert.equal(await temCompra(clienteComprador(db), db), false)
 
@@ -352,3 +357,88 @@ test('faturamento por cupom não soma compra reembolsada (a vaga do cupom contin
   const [c] = await listarCupons(db)
   assert.equal(c.faturamento_centavos, 8000)
 }) 
+
+test('falha no estorno responde 500 (o Mercado Pago reenvia) e o reenvio conserta sem duplicar', async (t) => {
+  const db = montar()
+  t.mock.method(console, 'error', () => {})
+  const af = novoAfiliado(db)
+  const codigo = db.banco.prepare('SELECT codigo FROM afiliados WHERE id = ?').get(af.id).codigo
+  const p = pagamento({ afiliado: codigo })
+  await avisar(p)
+  const reembolso = mudar(p, 'refunded')
+  const prepare = db.prepare.bind(db)
+  db.prepare = (sql) => {
+    if (String(sql).includes('afiliados_lancamentos')) throw new Error('D1 fora do ar')
+    return prepare(sql)
+  }
+  assert.equal((await avisar(reembolso)).status, 500)
+  db.prepare = prepare
+  assert.equal((await avisar(reembolso)).status, 200)
+  assert.equal((await avisar(reembolso)).status, 200)
+  assert.equal(compraDe(db, p).status, 'reembolsado')
+  assert.equal(lancamentos(db, 'venda')[0].status, 'cancelada')
+  assert.equal(eventos(db, 'reembolso'), 1)
+  // Falha antes mesmo de mudar o status (banco fora): também 500.
+  const outro = pagamento({})
+  await avisar(outro)
+  db.prepare = () => { throw new Error('D1 fora do ar') }
+  assert.equal((await avisar(mudar(outro, 'refunded'))).status, 500)
+  db.prepare = prepare
+  assert.equal(compraDe(db, outro).status, 'pago')
+  assert.equal((await avisar(mudar(outro, 'refunded'))).status, 200)
+  assert.equal(compraDe(db, outro).status, 'reembolsado')
+})
+
+test('aprovação atrasada não desfaz um reembolso mais novo (com e sem afiliado); a mais nova desfaz', async () => {
+  for (const comAfiliado of [true, false]) {
+    const db = montar()
+    const af = novoAfiliado(db)
+    const codigo = db.banco.prepare('SELECT codigo FROM afiliados WHERE id = ?').get(af.id).codigo
+    const p = pagamento({ afiliado: comAfiliado ? codigo : '' })
+    await avisar(p)
+    const antiga = { ...p } // o que a requisição A leu antes do reembolso
+    await avisar(mudar(p, 'refunded'))
+    assert.equal(compraDe(db, p).status, 'reembolsado')
+    await avisar(antiga) // A termina depois
+    assert.equal(compraDe(db, p).status, 'reembolsado', 'aprovação velha não vence')
+    assert.equal(await temCompra(clienteComprador(db), db), false)
+    if (comAfiliado) assert.equal(lancamentos(db, 'venda')[0].status, 'cancelada')
+    await avisar(mudar(p, 'approved')) // mediação ganha: este é mais novo
+    assert.equal(compraDe(db, p).status, 'pago')
+    // Reembolso velho também não derruba uma aprovação mais nova.
+    const velho = mudar(p, 'refunded')
+    await avisar(mudar(p, 'approved'))
+    await avisar(velho)
+    assert.equal(compraDe(db, p).status, 'pago')
+  }
+})
+
+test('comissão não nasce se a compra deixou de estar paga no momento de gravar', async () => {
+  const db = montar()
+  const af = novoAfiliado(db)
+  const cli = db.banco.prepare("INSERT INTO clientes (email) VALUES ('x@example.com') RETURNING id").get().id
+  const { id } = db.banco.prepare("INSERT INTO compras (cliente_id, stripe_session_id, valor_centavos, status, afiliado_id) VALUES (?, 'mp_9', 8990, 'reembolsado', ?) RETURNING id").get(cli, af.id)
+  const { concluirVendaAfiliado } = await import('../../lib/afiliados/venda.js')
+  const r = await concluirVendaAfiliado(db, { afiliadoId: af.id, compraId: Number(id), aprovadoEm: '2026-11-10T12:00:00.000-03:00' })
+  assert.equal(r.criado, false)
+  assert.equal(lancamentos(db, 'venda').length, 0)
+  assert.equal(eventos(db, 'pagamento_aprovado'), 0)
+  db.banco.prepare("UPDATE compras SET status = 'pago' WHERE id = ?").run(id)
+  assert.equal((await concluirVendaAfiliado(db, { afiliadoId: af.id, compraId: Number(id), aprovadoEm: '2026-11-10T12:00:00.000-03:00' })).criado, true)
+})
+
+test('restauração interrompida: compra já paga com comissão cancelada é consertada na repetição', async () => {
+  const db = montar()
+  const af = novoAfiliado(db)
+  const codigo = db.banco.prepare('SELECT codigo FROM afiliados WHERE id = ?').get(af.id).codigo
+  const p = pagamento({ afiliado: codigo })
+  await avisar(p)
+  await avisar(mudar(p, 'in_mediation'))
+  assert.equal(lancamentos(db, 'venda')[0].status, 'cancelada')
+  // Estado deixado por uma queda: status voltou para pago, comissão ficou cancelada.
+  db.banco.prepare("UPDATE compras SET status = 'pago' WHERE stripe_session_id = ?").run(`mp_${p.id}`)
+  assert.equal(lancamentos(db, 'venda')[0].status, 'cancelada')
+  await avisar(mudar(p, 'approved'))
+  assert.equal(lancamentos(db, 'venda')[0].status, 'pendente')
+  assert.equal(lancamentos(db, 'venda').length, 1)
+})

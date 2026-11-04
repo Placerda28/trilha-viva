@@ -59,7 +59,7 @@ export async function buscarSeguintes(db, soTelefone, agoraSql) {
            c.proximo_whatsapp_em AS vez_em,
            EXISTS (
              SELECT 1 FROM compras p JOIN clientes cl ON cl.id = p.cliente_id
-              WHERE p.status = 'pago' AND cl.email = c.email LIMIT 1
+              WHERE p.status IN ('pago', 'reembolsado', 'contestado', 'em_mediacao') AND cl.email = c.email LIMIT 1
            ) OR EXISTS (
              SELECT 1 FROM carrinhos pago
               WHERE pago.status = 'pago' AND (pago.email = c.email OR pago.telefone = c.telefone) LIMIT 1
@@ -106,7 +106,7 @@ export async function impedimentos(db, email, telefone, agoraSql, id = '') {
         WHERE (tipo = 'email' AND valor = ?) OR (tipo = 'telefone' AND valor = ?) LIMIT 1) AS teste,
       EXISTS(
         SELECT 1 FROM compras p JOIN clientes c ON c.id = p.cliente_id
-         WHERE p.status = 'pago' AND c.email = ? LIMIT 1
+         WHERE p.status IN ('pago', 'reembolsado', 'contestado', 'em_mediacao') AND c.email = ? LIMIT 1
       ) AS tem_compra,
       EXISTS(SELECT 1 FROM descadastros d WHERE d.email = ? LIMIT 1) AS descadastrado,
       EXISTS(
@@ -229,7 +229,7 @@ export async function encerrarPorCompraOuSaida(db, agoraSql, logger) {
      WHERE whatsapp_enviado_em IS NOT NULL AND whatsapp_encerrado_em IS NULL
        AND (
          EXISTS (SELECT 1 FROM compras p JOIN clientes cl ON cl.id = p.cliente_id
-                  WHERE p.status = 'pago' AND cl.email = carrinhos.email LIMIT 1)
+                  WHERE p.status IN ('pago', 'reembolsado', 'contestado', 'em_mediacao') AND cl.email = carrinhos.email LIMIT 1)
          OR EXISTS (SELECT 1 FROM carrinhos pago
                      WHERE pago.status = 'pago'
                        AND (pago.email = carrinhos.email OR pago.telefone = carrinhos.telefone) LIMIT 1)

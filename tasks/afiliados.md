@@ -144,6 +144,8 @@ O `metadata` do Mercado Pago já leva `cupom` e `referencia` (UUID = `external_r
     - `?volta=` em `/entrar` e `/criar-senha` (`components/ContaForm.jsx`), lista fechada de caminhos.
     - Protótipo temporário para print: `app/prototipo-afiliado/[estado]` (404 em produção; apagar na aprovação). Testes: `tests/afiliados/campos-ui.test.mjs`.
 - [ ] **4. Checkout e webhook:**
+  - [x] **Backend (04/11/2026, só local):** código no checkout (corpo ou cookie `tv_ref`), validação no servidor, `metadata.afiliado`, comissão base em `registrarCompra` (webhook e `conta/criar`), taxa do MP, avisos de nível, reembolso/mediação/chargeback tirando o acesso e estornando a comissão. `npm test` 386 -> 407.
+  - [x] **Fase 4b (revisão do Codex, 5 falhas):** carimbo `compras.mp_status_em` na 0018 (ordem dos avisos), comissão condicional ao estado atual da compra, restauração em `db.batch`, webhook 500 se o reembolso falhar, temporizador do aviso limpo ao desmontar, robô sem lembrete para reembolsado/contestado/em mediação. `npm test` 407 -> 418.
   - [x] **Frontend (04/11/2026, só local):** campo opcional "Código de quem te indicou" no `/assinar`, atrás do link "Tem código de quem te indicou?", logo abaixo do cupom (`components/CheckoutIndicacao.jsx`, usado em `CheckoutForm.jsx`).
     - Vem preenchido e aberto pelo cookie `tv_ref` (ou pelo `?ref=`); a pessoa apaga ou troca, e o que está no campo vale.
     - Vai no `POST /api/checkout` como `codigo_afiliado` (maiúsculas, só A-Z e 0-9, até 15). Campo apagado de propósito também apaga o cookie.

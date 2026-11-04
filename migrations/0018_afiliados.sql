@@ -161,6 +161,9 @@ ALTER TABLE compras ADD COLUMN codigo_afiliado TEXT;
 ALTER TABLE compras ADD COLUMN bruto_centavos INTEGER;
 ALTER TABLE compras ADD COLUMN taxa_mp_centavos INTEGER;
 ALTER TABLE compras ADD COLUMN liquido_centavos INTEGER;
+-- Carimbo (UTC, ISO) do date_last_updated do pagamento que gravou o status atual. Reembolso e
+-- aprovação atrasada só mudam o status se o carimbo novo for MAIS recente (ordem dos avisos).
+ALTER TABLE compras ADD COLUMN mp_status_em TEXT;
 CREATE INDEX IF NOT EXISTS idx_compras_afiliado ON compras(afiliado_id);
 
 -- Limite de pedidos de conta de afiliado por IP (mesmo padrão de leads_tentativas).

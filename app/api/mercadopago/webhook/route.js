@@ -50,6 +50,7 @@ async function liberarAcesso(r, teste) {
     financeiro: r.financeiro,
     aprovadoEm: r.aprovadoEm,
     telefone: r.telefone,
+    atualizadoEm: r.atualizadoEm,
   })
   try {
     await marcarLeadComprou(getDB(), email, teste, r.compraId)
@@ -164,7 +165,14 @@ export async function POST(req) {
     } else if (r.status === 'revertido') {
       // Reembolso, chargeback ou mediação: tira o acesso e estorna a comissão. Pagamento que
       // nunca virou compra é ignorado. Sem evento de compra para a Meta.
-      await reverterCompra(getDB(), r.compraId, r.estadoCompra)
+      // Se falhar no banco, o erro vira 500 (abaixo): o Mercado Pago reenvia e a repetição é
+      // idempotente. Engolir o erro deixaria o acesso liberado para sempre.
+      try {
+        await reverterCompra(getDB(), r.compraId, r.estadoCompra, r.atualizadoEm)
+      } catch (err) {
+        console.error('mp reverter compra', r.pagamentoId, err?.message)
+        entregue = false
+      }
     } else if (r.status === 'failed' && r.cupom && r.referencia) {
       // Pagamento recusado ou cancelado: devolve a vaga na hora, para outra
       // pessoa poder usar o cupom sem esperar a reserva vencer.

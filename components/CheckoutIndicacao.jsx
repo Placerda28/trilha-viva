@@ -12,6 +12,10 @@ export function useIndicacao() {
   const [valor, setValor] = useState('')
   const [aviso, setAviso] = useState(null) // { texto, url }
   const veioPreenchido = useRef(false)
+  const temporizador = useRef(null)
+
+  // Sair da página antes dos 3,5 s não pode abrir o pagamento antigo depois.
+  useEffect(() => () => clearTimeout(temporizador.current), [])
 
   // Chamar ao abrir a página, com a busca do endereço.
   const iniciar = useCallback((busca) => {
@@ -41,7 +45,8 @@ export function useIndicacao() {
   function mostrarAviso(dados) {
     if (!dados.aviso_afiliado) return false
     setAviso({ texto: String(dados.aviso_afiliado), url: dados.url })
-    setTimeout(() => {
+    clearTimeout(temporizador.current)
+    temporizador.current = setTimeout(() => {
       window.location.href = dados.url
     }, 3500)
     return true

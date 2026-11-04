@@ -84,6 +84,7 @@ export async function POST(req) {
       financeiro: r.financeiro,
       aprovadoEm: r.aprovadoEm,
       telefone: r.telefone,
+      atualizadoEm: r.atualizadoEm,
     })
     compraId = r.compraId
   }

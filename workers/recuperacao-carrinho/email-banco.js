@@ -62,7 +62,7 @@ export async function impedimentosIniciais(db, email, telefone, id) {
         SELECT 1
           FROM compras p
           JOIN clientes c ON c.id = p.cliente_id
-         WHERE p.status = 'pago' AND c.email = ?
+         WHERE p.status IN ('pago', 'reembolsado', 'contestado', 'em_mediacao') AND c.email = ?
          LIMIT 1
       ) AS tem_compra,
       (
@@ -105,7 +105,7 @@ export async function impedimentosSeguimento(db, email, telefone, id) {
         SELECT 1
           FROM compras p
           JOIN clientes c ON c.id = p.cliente_id
-         WHERE p.status = 'pago' AND c.email = ?
+         WHERE p.status IN ('pago', 'reembolsado', 'contestado', 'em_mediacao') AND c.email = ?
          LIMIT 1
       ) AS tem_compra,
       EXISTS(

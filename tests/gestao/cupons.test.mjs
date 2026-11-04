@@ -21,6 +21,10 @@ class D1Local {
     this.banco = banco
   }
 
+  async batch(lista) {
+    return Promise.all(lista.map((s) => s.all()))
+  }
+
   prepare(sql) {
     const preparada = this.banco.prepare(sql)
     let valores = []
