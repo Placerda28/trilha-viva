@@ -3,7 +3,7 @@
 // ORÇAMENTO DE CONSULTAS: o plano grátis do D1 dá 50 consultas por invocação do Worker e o robô divide
 // isso com e-mail, leads e WhatsApp. Esta etapa gasta no máximo ORCAMENTO (16) por rodada. Cada statement
 // preparado conta 1, inclusive os de um db.batch. Contas (custo por unidade):
-//   - checagem do fechamento: 1; fecharMes: 3 fixas + 5 por afiliado (fixo, contagem, 3 do lote: fechamento, bônus,
+//   - checagem do fechamento: 1; fecharMes: 4 fixas (config, conserto de marcadores, níveis, lista) + 5 por afiliado (fixo, contagem, 3 do lote: fechamento, bônus,
 //     liberação do mês) -> 2 afiliados = 13 (3 chegariam a 18, acima do teto)
 //   - resumo: 1 de lista + por e-mail 4 na 1ª tentativa (saldo, reserva, aviso, marcar) ou 2 nas repetições
 //   - "faltam": só nos 5 últimos dias; 2 (níveis e candidatos) + 1 por aviso novo + 1 de fila + 2 por e-mail
@@ -23,7 +23,7 @@ export const ORCAMENTO = 16
 const FECHAMENTOS = 2
 const RESUMOS = 5
 const FALTAM = 5
-const CONSULTAS_FECHAR_FIXAS = 3
+const CONSULTAS_FECHAR_FIXAS = 4
 const CONSULTAS_POR_AFILIADO = 5
 const TENTATIVAS = 3
 const JANELA_HORAS = 20 // a chave do Resend vale 24 h
