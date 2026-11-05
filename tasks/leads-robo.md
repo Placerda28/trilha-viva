@@ -33,6 +33,6 @@ Branch `leads-robo` (C:\dev\tv-afiliados), base `main` c1dccef.
 
 ## Fases
 - [x] 1. (05/11, na branch, sem commit; falta o Paulo aplicar a 0023 no D1 remoto) Backend: sequência de WhatsApp para leads, novo cronograma de e-mail com fase mensal, estado encerrado/convertido, rotas da Gestão (etapa, funil, parar, enviar agora) e testes.
-- [ ] 2. Telas da Gestão > Leads VS grátis.
+- [x] 2. (05/11, na branch, sem commit) Telas da Gestão > Leads VS grátis: funil de conversão (`FunilLeads.jsx`, com tabela alternativa), lista com etapa do robô, situação e menu Parar / Enviar agora (`LeadsLista.jsx`, `LeadAcoes.jsx`, `leadsRobo.js`), teste em `tests/gestao/leads-robo-util.test.mjs`. Prints em `C:/Users/PauloHenriqueLacerda/AppData/Local/Temp/prints-afiliados/leads-*.png` (protótipo `app/prototipo-leads/` apagado).
 - [ ] 3. Modelos de WhatsApp aprovados na Meta.
 - [ ] 4. Publicação (migração, site, robô) e prova com um lead de teste.
