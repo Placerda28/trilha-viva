@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { reais } from '@/lib/afiliados-campos'
+import { diaMes } from '@/lib/afiliados-painel'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { enviar, useHttp } from './api'
 
-// Botão "Sacar R$ X". Bloqueado, mostra o motivo numa frase (vem do servidor) e,
-// quando há um passo óbvio, o atalho para ele. Pedir saque abre uma confirmação.
+// Botão "Sacar R$ X". Bloqueado, mostra o motivo numa frase (vem do servidor, com
+// `abreEm` quando o saque só abre numa data) e, quando há um passo óbvio, o atalho
+// para ele. Pedir saque abre uma confirmação. Regra: 1 saque por ciclo (do dia 8 ao dia 7), do saldo inteiro.
 export default function SaqueBotao({ saque, irPara, onPedido }) {
   const chamar = useHttp()
   const router = useRouter()
@@ -65,7 +67,7 @@ export default function SaqueBotao({ saque, irPara, onPedido }) {
                 <DialogHeader>
                   <DialogTitle>Pedir saque de {reais(saque.valor)}?</DialogTitle>
                   <DialogDescription>
-                    O valor vai por Pix para a chave que você cadastrou. Enquanto o saque estiver em análise, os dados Pix ficam travados para alteração.
+                    O pedido leva o valor inteiro e vai por Pix para a chave que você cadastrou. O saque vale uma vez por mês. Enquanto o saque estiver em análise, os dados Pix ficam travados para alteração.
                   </DialogDescription>
                 </DialogHeader>
                 {erro && (
@@ -90,11 +92,18 @@ export default function SaqueBotao({ saque, irPara, onPedido }) {
   }
 
   const motivo = saque.motivo || 'Saque indisponível no momento.'
-  const atalho = /chave pix/i.test(motivo) ? ['pix', 'Cadastrar chave Pix'] : /saque em an[aá]lise/i.test(motivo) ? ['saques', 'Ver meus saques'] : null
+  const abre = saque.abreEm ? diaMes(saque.abreEm) : ''
+  // A data vem de `abreEm` (nunca do texto do motivo, que o servidor pode reescrever).
+  const rotuloBloqueado = abre ? `Saque a partir de ${abre}` : rotulo
+  const atalho = /chave pix/i.test(motivo)
+    ? ['pix', 'Cadastrar chave Pix']
+    : /em an[aá]lise|deste ciclo/i.test(motivo)
+      ? ['saques', 'Ver meus saques']
+      : null
   return (
     <>
       <button type="button" disabled aria-describedby="motivo-saque" className="btn mt-5 min-h-12 w-full cursor-not-allowed border border-line bg-paper text-ink-muted">
-        {rotulo}
+        {rotuloBloqueado}
       </button>
       <p id="motivo-saque" className="mt-3 text-[14.5px] leading-[1.55] text-ink">
         {motivo}

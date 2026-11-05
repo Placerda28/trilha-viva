@@ -45,12 +45,12 @@ Dashboard: afiliados;Em Prata no mês atual;1;1;Sim
 Dashboard: afiliados;Em Ouro no mês atual;1;1;Sim
 Dashboard: afiliados;Ativos sem vendas no mês;1;1;Sim
 Dashboard: afiliados;Perto de subir (faltam 3 ou menos);1;1;Sim
-Dashboard: dinheiro a pagar;Disponível para saque (saldo positivo de cada um);1970,00;1970,00;Sim
-Dashboard: dinheiro a pagar;Liberando (carência);15,00;15,00;Sim
+Dashboard: dinheiro a pagar;Disponível para saque (saldo positivo de cada um);475,00;475,00;Sim
+Dashboard: dinheiro a pagar;A liberar no fechamento (mês ainda aberto);1530,00;1530,00;Sim
 Dashboard: dinheiro a pagar;Bônus previsto do próximo fechamento (novembro);990,00;990,00;Sim
-Dashboard: dinheiro a pagar;Próximos 15 dias: o que libera;15,00;15,00;Sim
+Dashboard: dinheiro a pagar;Próximos 15 dias: o que libera;1530,00;1530,00;Sim
 Dashboard: dinheiro a pagar;Próximos 15 dias: bônus que cai (fecha em 08/12);990,00;990,00;Sim
-Dashboard: dinheiro a pagar;Próximos 15 dias: total;1005,00;1005,00;Sim
+Dashboard: dinheiro a pagar;Próximos 15 dias: total;2520,00;2520,00;Sim
 Dashboard: dinheiro a pagar;Saques pendentes: quantidade;1;1;Sim
 Dashboard: dinheiro a pagar;Saques pendentes: valor;123,45;123,45;Sim
 Dashboard: dinheiro a pagar;Pago no período: valor;400,00;400,00;Sim

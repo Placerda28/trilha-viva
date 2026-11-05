@@ -4,7 +4,7 @@ import EscadaNiveis from '../EscadaNiveis'
 const PASSOS = [
   ['Copie o seu link', 'É o botão "Copiar" no painel preto abaixo. O seu código já vai dentro dele.'],
   ['Divulgue', 'Mande para quem toca em banda, igreja ou ministério: no WhatsApp, no Instagram, onde você conversa com eles.'],
-  ['Acompanhe aqui', 'Cada compra feita pelo seu link aparece nesta tela, com o valor que você ganhou.'],
+  ['Acompanhe aqui', 'Cada compra feita pelo seu link aparece nesta tela, e o valor do mês cresce com as vendas.'],
 ]
 
 // Afiliado novo, sem nenhuma venda: em vez de zeros, o caminho da primeira venda.

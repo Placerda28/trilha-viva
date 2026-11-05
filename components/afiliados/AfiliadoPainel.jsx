@@ -19,7 +19,7 @@ const STATUS = {
 }
 
 // Regras que o admin pode mudar; o servidor manda os valores vigentes.
-const CONFIG_PADRAO = { carenciaDias: 7, diaFechamento: 8, intervaloSaqueDias: 15 }
+const CONFIG_PADRAO = { diaFechamento: 8 }
 const IDS = ABAS.map((a) => a.id)
 const abaDoEndereco = () => {
   try {
@@ -125,10 +125,10 @@ export default function AfiliadoPainel({ nome, codigo, link, status, emailSuport
         <Abas ativa={aba} onTrocar={trocar} />
       </div>
       <div id={`painel-${aba}`} role="tabpanel" aria-labelledby={`aba-${aba}`} tabIndex={-1} className="mt-6 focus:outline-none">
-        {aba === 'inicio' && <Inicio d={dados} codigo={codigo} link={link} nome={nome} config={cfg} avisarCadaVenda={avisarCadaVenda} irPara={trocar} />}
+        {aba === 'inicio' && <Inicio d={dados} codigo={codigo} link={link} nome={nome} avisarCadaVenda={avisarCadaVenda} irPara={trocar} />}
         {aba === 'vendas' && <Vendas mesAtual={dados.mes} />}
         {aba === 'ganhos' && <Ganhos niveis={dados.niveis} />}
-        {aba === 'saques' && <Saques />}
+        {aba === 'saques' && <Saques config={cfg} />}
         {aba === 'pix' && <DadosPix />}
         {aba === 'como' && <ComoFunciona niveis={dados.niveis} config={cfg} />}
       </div>

@@ -33,18 +33,20 @@ function degraus(niveis) {
 }
 
 export default function ComoFunciona({ niveis, config }) {
-  const dia = String(config.diaFechamento)
+  const dia = String(Number(config.diaFechamento))
+  const fimDoCiclo = Number(dia) > 1 ? `o dia ${String(Number(dia) - 1)} do mês seguinte` : 'o último dia do mês'
   const FAQ = [
-    { q: 'Quando eu recebo?', a: <p>Cada venda libera {config.carenciaDias} dias depois de acontecer. Depois disso o valor fica disponível e você pede o saque por Pix. O bônus de nível cai no dia {dia} do mês seguinte.</p> },
+    { q: 'Quando eu recebo?', a: <p>O mês fecha no dia {dia} do mês seguinte, já sem as compras devolvidas. Nesse dia o total do mês inteiro fica disponível de uma vez. A partir do dia {dia} você pede o pagamento do mês anterior, uma vez por mês, por Pix. As vendas de novembro, por exemplo, ficam disponíveis em {dia.padStart(2, '0')}/12.</p> },
+    { q: 'Quanto eu ganho no mês?', a: <p>Depende da meta. O número de vendas do mês define o seu nível, e todas as vendas daquele mês valem o valor desse nível. O cartão A receber, no Início, mostra quanto o mês vale até agora.</p> },
     { q: 'Quem compra pelo meu link ganha desconto?', a: <p>Não. Quem compra paga o preço normal. O seu código só registra que a venda veio de você.</p> },
-    { q: 'O que acontece se a compra for devolvida?', a: <p>A venda deixa de contar para a sua meta e a comissão sai. Se o mês já tinha fechado, a devolução aparece no extrato como um ajuste.</p> },
-    { q: 'Como o meu nível é decidido?', a: <p>Pelo número de vendas do mês. Chegou à meta, todas as vendas daquele mês passam a valer o valor do nível novo. No dia 1º a contagem recomeça.</p> },
+    { q: 'O que acontece se a compra for devolvida?', a: <p>A venda deixa de contar para a sua meta. Se a devolução vier antes do fechamento, o valor do mês é refeito sem ela, e o nível pode mudar. Se o mês já tinha fechado, o valor devolvido aparece como ajuste na aba Meus ganhos e sai do seu saldo.</p> },
     { q: 'Posso comprar com o meu próprio código?', a: <p>Não. Compras feitas pelo próprio afiliado não contam como venda.</p> },
-    { q: 'Como peço o saque?', a: <p>Cadastre sua chave Pix na aba Dados Pix. Quando houver valor disponível, o botão Sacar aparece no Início. Só dá para ter um saque em análise por vez, e há um intervalo de {config.intervaloSaqueDias} dias entre um pedido e o próximo.</p> },
+    { q: 'Como peço o saque?', a: <p>Cadastre sua chave Pix na aba Dados Pix. A partir do dia {dia}, havendo valor disponível, o botão Sacar aparece no Início. O pedido leva o valor inteiro e vale uma vez por mês. Só dá para ter um saque em análise por vez.</p> },
+    { q: `E se eu esquecer de pedir no dia ${Number(dia)}?`, a: <p>Sem problema. O pedido vale do dia {dia} até {fimDoCiclo}, então você ainda pode pedir depois, dentro desse período. O valor continua guardado e sai tudo junto.</p> },
   ]
   const REGRAS = [
     'O pagamento é sempre por Pix, para uma chave em seu nome.',
-    `O saque pode ser pedido a cada ${config.intervaloSaqueDias} dias.`,
+    `O pagamento do mês anterior pode ser pedido a partir do dia ${dia}, uma vez por mês.`,
     'É proibido comprar usando o seu próprio código.',
     'É proibido fazer anúncio pago usando a marca "Trilha Viva".',
     'É proibido divulgar por spam.',
@@ -54,23 +56,13 @@ export default function ComoFunciona({ niveis, config }) {
       <section className="card-line space-y-10 px-5 py-7 sm:px-8" aria-labelledby="dinheiro-titulo">
         <h2 id="dinheiro-titulo" className="text-d3 text-ink">Como o dinheiro chega até você</h2>
         <Linha
-          id="linha-venda"
-          titulo="Cada venda"
+          id="linha-mes"
+          titulo="A cada mês"
           passos={[
-            ['Venda', 'Alguém compra pelo seu link.'],
-            [`${config.carenciaDias} dias`, 'Prazo de segurança, caso a compra seja devolvida.'],
-            ['Disponível', 'O valor já é seu para sacar.'],
-            ['Saque', 'Você pede na aba Início.'],
-            ['Pix na conta', 'A Trilha Viva paga na sua chave.'],
-          ]}
-        />
-        <Linha
-          id="linha-bonus"
-          titulo="Bônus de nível"
-          passos={[
-            ['Fim do mês', 'O nível do mês é conferido.'],
-            [`Dia ${dia}`, 'O mês é fechado e o bônus calculado.'],
-            ['Bônus disponível', 'Entra no seu saldo para sacar.'],
+            ['Vendas no mês', 'Cada compra pelo seu link conta para a meta. O nível que você atingir vale para todas.'],
+            [`Dia ${dia}`, 'O mês fecha, já sem as compras devolvidas.'],
+            ['Total disponível', 'O valor do mês inteiro entra no seu saldo de uma vez.'],
+            ['Saque uma vez por mês', 'A partir do dia '+dia+' você pede na aba Início e a Trilha Viva paga por Pix na sua chave.'],
           ]}
         />
       </section>

@@ -127,7 +127,14 @@ linha(S3, 'Perto de subir (faltam 3 ou menos)', nov.filter((x) => x.status === '
 // Dinheiro a pagar: monta as linhas do extrato à mão
 const S4 = 'Dashboard: dinheiro a pagar'
 const extrato = [
-  ...comAf(vendas).filter((v) => v.estado !== 'cancelada').map((v) => ({ af: v.af, valor: BASE, disp: new Date(v.quando).getTime() + 7 * DIA })), // carência de 7 dias
+  // Regra do dono (05/11): nada libera antes do fechamento. Mês fechado: disponível na hora do fechamento (AGORA).
+  // Mês aberto: só no dia 8 do mês seguinte (Infinity = ainda não fechou; `fecha` é a data prevista, para a previsão de 15 dias).
+  ...comAf(vendas).filter((v) => v.estado !== 'cancelada').map((v) => {
+    const mes = mesBr(v.quando)
+    const [ano, m] = mes.split('-').map(Number)
+    const fecha = Date.UTC(ano, m, 8, 3) // 00:00 de Brasília do dia 8 do mês seguinte
+    return FECHADOS.includes(mes) ? { af: v.af, valor: BASE, disp: AGORA.getTime() } : { af: v.af, valor: BASE, disp: Infinity, fecha }
+  }),
   ...AFILIADOS.flatMap((x) => (FECHADOS.map((m) => ({ af: x.chave, valor: (validasNoMes(x.chave, m) ? nivelDe(validasNoMes(x.chave, m)).valor - BASE : 0) * validasNoMes(x.chave, m), disp: AGORA.getTime() })))).filter((l) => l.valor > 0),
   ...AJUSTES.map((x) => ({ af: x.af, valor: x.valor, disp: new Date(x.quando).getTime() })),
   ...vendas.filter((v) => v.estado === 'estornada').map((v) => ({ af: v.af, valor: -BASE, disp: new Date(v.refundadoEm).getTime() })),
@@ -135,9 +142,9 @@ const extrato = [
 const porAf = (f) => AFILIADOS.map((x) => soma(extrato.filter((l) => l.af === x.chave && f(l)).map((l) => l.valor)))
 const em15 = AGORA.getTime() + 15 * DIA
 const bonusAberto = soma(afiliadosDoMes('2026-11').map((x) => x.n * (nivelDe(x.n).valor - BASE)))
-const libera15 = soma(extrato.filter((l) => l.disp > AGORA.getTime() && l.disp <= em15).map((l) => l.valor))
+const libera15 = soma(extrato.filter((l) => l.disp > AGORA.getTime() && (l.disp <= em15 || (l.fecha ?? Infinity) <= em15)).map((l) => l.valor))
 linha(S4, 'Disponível para saque (saldo positivo de cada um)', soma(porAf((l) => l.disp <= AGORA.getTime()).map((s) => Math.max(s, 0))), d.dinheiro.disponivel_centavos, 'din')
-linha(S4, 'Liberando (carência)', soma(extrato.filter((l) => l.disp > AGORA.getTime()).map((l) => l.valor)), d.dinheiro.liberando_centavos, 'din')
+linha(S4, 'A liberar no fechamento (mês ainda aberto)', soma(extrato.filter((l) => l.disp > AGORA.getTime()).map((l) => l.valor)), d.dinheiro.liberando_centavos, 'din')
 linha(S4, 'Bônus previsto do próximo fechamento (novembro)', bonusAberto, d.dinheiro.bonus_previsto.total_centavos, 'din')
 linha(S4, 'Próximos 15 dias: o que libera', libera15, d.dinheiro.previsao_15_dias.libera_centavos, 'din')
 linha(S4, 'Próximos 15 dias: bônus que cai (fecha em 08/12)', bonusAberto, d.dinheiro.previsao_15_dias.bonus_centavos, 'din')

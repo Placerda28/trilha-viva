@@ -3,13 +3,14 @@
 // ORÇAMENTO DE CONSULTAS: o plano grátis do D1 dá 50 consultas por invocação do Worker e o robô divide
 // isso com e-mail, leads e WhatsApp. Esta etapa gasta no máximo ORCAMENTO (16) por rodada. Cada statement
 // preparado conta 1, inclusive os de um db.batch. Contas (custo por unidade):
-//   - checagem do fechamento: 1; fecharMes: 3 fixas + 4 por afiliado (fixo, contagem, 2 do lote) -> 3 afiliados = 16
+//   - checagem do fechamento: 1; fecharMes: 3 fixas + 5 por afiliado (fixo, contagem, 3 do lote: fechamento, bônus,
+//     liberação do mês) -> 2 afiliados = 13 (3 chegariam a 18, acima do teto)
 //   - resumo: 1 de lista + por e-mail 4 na 1ª tentativa (saldo, reserva, aviso, marcar) ou 2 nas repetições
 //   - "faltam": só nos 5 últimos dias; 2 (níveis e candidatos) + 1 por aviso novo + 1 de fila + 2 por e-mail
 // O teto de 16 ainda é reduzido pelo que as etapas anteriores da rodada já gastaram (orcamento.js): afiliados
 // roda por último e usa min(16, 50 - gasto - 4).
 // A ordem é fechamento, resumo, faltam; cada parte só começa se o orçamento restante comporta uma unidade.
-// Cron a cada 10 min = até 18 fechamentos por hora; o que sobrar fica para a rodada seguinte.
+// Cron a cada 10 min = até 12 fechamentos por hora; o que sobrar fica para a rodada seguinte.
 import { fecharMes } from '../../lib/afiliados/fechamento.js'
 import { calcularNivel, niveisDoMes } from '../../lib/afiliados/niveis.js'
 import { saldosDoAfiliado, SQL_VENDA_VALIDA } from '../../lib/afiliados/status.js'
@@ -19,11 +20,11 @@ import { normalizarEmailLembrete } from '../../lib/lembrete-assinatura.js'
 import { LIMITE_D1, MARGEM, consultasGastas } from './orcamento.js'
 
 export const ORCAMENTO = 16
-const FECHAMENTOS = 3
+const FECHAMENTOS = 2
 const RESUMOS = 5
 const FALTAM = 5
 const CONSULTAS_FECHAR_FIXAS = 3
-const CONSULTAS_POR_AFILIADO = 4
+const CONSULTAS_POR_AFILIADO = 5
 const TENTATIVAS = 3
 const JANELA_HORAS = 20 // a chave do Resend vale 24 h
 const DIAS_FINAIS = 5
@@ -147,8 +148,7 @@ export async function enviarResumos(env, o, agora, fetchImpl, logger = console) 
       if (!reserva.meta.changes) continue
       const nivel = JSON.parse(x.niveis_snapshot).nivel?.nome || null
       const corpo = montarResumoFechamento(
-        { para: x.email, nome: x.nome, mes: x.mes_referencia, vendas: x.vendas_validas, nivel, base: x.base_centavos,
-          bonus: x.bonus_centavos, total: x.total_centavos, disponivel: saldo },
+        { para: x.email, nome: x.nome, mes: x.mes_referencia, vendas: x.vendas_validas, nivel, total: x.total_centavos, disponivel: saldo },
         env,
       )
       if (primeira) {
@@ -202,10 +202,13 @@ export async function avisarFaltam(env, o, agora, fetchImpl, logger = console) {
         try {
           const c = calcularNivel(x.n, niveis, null)
           if (!c.proximo || c.faltam < 1 || c.faltam > FALTAM_MAXIMO) continue
-          const dados = { vendas: x.n, faltam: c.faltam, proximo: c.proximo.nome }
+          const dados = {
+            vendas: x.n, faltam: c.faltam, proximo: c.proximo.nome,
+            valorHoje: c.total, valorSeBater: c.proximo.vendas_minimas * c.proximo.valor_por_venda_centavos,
+          }
           const titulo = `Faltam ${c.faltam} ${c.faltam === 1 ? 'venda' : 'vendas'} para o nível ${c.proximo.nome}`
           const g = await gravarAviso(o, x.id, tipo, titulo,
-            `Você tem ${x.n} vendas em ${nomeDoMes(mes)}. Todas passam a valer o nível ${c.proximo.nome} se você chegar lá.`,
+            `Você tem ${x.n} vendas em ${nomeDoMes(mes)}. Todas passam a valer o nível ${c.proximo.nome} se você chegar lá: seu mês vai de ${reais(c.total)} para ${reais(c.proximo.vendas_minimas * c.proximo.valor_por_venda_centavos)}.`,
             JSON.stringify(dados))
           r.avisos += g.meta.changes
         } catch (erro) {
@@ -248,7 +251,7 @@ export async function avisarFaltam(env, o, agora, fetchImpl, logger = console) {
         .run()
       if (!reserva.meta.changes) continue
       const d = JSON.parse(v.email_dados)
-      const corpo = montarFaltamVendas({ para: v.email, nome: v.nome, mes, vendas: d.vendas, faltam: d.faltam, proximo: d.proximo }, env)
+      const corpo = montarFaltamVendas({ para: v.email, nome: v.nome, mes, vendas: d.vendas, faltam: d.faltam, proximo: d.proximo, valorHoje: d.valorHoje, valorSeBater: d.valorSeBater }, env)
       await enviarResend(env, fetchImpl, corpo, `afiliado-faltam:${v.afiliado_id}:${mes}`, logger)
       await o.db.prepare('UPDATE afiliados_avisos SET email_enviado_em = ? WHERE id = ?').bind(agoraTxt, v.id).run()
       r.enviados += 1

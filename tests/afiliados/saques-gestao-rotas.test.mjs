@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { registerHooks } from 'node:module'
-import { novoDb, novoAfiliado, vendas, FECHA } from './_base.mjs'
+import { novoDb, novoAfiliado, vendas, FECHA, fechar } from './_base.mjs'
 import { pedirSaque } from '../../lib/afiliados/saque.js'
 
 const modulo = (codigo) => 'data:text/javascript,' + encodeURIComponent(codigo)
@@ -71,6 +71,7 @@ function montar() {
 async function comSaque(db) {
   const af = novoAfiliado(db)
   await vendas(db, af, 2)
+  await fechar(db)
   const s = await pedirSaque(db, af.id, FECHA)
   return { af, id: s.saqueId, valor: s.valor_centavos }
 }

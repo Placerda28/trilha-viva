@@ -97,6 +97,16 @@ O `metadata` do Mercado Pago já leva `cupom` e `referencia` (UUID = `external_r
 - A Fase 2 foi revisada (Fase 2b) depois do Codex achar 6 bugs; todos corrigidos com teste (ver `tests/afiliados/`).
 - Fase 2c (2ª revisão do Codex): o INSERT do fechamento só grava se as vendas do mês (válidas e total) continuam iguais dentro do lote; senão recalcula e tenta de novo (3 vezes) e, esgotado, devolve o afiliado em `pendentes` para o botão manual repetir. `estornarVenda` devolve `acao`/`criado` exatos pelos resultados do lote (`RETURNING`). Testes novos em `tests/afiliados/fechamento.test.mjs`.
 
+## Decisão do dono (05/11/2026): saque mensal, saldo a receber
+Palavras dele: "Liberar para saque uma vez por mês: o pagamento do mês anterior pode ser solicitado todo dia 08. Não tem venda + bônus; tratar dessa forma fica confuso. Tem que ser saldo a receber, que será em cima da meta batida." (O programa já estava no ar desde 05/11.)
+- Durante o mês cada venda continua gerando lançamento, mas NADA fica disponível antes do fechamento. O afiliado só vê o "a receber" do mês (vendas válidas x valor do nível atingido, retroativo).
+- No fechamento (`dia_fechamento`, hoje 8) o total do mês (base + bônus, reembolsos de antes já descontados) fica disponível de uma vez. Base e bônus continuam como escrituração só para a Gestão.
+- Saque: 1 pedido por CICLO, do `dia_fechamento` (8) até o dia 7 do mês seguinte (Brasília), sempre do saldo disponível inteiro. Substitui o intervalo de 15 dias. Recusado não conta. Esqueceu de pedir entre 08/11 e 30/11? Em 03/12 pede na hora (ainda é o ciclo de 08/11); em 08/12 começa outro ciclo (decisão do dono, 05/11).
+- `carencia_dias` e `intervalo_saque_dias` deixaram de valer (colunas ficam na tabela, sem uso, fora da tela e da validação). `carencia_dias` não serve para mais nada.
+- Fora da Gestão não se fala mais em "garantido", "bônus de nível", "base" nem "liberando em 7 dias".
+- Como ficou (código): `disponivel_em` das vendas de mês aberto = marcador `9999-12-31 23:59:59`; `fecharMes` troca por `fechado_em` no mesmo batch; migração `0022_afiliados_saque_mensal.sql` ajusta lançamentos já gravados. Contrato, motivos de bloqueio e limites: `docs/architecture.md`, "Afiliados: saque mensal". Falta (outro agente): telas e textos (`components/afiliados/**`, `components/gestao/afiliados/**`, `app/afiliados/page.js`, `lib/afiliados-painel.js`, `lib/afiliados-simulador.js`).
+- Regra para quem mexer depois: o saldo lê `disponivel_em <= agora` e mais nada; nunca decidir saldo pela data prevista do fechamento.
+
 ## Decisões do Paulo (04/11/2026, 2ª rodada)
 1. **Pedido de reembolso tira o acesso ao acervo.** Na Fase 4:
    - `refunded`, `charged_back` e `in_mediation` (o pedido aberto pelo comprador) mudam `compras.status` e tiram o acesso.

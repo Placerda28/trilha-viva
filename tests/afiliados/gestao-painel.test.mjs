@@ -102,14 +102,14 @@ test('afiliados: contagens, nível do mês e perto de subir', async () => {
 test('dinheiro a pagar', async () => {
   const { d } = await dados()
   const m = d.dinheiro
-  // Disponível (soma do saldo positivo de cada afiliado, carência de 7 dias vencida em 30/11):
-  // A4 20x1500 + bônus 10000 = 40000; A1 5x1500 + 48x1500 = 79500; A2 2x1500 - 500 (ajuste) = 2500; A3 51x1500 - 1500 (estorno) = 75000 -> 197000
-  assert.equal(m.disponivel_centavos, 197000)
-  // Liberando: só a venda de A2 de 30/11 23:30 (libera em 08/12) = 1500, que também cai nos próximos 15 dias
-  assert.equal(m.liberando_centavos, 1500)
+  // Disponível (soma do saldo positivo de cada afiliado): só outubro, que já fechou. Novembro só libera em 08/12.
+  // A4 20x1500 + bônus 10000 = 40000; A1 5x1500 (outubro) = 7500; A2 só tem o ajuste de -500 e A3 só o estorno de -1500: saldo negativo vale 0 -> 47500
+  assert.equal(m.disponivel_centavos, 47500)
+  // A liberar no fechamento de novembro (base de cada venda): A1 48 + A2 3 + A3 51 (a estornada ainda tem a base) = 102 x 1500
+  assert.equal(m.liberando_centavos, 153000)
   // Bônus previsto de novembro (fecha em 08/12): A1 48x(2000-1500) = 24000 + A3 50x(3000-1500) = 75000 -> 99000. Outubro já fechou.
   assert.deepEqual(m.bonus_previsto, { total_centavos: 99000, partes: [{ mes: '2026-11', valor_centavos: 99000, fecha_em: '2026-12-08' }] })
-  assert.deepEqual(m.previsao_15_dias, { libera_centavos: 1500, bonus_centavos: 99000, total_centavos: 100500 })
+  assert.deepEqual(m.previsao_15_dias, { libera_centavos: 153000, bonus_centavos: 99000, total_centavos: 252000 })
   assert.deepEqual(m.saques_pendentes, { quantidade: 1, valor_centavos: 12345 })
   assert.deepEqual(m.pago_no_periodo, { quantidade: 1, valor_centavos: 40000 })
   assert.deepEqual(m.pago_desde_o_inicio, { quantidade: 2, valor_centavos: 60000 })

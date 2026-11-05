@@ -5,7 +5,7 @@ import { mesLongo, ordenarNiveis } from '../painelUtil'
 
 // Os dois blocos de texto do Dashboard: "Afiliados" (quantos são, quem vendeu,
 // em que nível está) e "Dinheiro a pagar" (o que já dá para sacar, o que ainda
-// está na carência e o bônus previsto). Tudo vem calculado do servidor.
+// ainda vai fechar e a previsão do próximo fechamento). Tudo vem calculado do servidor.
 
 function Linha({ rotulo, valor, detalhe, href }) {
   const corpo = (
@@ -77,8 +77,8 @@ export function BlocoDinheiro({ d }) {
   return (
     <Caixa titulo="Dinheiro a pagar" id="titulo-dinheiro">
       <dl className="mt-2 divide-y divide-line">
-        <Linha rotulo="Disponível para saque" valor={moeda(d.disponivel_centavos)} detalhe="já passou da carência" />
-        <Linha rotulo="Liberando" valor={moeda(d.liberando_centavos)} detalhe="ainda na carência" />
+        <Linha rotulo="Disponível para saque" valor={moeda(d.disponivel_centavos)} detalhe="de meses já fechados" />
+        <Linha rotulo="A liberar no fechamento" valor={moeda(d.liberando_centavos)} detalhe="vendas dos meses ainda abertos, só a base" />
         <Linha
           rotulo="Saques esperando pagamento"
           valor={moeda(d.saques_pendentes.valor_centavos)}
@@ -109,10 +109,10 @@ export function BlocoDinheiro({ d }) {
       </div>
 
       <div className="mt-3 rounded bg-paper px-3 py-3">
-        <h3 className="text-[14.5px] font-semibold text-ink">Previsão para os próximos 15 dias</h3>
+        <h3 className="text-[14.5px] font-semibold text-ink">Próximo fechamento</h3>
         <p className="figs mt-1 text-[20px] font-bold leading-none text-ink">{moeda(prev.total_centavos)}</p>
         <p className="figs mt-1.5 text-[13px] text-ink-muted">
-          {moeda(prev.libera_centavos)} saem da carência e {moeda(prev.bonus_centavos)} de bônus
+          {moeda(prev.libera_centavos)} de base e {moeda(prev.bonus_centavos)} de bônus entram no saldo
         </p>
       </div>
     </Caixa>

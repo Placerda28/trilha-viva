@@ -5,11 +5,12 @@ import { statusDoMes } from '../../lib/afiliados/status.js'
 import { pedirSaque } from '../../lib/afiliados/saque.js'
 import { gravarComprovante, marcarPago } from '../../lib/afiliados/saques-gestao.js'
 import { caminhoDoComprovante } from '../../lib/b2-envio.js'
-import { novoAfiliado, novoDb, vendas } from './_base.mjs'
+import { fechar, novoAfiliado, novoDb, vendas } from './_base.mjs'
 
 const AGORA = new Date('2026-11-20T15:00:00Z')
 const MES = '2026-11'
 
+// Todos menos D têm vendas de outubro, já fechadas em 09/11: é o saldo que dá para sacar em 20/11 (novembro só fecha em 08/12).
 // A=3 (Bronze), B=21 menos 1 estorno = 20 (Prata), C=50 (Ouro), D=0, E=19 (Bronze, falta 1). A tem saque pago, E tem saque pendente.
 async function cenario() {
   const db = novoDb()
@@ -22,6 +23,12 @@ async function cenario() {
   const idsB = await vendas(db, b, 21)
   await vendas(db, c, 50)
   await vendas(db, e, 19)
+  const OUT = new Date('2026-10-10T15:00:00Z')
+  await vendas(db, a, 3, OUT)
+  await vendas(db, e, 2, OUT)
+  await vendas(db, b, 2, OUT) // B e C ficam com saldo livre de outubro, sem sacar (B ainda desconta o estorno de R$ 20)
+  await vendas(db, c, 1, OUT)
+  await fechar(db, '2026-10', new Date('2026-11-09T12:00:00Z'))
   db.banco
     .prepare("INSERT INTO afiliados_lancamentos (afiliado_id, compra_id, tipo, mes_referencia, valor_centavos, status) VALUES (?, ?, 'estorno', ?, -2000, 'pendente')")
     .run(b.id, idsB[0], MES)

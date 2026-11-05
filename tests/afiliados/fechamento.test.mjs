@@ -74,27 +74,23 @@ test('comissão base repetida para a mesma compra não duplica', async () => {
   assert.equal(contar(db, "SELECT COUNT(*) n FROM afiliados_lancamentos WHERE tipo = 'venda'"), 1)
 })
 
-test('base libera só após 7 dias; bônus disponível na hora do fechamento', async () => {
+test('só o fechamento libera dinheiro: fechamento atrasado nunca libera antes, e libera o mês todo (base + bônus)', async () => {
   const db = novoDb()
   db.banco.prepare('UPDATE afiliados_config SET dia_fechamento = 1').run()
   const af = novoAfiliado(db)
   await vendas(db, af, 20, new Date('2026-11-30T15:00:00Z'))
-  const dia6 = new Date('2026-12-06T15:00:00Z')
-  const dia7 = new Date('2026-12-07T15:00:00Z')
-  let s = await statusDoMes(db, af.id, '2026-11', dia6)
-  assert.equal(s.saldos.disponivel, 0)
-  assert.equal(s.saldos.liberando, 30000)
-  assert.equal(s.saldos.proximaLiberacao, '2026-12-07 15:00:00')
-  s = await statusDoMes(db, af.id, '2026-11', dia7)
-  assert.equal(s.saldos.disponivel, 30000)
-  assert.equal(s.saldos.liberando, 0)
-
-  // Fecha no dia 1, antes de a base liberar: o bônus já está disponível, a base não.
-  const dia1 = new Date('2026-12-01T12:00:00Z')
-  await fecharMes(db, '2026-11', dia1)
-  s = await statusDoMes(db, af.id, '2026-11', dia1)
-  assert.equal(s.saldos.disponivel, 10000)
-  assert.equal(s.saldos.liberando, 30000)
+  // 15 dias sem fechar (robô atrasado): continua tudo a liberar
+  for (const quando of ['2026-12-01T12:00:00Z', '2026-12-07T15:00:00Z', '2026-12-15T15:00:00Z']) {
+    const s = await statusDoMes(db, af.id, '2026-11', new Date(quando))
+    assert.deepEqual([s.saldos.disponivel, s.saldos.liberando], [0, 30000], quando)
+  }
+  const fechou = new Date('2026-12-16T12:00:00Z')
+  await fecharMes(db, '2026-11', fechou)
+  const s = await statusDoMes(db, af.id, '2026-11', fechou)
+  assert.deepEqual([s.saldos.disponivel, s.saldos.liberando], [40000, 0])
+  // repetir o fechamento não mexe em nada
+  await fecharMes(db, '2026-11', new Date('2026-12-17T12:00:00Z'))
+  assert.equal(db.banco.prepare("SELECT DISTINCT disponivel_em d FROM afiliados_lancamentos").all().map((x) => x.d).join(), '2026-12-16 12:00:00')
 })
 
 test('fechar mês que ainda não pode ser fechado é recusado com mensagem', async () => {
@@ -153,7 +149,7 @@ test('venda aprovada depois do fechamento do mês recebe o valor do nível fecha
   const l = db.banco.prepare("SELECT * FROM afiliados_lancamentos WHERE compra_id = ? AND tipo = 'venda'").get(id)
   assert.equal(l.mes_referencia, '2026-11')
   assert.equal(l.valor_centavos, 2000) // Prata fechado, não os 1500 do Bronze
-  assert.equal(l.disponivel_em, '2026-12-07 23:00:00')
+  assert.equal(l.disponivel_em, '2026-11-30 23:00:00') // mês já fechado: disponível na hora da aprovação (já passou)
   const s = await statusDoMes(db, af.id, '2026-11', FECHA)
   assert.equal(s.vendasValidas, 20)
   assert.equal(s.nivel.nome, 'Prata')

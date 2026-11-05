@@ -41,11 +41,7 @@ export default async function AfiliadoPage() {
           dados: painel,
           niveis,
           avisarCadaVenda: Number(pref?.v) === 1,
-          config: config && {
-            carenciaDias: config.carencia_dias,
-            diaFechamento: config.dia_fechamento,
-            intervaloSaqueDias: config.intervalo_saque_dias,
-          },
+          config: config && { diaFechamento: config.dia_fechamento },
         }}
         nome={afiliado.nome || cliente.nome}
         afiliado={{

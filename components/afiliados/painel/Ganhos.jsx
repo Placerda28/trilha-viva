@@ -1,14 +1,14 @@
 'use client'
 
 import { reais } from '@/lib/afiliados-campos'
-import { dataBr, diaMes, reaisSinal, rotuloMesCurto, rotuloMes } from '@/lib/afiliados-painel'
+import { dataBr, reaisSinal, rotuloMes, rotuloMesCurto, situacaoMes } from '@/lib/afiliados-painel'
 import Ajuda from './Ajuda'
 import { useDados } from './api'
 import { Carregando, Falhou } from './Carregando'
 import Medalha from './Medalha'
+import { Selo } from './Situacao'
 
-const TIPOS = { venda: 'Venda', bonus_nivel: 'Bônus de nível', ajuste: 'Ajuste', estorno: 'Estorno' }
-const STATUS = { pendente: 'Aguardando', em_saque: 'Em saque', paga: 'Paga', cancelada: 'Cancelada' }
+const TIPOS = { ajuste: 'Ajuste', estorno: 'Devolução depois do fechamento' }
 
 function Nivel({ nivel, niveis }) {
   if (!nivel) return <span className="text-ink-muted">Sem nível</span>
@@ -23,16 +23,12 @@ function Nivel({ nivel, niveis }) {
 }
 
 function Situacao({ h }) {
-  return h.situacao === 'em_andamento' ? 'Em andamento' : `Fechado em ${diaMes(h.fechadoEm)}`
-}
-
-function Bonus({ h }) {
-  if (!h.bonus) return <span className="text-ink-muted">—</span>
+  const s = situacaoMes(h)
   return (
-    <>
-      {reais(h.bonus)}
-      {h.situacao === 'em_andamento' && <span className="text-ink-muted"> (previsto)</span>}
-    </>
+    <span className="inline-flex flex-col items-start gap-1.5">
+      <Selo chave={s.chave} texto={s.texto} />
+      {s.detalhe && <span className="text-[13.5px] text-ink-muted">{s.detalhe}</span>}
+    </span>
   )
 }
 
@@ -42,8 +38,8 @@ function Historico({ historico, niveis }) {
       <h2 id="hist-titulo" className="text-[17px] font-bold text-ink">
         Mês a mês{' '}
         <Ajuda titulo="Como o mês fecha">
-          <p>No dia 1º o mês recomeça. Quando ele fecha, o nível que você atingiu é gravado e o bônus entra na sua conta.</p>
-          <p>Enquanto o mês está em andamento, o bônus é só uma previsão.</p>
+          <p>No dia 1º o mês recomeça. Quando ele fecha, o nível que você atingiu é gravado e o total do mês fica disponível de uma vez.</p>
+          <p>Enquanto o mês está em andamento, o total é só uma previsão: ele muda com as vendas e com as devoluções.</p>
         </Ajuda>
       </h2>
 
@@ -54,12 +50,10 @@ function Historico({ historico, niveis }) {
               <p className="text-[16px] font-bold text-ink">{rotuloMes(h.mes)}</p>
               <p className="figs text-[24px] font-extrabold leading-none text-ink">{reais(h.total)}</p>
             </div>
-            <p className="mt-1 text-[14px] text-ink-muted"><Situacao h={h} /></p>
+            <div className="mt-2.5"><Situacao h={h} /></div>
             <dl className="figs mt-3 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 text-[15px]">
-              <dt className="text-ink-muted">Vendas válidas</dt><dd className="text-right font-semibold text-ink">{h.vendasValidas}</dd>
+              <dt className="text-ink-muted">Vendas que contaram</dt><dd className="text-right font-semibold text-ink">{h.vendasValidas}</dd>
               <dt className="text-ink-muted">Nível</dt><dd className="text-right"><Nivel nivel={h.nivel} niveis={niveis} /></dd>
-              <dt className="text-ink-muted">Garantido</dt><dd className="text-right font-semibold text-ink">{reais(h.garantido)}</dd>
-              <dt className="text-ink-muted">Bônus de nível</dt><dd className="text-right font-semibold text-ink"><Bonus h={h} /></dd>
             </dl>
           </li>
         ))}
@@ -70,11 +64,9 @@ function Historico({ historico, niveis }) {
         <thead>
           <tr className="border-b border-line text-[13.5px] text-ink-muted">
             <th scope="col" className="py-3 pr-4 font-semibold">Mês</th>
-            <th scope="col" className="py-3 pr-4 text-right font-semibold">Vendas válidas</th>
+            <th scope="col" className="py-3 pr-4 text-right font-semibold">Vendas que contaram</th>
             <th scope="col" className="py-3 pr-4 font-semibold">Nível</th>
-            <th scope="col" className="py-3 pr-4 text-right font-semibold">Garantido</th>
-            <th scope="col" className="py-3 pr-4 text-right font-semibold">Bônus de nível</th>
-            <th scope="col" className="py-3 pr-4 text-right font-semibold">Total do mês</th>
+            <th scope="col" className="py-3 pr-6 text-right font-semibold">Total do mês</th>
             <th scope="col" className="py-3 font-semibold">Situação</th>
           </tr>
         </thead>
@@ -84,10 +76,8 @@ function Historico({ historico, niveis }) {
               <th scope="row" className="py-3.5 pr-4 font-semibold text-ink">{rotuloMesCurto(h.mes)}</th>
               <td className="py-3.5 pr-4 text-right text-ink">{h.vendasValidas}</td>
               <td className="py-3.5 pr-4"><Nivel nivel={h.nivel} niveis={niveis} /></td>
-              <td className="py-3.5 pr-4 text-right text-ink">{reais(h.garantido)}</td>
-              <td className="py-3.5 pr-4 text-right text-ink"><Bonus h={h} /></td>
-              <td className="py-3.5 pr-4 text-right font-extrabold text-ink">{reais(h.total)}</td>
-              <td className="py-3.5 text-ink-muted"><Situacao h={h} /></td>
+              <td className="py-3.5 pr-6 text-right font-extrabold text-ink">{reais(h.total)}</td>
+              <td className="py-3.5"><Situacao h={h} /></td>
             </tr>
           ))}
         </tbody>
@@ -96,17 +86,18 @@ function Historico({ historico, niveis }) {
   )
 }
 
-function Extrato({ itens }) {
+function Ajustes({ itens }) {
   return (
-    <section className="card-line px-5 py-6 sm:px-8" aria-labelledby="extrato-titulo">
-      <h2 id="extrato-titulo" className="text-[17px] font-bold text-ink">
-        Extrato{' '}
-        <Ajuda titulo="Extrato">
-          <p>Cada linha é uma entrada ou uma saída da sua conta de afiliado, na ordem em que aconteceu. Valores negativos são descontos, como o de uma venda devolvida.</p>
+    <section className="card-line px-5 py-6 sm:px-8" aria-labelledby="ajustes-titulo">
+      <h2 id="ajustes-titulo" className="text-[17px] font-bold text-ink">
+        Ajustes{' '}
+        <Ajuda titulo="Ajustes">
+          <p>Aqui aparecem só dois tipos de lançamento: correções feitas pela equipe e o desconto de uma compra devolvida depois que o mês já tinha fechado.</p>
+          <p>Valores negativos saem do seu saldo. As vendas do dia a dia não aparecem aqui: elas entram no total do mês.</p>
         </Ajuda>
       </h2>
       {itens.length === 0 ? (
-        <p className="py-6 text-[15px] text-ink-muted">Nada por aqui ainda. As vendas e os bônus aparecem nesta lista.</p>
+        <p className="py-4 text-[15px] leading-[1.55] text-ink-muted">Nenhum ajuste por enquanto. Se uma correção ou uma devolução depois do fechamento mexer no seu saldo, ela aparece aqui.</p>
       ) : (
         <ul className="mt-2 divide-y divide-line">
           {itens.map((e) => (
@@ -114,8 +105,7 @@ function Extrato({ itens }) {
               <div className="min-w-0">
                 <p className="text-[15.5px] font-semibold leading-snug text-ink">{e.descricao || TIPOS[e.tipo] || 'Lançamento'}</p>
                 <p className="mt-0.5 text-[13.5px] text-ink-muted">
-                  {TIPOS[e.tipo] || e.tipo} · {dataBr(e.criado_em)}
-                  {e.status === 'pendente' && e.disponivel_em ? ` · libera em ${diaMes(e.disponivel_em)}` : STATUS[e.status] ? ` · ${STATUS[e.status].toLowerCase()}` : ''}
+                  {e.descricao ? `${TIPOS[e.tipo] || e.tipo}, ` : ''}{dataBr(e.criado_em)}
                 </p>
               </div>
               <p className={`figs shrink-0 text-[17px] font-extrabold leading-snug ${e.valor_centavos < 0 ? 'text-signal-deep' : 'text-ink'}`}>
@@ -143,7 +133,7 @@ export default function Ganhos({ niveis }) {
       ) : (
         <Historico historico={dados.historico} niveis={niveis} />
       )}
-      <Extrato itens={dados.extrato} />
+      <Ajustes itens={dados.ajustes || []} />
     </div>
   )
 }

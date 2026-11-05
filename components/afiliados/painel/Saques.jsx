@@ -49,23 +49,32 @@ function Linha({ s }) {
   )
 }
 
-export default function Saques() {
+export default function Saques({ config }) {
   const { dados, erro, carregando, recarregar } = useDados('/api/afiliados/saques')
   if (carregando && !dados) return <Carregando />
   if (erro) return <Falhou onTentar={recarregar} />
   const proximo = dados.proximoSaqueEm
+  const dia = String(Number(config?.diaFechamento ?? 8))
   const aberto = dados.itens.some((x) => x.status === 'solicitado')
   return (
     <div className="space-y-5">
       <div className="card-cut px-5 py-6 sm:px-8">
         <h2 className="text-[17px] font-bold text-ink">
-          {aberto ? 'Você tem um saque em análise' : proximo ? `Próximo saque liberado em ${diaMes(proximo)}` : 'Você já pode pedir um saque'}{' '}
-          <Ajuda titulo="Intervalo entre saques">
-            <p>Para o pagamento ficar organizado, só dá para pedir um saque por vez e há um intervalo entre um pedido e o seguinte.</p>
+          {aberto ? 'Você tem um saque em análise' : proximo ? `Próximo saque a partir de ${diaMes(proximo)}` : 'Você já pode pedir um saque'}{' '}
+          <Ajuda titulo="Saque mensal">
+            <p>A partir do dia {dia} você pede o pagamento do mês anterior, uma vez por mês. O pedido leva sempre o valor inteiro que está disponível.</p>
+            <p>Esqueceu de pedir no dia {dia}? Dá para pedir depois, até {Number(dia) > 1 ? `o dia ${String(Number(dia) - 1)} do mês seguinte` : 'o último dia do mês'}. O valor continua guardado.</p>
           </Ajuda>
         </h2>
         <p className="mt-1.5 text-[14.5px] leading-[1.55] text-ink-muted">
-          {aberto ? 'Você pode pedir outro depois que ele for pago.' : proximo ? 'Até lá o valor continua guardado e disponível para você.' : 'O pedido é feito na aba Início, no cartão Disponível para sacar.'}
+          {aberto
+            ? 'Você acompanha o pagamento na lista abaixo.'
+            : proximo
+              ? 'Até lá o valor continua guardado e disponível para você.'
+              : 'O pedido é feito na aba Início, no cartão Disponível para sacar.'}
+        </p>
+        <p className="mt-3 border-t border-line pt-3 text-[14.5px] leading-[1.55] text-ink">
+          A regra: a partir do dia {dia} você pede o pagamento do mês anterior, uma vez por mês, com o valor inteiro disponível, por Pix.
         </p>
       </div>
 

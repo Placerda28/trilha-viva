@@ -4,11 +4,11 @@ import Ajuda from './Ajuda'
 // Cada situação tem cor (ponto), texto e fundo suave; o texto é sempre escuro
 // sobre o fundo claro, então passa de AA sem depender da cor do ponto.
 const TONS = {
-  liberando: { ponto: '#D97706', fundo: '#FEF3C7', texto: '#6B3F00' },
-  disponivel: { ponto: '#16A34A', fundo: '#DCFCE7', texto: '#0F4A26' },
-  em_saque: { ponto: '#2563EB', fundo: '#DBEAFE', texto: '#183A8C' },
+  conta: { ponto: '#0D0D0D', fundo: '#EDEDED', texto: '#1A1A1A' },
   paga: { ponto: '#FFFFFF', fundo: '#E7E8EB', texto: '#2B2B2B', aro: '#6B7280' },
   cancelada: { ponto: '#E5152D', fundo: '#FDEDEF', texto: '#8F0C1D' },
+  em_andamento: { ponto: '#D97706', fundo: '#FEF3C7', texto: '#6B3F00' },
+  disponivel: { ponto: '#16A34A', fundo: '#DCFCE7', texto: '#0F4A26' },
   solicitado: { ponto: '#D97706', fundo: '#FEF3C7', texto: '#6B3F00' },
   pago: { ponto: '#16A34A', fundo: '#DCFCE7', texto: '#0F4A26' },
   recusado: { ponto: '#E5152D', fundo: '#FDEDEF', texto: '#8F0C1D' },
@@ -38,7 +38,7 @@ export default function SituacaoVenda({ item }) {
       <Selo chave={s.chave} texto={s.texto} />
       {s.chave === 'cancelada' && (
         <Ajuda titulo="Venda cancelada">
-          <p>A compra foi devolvida ao comprador, por isso ela não conta para a sua meta e a comissão sai.</p>
+          <p>A compra foi devolvida ao comprador, por isso ela deixou de contar para a sua meta do mês.</p>
         </Ajuda>
       )}
     </span>

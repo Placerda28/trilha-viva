@@ -16,9 +16,7 @@ import { Anotacoes, HistoricoAcoes } from './FichaNotas'
 import FichaPainel from './FichaPainel'
 
 // A ficha de um afiliado (Gestão > Afiliados > Afiliados, com ?afiliado=<id>).
-// Busca a ficha e as configurações juntas (a carência e o dia do fechamento
-// entram nos cartões do mini painel). Depois de qualquer ação a ficha é
-// buscada de novo, sem esconder a tela.
+// Depois de qualquer ação a ficha é buscada de novo, sem esconder a tela.
 
 const ABAS = [
   ['meses', 'Meses'],
@@ -53,10 +51,9 @@ export default function Ficha({ id, master, voltar }) {
   const [tentativa, setTentativa] = useState(0)
   const [aberta, setAberta] = useState(null)
   const { dados, erro } = useBusca(async (api, sinal) => {
-    const [f, c] = await Promise.all([api.ficha(id, sinal), api.config(sinal)])
+    const f = await api.ficha(id, sinal)
     // 404 com texto = afiliado inexistente; 404 sem texto = sessão caída (a casca mostra "entre de novo").
-    if (!f.ok) return f.status === 404 && f.dados?.erro ? { ok: false, status: 409, dados: f.dados } : f
-    return { ...f, dados: { ...f.dados, config: c.ok ? c.dados : null } }
+    return !f.ok && f.status === 404 && f.dados?.erro ? { ok: false, status: 409, dados: f.dados } : f
   }, [id, tentativa])
   const atualizar = () => setTentativa((n) => n + 1)
 
@@ -84,7 +81,7 @@ export default function Ficha({ id, master, voltar }) {
       <Topo a={a} painel={painel} voltar={voltar} />
       <FichaAcoes afiliado={a} painel={painel} master={master} aoMudou={atualizar} aberta={aberta} setAberta={setAberta} />
       <FichaDados afiliado={a} master={master} />
-      <FichaPainel painel={painel} config={dados.config} nome={a.nome} />
+      <FichaPainel painel={painel} nome={a.nome} />
 
       <Tabs.Root defaultValue="meses">
         <Tabs.List aria-label="Histórico do afiliado" className="-mx-4 flex overflow-x-auto border-b border-line px-1 md:mx-0 md:px-0">

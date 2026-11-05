@@ -7,6 +7,7 @@ import { readdirSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { cenario, entrarComo, sair, redeFalsa, req, ctx, HOST, MASTER_EMAIL, MEMBRO_EMAIL, CPF, PIX } from './_seg.mjs'
+import { fecharMes } from '../../lib/afiliados/fechamento.js'
 
 const rotasEm = (raiz) => {
   const achar = (dir) =>
@@ -114,6 +115,7 @@ test('A não lê, não saca, não troca Pix e não baixa comprovante de B (o id 
 
     // Saque: sai o saldo de A (2 vendas x R$ 15) e os lançamentos de B ficam como estavam.
     const pendentesB = () => c.db.banco.prepare("SELECT COUNT(*) AS n FROM afiliados_lancamentos WHERE afiliado_id = ? AND status = 'pendente'").get(c.B.id).n
+    await fecharMes(c.db, '2026-11', new Date('2026-12-09T12:00:00Z')) // novembro fechou: as 2 vendas de A (e de B) ficam disponíveis
     const antesB = pendentesB()
     const sq = await rota(AFIL, 'saque').POST(req('POST', { corpo: { afiliado_id: c.B.id } }))
     assert.equal(sq.status, 200)
@@ -142,11 +144,12 @@ test('membro: ações restritas ao master dão 403/404 e não mudam nada; aprova
   assert.deepEqual({ ...estado() }, antes)
   assert.equal(c.db.banco.prepare("SELECT COUNT(*) AS n FROM afiliados_lancamentos WHERE tipo = 'ajuste'").get().n, 0)
   // Rotas inteiras de master: 404 do Next, sem gravar.
-  await nao(() => rota(GEST, 'config').POST(req('POST', { corpo: { carencia_dias: 0 } })))
+  const fechadosAntes = c.db.banco.prepare('SELECT COUNT(*) AS n FROM afiliados_fechamentos').get().n
+  await nao(() => rota(GEST, 'config').POST(req('POST', { corpo: { dia_fechamento: 20 } })))
   await nao(() => rota(GEST, 'metas').POST(req('POST', { corpo: { niveis: [] } })))
   await nao(() => rota(GEST, 'fechamento').POST(req('POST', { corpo: { mes: '2026-11' } })))
-  assert.equal(c.db.banco.prepare('SELECT carencia_dias AS d FROM afiliados_config').get().d, 7)
-  assert.equal(c.db.banco.prepare('SELECT COUNT(*) AS n FROM afiliados_fechamentos').get().n, 0)
+  assert.equal(c.db.banco.prepare('SELECT dia_fechamento AS d FROM afiliados_config').get().d, 8)
+  assert.equal(c.db.banco.prepare('SELECT COUNT(*) AS n FROM afiliados_fechamentos').get().n, fechadosAntes)
   // O que o membro pode:
   assert.equal((await acao({ acao: 'anotar', texto: 'ligou pedindo ajuda' })).status, 200)
   c.db.banco.prepare("UPDATE afiliados SET status = 'pendente' WHERE id = ?").run(c.A.id)

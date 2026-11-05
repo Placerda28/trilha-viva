@@ -5,12 +5,13 @@ import { gravarComprovante, listarSaques, marcarPago, recusar } from '../../lib/
 import { enviarParaB2, caminhoValido, tipoPelosBytes } from '../../lib/b2-envio.js'
 import { montarSaquePago, montarSaqueRecusado } from '../../lib/emails-afiliado.js'
 import { consultarAvisos } from '../../lib/gestao/avisos.js'
-import { FECHA, contar, novoAfiliado, novoDb, vendas } from './_base.mjs'
+import { FECHA, contar, fechar, novoAfiliado, novoDb, vendas } from './_base.mjs'
 
 const AGORA = new Date('2026-12-10T12:00:00Z')
 
 async function saqueDe(db, af = novoAfiliado(db), n = 2) {
   await vendas(db, af, n)
+  await fechar(db)
   const r = await pedirSaque(db, af.id, FECHA)
   assert.equal(r.ok, true)
   return { af, id: r.saqueId, valor: r.valor_centavos }
@@ -108,7 +109,7 @@ test('recusar: motivo obrigatório, valores voltam ao saldo, aviso e pedirSaque 
   assert.equal((await recusar(db, { saqueId: id, motivo: 'Chave Pix não confere com o CPF', quem: 'x@t.com', agora: AGORA })).jaTratado, true)
   assert.equal(contar(db, 'SELECT COUNT(*) n FROM afiliados_avisos WHERE afiliado_id = ?', af.id), 1)
 
-  // recusado não conta no intervalo de 15 dias: dá para pedir de novo no dia seguinte, com o mesmo valor
+  // recusado não conta no limite de 1 saque por mês: dá para pedir de novo no dia seguinte, com o mesmo valor
   const novo = await pedirSaque(db, af.id, new Date('2026-12-09T12:00:00Z'))
   assert.deepEqual([novo.ok, novo.valor_centavos], [true, valor])
 })

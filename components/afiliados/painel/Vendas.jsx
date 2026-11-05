@@ -24,11 +24,9 @@ function Legenda() {
     <details className="mt-4 border-t border-line pt-1">
       <summary className="flex min-h-11 cursor-pointer items-center text-[14.5px] font-semibold text-ink">O que cada situação quer dizer</summary>
       <ul className="space-y-3 pb-3 pt-1 text-[14.5px] leading-[1.5] text-ink-muted">
-        <li><Selo chave="liberando" texto="Liberando em DD/MM" /> <span className="block pt-1.5">Esperando o prazo de segurança. Na data indicada ela fica disponível.</span></li>
-        <li><Selo chave="disponivel" texto="Disponível" /> <span className="block pt-1.5">Já pode entrar num pedido de saque.</span></li>
-        <li><Selo chave="em_saque" texto="Em saque" /> <span className="block pt-1.5">Está dentro de um saque que você pediu e ainda não foi pago.</span></li>
-        <li><Selo chave="paga" texto="Paga em DD/MM" /> <span className="block pt-1.5">Já caiu na sua conta por Pix.</span></li>
-        <li><Selo chave="cancelada" texto="Cancelada (reembolso)" /> <span className="block pt-1.5">A compra foi devolvida, por isso não conta para a meta nem rende comissão.</span></li>
+        <li><Selo chave="conta" texto="Conta para a meta" /> <span className="block pt-1.5">Entra na contagem de vendas do mês, que define o seu nível. O valor do mês fica disponível de uma vez, quando o mês fecha.</span></li>
+        <li><Selo chave="cancelada" texto="Cancelada (reembolso)" /> <span className="block pt-1.5">A compra foi devolvida, por isso não conta mais para a meta.</span></li>
+        <li><Selo chave="paga" texto="Paga em DD/MM" /> <span className="block pt-1.5">O mês dessa venda já foi pago a você por Pix.</span></li>
       </ul>
     </details>
   )
@@ -60,7 +58,7 @@ export default function Vendas({ mesAtual }) {
         {dados && (
           <dl className="mt-6 grid grid-cols-3 gap-4">
             <Numero rotulo="Vendas" valor={dados.resumo.total} ajuda={<Ajuda titulo="Vendas do mês"><p>Todas as compras feitas pelo seu código neste mês, inclusive as que foram devolvidas depois.</p></Ajuda>} />
-            <Numero rotulo="Canceladas" valor={dados.resumo.canceladas} ajuda={<Ajuda titulo="Vendas canceladas"><p>Compras que foram devolvidas ao comprador. Elas saem da sua conta e da sua meta.</p></Ajuda>} />
+            <Numero rotulo="Canceladas" valor={dados.resumo.canceladas} ajuda={<Ajuda titulo="Vendas canceladas"><p>Compras que foram devolvidas ao comprador. Elas saem da sua meta do mês.</p></Ajuda>} />
             <Numero rotulo="Contam para a meta" valor={dados.resumo.validas} ajuda={<Ajuda titulo="Contam para a meta"><p>É o total de vendas menos as canceladas. É esse número que define o seu nível no mês.</p></Ajuda>} />
           </dl>
         )}

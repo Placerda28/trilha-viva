@@ -102,6 +102,8 @@ test('rotuloFonte e agruparFontes dão nomes legíveis', () => {
 
 test('avisos: contadores, listas e membros só para o master, em um batch', async () => {
   const { b, db } = seed()
+  // A janela de 30 dias usa o relógio do SQLite: a compra com falha na Meta é datada em relação a hoje, não fixa em outubro.
+  b.exec("UPDATE compras SET criado_em = datetime('now', '-5 days') WHERE id = 2")
   const antes = db.lotes
   const master = await consultarAvisos(db, { master: true })
   assert.equal(db.lotes - antes, 3) // o menu + o lote dos contadores de afiliados + o lote do limite do robô

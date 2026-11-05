@@ -148,9 +148,7 @@ export function validarNiveis(linhas) {
 
 // ---- configurações ----------------------------------------------------------
 export const LIMITES_CONFIG = {
-  carencia_dias: [0, 90],
   dia_fechamento: [1, 28],
-  intervalo_saque_dias: [0, 90],
 }
 export const SAQUE_MINIMO_MAX = 1000000
 

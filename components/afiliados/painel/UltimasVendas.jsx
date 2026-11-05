@@ -10,8 +10,8 @@ export function UltimasVendas({ itens, irPara }) {
       <h2 id="ultimas-titulo" className="text-[17px] font-bold text-ink">
         Últimas vendas{' '}
         <Ajuda titulo="Situação da venda">
-          <p>O ponto colorido mostra em que pé está cada venda: liberando (esperando o prazo), disponível, em saque, paga ou cancelada.</p>
-          <p>A aba Minhas vendas explica cada cor.</p>
+          <p>Cada venda mostra uma de três situações: conta para a meta, cancelada (a compra foi devolvida) ou paga (já foi para um saque pago).</p>
+          <p>O dinheiro não é por venda: é o total do mês, que você vê no cartão A receber.</p>
         </Ajuda>
       </h2>
       <div className="md:hidden"><VendaLinhas itens={itens} resumida /></div>

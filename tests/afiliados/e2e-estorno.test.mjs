@@ -5,7 +5,7 @@
 // põe nas compras e nos eventos a data certa da história (em produção as duas coincidem).
 //
 // A CONTA (cada comprador paga R$ 89,90; taxa do Mercado Pago R$ 5,00; líquido R$ 84,90):
-//   20 vendas aprovadas em 10/11 -> Prata: garantido 20 x 15 = 300, bônus 20 x (20 - 15) = 100, total 400.
+//   20 vendas aprovadas em 10/11 -> Prata: 20 x 20 = 400 a receber (na Gestão: base 300 + bônus 100). Nada fica disponível antes do fechamento.
 //   1 reembolso ANTES do fechamento -> 19 vendas = Bronze: 19 x 15 = 285, bônus 0.
 //   Fechamento (8/12): Bronze, 19 vendas, base 285, bônus 0, total 285.
 //   1 chargeback DEPOIS (9/12): estorno de -15 (valor por venda do nível FECHADO). O nível do mês fica Bronze.
@@ -219,7 +219,7 @@ test('estorno e chargeback de ponta a ponta', async (t) => {
     assert.equal(lancs('venda')[0].status, 'cancelada')
     assert.equal(lancs('estorno').length, 0) // antes do fechamento é cancelamento, não estorno
     const p = await painel('2026-11-21T15:00:00Z')
-    assert.deepEqual([p.vendasValidas, p.nivel.nome, p.ganhos.garantido, p.ganhos.bonusPrevisto, p.ganhos.totalPrevisto], [19, 'Bronze', 28500, 0, 28500])
+    assert.deepEqual([p.vendasValidas, p.nivel.nome, p.aReceber.valor, p.disponivel], [19, 'Bronze', 28500, 0]) // a receber no fechamento; nada disponível antes
     assert.equal(p.proximo.nome, 'Prata')
     assert.equal(p.faltam, 1)
     assert.equal(await temCompra(clienteDe(0)), false) // quem pediu reembolso perde o acesso
@@ -258,7 +258,7 @@ test('estorno e chargeback de ponta a ponta', async (t) => {
 
   await t.test('8. o saldo desconta o estorno: 19 x 15 - 15 = R$ 270', async () => {
     const p = await painel('2026-12-09T16:00:00Z')
-    assert.equal(p.cartoes.disponivel, 27000)
+    assert.equal(p.disponivel, 27000)
     assert.deepEqual([p.saque.pode, p.saque.valor], [true, 27000])
   })
 
@@ -294,7 +294,7 @@ test('estorno e chargeback de ponta a ponta', async (t) => {
     assert.equal(link.headers.get('referrer-policy'), 'no-referrer')
     assert.match(link.headers.get('location'), /^https:\/\/dl\.b2\.test\/file\//)
     const p = await painel('2026-12-10T17:00:00Z')
-    assert.deepEqual([p.cartoes.disponivel, p.cartoes.jaRecebido], [0, 27000])
+    assert.deepEqual([p.disponivel, p.jaRecebido], [0, 27000])
   })
 
   await t.test('10. in_mediation seguido de approved devolve o acesso e a comissão (estorno -R$ 15 + devolução +R$ 15)', async () => {
@@ -312,12 +312,12 @@ test('estorno e chargeback de ponta a ponta', async (t) => {
     const dev = () => lancs('ajuste').filter((l) => l.descricao === `Devolução: compra #${compraDe(2).id} confirmada`)
     assert.deepEqual(dev().map((l) => l.valor_centavos), [1500])
     const p = await painel('2026-12-12T16:00:00Z')
-    assert.equal(p.cartoes.disponivel, 0)
+    assert.equal(p.disponivel, 0)
     assert.equal(p.saque.pode, false)
     // Aviso repetido não devolve de novo.
     await mudar(2, 'approved')
     assert.equal(dev().length, 1)
-    assert.equal((await painel('2026-12-12T16:30:00Z')).cartoes.disponivel, 0)
+    assert.equal((await painel('2026-12-12T16:30:00Z')).disponivel, 0)
     // O nível do mês fechado não muda.
     assert.equal(db.banco.prepare("SELECT n.nome FROM afiliados_fechamentos f JOIN afiliados_niveis n ON n.id = f.nivel_id WHERE f.mes_referencia = '2026-11'").get()?.nome, 'Bronze')
   })

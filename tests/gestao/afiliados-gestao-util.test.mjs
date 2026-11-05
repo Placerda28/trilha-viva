@@ -66,13 +66,15 @@ test('a tabela de níveis é conferida com as mesmas regras do servidor', () => 
   assert.ok(validarNiveis(Array.from({ length: 11 }, () => ok[0])).geral)
 })
 
-test('configurações: limites e saque mínimo em reais', () => {
-  const base = { carencia_dias: '15', dia_fechamento: '8', intervalo_saque_dias: '15', saque_minimo: '50', aprovacao_automatica: false, programa_aberto: true }
-  assert.deepEqual(validarConfig(base).valores, { carencia_dias: 15, dia_fechamento: 8, intervalo_saque_dias: 15, saque_minimo_centavos: 5000, aprovacao_automatica: false, programa_aberto: true })
+test('configurações: dia do fechamento, saque mínimo em reais e sem carência nem intervalo', () => {
+  const base = { dia_fechamento: '8', saque_minimo: '50', aprovacao_automatica: false, programa_aberto: true }
+  assert.deepEqual(validarConfig(base).valores, { dia_fechamento: 8, saque_minimo_centavos: 5000, aprovacao_automatica: false, programa_aberto: true })
   assert.ok(validarConfig({ ...base, dia_fechamento: '29' }).erros.dia_fechamento)
-  assert.ok(validarConfig({ ...base, carencia_dias: '91' }).erros.carencia_dias)
+  assert.equal(validarConfig({ ...base, dia_fechamento: '' }).valores, null)
   assert.ok(validarConfig({ ...base, saque_minimo: '10001' }).erros.saque_minimo_centavos)
-  assert.equal(validarConfig({ ...base, intervalo_saque_dias: '' }).valores, null)
+  // campos que saíram do contrato não voltam para o POST, mesmo que a tela mande
+  assert.equal('carencia_dias' in validarConfig({ ...base, carencia_dias: '15' }).valores, false)
+  assert.equal('intervalo_saque_dias' in validarConfig({ ...base, intervalo_saque_dias: '15' }).valores, false)
 })
 
 test('ações da ficha por status e papel', () => {

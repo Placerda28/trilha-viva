@@ -32,11 +32,11 @@ function CodigoCompacto({ codigo, link }) {
   )
 }
 
-export default function Inicio({ d, codigo, link, nome, config, avisarCadaVenda, irPara }) {
+export default function Inicio({ d, codigo, link, nome, avisarCadaVenda, irPara }) {
   // O saque pedido nesta visita trava o botão sem esperar a página recarregar.
   const [pedido, setPedido] = useState(null)
   const dados = pedido
-    ? { ...d, saque: { pode: false, valor: d.saque.valor, motivo: 'Você já tem um saque em análise (pedido agora há pouco).' } }
+    ? { ...d, saque: { pode: false, valor: d.saque.valor, motivo: 'Você já pediu o saque deste ciclo.', abreEm: null } }
     : d
   const primeiroNome = String(nome || '').trim().split(' ')[0]
 
@@ -55,8 +55,8 @@ export default function Inicio({ d, codigo, link, nome, config, avisarCadaVenda,
       <Avisos avisos={d.avisos} />
       <CodigoCompacto codigo={codigo} link={link} />
       <NivelCard d={dados} />
-      <GanhosMes d={dados} config={config} />
-      <CartoesDinheiro d={dados} config={config} irPara={irPara} onPedido={setPedido} />
+      <GanhosMes d={dados} />
+      <CartoesDinheiro d={dados} irPara={irPara} onPedido={setPedido} />
       <GraficoVendas d={dados} />
       <ComparaMes d={dados} />
       <UltimasVendas itens={dados.ultimasVendas} irPara={irPara} />

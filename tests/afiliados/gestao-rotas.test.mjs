@@ -76,10 +76,10 @@ test('POST de outra origem recebe 404 e não muda nada', async () => {
   await status404(() => post(R.acao, { id: af.id, acao: 'anotar', texto: 'x' }, outra))
   await status404(() => post(R.revelar, { id: af.id, campo: 'cpf' }, outra))
   await status404(() => post(R.metas, { niveis: [{ nome: 'A', vendas_minimas: 1, valor_por_venda_centavos: 1000 }] }, outra))
-  await status404(() => post(R.config, { carencia_dias: 1 }, outra))
+  await status404(() => post(R.config, { dia_fechamento: 1 }, outra))
   assert.equal(n(db, 'SELECT COUNT(*) n FROM registro'), 0)
   assert.equal(n(db, 'SELECT COUNT(*) n FROM afiliados_anotacoes'), 0)
-  assert.equal(n(db, 'SELECT carencia_dias n FROM afiliados_config'), 7)
+  assert.equal(n(db, 'SELECT dia_fechamento n FROM afiliados_config'), 8)
 })
 
 test('lista: membro lê; filtros e ordem chegam do endereço', async () => {
@@ -251,18 +251,18 @@ test('metas: master grava valendo no mês seguinte; membro lê mas não grava; e
 test('config: membro lê; master grava, registra e recebe o aviso; valor fora do limite é 400', async () => {
   const { db } = montar(MEMBRO)
   const lida = await (await get(R.config)).json()
-  assert.deepEqual([lida.ok, lida.carencia_dias, lida.aprovacao_automatica, lida.aviso], [true, 7, true, 'Mudanças não alteram meses já fechados.'])
-  await status404(() => post(R.config, { carencia_dias: 3 }))
-  assert.equal(n(db, 'SELECT carencia_dias n FROM afiliados_config'), 7)
+  assert.deepEqual([lida.ok, lida.dia_fechamento, lida.aprovacao_automatica, lida.aviso], [true, 8, true, 'Mudanças não alteram meses já fechados.'])
+  await status404(() => post(R.config, { dia_fechamento: 3 }))
+  assert.equal(n(db, 'SELECT dia_fechamento n FROM afiliados_config'), 8)
 
   globalThis.__admin = MASTER
-  const r = await post(R.config, { carencia_dias: 3, aprovacao_automatica: false })
+  const r = await post(R.config, { dia_fechamento: 3, aprovacao_automatica: false })
   const c = await r.json()
   assert.equal(r.status, 200)
-  assert.deepEqual([c.alterado, c.carencia_dias, c.aprovacao_automatica, c.atualizado_por], [true, 3, false, 'master@t.com'])
+  assert.deepEqual([c.alterado, c.dia_fechamento, c.aprovacao_automatica, c.atualizado_por], [true, 3, false, 'master@t.com'])
   assert.equal(c.aviso, 'Mudanças não alteram meses já fechados.')
   assert.equal(reg(db, 'afiliados_config').length, 1)
-  const repetido = await (await post(R.config, { carencia_dias: 3 })).json()
+  const repetido = await (await post(R.config, { dia_fechamento: 3 })).json()
   assert.equal(repetido.alterado, false)
   assert.equal(reg(db, 'afiliados_config').length, 1)
   const ruim = await post(R.config, { dia_fechamento: 30 })

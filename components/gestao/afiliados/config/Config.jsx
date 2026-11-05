@@ -9,17 +9,16 @@ import { erroDaAcao, useApiAfiliados, useBusca } from '../apiAfiliados'
 import { LIMITES_CONFIG, centavosParaCampo, validarConfig } from '../afiliadosUtil'
 import { Campo, classeCampo } from '../lista/Pecas'
 
-// Gestão > Afiliados > Configurações: carência, dia do fechamento, intervalo e
-// valor mínimo de saque, aprovação automática e programa aberto. Só o Master
-// grava; a equipe vê os mesmos valores sem poder mexer.
+// Gestão > Afiliados > Configurações: dia do fechamento do mês, valor mínimo de
+// saque, aprovação automática e programa aberto. O saque é 1 por ciclo (do dia do
+// fechamento até o dia anterior do mês seguinte; regra fixa, sem campo). Só o Master grava; a equipe vê os
+// mesmos valores sem poder mexer.
 
 // O banco pode mandar 'AAAA-MM-DD HH:MM:SS' (UTC, sem fuso): vira ISO antes de formatar.
 const utc = (t) => (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(t) ? t.replace(' ', 'T') + 'Z' : t)
 
 const NUMEROS = [
-  ['carencia_dias', 'Carência da comissão (dias)', 'Quantos dias a comissão de uma venda espera antes de ficar disponível para saque.'],
-  ['dia_fechamento', 'Dia do fechamento do mês', 'A partir de que dia o mês anterior é fechado e o bônus de nível cai no saldo.'],
-  ['intervalo_saque_dias', 'Intervalo entre saques (dias)', 'Quantos dias o afiliado espera entre um pedido de saque e o próximo.'],
+  ['dia_fechamento', 'Dia do fechamento do mês', 'A partir desse dia o mês anterior fecha e o total dele fica disponível, de uma vez. É também o dia em que o ciclo de saque abre.'],
 ]
 
 function Interruptor({ id, rotulo, texto, ligado, aoMudar, desabilitado }) {
@@ -37,9 +36,7 @@ function Interruptor({ id, rotulo, texto, ligado, aoMudar, desabilitado }) {
 function Formulario({ inicial, master, aoSalvar }) {
   const api = useApiAfiliados()
   const [v, setV] = useState({
-    carencia_dias: String(inicial.carencia_dias),
     dia_fechamento: String(inicial.dia_fechamento),
-    intervalo_saque_dias: String(inicial.intervalo_saque_dias),
     saque_minimo: centavosParaCampo(inicial.saque_minimo_centavos),
     aprovacao_automatica: Boolean(inicial.aprovacao_automatica),
     programa_aberto: Boolean(inicial.programa_aberto),
@@ -88,6 +85,10 @@ function Formulario({ inicial, master, aoSalvar }) {
         </Campo>
       </div>
 
+      <p className="border-l-2 border-ink pl-3 text-[14.5px] leading-[1.55] text-ink">
+        Regra do saque, que não muda por aqui: cada afiliado pode fazer 1 pedido por ciclo, que vai do dia {String(v.dia_fechamento).trim() || '—'} de um mês até o dia anterior do mês seguinte, sempre com o saldo disponível inteiro. Quem esquece de pedir no primeiro dia ainda pede depois, dentro do ciclo.
+      </p>
+
       <div className="grid gap-3 md:grid-cols-2">
         <Interruptor id="c-aprovacao" rotulo="Aprovação automática" texto="Quando ligada, quem se cadastra já entra ativo, sem esperar você aprovar." ligado={v.aprovacao_automatica} aoMudar={liga('aprovacao_automatica')} desabilitado={!master} />
         <Interruptor id="c-aberto" rotulo="Programa aberto" texto="Quando desligado, a página de cadastro não aceita novos afiliados. Quem já é afiliado continua." ligado={v.programa_aberto} aoMudar={liga('programa_aberto')} desabilitado={!master} />
@@ -121,7 +122,7 @@ export default function Config({ master = false }) {
   const { dados, erro } = useBusca((api, sinal) => api.config(sinal), [tentativa])
   return (
     <section aria-label="Configurações dos afiliados">
-      <CabecalhoPagina titulo="Configurações" texto="As regras de prazo e de saque do programa de afiliados." />
+      <CabecalhoPagina titulo="Configurações" texto="O dia do fechamento mensal e as regras de saque do programa de afiliados." />
       <SubAbas atual="config" />
       {erro ? (
         <Aviso erro={erro} onTentar={() => setTentativa((n) => n + 1)} />

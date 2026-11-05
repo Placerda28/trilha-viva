@@ -5,7 +5,7 @@ import { executarAcao } from '../../lib/afiliados/gestao-acoes.js'
 import { dadosDoPainel } from '../../lib/afiliados/painel.js'
 import { pedirSaque } from '../../lib/afiliados/saque.js'
 import { gravarRegistro } from '../../lib/gestao/registro.js'
-import { novoAfiliado, novoDb, vendas } from './_base.mjs'
+import { fechar, novoAfiliado, novoDb, vendas } from './_base.mjs'
 
 const AGORA = new Date('2026-11-20T15:00:00Z')
 const MASTER = { quem: 'm@t.com', papel: 'master', agora: AGORA }
@@ -16,6 +16,8 @@ test('ficha: dados do afiliado com CPF e Pix mascarados e os mesmos números do 
   db.banco.prepare("UPDATE afiliados_pix SET chave = '12345678909', titular_cpf = '12345678909' WHERE afiliado_id = ?").run(af.id)
   db.banco.prepare("UPDATE afiliados SET cpf = '12345678909', telefone = '27999990000', canal = 'Instagram' WHERE id = ?").run(af.id)
   await vendas(db, af, 3)
+  await vendas(db, af, 2, new Date('2026-10-10T15:00:00Z')) // outubro fechado: o saldo que dá para sacar em 20/11
+  await fechar(db, '2026-10', new Date('2026-11-09T12:00:00Z'))
   const saque = await pedirSaque(db, af.id, AGORA)
   assert.equal(saque.ok, true)
 
@@ -34,7 +36,8 @@ test('ficha: dados do afiliado com CPF e Pix mascarados e os mesmos números do 
   assert.deepEqual(f.painel, await dadosDoPainel(db, af.id, AGORA))
   assert.equal(f.painel.vendasValidas, 3)
   // comprador mascarado nas vendas recentes
-  assert.equal(f.vendas_recentes.length, 3)
+  assert.equal(f.vendas_recentes.length, 5)
+  assert.equal(f.vendas_recentes[0].comissaoCentavos, 1500) // a Gestão ainda vê a comissão por venda
   assert.match(f.vendas_recentes[0].comprador, /^.{1,2}\*\*\*@/)
   assert.ok(!/[0-9a-z]@t.com/.test(JSON.stringify(f.vendas_recentes)))
   assert.equal(f.saques.length, 1)
@@ -43,6 +46,10 @@ test('ficha: dados do afiliado com CPF e Pix mascarados e os mesmos números do 
   assert.ok(f.extrato.length >= 3)
   assert.equal(f.historico_mensal[0].mes, '2026-11')
   assert.equal(f.historico_mensal[0].vendasValidas, 3)
+  assert.deepEqual([f.historico_mensal[0].garantido, f.historico_mensal[0].bonus, f.historico_mensal[0].situacao], [4500, 0, 'em_andamento'])
+  // Extrato da Gestão: o marcador "só no fechamento" aparece como a data prevista (08/12 em Brasília), nunca 9999
+  assert.ok(f.extrato.every((l) => !l.disponivel_em.startsWith('9999')))
+  assert.ok(f.extrato.some((l) => l.disponivel_em === '2026-12-08T03:00:00Z'))
   assert.deepEqual(f.anotacoes, [])
 })
 

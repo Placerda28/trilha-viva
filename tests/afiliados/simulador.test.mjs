@@ -22,17 +22,20 @@ test('simulador: limites 0, 1, 19, 20, 49, 50, 51 e 100', () => {
     assert.equal(s.grau, grau, `${n} vendas: grau`)
     assert.equal(s.nivel, nivel, `${n} vendas: nível`)
     assert.equal(s.faltam, faltam, `${n} vendas: faltam`)
-    assert.equal(s.base + s.bonus, s.total)
-    assert.equal(s.base, n * 1500)
+    // Regra de 05/11: o mês vale (vendas × valor do nível atingido), sem garantido nem bônus.
+    assert.equal(s.total, n * (s.grau ? NIVEIS_PUBLICOS[s.grau - 1].valor_por_venda_centavos : 0))
+    assert.equal('base' in s || 'bonus' in s, false)
   }
 })
 
 test('simulador: a tabela dá o mesmo resultado que calcularNivel, linha a linha', () => {
   const tabela = tabelaDoSimulador()
   assert.equal(tabela.length, MAX_VENDAS_SIMULADOR + 1)
-  tabela.forEach(([grau, base, bonus, total, faltam], n) => {
+  tabela.forEach((linha, n) => {
+    const [grau, total, faltam] = linha
     const c = calcularNivel(n, NIVEIS_PUBLICOS)
-    assert.deepEqual([base, bonus, total, faltam], [c.base, c.bonus, c.total, c.faltam], `${n} vendas`)
+    assert.equal(linha.length, 3, 'só grau, total e faltam: sem garantido nem bônus')
+    assert.deepEqual([total, faltam], [c.total, c.faltam], `${n} vendas`)
     assert.equal(grau, c.nivel ? NIVEIS_PUBLICOS.findIndex((x) => x.nome === c.nivel.nome) + 1 : 0)
   })
 })

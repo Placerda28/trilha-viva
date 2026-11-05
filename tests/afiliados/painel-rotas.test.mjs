@@ -1,10 +1,11 @@
-import test from 'node:test'
+import test, { afterEach, mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { registerHooks } from 'node:module'
 import { novoDb, novoAfiliado } from './_base.mjs'
 import { gravarComissaoBase } from '../../lib/afiliados/comissao.js'
+import { fecharMes } from '../../lib/afiliados/fechamento.js'
 
 const modulo = (codigo) => 'data:text/javascript,' + encodeURIComponent(codigo)
 const falsos = {
@@ -46,13 +47,19 @@ const rPref = await import('../../app/api/afiliados/preferencias/route.js')
 
 const HOST = 'https://trilhaviva.org'
 const CPF = '52998224725'
-const TRINTA_DIAS = () => new Date(Date.now() - 30 * 86400000)
+// Relógio fixo: o saque depende do dia do mês (abre no dia 8) e do fechamento do mês da venda.
+const AGORA = new Date('2026-11-20T15:00:00Z')
+const OUTUBRO = new Date('2026-10-10T15:00:00Z')
+afterEach(() => mock.timers.reset())
+const liberar = (db) => fecharMes(db, '2026-10', new Date('2026-11-09T12:00:00Z')) // outubro fechado: o total dele fica disponível
 
 function entrar(db, af, extra = {}) {
   const c = db.banco.prepare('SELECT id, email FROM clientes WHERE id = ?').get(af.clienteId)
   globalThis.__cliente = { id: Number(c.id), email: c.email, nome: 'X', bloqueado: 0, ...extra }
 }
 function montar() {
+  mock.timers.reset()
+  mock.timers.enable({ apis: ['Date'], now: AGORA })
   const db = novoDb()
   globalThis.__db = db
   globalThis.__emails = []
@@ -72,7 +79,7 @@ const post = (rota, corpo, cab = {}) =>
   }))
 const n = (db, sql, ...a) => Number(db.banco.prepare(sql).get(...a).n)
 
-async function vendaReal(db, af, email, quando = TRINTA_DIAS()) {
+async function vendaReal(db, af, email, quando = OUTUBRO) {
   db.banco.prepare('INSERT OR IGNORE INTO clientes (email) VALUES (?)').run(email)
   const cli = db.banco.prepare('SELECT id FROM clientes WHERE email = ?').get(email)
   const c = db.banco
@@ -103,7 +110,7 @@ test('vendas: mês inválido 400; comprador mascarado; A não vê B', async () =
   const { db, a, b } = montar()
   await vendaReal(db, a, 'joao.silva@gmail.com')
   await vendaReal(db, b, 'maria@outro.com')
-  const mes = new Date(Date.now() - 30 * 86400000 - 3 * 3600000).toISOString().slice(0, 7)
+  const mes = '2026-10'
   assert.equal((await get(rVendas, '?mes=2026-13')).status, 400)
   assert.equal((await get(rVendas, '?mes=abc')).status, 400)
   const r = await get(rVendas, `?mes=${mes}`)
@@ -111,7 +118,8 @@ test('vendas: mês inválido 400; comprador mascarado; A não vê B', async () =
   assert.equal(r.status, 200)
   assert.equal(j.itens.length, 1)
   assert.equal(j.itens[0].comprador, 'jo***@gmail.com')
-  assert.equal(j.itens[0].situacao, 'disponivel')
+  assert.equal(j.itens[0].situacao, 'conta')
+  assert.ok(!('comissaoCentavos' in j.itens[0]))
   const texto = JSON.stringify(j)
   assert.ok(!texto.includes('joao.silva') && !texto.includes('maria'))
 
@@ -123,9 +131,13 @@ test('vendas: mês inválido 400; comprador mascarado; A não vê B', async () =
 test('ganhos e saques: formato e isolamento', async () => {
   const { db, a, b } = montar()
   await vendaReal(db, a, 'x@x.com')
+  await liberar(db)
+  db.banco.prepare("INSERT INTO afiliados_lancamentos (afiliado_id, tipo, mes_referencia, valor_centavos, status, descricao) VALUES (?, 'ajuste', '2026-11', -200, 'pendente', 'Ajuste: teste')").run(a.id)
   const g = await (await get(rGanhos)).json()
-  assert.equal(g.historico[0].situacao, 'em_andamento')
-  assert.equal(g.extrato.length, 1)
+  assert.deepEqual(g.historico.map((h) => [h.mes, h.situacao, h.total]), [['2026-11', 'em_andamento', 0], ['2026-10', 'disponivel', 1500]])
+  assert.equal(g.ajustes.length, 1) // só ajustes e estornos: o que vem das vendas está no histórico mensal
+  assert.deepEqual([g.ajustes[0].tipo, g.ajustes[0].valor_centavos], ['ajuste', -200])
+  assert.equal(g.extrato, undefined)
   assert.equal((await saqueOk()).ok, true)
   const s = await (await get(rSaques)).json()
   assert.equal(s.itens.length, 1)
@@ -134,7 +146,7 @@ test('ganhos e saques: formato e isolamento', async () => {
   entrar(db, b)
   const sb = await (await get(rSaques)).json()
   assert.deepEqual([sb.itens, sb.proximoSaqueEm], [[], null])
-  assert.deepEqual((await (await get(rGanhos)).json()).extrato, [])
+  assert.deepEqual((await (await get(rGanhos)).json()).ajustes, [])
 })
 async function saqueOk() {
   const r = await post(rSaque, {})
@@ -145,6 +157,7 @@ test('saque: sucesso grava registro e avisa o dono; segundo pedido dá 409 com m
   process.env.ADMIN_MASTER = 'dono@trilhaviva.org, Kaylan@trilhaviva.org;'
   const { db, a } = montar()
   await vendaReal(db, a, 'x@x.com')
+  await liberar(db)
   const r = await post(rSaque, {}, { origin: HOST })
   const j = await r.json()
   assert.equal(r.status, 200)
@@ -169,6 +182,7 @@ test('saque: sucesso grava registro e avisa o dono; segundo pedido dá 409 com m
 test('saque: falha no e-mail só vira log; origem de fora 403; suspenso vê mas não saca', async () => {
   const { db, a, b } = montar()
   await vendaReal(db, a, 'x@x.com')
+  await liberar(db)
   assert.equal((await post(rSaque, {}, { origin: 'https://outro.com' })).status, 403)
   globalThis.__emailFalha = true
   const r = await post(rSaque, {})
@@ -233,6 +247,7 @@ test('pix: senha errada 401 (e trava após 10), sem senha na conta 409, CPF de o
 
   // saque aberto: troca recusada, no GET e no POST
   await vendaReal(db, a, 'x@x.com')
+  await liberar(db)
   assert.equal((await post(rSaque, {})).status, 200)
   const aberto = await post(rPix, PIX)
   assert.equal(aberto.status, 409)

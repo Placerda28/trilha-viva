@@ -166,6 +166,9 @@ test('webhook repetido 3 vezes: 1 compra, 1 comissão, 1 evento, 1 e-mail de ven
   assert.equal(lancamentos(db, 'venda').length, 1)
   assert.equal(eventos(db, 'pagamento_aprovado'), 1)
   assert.equal(globalThis.__enviados.filter((e) => e.tipo === 'venda').length, 1)
+  // "agora são N vendas, seu mês vale R$ Y": sem comissão base nem bônus
+  const ev = globalThis.__enviados.find((e) => e.tipo === 'venda')
+  assert.deepEqual([ev.vendasMes, ev.mesValeCentavos, 'comissaoCentavos' in ev], [1, 1500, false])
 })
 
 test('comprador igual ao afiliado: compra ok, sem comissão, com evento (e-mail, telefone ou cliente)', async () => {
@@ -234,7 +237,7 @@ test('subida de nível: 20ª venda grava o aviso e o e-mail com o valor do mês,
   const avisos = db.banco.prepare('SELECT titulo, texto FROM afiliados_avisos').all()
   assert.equal(avisos.length, 1)
   assert.equal(avisos[0].titulo, 'Você subiu para PRATA!')
-  assert.match(avisos[0].texto, /R\$ 400,00/) // 20 x R$ 20 passou a valer
+  assert.match(avisos[0].texto, /seu mês já vale R\$ 400,00/) // 20 x R$ 20 passou a valer
   assert.equal(globalThis.__enviados.filter((e) => e.tipo === 'nivel').length, 1)
   assert.equal(globalThis.__enviados[0].para, db.banco.prepare('SELECT c.email FROM afiliados a JOIN clientes c ON c.id = a.cliente_id').get().email)
 })

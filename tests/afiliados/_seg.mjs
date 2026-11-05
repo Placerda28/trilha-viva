@@ -7,6 +7,7 @@ import { pathToFileURL } from 'node:url'
 import { registerHooks } from 'node:module'
 import { novoDb, novoAfiliado } from './_base.mjs'
 import { gravarComissaoBase } from '../../lib/afiliados/comissao.js'
+import { fecharMes } from '../../lib/afiliados/fechamento.js'
 import { pedirSaque } from '../../lib/afiliados/saque.js'
 import { gravarComprovante, marcarPago } from '../../lib/afiliados/saques-gestao.js'
 import { caminhoDoComprovante } from '../../lib/b2-envio.js'
@@ -112,7 +113,7 @@ export async function cenario() {
   const db = novoDb()
   globalThis.__db = db
   const comprador = criarCliente(db, COMPRADOR)
-  const base = new Date('2026-11-10T15:00:00Z')
+  const base = new Date('2026-10-10T15:00:00Z') // outubro: fecha em 09/11, o saque abre em 08/11
   const depois = new Date('2026-11-25T15:00:00Z')
   const out = { db, comprador }
   for (const k of ['A', 'B']) {
@@ -123,6 +124,7 @@ export async function cenario() {
     db.banco.prepare('UPDATE clientes SET email = ? WHERE id = ?').run(`afiliado.${k.toLowerCase()}@exemplo.com`, af.clienteId)
     await venda(db, af, comprador, base)
     await venda(db, af, comprador, base)
+    await fecharMes(db, '2026-10', new Date('2026-11-09T12:00:00Z'))
     const s = await pedirSaque(db, af.id, new Date('2026-11-20T15:00:00Z'))
     const caminho = caminhoDoComprovante(s.saqueId, 'pdf')
     await gravarComprovante(db, { saqueId: s.saqueId, caminho })

@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   diaMes, dataBr, rotuloMes, rotuloMesCurto, mesesParaFiltro, reaisSinal, corMetal, contraste,
-  posicoesDaBarra, alinhamento, textoRitmo, textoDias, serieDoMes, resumoGrafico, situacaoVenda,
+  posicoesDaBarra, alinhamento, textoRitmo, textoDias, serieDoMes, resumoGrafico, situacaoVenda, situacaoMes,
   linkInterno, painelVazio, vendasTxt,
 } from '../../lib/afiliados-painel.js'
 
@@ -80,11 +80,18 @@ test('série do mês: um item por dia, zero onde não houve venda', () => {
   assert.match(resumoGrafico(serieDoMes('2026-11', []), 'novembro').texto, /Nenhuma venda/)
 })
 
-test('situação das vendas', () => {
-  assert.equal(situacaoVenda({ situacao: 'liberando', situacaoEm: '2026-11-06 03:00:00' }).texto, 'Liberando em 06/11')
+test('situação das vendas: conta, paga ou cancelada, sem liberação nem comissão', () => {
+  assert.deepEqual(situacaoVenda({ situacao: 'conta' }), { chave: 'conta', texto: 'Conta para a meta' })
   assert.equal(situacaoVenda({ situacao: 'paga', situacaoEm: '2026-11-02' }).texto, 'Paga em 02/11')
-  assert.equal(situacaoVenda({ situacao: 'cancelada' }).texto, 'Cancelada (reembolso)')
-  assert.equal(situacaoVenda({ situacao: 'disponivel' }).chave, 'disponivel')
+  assert.equal(situacaoVenda({ situacao: 'cancelada', situacaoEm: '2026-11-03' }).texto, 'Cancelada (reembolso)')
+  // contrato antigo não vaza: qualquer outra coisa é só "conta para a meta"
+  assert.equal(situacaoVenda({ situacao: 'liberando' }).chave, 'conta')
+})
+
+test('situação do mês no histórico', () => {
+  assert.deepEqual(situacaoMes({ situacao: 'em_andamento', liberaEm: '2026-12-08' }), { chave: 'em_andamento', texto: 'Em andamento', detalhe: 'Disponível em 08/12' })
+  assert.deepEqual(situacaoMes({ situacao: 'disponivel', liberaEm: '2026-11-08' }), { chave: 'disponivel', texto: 'Disponível', detalhe: 'Liberado em 08/11' })
+  assert.equal(situacaoMes({ situacao: 'pago', liberaEm: '2026-10-08' }).texto, 'Pago')
 })
 
 test('link de aviso: só caminho do próprio site', () => {
@@ -95,7 +102,10 @@ test('link de aviso: só caminho do próprio site', () => {
 })
 
 test('painel vazio só para afiliado sem nada', () => {
-  assert.equal(painelVazio({ vendasValidas: 0, ultimasVendas: [], cartoes: { jaRecebido: 0 } }), true)
-  assert.equal(painelVazio({ vendasValidas: 0, ultimasVendas: [], cartoes: { jaRecebido: 900 } }), false)
-  assert.equal(painelVazio({ vendasValidas: 0, ultimasVendas: [], cartoes: {}, mesPassado: { vendas: 3 } }), false)
+  const zero = { vendasValidas: 0, ultimasVendas: [], jaRecebido: 0, disponivel: 0, emSaque: 0, aReceber: { valor: 0 }, aReceberMesAnterior: null }
+  assert.equal(painelVazio(zero), true)
+  assert.equal(painelVazio({ ...zero, jaRecebido: 900 }), false)
+  assert.equal(painelVazio({ ...zero, disponivel: 900 }), false)
+  assert.equal(painelVazio({ ...zero, aReceberMesAnterior: { mes: '2026-10', valor: 1500, liberaEm: '2026-11-08' } }), false)
+  assert.equal(painelVazio({ ...zero, mesPassado: { vendas: 3 } }), false)
 })

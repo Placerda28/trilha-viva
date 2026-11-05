@@ -47,11 +47,11 @@ test('sem nada a fechar a checagem custa 1 consulta', async () => {
   assert.equal(s.db.consultas - antes, 1)
 })
 
-test('limite por rodada (3) e orçamento: continua na seguinte, no fim todos fechados, ≤ 16 consultas', async () => {
+test('limite por rodada (2) e orçamento: continua na seguinte, no fim todos fechados, ≤ 16 consultas', async () => {
   const s = montar()
   for (let i = 0; i < 7; i++) await vendas(s.db, novoAfiliado(s.db), 1)
   const total = () => s.n('SELECT COUNT(*) AS n FROM afiliados_fechamentos')
-  for (const esperado of [3, 6, 7, 7]) {
+  for (const esperado of [2, 4, 6, 7, 7]) {
     const antes = s.db.consultas
     const r = await s.rodar(FECHA)
     assert.equal(total(), esperado)
@@ -162,9 +162,10 @@ test('resumo sai 1 vez mesmo em 3 rodadas, com aviso no painel e sem cópia ocul
   const s = montar()
   await vendas(s.db, novoAfiliado(s.db), 20)
   for (let i = 0; i < 3; i++) await s.rodar(FECHA)
-  const resumos = s.emails.filter((e) => e.subject.startsWith('Fechamento'))
+  const resumos = s.emails.filter((e) => e.subject.startsWith('Seu mês de'))
   assert.equal(resumos.length, 1)
-  assert.match(resumos[0].subject, /novembro de 2026: você ganhou R\$ 400,00/)
+  assert.match(resumos[0].subject, /^Seu mês de novembro fechou: 20 vendas, nível Prata, R\$ 400,00 disponível para saque/)
+  assert.doesNotMatch(resumos[0].html + resumos[0].text, /base|bônus|bonus|garantido|carência/i)
   assert.match(resumos[0].text, /Prata/)
   assert.equal(resumos[0].bcc, undefined)
   assert.equal(s.n("SELECT COUNT(*) AS n FROM afiliados_avisos WHERE tipo = 'fechamento:2026-11'"), 1)

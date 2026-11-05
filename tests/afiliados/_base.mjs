@@ -1,5 +1,6 @@
 import { D1Local, criarBanco } from '../gestao/_d1local.mjs'
 import { gravarComissaoBase } from '../../lib/afiliados/comissao.js'
+import { fecharMes } from '../../lib/afiliados/fechamento.js'
 
 export const NOV = new Date('2026-11-10T15:00:00Z') // aprovação das vendas de teste
 export const FECHA = new Date('2026-12-08T12:00:00Z') // dia do fechamento
@@ -45,3 +46,10 @@ export async function vendas(db, af, n, quando = NOV) {
 }
 
 export const contar = (db, sql, ...args) => Number(db.banco.prepare(sql).get(...args).n)
+
+// Fecha o mês do afiliado (libera o total dele de uma vez). Nada fica disponível antes disso.
+export async function fechar(db, mes = '2026-11', quando = FECHA) {
+  const r = await fecharMes(db, mes, quando)
+  if (r.erro) throw new Error(r.erro)
+  return r
+}
