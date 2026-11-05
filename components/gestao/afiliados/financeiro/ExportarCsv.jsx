@@ -41,7 +41,7 @@ async function baixar(tipo, de, ate) {
   }
 }
 
-export default function ExportarCsv({ de, ate }) {
+export default function ExportarCsv({ de, ate, master = false }) {
   const [pedindo, setPedindo] = useState(null)
   const [ocupado, setOcupado] = useState('')
   const [erro, setErro] = useState('')
@@ -60,7 +60,7 @@ export default function ExportarCsv({ de, ate }) {
       <h2 id="titulo-exportar" className="text-[17px] font-bold tracking-[-0.01em] text-ink">Planilhas para a contabilidade</h2>
       <p className="mt-1 text-[14px] text-ink-muted">Valem para o período escolhido acima. No máximo 5.000 linhas por arquivo.</p>
       <ul className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-        {RELATORIOS.map((r) => (
+        {RELATORIOS.filter((r) => master || !r.sensivel).map((r) => (
           <li key={r.id} className="flex flex-col items-start justify-between gap-3 rounded border border-line p-3.5">
             <div>
               <p className="text-[14.5px] font-semibold text-ink">{r.rotulo}</p>
@@ -83,6 +83,7 @@ export default function ExportarCsv({ de, ate }) {
           </li>
         ))}
       </ul>
+      {!master && <p className="mt-2 text-[13.5px] text-ink-muted">Só o Administrador Master paga saques e vê CPF e Pix completos. A planilha de saques pagos é dele.</p>}
       <p role="alert" className="mt-2 min-h-[20px] text-[13.5px] text-signal-deep">
         {erro}
       </p>

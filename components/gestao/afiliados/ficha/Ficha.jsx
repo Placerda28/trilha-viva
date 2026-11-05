@@ -83,7 +83,7 @@ export default function Ficha({ id, master, voltar }) {
     <section aria-label={`Ficha de ${a.nome}`} className="space-y-6">
       <Topo a={a} painel={painel} voltar={voltar} />
       <FichaAcoes afiliado={a} painel={painel} master={master} aoMudou={atualizar} aberta={aberta} setAberta={setAberta} />
-      <FichaDados afiliado={a} />
+      <FichaDados afiliado={a} master={master} />
       <FichaPainel painel={painel} config={dados.config} nome={a.nome} />
 
       <Tabs.Root defaultValue="meses">

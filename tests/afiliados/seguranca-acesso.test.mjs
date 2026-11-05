@@ -156,15 +156,33 @@ test('membro: ações restritas ao master dão 403/404 e não mudam nada; aprova
   assert.equal((await rota(GEST, 'lista').GET(req())).status, 200)
 })
 
-test('LACUNA: o membro paga e recusa saque, anexa comprovante, revela CPF/Pix inteiros e exporta CSV com Pix (só "ações de dinheiro" do Master ficaram barradas)', async () => {
+test('membro NÃO paga, recusa, anexa comprovante, revela CPF/Pix nem exporta CSV de saques pagos (403 em JSON, sem efeito); o master faz tudo', async () => {
   const c = await cenario()
   redeFalsa()
   entrarComo(c.db, MEMBRO_EMAIL)
-  // Saque aberto novo para A (o de antes já foi pago).
   c.db.banco.prepare("INSERT INTO afiliados_saques (afiliado_id, chave, valor_centavos, status, pix_snapshot, pedido_em) VALUES (?, 'k1', 3000, 'solicitado', '{}', datetime('now'))").run(c.A.id)
   const s = Number(c.db.banco.prepare("SELECT id FROM afiliados_saques WHERE chave = 'k1'").get().id)
-  const rec = await rota(GEST, 'saques/[id]/recusar').POST(req('POST', { corpo: { motivo: 'Pix incorreto' } }), ctx(s))
-  assert.equal(rec.status, 200)
+  const recusado = async (res, rotulo) => {
+    assert.equal(res.status, 403, rotulo)
+    assert.deepEqual(await res.json(), { ok: false, erro: 'Só o Administrador Master pode fazer esta ação.' }, rotulo)
+  }
+  await recusado(await rota(GEST, 'saques/[id]/recusar').POST(req('POST', { corpo: { motivo: 'Pix incorreto' } }), ctx(s)), 'recusar')
+  await recusado(await rota(GEST, 'saques/[id]/pagar').POST(req('POST', { corpo: {} }), ctx(s)), 'pagar')
+  await recusado(await rota(GEST, 'saques/[id]/comprovante').POST(req('POST', { corpo: {} }), ctx(s)), 'comprovante')
+  await recusado(await rota(GEST, 'ficha/revelar').POST(req('POST', { corpo: { id: c.A.id, campo: 'cpf' } })), 'revelar cpf')
+  await recusado(await rota(GEST, 'ficha/revelar').POST(req('POST', { corpo: { id: c.A.id, campo: 'pix' } })), 'revelar pix')
+  await recusado(await rota(GEST, 'financeiro/csv').GET(req('GET', { url: `${HOST}/x?tipo=saques_pagos&de=2026-11-01&ate=2026-11-30` })), 'csv saques_pagos')
+  assert.equal(c.db.banco.prepare('SELECT status FROM afiliados_saques WHERE id = ?').get(s).status, 'solicitado')
+  assert.equal(c.db.banco.prepare('SELECT COUNT(*) AS n FROM registro WHERE quem = ?').get(MEMBRO_EMAIL).n, 0)
+  // O que o membro ainda vê: a fila e os outros CSVs (sem CPF nem Pix).
+  assert.equal((await rota(GEST, 'saques').GET(req())).status, 200)
+  for (const tipo of ['comissoes', 'resumo_mensal']) {
+    const ok = await rota(GEST, 'financeiro/csv').GET(req('GET', { url: `${HOST}/x?tipo=${tipo}&de=2026-11-01&ate=2026-11-30` }))
+    assert.equal(ok.status, 200, tipo)
+  }
+
+  // Master continua podendo.
+  entrarComo(c.db, MASTER_EMAIL)
   const rev = await rota(GEST, 'ficha/revelar').POST(req('POST', { corpo: { id: c.A.id, campo: 'cpf' } }))
   assert.equal((await rev.json()).cpf, '529.982.247-25')
   const pix = await (await rota(GEST, 'ficha/revelar').POST(req('POST', { corpo: { id: c.A.id, campo: 'pix' } }))).json()
@@ -172,8 +190,8 @@ test('LACUNA: o membro paga e recusa saque, anexa comprovante, revela CPF/Pix in
   const csv = await rota(GEST, 'financeiro/csv').GET(req('GET', { url: `${HOST}/x?tipo=saques_pagos&de=2026-11-01&ate=2026-11-30` }))
   const texto = await csv.text()
   assert.ok(texto.includes('529.982.247-25') && texto.includes(PIX.A))
-  // Fica registrado quem fez (é a única proteção hoje):
-  assert.equal(c.db.banco.prepare("SELECT COUNT(*) AS n FROM registro WHERE quem = ? AND acao IN ('afiliado_dado_revelado','afiliados_exportar','afiliado_saque_recusado')").get(MEMBRO_EMAIL).n, 4)
+  const rec = await rota(GEST, 'saques/[id]/recusar').POST(req('POST', { corpo: { motivo: 'Pix incorreto' } }), ctx(s))
+  assert.equal(rec.status, 200)
 })
 
 test('POST de outro site (Origin diferente): 403 nas rotas do afiliado e 404 na Gestão; sem Origin passa (LACUNA conhecida do mesmaOrigem)', async () => {

@@ -73,11 +73,12 @@ Todas passam por `soAdmin`/`soMaster` (sessão real, `adminPeloToken`); anônimo
 |---|---|---|
 | `GET dashboard`, `financeiro`, `alertas`, `fechamento`, `metas`, `config` | master e membro | nomes e valores; sem CPF/Pix |
 | `GET lista`, `ficha` | master e membro | e-mail e telefone do afiliado; CPF e Pix **mascarados** |
-| `POST ficha/revelar` | master e membro | CPF ou Pix **inteiro**; grava quem pediu (e só devolve se gravou) |
-| `GET saques` | master e membro | Pix inteiro (a equipe precisa para pagar) |
-| `GET financeiro/csv` | master e membro | tipo `saques_pagos` traz CPF e Pix inteiros; grava quem exportou |
+| `POST ficha/revelar` | só master (403 JSON para membro) | CPF ou Pix **inteiro**; grava quem pediu (e só devolve se gravou) |
+| `GET saques` | master e membro | master: Pix inteiro; membro: chave e CPF do titular **mascarados** |
+| `GET financeiro/csv` | `comissoes` e `resumo_mensal`: master e membro. `saques_pagos`: só master (403 JSON para membro) | `saques_pagos` traz CPF e Pix inteiros; grava quem exportou |
 | `GET fechamento/csv` | master e membro | código, nome, valores |
-| `GET/POST saques/[id]/comprovante`, `POST pagar`, `POST recusar` | master e membro | link do comprovante (5 min) |
+| `POST saques/[id]/comprovante`, `POST pagar`, `POST recusar` | só master (403 JSON para membro) | nada |
+| `GET saques/[id]/comprovante` | master e membro | link do comprovante (5 min) |
 | `POST alertas/[id]/resolver` | master e membro | nada |
 | `POST acao` | `aprovar` e `anotar`: master e membro. `suspender`, `reativar`, `travar_nivel`, `trocar_codigo`, `ajuste`: só master (403 para membro) | nada |
 | `POST config`, `POST metas`, `POST fechamento` | só master (404 para membro) | nada |
@@ -149,7 +150,7 @@ Tempo de JS (fora do banco) com **1.000 afiliados, 30.000 compras, 22.500 lança
 Nenhum é alto. Os 4 primeiros precisam de decisão sua.
 
 **Médio**
-1. **Membro faz coisas de dinheiro e de dado pessoal.** Hoje o membro pode pagar saque, recusar saque, anexar comprovante, "revelar" CPF/Pix inteiros e baixar o CSV de saques pagos com CPF e Pix (só `suspender`, `ajuste` etc. ficaram só do master). Cenário: um membro marca "pago" com um comprovante qualquer e o saldo do afiliado some sem Pix enviado. Fica o registro de quem fez. Onde: `saques/[id]/pagar/route.js:62`, `recusar/route.js:53`, `saques/[id]/comprovante/route.js:75-76` (todos `comId` = `soAdmin`), `ficha/revelar/route.js:40`, `financeiro/csv/route.js`. Proposta: trocar para `soMaster` em pagar, recusar e comprovante, e deixar revelar/CSV de Pix só para o master. Teste que descreve o comportamento atual: `LACUNA: o membro paga e recusa saque...` (vira falha se a regra mudar; é só trocar a expectativa).
+1. **RESOLVIDO em 05/11 (decisão do dono: "o adm master pode ver esses dados").** Pagar, recusar, anexar comprovante, revelar CPF/Pix e o CSV `saques_pagos` agora são só do master: o membro recebe 403 JSON "Só o Administrador Master pode fazer esta ação." (`recusaMembro` / `comIdMaster` em `lib/gestao/saques-rota.js`), sem efeito e sem registro. O membro ainda vê a fila de saques, com chave Pix e CPF do titular mascarados. As telas escondem os botões e mostram o aviso. Teste: `membro NÃO paga, recusa...` em `seguranca-acesso.test.mjs`.
 2. **Telas da Gestão leem a tabela inteira (escala).** Lista, alertas, dashboard e o contador do menu fazem varredura completa em lançamentos, cliques e fechamentos (confirmado com `EXPLAIN QUERY PLAN`). Hoje, com poucas vendas, é barato. Com 1.000 afiliados e 30 mil vendas, abrir a lista lê cerca de 140 mil linhas, e o contador do menu (que roda em TODA página da Gestão) varre os lançamentos. O limite do D1 grátis é 5 milhões de linhas lidas por dia. Onde: `lib/afiliados/gestao-lista.js:51`, `gestao-painel.js` (`GRUPOS_SQL`), `gestao-alertas.js`, `lib/gestao/avisos.js`. Proposta para quando o programa crescer: limitar por mês de referência e guardar contadores. Não mexi.
 3. **Cliques inflados sem limite.** A trava é "1 clique por visitante em 24 h", e o visitante é IP + navegador. Quem troca o user-agent a cada pedido gera um clique novo por pedido (30 pedidos = 30 linhas, provado). Infla "cliques" e a conversão no dashboard e escreve no D1 sem limite (`lib/afiliados/clique.js:38-52`, `app/api/afiliados/clique/route.js`). Não afeta dinheiro. Proposta: limite por IP (hash) por hora.
 4. **Mediação ganha pela loja não devolve a comissão** (já documentado como limitação). Depois do fechamento, `in_mediation` estorna -R$ 15; quando o `approved` volta, o acesso volta mas o estorno fica, e o afiliado fica com saldo -R$ 15 (painel mostra negativo e o saque fica bloqueado até novas vendas cobrirem). Onde: `lib/afiliados/venda.js` (`restaurarCompra`, limitação já no `docs/architecture.md`, Fase 4). Provado no passo 10 do teste. Decisão sua: fazer o `approved` depois de mediação lançar um ajuste positivo automático, ou continuar com ajuste manual.

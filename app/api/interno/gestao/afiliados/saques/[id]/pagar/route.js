@@ -2,7 +2,7 @@ import { getDB } from '@/lib/d1'
 import { mesmaOrigem } from '@/lib/origem'
 import { naoEncontrado } from '@/lib/gestao/permissao'
 import { gravarRegistro } from '@/lib/gestao/registro'
-import { comId, emailDe, extDe, idDe, resposta } from '@/lib/gestao/saques-rota'
+import { comIdMaster, emailDe, extDe, idDe, resposta } from '@/lib/gestao/saques-rota'
 import { linkDeDownload } from '@/lib/b2'
 import { marcarPago } from '@/lib/afiliados/saques-gestao'
 import { enviarEmailSaque } from '@/lib/afiliados/saques-email'
@@ -53,7 +53,7 @@ const post = async (req, admin, ctx) => {
   return resposta({ ok: true, email_enviado: enviado })
 }
 
-export const POST = comId(post)
+export const POST = comIdMaster(post)
 export const GET = naoEncontrado
 export const HEAD = naoEncontrado
 export const OPTIONS = naoEncontrado

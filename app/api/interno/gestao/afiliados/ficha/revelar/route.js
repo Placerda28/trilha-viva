@@ -2,7 +2,7 @@ import { getDB } from '@/lib/d1'
 import { mesmaOrigem } from '@/lib/origem'
 import { naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
 import { gravarRegistro } from '@/lib/gestao/registro'
-import { emailDe, resposta } from '@/lib/gestao/saques-rota'
+import { emailDe, recusaMembro, resposta } from '@/lib/gestao/saques-rota'
 import { lerJson } from '@/lib/afiliados/rota'
 import { dadoCompleto } from '@/lib/afiliados/gestao-ficha'
 
@@ -10,6 +10,8 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const post = async (req, admin) => {
+  const recusa = recusaMembro(admin)
+  if (recusa) return recusa
   if (!mesmaOrigem(req)) return naoEncontrado()
   const corpo = (await lerJson(req)) || {}
   const id = corpo.id

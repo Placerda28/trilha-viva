@@ -6,11 +6,11 @@ import { listarSaques } from '@/lib/afiliados/saques-gestao'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const get = async (req) => {
+const get = async (req, admin) => {
   const db = getDB()
   if (!db) return resposta({ ok: false, erro: 'Banco indisponível no momento.' }, 503)
   const q = new URL(req.url).searchParams
-  return resposta({ ok: true, ...(await listarSaques(db, { status: q.get('status') || 'pendentes', pagina: q.get('pagina') || 1 })) })
+  return resposta({ ok: true, ...(await listarSaques(db, { status: q.get('status') || 'pendentes', pagina: q.get('pagina') || 1, mascarar: admin.papel !== 'master' })) })
 }
 
 export const GET = soAdmin(get)

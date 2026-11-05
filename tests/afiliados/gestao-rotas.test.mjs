@@ -113,8 +113,19 @@ test('ficha: dados mascarados, id inválido ou inexistente dá 404', async () =>
   assert.equal((await get(R.ficha)).status, 404)
 })
 
-test('revelar: devolve o dado inteiro e grava quem revelou; sem registro não revela', async () => {
+test('revelar: membro recebe 403 e nada é gravado', async () => {
   const { db } = montar(MEMBRO)
+  const af = novoAfiliado(db)
+  for (const campo of ['cpf', 'pix']) {
+    const r = await post(R.revelar, { id: af.id, campo })
+    assert.equal(r.status, 403)
+    assert.deepEqual(await r.json(), { ok: false, erro: 'Só o Administrador Master pode fazer esta ação.' })
+  }
+  assert.equal(reg(db, 'afiliado_dado_revelado').length, 0)
+})
+
+test('revelar: devolve o dado inteiro e grava quem revelou; sem registro não revela', async () => {
+  const { db } = montar(MASTER)
   const af = novoAfiliado(db)
   db.banco.prepare("UPDATE afiliados SET cpf = '12345678909' WHERE id = ?").run(af.id)
   const codigo = db.banco.prepare('SELECT codigo FROM afiliados WHERE id = ?').get(af.id).codigo
@@ -126,7 +137,7 @@ test('revelar: devolve o dado inteiro e grava quem revelou; sem registro não re
   assert.equal(pix.chave, '00000000000')
   const linhas = reg(db, 'afiliado_dado_revelado')
   assert.equal(linhas.length, 2)
-  assert.deepEqual([linhas[0].quem, linhas[0].alvo, linhas[0].detalhe], ['equipe@t.com', codigo, '{"campo":"cpf"}'])
+  assert.deepEqual([linhas[0].quem, linhas[0].alvo, linhas[0].detalhe], ['master@t.com', codigo, '{"campo":"cpf"}'])
   assert.equal(linhas[1].detalhe, '{"campo":"pix"}')
   assert.equal((await post(R.revelar, { id: af.id, campo: 'senha' })).status, 400)
   assert.equal((await post(R.revelar, { id: 999, campo: 'cpf' })).status, 404)

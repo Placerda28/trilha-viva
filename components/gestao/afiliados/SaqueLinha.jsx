@@ -27,7 +27,7 @@ const Valor = ({ s }) => (
   <p className="figs shrink-0 text-[24px] font-extrabold leading-none tracking-[-0.02em] text-ink xl:text-right">{moeda(s.valor_centavos)}</p>
 )
 
-function Pendente({ s, aoPagar, aoRecusar }) {
+function Pendente({ s, master, aoPagar, aoRecusar }) {
   const atrasado = urgente(s.dias_esperando)
   return (
     <li className={'relative px-4 py-4 sm:px-5 ' + COLUNAS}>
@@ -41,6 +41,7 @@ function Pendente({ s, aoPagar, aoRecusar }) {
         {atrasado && <span className="sr-only">Atrasado. </span>}
         {textoEspera(s.dias_esperando)}
       </p>
+      {master && (
       <div className="mt-4 grid grid-cols-2 gap-3 sm:max-w-sm xl:mt-0 xl:flex xl:max-w-none">
         <button type="button" onClick={() => aoRecusar(s)} className="btn-quiet min-h-11 !px-5 !py-2.5 !text-[14.5px]">
           Recusar
@@ -51,6 +52,7 @@ function Pendente({ s, aoPagar, aoRecusar }) {
           <span className="sr-only">, {s.nome}</span>
         </button>
       </div>
+      )}
     </li>
   )
 }
@@ -105,6 +107,6 @@ function Encerrado({ s }) {
   )
 }
 
-export default function SaqueLinha({ saque, aoPagar, aoRecusar }) {
-  return quemPagou(saque) === 'pendente' ? <Pendente s={saque} aoPagar={aoPagar} aoRecusar={aoRecusar} /> : <Encerrado s={saque} />
+export default function SaqueLinha({ saque, master = false, aoPagar, aoRecusar }) {
+  return quemPagou(saque) === 'pendente' ? <Pendente s={saque} master={master} aoPagar={aoPagar} aoRecusar={aoRecusar} /> : <Encerrado s={saque} />
 }

@@ -40,13 +40,16 @@ function montar() {
   return { banco, env, opcoes, mensagens, inserir, lead, rodar }
 }
 
-test('cron lê no máximo 20 leads por rodada e deixa o restante para depois', async () => {
+test('cron manda poucos leads por rodada (orçamento de consultas) e o restante sai nas rodadas seguintes, sem repetir', async () => {
   const s = montar()
   for (let id = 1; id <= 21; id++) s.inserir(id)
   await s.rodar()
-  assert.equal(s.mensagens.length, 20)
-  assert.equal(s.lead(20).etapa_email, 1)
+  // 1 consulta da fila + 3 por lead, dentro de 46 consultas (50 - margem 4) menos o que o e-mail já gastou.
+  assert.ok(s.mensagens.length >= 10 && s.mensagens.length < 21, 'mandou ' + s.mensagens.length)
   assert.equal(s.lead(21).etapa_email, 0)
+  for (let i = 0; i < 8 && s.lead(21).etapa_email === 0; i++) await s.rodar()
+  assert.ok(s.lead(21).etapa_email >= 1) // o consentimento é de 7 dias atrás: as etapas seguintes também já vencem
+  assert.equal(new Set(s.mensagens.map((m) => m.chave)).size, s.mensagens.length) // nenhuma chave repetida
 })
 
 test('cron avança 1→2→3→4, agenda desde o consentimento em UTC e para', async () => {

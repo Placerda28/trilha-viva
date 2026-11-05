@@ -36,6 +36,7 @@ export const ACOES = {
   afiliados_metas: 'mudou a tabela de níveis dos afiliados, valendo a partir de',
   afiliados_config: 'mudou as configurações dos afiliados',
   afiliados_exportar: 'Exportou relatório de afiliados',
+  robo_limite: 'adiou envios por falta de consultas do plano grátis, nas etapas',
   afiliados_alerta_resolvido: 'marcou como resolvido o alerta de afiliados',
   cupom_criado: 'criou o cupom',
   cupom_desativado: 'desativou o cupom',

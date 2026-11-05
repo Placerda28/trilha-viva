@@ -1,5 +1,9 @@
 import { montarEmailLead } from '../../lib/emails-lead.js'
 import { normalizarEmailLembrete } from '../../lib/lembrete-assinatura.js'
+import { adiar, cabe } from './orcamento.js'
+
+// Consultas ao D1 por lead: checagem de compra 1 + reserva 1 + conclusão 1.
+const CUSTO_LEAD = 3
 
 const COMPRA_REAL = `EXISTS (SELECT 1 FROM compras p JOIN clientes c ON c.id = p.cliente_id
   WHERE c.email = leads.email AND p.status = 'pago' AND p.teste = 0 LIMIT 1)`
@@ -10,12 +14,21 @@ export async function executarLeads(env, { fetchImpl = fetch, logger = console }
     throw new Error('Envio de e-mail de lead não configurado.')
   }
   const resultado = { enviados: 0, compradores: 0, falhas: 0 }
+  // Sem nem 1 consulta para ver a fila, não dá para saber quantos esperam: registra 1.
+  if (!cabe(db, 1)) {
+    adiar(db, 'leads', 1)
+    return resultado
+  }
   const { results: leads = [] } = await db.prepare(`SELECT id, nome, email, token_hash, etapa_email
     FROM leads WHERE proximo_email_em <= datetime('now')
       AND consentimento = 1 AND descadastrado = 0 AND comprou = 0 AND etapa_email BETWEEN 0 AND 3
     ORDER BY proximo_email_em, id LIMIT 20`).all()
-  for (const lead of leads) {
+  for (const [i, lead] of leads.entries()) {
     if (env.MODO !== 'ativo' && lead.email !== normalizarEmailLembrete(env.TESTE_PARA)) continue
+    if (!cabe(db, CUSTO_LEAD)) {
+      adiar(db, 'leads', leads.length - i)
+      break
+    }
     try {
       const compra = await db.prepare(`UPDATE leads SET comprou = 1,
         comprou_em = COALESCE(comprou_em, datetime('now')), proximo_email_em = NULL

@@ -2,7 +2,7 @@ import { getDB } from '@/lib/d1'
 import { mesmaOrigem } from '@/lib/origem'
 import { naoEncontrado } from '@/lib/gestao/permissao'
 import { gravarRegistro } from '@/lib/gestao/registro'
-import { comId, emailDe, extDe, idDe, irPara, resposta } from '@/lib/gestao/saques-rota'
+import { comId, comIdMaster, emailDe, extDe, idDe, irPara, resposta } from '@/lib/gestao/saques-rota'
 import { linkDeDownload } from '@/lib/b2'
 import { enviarParaB2, caminhoDoComprovante, caminhoValido, envioConfigurado, MAX_COMPROVANTE_BYTES, tipoPelosBytes } from '@/lib/b2-envio'
 import { gravarComprovante, saquePorId } from '@/lib/afiliados/saques-gestao'
@@ -68,7 +68,7 @@ const get = async (req, admin, ctx) => {
 }
 
 export const GET = comId(get)
-export const POST = comId(post)
+export const POST = comIdMaster(post)
 export const HEAD = naoEncontrado
 export const OPTIONS = naoEncontrado
 export const PUT = naoEncontrado

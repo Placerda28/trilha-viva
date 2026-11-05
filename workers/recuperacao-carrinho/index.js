@@ -3,7 +3,8 @@ import { atenderWebhook, executarWhatsapp } from './whatsapp.js'
 import { acompanharAcessoLiberado } from './acesso-liberado.js'
 import { executarLeads } from './leads.js'
 import { executarAfiliados } from './afiliados.js'
-import { consultasGastas, contarConsultas } from './orcamento.js'
+import { ORCAMENTO } from './afiliados.js'
+import { adiar, adiados, cabe, consultasGastas, contarConsultas, restante } from './orcamento.js'
 import { mascararEmail, montarEmail } from './email-lembrete.js'
 import {
   buscarCandidatosIniciais,
@@ -23,6 +24,11 @@ import {
 // O texto do e-mail fica em email-lembrete.js e as consultas da sequência em
 // email-banco.js; quem já importava daqui segue importando daqui.
 export { mascararEmail, montarEmail }
+
+// Consultas ao D1 por carrinho: impedimentos 1 + reserva 2 (1ª) ou 1 + conclusão 1 (seguimento). Falha do Resend
+// custa até 2 a mais; a margem da rodada cobre.
+const CUSTO_EMAIL = 3
+const CUSTO_ACESSO = 6 // conferência na Meta: consulta + gravação + (aprovado) teste
 
 function limite(valor, padrao) {
   const numero = Number(valor)
@@ -70,7 +76,8 @@ async function executarRodadaEmail(env, opcoes = {}) {
   }
 
   const candidatos = await buscarCandidatosIniciais(db)
-  for (const carrinho of candidatos) {
+  let adiou = false
+  for (const [i, carrinho] of candidatos.entries()) {
     if (contagem.dia >= tetoDia || contagem.mes >= tetoMes) break
 
     const email = normalizarEmailLembrete(carrinho.email)
@@ -78,6 +85,11 @@ async function executarRodadaEmail(env, opcoes = {}) {
       logger.log(`Carrinho ${carrinho.id} não enviado no modo teste: ${mascararEmail(email)}`)
       resultado.apenasLog += 1
       continue
+    }
+    if (!cabe(db, CUSTO_EMAIL)) {
+      adiar(db, 'email', candidatos.length - i)
+      adiou = true
+      break
     }
 
     let reservado = false
@@ -112,10 +124,15 @@ async function executarRodadaEmail(env, opcoes = {}) {
     }
   }
 
-  if (contagem.dia >= tetoDia || contagem.mes >= tetoMes) return resultado
+  if (contagem.dia >= tetoDia || contagem.mes >= tetoMes || adiou) return resultado
+  // Sem nem 1 consulta para ver a fila de seguimentos, não dá para saber quantos esperam: registra 1.
+  if (!cabe(db, 1)) {
+    adiar(db, 'email', 1)
+    return resultado
+  }
 
   const seguimentos = await buscarSeguimentos(db)
-  for (const carrinho of seguimentos) {
+  for (const [i, carrinho] of seguimentos.entries()) {
     if (contagem.dia >= tetoDia || contagem.mes >= tetoMes) break
 
     const email = normalizarEmailLembrete(carrinho.email)
@@ -123,6 +140,10 @@ async function executarRodadaEmail(env, opcoes = {}) {
       logger.log(`Carrinho ${carrinho.id} não alterado no modo teste: ${mascararEmail(email)}`)
       resultado.apenasLog += 1
       continue
+    }
+    if (!cabe(db, CUSTO_EMAIL)) {
+      adiar(db, 'email', seguimentos.length - i)
+      break
     }
 
     const etapaAnterior = Number(carrinho.etapa_email || 0)
@@ -181,6 +202,20 @@ async function executarRodadaEmail(env, opcoes = {}) {
 
 export { executarWhatsapp }
 
+// UMA linha por rodada que adiou trabalho por falta de orçamento: o Painel geral conta estas linhas.
+// Reaproveita a tabela `registro` (sem migração). Custa 1 consulta, coberta pela margem.
+async function registrarLimite(db, logger) {
+  const adiado = adiados(db)
+  if (!db || !Object.keys(adiado).length) return
+  const detalhe = JSON.stringify({ adiado, consultas: consultasGastas(db) })
+  try {
+    await db.prepare("INSERT INTO registro (quem, acao, alvo, detalhe) VALUES ('robo', 'robo_limite', ?, ?)")
+      .bind(Object.keys(adiado).join(','), detalhe).run()
+  } catch (erro) {
+    logger.error('Falha ao registrar o limite de consultas da rodada:', erro?.message || erro)
+  }
+}
+
 // Os dois canais são independentes: um erro no e-mail não impede o WhatsApp,
 // e vice-versa.
 export async function executarRodada(envOriginal, opcoes = {}) {
@@ -217,20 +252,27 @@ export async function executarRodada(envOriginal, opcoes = {}) {
   // Modelo "acesso_liberado" na Meta (status, aviso e teste). Independente
   // dos lembretes: uma falha aqui não atrapalha nada.
   try {
-    await acompanharAcessoLiberado(env, { db: env.DB, fetchImpl: opcoes.fetchImpl, logger })
+    if (cabe(env.DB, CUSTO_ACESSO)) await acompanharAcessoLiberado(env, { db: env.DB, fetchImpl: opcoes.fetchImpl, logger })
+    else if (env.WA_WABA_ID) adiar(env.DB, 'acesso', 1)
   } catch (erro) {
     logger.error('Falha ao acompanhar o modelo acesso_liberado:', erro)
   }
   marca('acesso')
 
   // Afiliados roda POR ÚLTIMO e usa só o que sobrou do orçamento de consultas (ver afiliados.js).
+  const sobra = restante(env.DB)
   try {
-    await executarAfiliados(env, opcoes)
+    const af = await executarAfiliados(env, opcoes)
+    // Só conta como limite do plano quando a sobra era menor que o teto próprio da etapa.
+    const f = af?.fechamento
+    if (af?.adiado) adiar(env.DB, 'afiliados', 1)
+    else if (sobra < ORCAMENTO && (f?.adiado || f?.pendentes > 0 || f?.restam)) adiar(env.DB, 'afiliados', f.pendentes || 1)
   } catch (erro) {
     logger.error('Falha na etapa de afiliados da rodada:', erro)
   }
   marca('afiliados')
   if (medidor) medidor.total = consultasGastas(env.DB)
+  await registrarLimite(env.DB, logger)
 
   if (erroEmail) throw erroEmail
   return resultado

@@ -284,3 +284,25 @@ test('pagar e recusar simultâneos: um só efeito, um só e-mail, Idempotency-Ke
   assert.match(chaves[0], /^saque-(pago|recusado):\d+$/)
   globalThis.fetch = base
 })
+
+test('membro: vê a fila com a chave Pix mascarada, mas pagar, recusar e anexar comprovante dão 403 sem efeito', async () => {
+  const { db } = montar()
+  const a = await comSaque(db)
+  const inteira = (await (await lista.GET(new Request(`${HOST}/x`))).json()).itens[0].pix.chave
+  globalThis.__admin = { papel: 'membro', precisa_trocar_senha: false, cliente: { id: 2, email: 'equipe@t.com' } }
+  const l = await lista.GET(new Request(`${HOST}/x`))
+  const c = await l.json()
+  assert.deepEqual([l.status, c.itens.length], [200, 1])
+  assert.notEqual(c.itens[0].pix.chave, inteira)
+  assert.ok(!JSON.stringify(c).includes(inteira))
+  const msg = { ok: false, erro: 'Só o Administrador Master pode fazer esta ação.' }
+  for (const [rota, nome] of [[pagar, 'pagar'], [recusar, 'recusar']]) {
+    const r = await json(rota, a.id, { motivo: 'x' })
+    assert.equal(r.status, 403, nome)
+    assert.deepEqual(await r.json(), msg, nome)
+  }
+  const up = await enviarArquivo(upload, a.id, PDF)
+  assert.equal(up.status, 403)
+  assert.deepEqual(await up.json(), msg)
+  assert.equal(n(db, "SELECT COUNT(*) AS n FROM afiliados_saques WHERE id = ? AND status = 'solicitado' AND comprovante_caminho IS NULL", a.id), 1)
+})

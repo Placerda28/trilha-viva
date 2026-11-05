@@ -3,11 +3,11 @@
 O branch `afiliados` (C:\dev\tv-afiliados) tem as fases 1 a 11 prontas e testadas só no PC: 623 testes passando, auditoria em `tasks/afiliados-seguranca.md` e planilha de conferência em `tasks/afiliados-conferencia.csv` (91 números conferidos, nenhum diferente). A `origin/main` não mudou desde a base (71df934), então o merge entra sem conflito.
 
 ## Decisões do Paulo (antes de publicar)
-1. **Membro da equipe:** hoje o membro pode pagar e recusar saques, anexar comprovante, revelar CPF e Pix e baixar o CSV de saques pagos. Fica assim, ou essas ações passam a ser só do master? Mudar é trocar para `soMaster` em 5 rotas.
+1. **Feito (05/11):** pagar e recusar saques, anexar comprovante, revelar CPF e Pix e baixar o CSV de saques pagos agora são só do master. O membro vê a fila de saques com o Pix mascarado.
 2. **Mediação ganha depois do fechamento:** o acesso volta, mas o estorno da comissão continua. As opções são deixar o ajuste manual ou fazer um ajuste positivo automático.
 3. **Cliques:** pôr ou não um limite por IP. Sem limite, dá para inflar a contagem de cliques. Isso não afeta o dinheiro.
-4. **Robô (problema que já existia antes dos afiliados):** em dia cheio, as etapas antigas passam de 50 consultas por rodada no plano grátis do D1. As opções são limitar os e-mails a uns 14 por rodada ou passar para o plano pago.
-5. **Textos da página `/afiliados`:** estão no relatório da Fase 10. Prints em `%TEMP%\prints-afiliados\landing-*.png`.
+4. **Feito (05/11):** o robô tem um orçamento de 46 consultas por rodada, dividido entre todas as etapas. Isso dá uns 14 e-mails por rodada; o que não cabe vai para a rodada seguinte, 10 min depois. Quando o limite é atingido, aparece um aviso no Painel da Gestão. Se o aviso aparecer todo dia, é hora de passar para o plano pago.
+5. **Aprovado (05/11):** textos da página `/afiliados`.
 
 ## Ordem de publicação (o Paulo libera cada passo)
 1. **Ponto de restauração do banco:** `npx wrangler d1 time-travel info trilha-viva` (anotar o bookmark).

@@ -42,6 +42,12 @@ import {
   reservarPrimeira,
   reservarSeguinte,
 } from './whatsapp-banco.js'
+import { adiar, cabe } from './orcamento.js'
+
+// Consultas ao D1 da etapa: as fixas (estado, resumo do dia, encerramentos, contagem, 2 filas) e as de cada
+// mensagem (impedimentos + reserva + envio gravado). Valores medidos em tests/recuperacao/orcamento-consultas.test.mjs.
+const FIXO_WHATSAPP = 12
+const CUSTO_WHATSAPP = 5
 
 export { dentroDoHorario }
 
@@ -79,6 +85,11 @@ export async function executarWhatsapp(env, opcoes = {}) {
 
   const db = env.DB
   if (!db) throw new Error('Binding DB não configurado.')
+  // Sem orçamento para as consultas fixas da etapa (estado, resumo, filas), nada roda: fica para a rodada seguinte.
+  if (!cabe(db, FIXO_WHATSAPP)) {
+    adiar(db, 'whatsapp', 1)
+    return resultado
+  }
   const fetchImpl = opcoes.fetchImpl || globalThis.fetch
   const agora = new Date(opcoes.agora || new Date())
   const agoraSql = paraSql(agora)
@@ -112,8 +123,12 @@ export async function executarWhatsapp(env, opcoes = {}) {
   const modelos = await modelosDaSequencia(db, env, fetchImpl, logger)
   const aprovados = new Set([...modelos].filter(([, m]) => m.status === 'APPROVED').map(([nome]) => nome))
 
-  for (const carrinho of fila) {
+  for (const [i, carrinho] of fila.entries()) {
     if (enviadosHoje >= tetoDia) break
+    if (!cabe(db, CUSTO_WHATSAPP)) {
+      adiar(db, 'whatsapp', fila.length - i)
+      break
+    }
     const email = normalizarEmailLembrete(carrinho.email)
 
     if (carrinho.seguinte) {

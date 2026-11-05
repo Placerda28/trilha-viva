@@ -16,7 +16,7 @@ import { ABAS, POR_PAGINA_PADRAO, VAZIO } from './saquesUtil'
 // pedido, paga o Pix no banco, anexa o comprovante e marca como pago; o
 // servidor manda o e-mail ao afiliado. Vale para o master e para a equipe.
 
-export default function Saques() {
+export default function Saques({ master = false }) {
   const [aba, setAba] = useState('pendentes')
   const [pagina, setPagina] = useState(1)
   const [tentativa, setTentativa] = useState(0)
@@ -35,6 +35,10 @@ export default function Saques() {
     <section aria-label="Saques dos afiliados">
       <CabecalhoPagina titulo="Saques dos afiliados" texto="Pague o Pix, anexe o comprovante e o afiliado recebe o aviso por e-mail." />
       <SubAbas atual="saques" />
+
+      {!master && (
+        <p className="mt-4 border-l-2 border-line pl-3 text-[14.5px] text-ink-muted">Só o Administrador Master paga saques e vê CPF e Pix completos.</p>
+      )}
 
       {dados?.resumo && <SaquesResumo resumo={dados.resumo} />}
 
@@ -63,7 +67,7 @@ export default function Saques() {
             <div className={'transition-opacity duration-150 ' + (carregando ? 'opacity-60' : '')}>
               <ul className="mt-4 divide-y divide-line rounded-md border border-line bg-white">
                 {dados.itens.map((s) => (
-                  <SaqueLinha key={s.id} saque={s} aoPagar={setPagando} aoRecusar={setRecusando} />
+                  <SaqueLinha key={s.id} saque={s} master={master} aoPagar={setPagando} aoRecusar={setRecusando} />
                 ))}
               </ul>
               <Paginacao pagina={dados.pagina || pagina} porPagina={dados.por_pagina || POR_PAGINA_PADRAO} total={dados.total} onIr={setPagina} />
@@ -72,7 +76,7 @@ export default function Saques() {
         </Tabs.Content>
       </Tabs.Root>
 
-      {pagando && (
+      {master && pagando && (
         <PagarSaque
           key={pagando.id}
           saque={pagando}
@@ -84,7 +88,7 @@ export default function Saques() {
           }}
         />
       )}
-      {recusando && <RecusarSaque key={recusando.id} saque={recusando} aoFechar={() => setRecusando(null)} aoMudou={atualizar} />}
+      {master && recusando && <RecusarSaque key={recusando.id} saque={recusando} aoFechar={() => setRecusando(null)} aoMudou={atualizar} />}
     </section>
   )
 }

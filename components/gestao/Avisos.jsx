@@ -57,6 +57,18 @@ export function avisosDaApi(d, agora) {
       href: '/gestao/vendas',
     })
   }
+  // O robô adiou e-mails por falta de consultas do plano grátis do D1: o dono decide se passa para o pago.
+  if (d.robo_limite_7d?.vezes > 0) {
+    const { vezes, dias, ultima } = d.robo_limite_7d
+    const quando = new Date(ultima).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+    lista.push({
+      id: 'robo-limite',
+      icone: 'robo',
+      texto: 'O robô chegou ao limite do plano grátis ' + plural(vezes, 'vez', 'vezes') + ' nos últimos 7 dias (em ' + plural(dias, 'dia', 'dias') + '; a última foi em ' + quando + '). Os e-mails foram adiados para a rodada seguinte. Se isso acontecer todo dia, vale passar para o plano pago do Cloudflare.',
+      acao: 'Ver o registro',
+      href: '/gestao/registro',
+    })
+  }
   for (const c of d.cupons_vencendo || []) {
     const dias = diasAte(c.valido_ate, agora)
     lista.push({

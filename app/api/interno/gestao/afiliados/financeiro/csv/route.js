@@ -3,6 +3,7 @@ import { gerarCsv } from '@/lib/gestao/csv'
 import { validarPeriodo } from '@/lib/gestao/datas'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
 import { gravarRegistro } from '@/lib/gestao/registro'
+import { recusaMembro } from '@/lib/gestao/saques-rota'
 import { LIMITE_CSV, TIPOS_CSV, dadosCsv } from '@/lib/afiliados/gestao-financeiro'
 
 export const runtime = 'nodejs'
@@ -14,6 +15,11 @@ const get = async (req, admin) => {
   const q = new URL(req.url).searchParams
   const tipo = String(q.get('tipo') || '')
   if (!TIPOS_CSV.includes(tipo)) return erro({ erro: 'Tipo inválido. Use comissoes, saques_pagos ou resumo_mensal.', campo: 'tipo' }, 400)
+  // saques_pagos leva CPF e chave Pix inteiros: só o master. comissoes e resumo_mensal não têm dado pessoal.
+  if (tipo === 'saques_pagos') {
+    const recusa = recusaMembro(admin)
+    if (recusa) return recusa
+  }
   const periodo = validarPeriodo(q.get('de'), q.get('ate'))
   if (!periodo.ok) return erro({ erro: periodo.erro }, 400)
   const db = getDB()

@@ -52,7 +52,7 @@ function Revelar({ campo, nome, aoRevelado, aoFechar }) {
   )
 }
 
-function ComRevelar({ mascarado, inteiro, aoRevelar, aoOcultar, rotulo, copiavel }) {
+function ComRevelar({ mascarado, inteiro, aoRevelar, aoOcultar, rotulo, copiavel, master }) {
   return (
     <>
       <span className="figs break-all">{inteiro ?? mascarado}</span>
@@ -64,17 +64,17 @@ function ComRevelar({ mascarado, inteiro, aoRevelar, aoOcultar, rotulo, copiavel
             </button>
             {copiavel && <BotaoCopiar texto={copiavel} rotulo="Copiar" rotuloCopiado="Copiado" />}
           </>
-        ) : (
+        ) : master ? (
           <button type="button" onClick={aoRevelar} className="btn-quiet min-h-11 !px-4 !py-2 !text-[14px]">
             Revelar<span className="sr-only"> {rotulo}</span>
           </button>
-        )}
+        ) : null}
       </span>
     </>
   )
 }
 
-export default function FichaDados({ afiliado: a }) {
+export default function FichaDados({ afiliado: a, master = false }) {
   const [revelando, setRevelando] = useState(null)
   const [aberto, setAberto] = useState({}) // { cpf: '123...', pix: {...} }
   const mostrar = (tipo, dados) => setAberto((o) => ({ ...o, [tipo]: tipo === 'cpf' ? dados.cpf : dados.pix }))
@@ -91,7 +91,7 @@ export default function FichaDados({ afiliado: a }) {
         <Dado rotulo="WhatsApp">{a.telefone || '—'}</Dado>
         <Dado rotulo="Canal de divulgação">{a.canal || '—'}</Dado>
         <Dado rotulo="CPF">
-          <ComRevelar mascarado={a.cpf} inteiro={aberto.cpf} rotulo="o CPF" aoRevelar={() => setRevelando({ tipo: 'cpf', id: a.id })} aoOcultar={() => ocultar('cpf')} />
+          <ComRevelar master={master} mascarado={a.cpf} inteiro={aberto.cpf} rotulo="o CPF" aoRevelar={() => setRevelando({ tipo: 'cpf', id: a.id })} aoOcultar={() => ocultar('cpf')} />
         </Dado>
         <Dado rotulo="Cadastro em">{a.criado_em ? dataHora(a.criado_em) : '—'}</Dado>
         <Dado rotulo="Termos aceitos em">{a.termos_aceitos_em ? dataHora(a.termos_aceitos_em) : '—'}</Dado>
@@ -112,12 +112,15 @@ export default function FichaDados({ afiliado: a }) {
         </Dado>
       </dl>
 
+      {!master && <p className="mt-4 text-[14px] text-ink-muted">Só o Administrador Master paga saques e vê CPF e Pix completos.</p>}
+
       <h3 className="mt-6 border-t border-line pt-5 text-[16px] font-bold text-ink">Chave Pix</h3>
       {pix ? (
         <dl className="mt-3 grid gap-x-8 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
           <Dado rotulo="Tipo">{nomeTipoPix(pix.tipo_chave)}</Dado>
           <Dado rotulo="Chave">
             <ComRevelar
+              master={master}
               mascarado={pix.chave}
               inteiro={aberto.pix?.chave}
               copiavel={aberto.pix?.chave}

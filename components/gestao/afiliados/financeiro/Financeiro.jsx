@@ -14,7 +14,7 @@ import ResumoMensal from './ResumoMensal'
 // contabilidade e o extrato geral com filtros e páginas. Os números vêm
 // prontos de /api/gestao/afiliados/financeiro; o período é o global da gestão.
 
-function Conteudo({ de, ate }) {
+function Conteudo({ de, ate, master }) {
   const [tipo, setTipo] = useState('')
   const [afiliado, setAfiliado] = useState(null)
   const [pagina, setPagina] = useState(1)
@@ -32,7 +32,7 @@ function Conteudo({ de, ate }) {
   if (!dados) return <Esqueleto linhas={5} />
   return (
     <div className="flex flex-col gap-3">
-      <ExportarCsv de={de} ate={ate} />
+      <ExportarCsv de={de} ate={ate} master={master} />
       <ResumoMensal resumo={dados.resumo_mensal} />
       <section aria-labelledby="titulo-extrato" className="rounded-md border border-line bg-white p-4 sm:p-5">
         <h2 id="titulo-extrato" className="text-[17px] font-bold tracking-[-0.01em] text-ink">Extrato geral</h2>
@@ -44,7 +44,7 @@ function Conteudo({ de, ate }) {
   )
 }
 
-function Tela() {
+function Tela({ master }) {
   const periodo = usePeriodo()
   return (
     <section aria-label="Financeiro dos afiliados">
@@ -52,7 +52,7 @@ function Tela() {
       <SubAbas atual="financeiro" />
       {periodo.valido ? (
         // Trocar o período recomeça os filtros e a página.
-        <Conteudo key={periodo.de + periodo.ate} de={periodo.de} ate={periodo.ate} />
+        <Conteudo key={periodo.de + periodo.ate} de={periodo.de} ate={periodo.ate} master={master} />
       ) : (
         <p role="alert" className="mt-3 text-[14px] text-signal-deep">{periodo.erro}</p>
       )}
@@ -60,10 +60,10 @@ function Tela() {
   )
 }
 
-export default function Financeiro() {
+export default function Financeiro({ master = false }) {
   return (
     <Suspense fallback={<Esqueleto linhas={5} />}>
-      <Tela />
+      <Tela master={master} />
     </Suspense>
   )
 }
