@@ -10,6 +10,24 @@ import { NOV, novoAfiliado, novoDb, vendas } from './_base.mjs'
 const AGORA = new Date('2026-11-20T15:00:00Z')
 const N = (nome, vendas_minimas, valor_por_venda_centavos, cor = null) => ({ nome, vendas_minimas, valor_por_venda_centavos, cor })
 
+test('primeiro nível tem de ser 1 venda; tabela sem nível de 1 venda não derruba o cálculo', async () => {
+  const r = validarNiveis([N('A', 5, 1000), N('B', 10, 2000)])
+  assert.equal(r.ok, false)
+  assert.match(r.erro, /primeiro nível precisa começar em 1 venda/)
+  const { calcularNivel } = await import('../../lib/afiliados/niveis.js')
+  const tabela = [{ id: 1, nome: 'A', vendas_minimas: 5, valor_por_venda_centavos: 1000 }, { id: 2, nome: 'B', vendas_minimas: 10, valor_por_venda_centavos: 2000 }]
+  const um = calcularNivel(1, tabela) // antes: Cannot read properties of null
+  assert.deepEqual([um.nivel, um.total, um.base, um.bonus, um.faltam, um.proximo.nome], [null, 0, 0, 0, 4, 'A'])
+  assert.equal(calcularNivel(5, tabela).total, 5000)
+  assert.equal(calcularNivel(0, tabela).total, 0)
+  assert.equal(calcularNivel(3, []).total, 0)
+  // com a tabela ruim no banco, a projeção também não cai
+  const db = novoDb()
+  db.banco.prepare("UPDATE afiliados_niveis SET vendas_minimas = vendas_minimas + 4 WHERE valido_desde_mes = '2026-01'").run()
+  await vendas(db, novoAfiliado(db), 1)
+  assert.equal((await projecaoDoMes(db, NOV)).custo_projetado_centavos, 0)
+})
+
 test('validarNiveis: ordem crescente, sem repetir, valores positivos, cor e limites', () => {
   assert.equal(validarNiveis([N('A', 1, 1000), N('B', 10, 2000, '#aabbcc')]).ok, true)
   assert.equal(validarNiveis([N('A', 1, 1000)]).niveis[0].cor, null)

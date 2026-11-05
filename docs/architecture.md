@@ -155,17 +155,17 @@
 - A chave de leitura do acervo (`B2_KEY_ID`) precisa enxergar o prefixo `afiliados-comprovantes/` (chave do balde inteiro, como hoje). Se ela for restrita a outro prefixo, o comprovante não abre e o e-mail sai sem anexo (`email_enviado: false`).
 
 ### Afiliados (Fase 8A: Dashboard, Financeiro e Alertas da Gestão)
-- **Migração `0021_afiliados_alertas.sql` (só acrescenta; o Paulo aplica no remoto ANTES do deploy):** tabela `afiliados_alertas_resolvidos` (`chave` única, `resolvido_em`, `resolvido_por`) e 4 índices (`afiliados_lancamentos(criado_em)`, `afiliados_cliques(criado_em)`, `afiliados_eventos(evento, criado_em)`, `afiliados_saques(status, pedido_em)`). **O contador do menu (`consultarAvisos`) lê a tabela nova: sem a 0021 aplicada, `GET /api/interno/gestao/avisos` dá erro.**
+- **Migração `0021_afiliados_alertas.sql` (só acrescenta; o Paulo aplica no remoto ANTES do deploy):** tabela `afiliados_alertas_resolvidos` (`chave` única, `resolvido_em`, `resolvido_por`) e 4 índices (`afiliados_lancamentos(criado_em)`, `afiliados_cliques(criado_em)`, `afiliados_eventos(evento, criado_em)`, `afiliados_saques(status, pedido_em)`). O contador do menu lê a tabela nova, mas num lote próprio com try/catch: sem a 0021 (ou a 0018), `afiliados_alertas` e `afiliados_saques_pendentes` vêm 0, com um log, e o resto dos avisos funciona.
 - Peças em `lib/afiliados/` (sem `@/`): `gestao-painel.js` (`dashboardAfiliados`), `gestao-painel-niveis.js` e `gestao-painel-frase.js` (apoio), `gestao-financeiro.js` (`extrato`, `resumoMensal`, `dadosCsv`), `gestao-alertas.js` (`calcularAlertas`, `resolverAlerta`, `prepararContagemAlertas`), `gestao-periodo.js` (meses, variação, `reais`). `lib/gestao/csv.js` ganhou `numeroCsv(texto)`: número já formatado (`-5,00`) que o sistema gerou não leva aspas simples de proteção; texto de fora continua protegido.
 - Convenções comuns (as de 8B valem aqui): rotas em `/api/interno/gestao/afiliados/`, `nodejs`/`force-dynamic`, `no-store`, `soAdmin` (404 comum para quem não é admin; membro vê tudo e resolve alerta), outros métodos 404, erro `{ ok: false, erro, campo? }` (400 dados, 503 banco). **Período** `?de=AAAA-MM-DD&ate=AAAA-MM-DD`, obrigatório, inclusivo, dia de Brasília, até 731 dias (`validarPeriodo`). Dinheiro em **centavos inteiros**; datas de itens em ISO UTC; contagens são inteiros; porcentagens têm 1 casa (`95.3` = 95,3%) e vêm `null` quando a base é zero.
-- **Fontes dos números:** vendas = `compras_reais` com `status = 'pago'` (reembolso, chargeback e mediação saem da venda e ficam à parte). Receita líquida = `liquido_centavos`; quando é nulo (venda antiga sem taxa do Mercado Pago) vale `valor_centavos` e a venda é contada em `vendas_com_valor_estimado`/`estimadas`. **Não existe desconto**: custo do programa = comissão base (lançamentos `venda` não cancelados, pela data da venda) + bônus (`bonus_nivel`, pelo `mes_referencia`) + ajustes e estornos (pela data do lançamento; estorno é negativo). Lucro = receita líquida − custo.
+- **Fontes dos números:** vendas = `compras_reais` com `status = 'pago'` (reembolso, chargeback e mediação saem da venda e ficam à parte). Receita líquida = `liquido_centavos`; quando é nulo (venda antiga sem taxa do Mercado Pago) vale `valor_centavos` e a venda é contada em `vendas_com_valor_estimado`/`estimadas`. **Não existe desconto**: custo do programa = comissão base (lançamentos `venda` não cancelados, pela data da venda) + bônus (`bonus_nivel`), ajustes e estornos, **estes três pela data em que o lançamento foi gravado** (regra de caixa; o bônus nasce no fechamento do mês, então só aparece no período que contém o dia do fechamento; estorno é negativo). `custo_programa.como_contado` traz essa explicação em texto para a tela. A série `receita_custo_mensal` do dashboard usa a mesma regra; o `resumo_mensal` do Financeiro continua por competência (bônus no `mes_referencia`). Lucro = receita líquida − custo.
 
 #### `GET .../dashboard?de&ate`
 ```
 { ok, periodo: { de, ate, dias, anterior: { de, ate } }, gerado_em, frase,
   compensa: {
     receita_liquida_afiliados_centavos, vendas_com_valor_estimado,
-    custo_programa: { total_centavos, base_centavos, bonus_centavos, ajustes_centavos, estornos_centavos },
+    custo_programa: { como_contado, total_centavos, base_centavos, bonus_centavos, ajustes_centavos, estornos_centavos },
     lucro_afiliados_centavos, vendas_afiliados, vendas_diretas, vendas_total,
     pct_vendas_afiliados,                       // null sem vendas
     cpa_centavos,                               // custo / vendas via afiliado; null sem vendas via afiliado
@@ -196,7 +196,7 @@
 - `tipo` (opcional): `venda`, `bonus_nivel`, `ajuste` ou `estorno`; `afiliado` (opcional): id numérico; `pagina` a partir de 1. Valor inválido: 400 com `campo`.
 ```
 { ok, de, ate,
-  extrato: { pagina, por_pagina: 50, total_itens, soma_centavos,   // soma de TODOS os itens do filtro, não só da página
+  extrato: { pagina, por_pagina: 50, total_itens, soma_centavos, canceladas_centavos,   // soma de TODOS os itens do filtro, não só da página; soma_centavos NÃO inclui os lançamentos cancelados (venda reembolsada antes do fechamento), que vão em canceladas_centavos
     itens: [{ id, quando, afiliado: { id, nome, codigo }, tipo, mes_referencia, valor_centavos, status, compra_id, saque_id, descricao }] },  // mais novo primeiro; filtro pela data do lançamento
   resumo_mensal: { meses: [{ mes, vendas, bruto, taxas, liquido, estimadas, comissoes_base, bonus, ajustes, estornos, custo, lucro }],   // todos em centavos, menos vendas e estimadas
                    totais: { vendas, bruto, taxas, liquido, estimadas, comissoes_base, bonus, ajustes, estornos, custo, lucro } } }
@@ -206,7 +206,7 @@
 #### `GET .../financeiro/csv?tipo=comissoes|saques_pagos|resumo_mensal&de&ate`
 - `text/csv; charset=utf-8` com BOM, separador `;`, fim de linha CRLF, datas em Brasília, `attachment; filename="afiliados-<tipo>-<de>-a-<ate>.csv"`. Texto de fora com `=`, `+`, `-`, `@` no começo ganha `'` na frente; valores em reais saem como número (`-5,00`).
 - `comissoes` (lançamentos do período): Data; Afiliado; Código; Tipo; Mês de referência; Valor; Status; Compra; Descrição. `saques_pagos` (pago no período): Pago em; Afiliado; CPF do afiliado; Titular da chave Pix; CPF do titular; Tipo da chave; Chave Pix; Valor; Pedido em; Pago por (a chave e o titular vêm do snapshot gravado no saque). `resumo_mensal`: Mês; Vendas via afiliado; Receita bruta; Taxas Mercado Pago; Receita líquida; Comissões base; Bônus de nível; Ajustes; Estornos; Lucro; Vendas sem taxa informada, com uma linha final "Total".
-- `tipo` ou período inválido: 400. **Mais de 5.000 linhas: 400** ("Escolha um período menor"), nunca um arquivo cortado. Cada exportação grava em `registro` a ação `afiliados_exportar` (alvo = o tipo; detalhe `{ tipo, de, ate, linhas }`). Tradução no Registro: `afiliados_exportar` = "Exportou relatório de afiliados".
+- `tipo` ou período inválido: 400. **Mais de 5.000 linhas: 400** ("Escolha um período menor"), nunca um arquivo cortado. O registro é gravado ANTES de o arquivo sair; se falhar, a resposta é 503 e não há arquivo. Cada exportação grava em `registro` a ação `afiliados_exportar` (alvo = o tipo; detalhe `{ tipo, de, ate, linhas }`). Tradução no Registro: `afiliados_exportar` = "Exportou relatório de afiliados".
 
 #### `GET .../alertas`
 ```

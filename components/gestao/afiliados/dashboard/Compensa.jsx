@@ -124,7 +124,10 @@ export default function Compensa({ dados }) {
           valor={moeda(custo.total_centavos)}
           variacao={fracao(cmp.custo)}
           invertida
-          detalhe={partes.length ? partes.map(([n, v]) => n + ' ' + moeda(v)).join(', ') : 'Nenhum custo no período'}
+          detalhe={
+            (partes.length ? partes.map(([n, v]) => n + ' ' + moeda(v)).join(', ') : 'Nenhum custo no período') +
+            (custo.como_contado ? '. ' + custo.como_contado : '')
+          }
         />
         <Kpi
           rotulo="Custo por venda (CPA)"

@@ -78,7 +78,7 @@ test('dashboard: 200 com no-store, período obrigatório e válido', async () =>
   const corpo = await r.json()
   assert.equal(corpo.ok, true)
   assert.equal(corpo.compensa.vendas_afiliados, 101)
-  assert.equal(corpo.compensa.lucro_afiliados_centavos, 606990)
+  assert.equal(corpo.compensa.lucro_afiliados_centavos, 596990)
   assert.equal((await get(dash)).status, 400)
   assert.equal((await get(dash, '?de=2026-11-30&ate=2026-11-01')).status, 400)
   assert.equal((await get(dash, '?de=2026-01-01&ate=2028-12-31')).status, 400)
@@ -183,4 +183,18 @@ test('alertas: lista, resolve (idempotente), 404 de outra origem e chave inváli
   const reg = db.banco.prepare("SELECT * FROM registro WHERE acao = 'afiliados_alerta_resolvido'").all()
   assert.equal(reg.length, 1)
   assert.deepEqual([reg[0].quem, reg[0].alvo], ['master@t.com', `saque_atrasado:${s}`])
+})
+
+test('CSV com CPF e Pix não sai se o registro de quem exportou falhar', async () => {
+  const db = novoDb()
+  await montarCenario(db)
+  db.banco.exec('DROP TABLE registro') // gravarRegistro passa a falhar
+  globalThis.__db = db
+  globalThis.__admin = ADMIN
+  for (const tipo of ['saques_pagos', 'comissoes']) {
+    const r = await get(csv, `${PER}&tipo=${tipo}`)
+    assert.equal(r.status, 503)
+    assert.match(r.headers.get('content-type'), /json/)
+    assert.match((await r.json()).erro, /registrar a exportação/)
+  }
 })

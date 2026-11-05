@@ -21,13 +21,14 @@ const get = async (req, admin) => {
 
   const dados = await dadosCsv(db, tipo, periodo)
   if (dados.excedeu) return erro({ erro: `O período tem mais de ${LIMITE_CSV} linhas. Escolha um período menor.` }, 400)
-  // Quem exportou fica registrado (o CSV de saques tem CPF e chave Pix).
-  await gravarRegistro(db, {
+  // O arquivo só sai se ficou gravado quem exportou (o CSV de saques tem CPF e chave Pix).
+  const gravou = await gravarRegistro(db, {
     quem: String(admin.cliente.email || '').trim().toLowerCase(),
     acao: 'afiliados_exportar',
     alvo: tipo,
     detalhe: { tipo, de: periodo.de, ate: periodo.ate, linhas: dados.linhas.length },
   })
+  if (!gravou) return erro({ erro: 'Não foi possível registrar a exportação. Tente de novo.' }, 503)
   return new Response(gerarCsv(dados.cabecalho, dados.linhas), {
     headers: {
       ...cabecalhosPrivados,

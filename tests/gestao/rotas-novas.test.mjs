@@ -104,7 +104,7 @@ test('avisos: contadores, listas e membros só para o master, em um batch', asyn
   const { b, db } = seed()
   const antes = db.lotes
   const master = await consultarAvisos(db, { master: true })
-  assert.equal(db.lotes - antes, 1)
+  assert.equal(db.lotes - antes, 2) // o menu + o lote próprio dos contadores de afiliados
   // 27999990001 espera resposta; 27999990002 já foi respondida; a de 30 h está fora da janela.
   assert.equal(master.whatsapp_esperando, 1)
   assert.deepEqual(master.robo, { estado: 'pausado', modelo_status: 'APPROVED' })

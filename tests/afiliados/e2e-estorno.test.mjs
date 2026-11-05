@@ -324,7 +324,7 @@ test('estorno e chargeback de ponta a ponta', async (t) => {
     const c = d.compensa
     assert.deepEqual([c.vendas_afiliados, c.vendas_total, c.pct_vendas_afiliados], [18, 18, 100])
     assert.equal(c.receita_liquida_afiliados_centavos, 152820)
-    assert.deepEqual(c.custo_programa, { total_centavos: 25500, base_centavos: 28500, bonus_centavos: 0, ajustes_centavos: 0, estornos_centavos: -3000 })
+    assert.deepEqual(c.custo_programa, { como_contado: c.custo_programa.como_contado, total_centavos: 25500, base_centavos: 28500, bonus_centavos: 0, ajustes_centavos: 0, estornos_centavos: -3000 })
     assert.equal(c.lucro_afiliados_centavos, 127320)
     assert.equal(c.cpa_centavos, 1417)
     assert.deepEqual([d.dinheiro.disponivel_centavos, d.dinheiro.liberando_centavos], [0, 0])
@@ -341,6 +341,6 @@ test('estorno e chargeback de ponta a ponta', async (t) => {
     assert.deepEqual([dez.mes, dez.vendas, dez.liquido, dez.comissoes_base, dez.estornos, dez.custo, dez.lucro], ['2026-12', 0, 0, 0, -3000, -3000, 3000])
     const tot = fin.resumo_mensal.totais
     assert.deepEqual([tot.custo, tot.lucro], [25500, 127320]) // igual ao dashboard
-    assert.deepEqual([fin.extrato.total_itens, fin.extrato.soma_centavos], [22, 27000])
+    assert.deepEqual([fin.extrato.total_itens, fin.extrato.soma_centavos], [22, 25500]) // soma sem as canceladas (1500 vão em canceladas_centavos)
   })
 })

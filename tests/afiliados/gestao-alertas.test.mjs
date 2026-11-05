@@ -238,3 +238,18 @@ test('contador do menu (afiliados_alertas) bate com os 3 alertas baratos e cai a
   await resolve(db, 'fechamento_pendente:2026-09')
   assert.equal((await consultarAvisos(db, { agora: AGORA })).afiliados_alertas, 2)
 })
+
+test('menu: sem a tabela da 0021 (ou a da 0018) os avisos antigos continuam e os de afiliados viram 0', async () => {
+  const db = novoDb()
+  db.banco.exec('DROP TABLE afiliados_alertas_resolvidos')
+  const a = await consultarAvisos(db, { agora: AGORA })
+  assert.equal(a.afiliados_alertas, 0)
+  assert.equal(a.afiliados_saques_pendentes, 0)
+  assert.equal(a.whatsapp_esperando, 0) // o resto do menu responde normalmente
+  assert.equal(a.robo.estado, 'aguardando_modelo')
+  const b = novoDb()
+  b.banco.exec('DROP TABLE afiliados_saques')
+  const r = await consultarAvisos(b, { agora: AGORA })
+  assert.equal(r.afiliados_saques_pendentes, 0)
+  assert.ok(Array.isArray(r.cupons_vencendo))
+})

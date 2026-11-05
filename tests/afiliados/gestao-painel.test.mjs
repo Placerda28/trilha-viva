@@ -37,12 +37,16 @@ test('está compensando: receita, custo, lucro, CPA e % de afiliados', async () 
   // Receita líquida: A1 48x7500 = 360000; A2 2x7500 + 7990 (sem taxa, estimada) = 22990; A3 50x7500 = 375000 -> 757990
   assert.equal(c.receita_liquida_afiliados_centavos, 757990)
   assert.equal(c.vendas_com_valor_estimado, 1)
-  // Custo: base = 48x1500 + 3x1500 + 51x1500 (a 51a foi estornada depois) = 153000; bônus de novembro ainda não existe = 0;
-  // ajuste -500; estorno -1500 -> 153000 + 0 - 500 - 1500 = 151000
-  assert.deepEqual(c.custo_programa, { total_centavos: 151000, base_centavos: 153000, bonus_centavos: 0, ajustes_centavos: -500, estornos_centavos: -1500 })
-  // Lucro: 757990 - 151000 = 606990. CPA: 151000 / 101 = 1495,05 -> 1495
-  assert.equal(c.lucro_afiliados_centavos, 606990)
-  assert.equal(c.cpa_centavos, 1495)
+  // Custo (regra de caixa): base = 48x1500 + 3x1500 + 51x1500 (a 51a foi estornada depois) = 153000; bônus de A4 (outubro) foi gravado
+  // no fechamento de 30/11, então entra em novembro: 10000;
+  // ajuste -500; estorno -1500 -> 153000 + 10000 - 500 - 1500 = 161000
+  assert.match(c.custo_programa.como_contado, /Conta de caixa/)
+  const custo = { ...c.custo_programa }
+  delete custo.como_contado
+  assert.deepEqual(custo, { total_centavos: 161000, base_centavos: 153000, bonus_centavos: 10000, ajustes_centavos: -500, estornos_centavos: -1500 })
+  // Lucro: 757990 - 161000 = 596990. CPA: 161000 / 101 = 1594,06 -> 1594
+  assert.equal(c.lucro_afiliados_centavos, 596990)
+  assert.equal(c.cpa_centavos, 1594)
   // % afiliados: 101 / 106 = 95,28% -> 95,3
   assert.equal(c.pct_vendas_afiliados, 95.3)
 })
@@ -50,8 +54,8 @@ test('está compensando: receita, custo, lucro, CPA e % de afiliados', async () 
 test('lucro por venda: afiliado, direta e por nível do mês', async () => {
   const { d } = await dados()
   const l = d.compensa.lucro_por_venda
-  // afiliado: 606990 / 101 = 6009,8 -> 6010. Direta: 5x7500 / 5 = 7500
-  assert.equal(l.afiliado_centavos, 6010)
+  // afiliado: 596990 / 101 = 5910,8 -> 5911. Direta: 5x7500 / 5 = 7500
+  assert.equal(l.afiliado_centavos, 5911)
   assert.equal(l.direta_centavos, 7500)
   // Bronze (A2): 3 vendas, receita 22990, custo 3x1500 = 4500, lucro 18490, 18490/3 = 6163,3 -> 6163
   // Prata (A1, 48 vendas): receita 360000, custo 48x2000 = 96000, lucro 264000, por venda 5500
@@ -67,13 +71,13 @@ test('comparação com o período anterior (outubro)', async () => {
   const { d } = await dados()
   const c = d.compensa.comparacao
   // Outubro: afiliados 25 (A4 20 + A1 5, a de 31/10 23:30 conta), diretas 10, total 35; receita 25x7500 = 187500;
-  // custo = base 25x1500 = 37500 + bônus de A4 (Prata: 20x(2000-1500)) 10000 = 47500; lucro 140000; CPA 47500/25 = 1900; % = 25/35 = 71,4
+  // custo = base 25x1500 = 37500 (o bônus de A4 só foi gravado em 30/11, fora de outubro); lucro 150000; CPA 37500/25 = 1500; % = 25/35 = 71,4
   assert.deepEqual(c.vendas_afiliados, { atual: 101, anterior: 25, pct: 304 }) // (101-25)/25
   assert.deepEqual(c.vendas_total, { atual: 106, anterior: 35, pct: 202.9 }) // 71/35
   assert.deepEqual(c.receita_liquida, { atual: 757990, anterior: 187500, pct: 304.3 }) // 570490/187500
-  assert.deepEqual(c.custo, { atual: 151000, anterior: 47500, pct: 217.9 }) // 103500/47500
-  assert.deepEqual(c.lucro, { atual: 606990, anterior: 140000, pct: 333.6 }) // 466990/140000
-  assert.deepEqual(c.cpa, { atual: 1495, anterior: 1900, pct: -21.3 }) // -405/1900
+  assert.deepEqual(c.custo, { atual: 161000, anterior: 37500, pct: 329.3 }) // 123500/37500
+  assert.deepEqual(c.lucro, { atual: 596990, anterior: 150000, pct: 298 }) // 446990/150000
+  assert.deepEqual(c.cpa, { atual: 1594, anterior: 1500, pct: 6.3 }) // 94/1500
   assert.deepEqual(c.pct_vendas_afiliados, { atual: 95.3, anterior: 71.4, pct: 33.5 }) // 23,9/71,4
 })
 
@@ -126,8 +130,8 @@ test('séries: vendas por dia, mês a mês, funil, top 10, níveis, novos e orig
 
   const mes = (x) => s.receita_custo_mensal.find((p) => p.mes === x)
   assert.equal(s.receita_custo_mensal.length, 12)
-  assert.deepEqual(mes('2026-10'), { mes: '2026-10', vendas: 25, receita_liquida_centavos: 187500, custo_centavos: 47500, lucro_centavos: 140000 })
-  assert.deepEqual(mes('2026-11'), { mes: '2026-11', vendas: 101, receita_liquida_centavos: 757990, custo_centavos: 151000, lucro_centavos: 606990 })
+  assert.deepEqual(mes('2026-10'), { mes: '2026-10', vendas: 25, receita_liquida_centavos: 187500, custo_centavos: 37500, lucro_centavos: 150000 })
+  assert.deepEqual(mes('2026-11'), { mes: '2026-11', vendas: 101, receita_liquida_centavos: 757990, custo_centavos: 161000, lucro_centavos: 596990 })
 
   // Funil: 7 cliques (A1 5 + A2 2), 4 checkouts (A1 3 + A3 1), 101 vendas, estornos: 2 reembolsos + 1 chargeback
   assert.deepEqual(s.funil, {
@@ -150,8 +154,8 @@ test('séries: vendas por dia, mês a mês, funil, top 10, níveis, novos e orig
 test('frase automática em português simples', async () => {
   const { d } = await dados()
   assert.match(d.frase, /^De 01\/11 a 30\/11, os afiliados trouxeram 101 vendas \(95,3% das vendas\)\./)
-  assert.match(d.frase, /Entraram R\$ 7\.579,90 líquidos e as comissões custaram R\$ 1\.510,00, então o programa deixou R\$ 6\.069,90 de lucro\./)
-  assert.match(d.frase, /Cada venda custou R\$ 14,95 em comissão\./)
+  assert.match(d.frase, /Entraram R\$ 7\.579,90 líquidos e as comissões custaram R\$ 1\.610,00, então o programa deixou R\$ 5\.969,90 de lucro\./)
+  assert.match(d.frase, /Cada venda custou R\$ 15,94 em comissão\./)
   assert.match(d.frase, /subiram 304%/)
   assert.match(d.frase, /1 venda antiga não tem a taxa do Mercado Pago/)
   const vazia = fraseDoPeriodo({ de: '2026-11-01', ate: '2026-11-30', vendasAfil: 0, vendasTotal: 4, comparaVendas: variacao(0, 0) })
@@ -204,8 +208,8 @@ test('extrato: filtros, soma e paginação', async () => {
   const estornos = await extrato(db, { tipo: 'estorno', periodo })
   assert.deepEqual([estornos.total_itens, estornos.soma_centavos], [1, -1500])
   const doA2 = await extrato(db, { afiliadoId: ids.A2, periodo })
-  // A2 em novembro: 4 vendas (1 cancelada) + 1 ajuste = 5 lançamentos; soma 3x1500 + 1500 (cancelada continua no extrato) - 500 = 5500
-  assert.deepEqual([doA2.total_itens, doA2.soma_centavos], [5, 5500])
+  // A2 em novembro: 4 vendas (1 cancelada) + 1 ajuste = 5 lançamentos; soma SEM a cancelada: 3x1500 - 500 = 4000; canceladas à parte: 1500
+  assert.deepEqual([doA2.total_itens, doA2.soma_centavos, doA2.canceladas_centavos], [5, 4000, 1500])
   const pag2 = await extrato(db, { periodo: validarPeriodo('2026-10-01', '2026-11-30'), pagina: 2 })
   assert.equal(pag2.pagina, 2)
   assert.notEqual(pag2.itens[0].id, tudo.itens[0].id)
@@ -230,4 +234,21 @@ test('número de planilha só aceita dígitos: negativo não vira texto, fórmul
   assert.equal(celulaCsv(numeroCsv('-5,00')), '-5,00')
   assert.equal(celulaCsv(numeroCsv('=1+1')), "'=1+1")
   assert.equal(celulaCsv('-5,00'), "'-5,00")
+})
+
+test('filtro de um dia: o bônus do mês não se repete nos dias sem fechamento (regra de caixa)', async () => {
+  const { db } = await dados()
+  const dia = async (d) => (await dashboardAfiliados(db, validarPeriodo(d, d), AGORA)).compensa
+  // O bônus de outubro (A4, R$ 100) foi gravado em 30/11. Só o dia 30/11 o enxerga; 20/10, 20/11, 21/11 e 22/11 não.
+  for (const d of ['2026-10-20', '2026-11-20', '2026-11-21', '2026-11-22']) assert.equal((await dia(d)).custo_programa.bonus_centavos, 0, d)
+  // 20/11: sem venda de afiliado, só o ajuste de -R$ 5 -> custo -500 e CPA nulo (nada de prejuízo inventado)
+  const vinte = await dia('2026-11-20')
+  assert.equal(vinte.custo_programa.total_centavos, -500)
+  assert.equal(vinte.cpa_centavos, null)
+  // 30/11: a venda de A2 às 23:30 (R$ 15 de base) + o bônus gravado no fechamento (R$ 100) = 11500
+  const trinta = await dia('2026-11-30')
+  assert.deepEqual([trinta.custo_programa.base_centavos, trinta.custo_programa.bonus_centavos, trinta.custo_programa.total_centavos], [1500, 10000, 11500])
+  // O mesmo bônus não aparece em dois períodos seguidos: 2 dias (29 e 30) somam uma vez só
+  const par = (await dashboardAfiliados(db, validarPeriodo('2026-11-29', '2026-11-30'), AGORA)).compensa
+  assert.equal(par.custo_programa.bonus_centavos, 10000)
 })

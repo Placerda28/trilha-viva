@@ -6,13 +6,13 @@ Dashboard: está compensando? (01/11 a 30/11);% das vendas vindas de afiliados;9
 Dashboard: está compensando? (01/11 a 30/11);Receita líquida via afiliados;7579,90;7579,90;Sim
 Dashboard: está compensando? (01/11 a 30/11);Vendas com valor estimado (sem a taxa do Mercado Pago);1;1;Sim
 Dashboard: está compensando? (01/11 a 30/11);Comissões base;1530,00;1530,00;Sim
-Dashboard: está compensando? (01/11 a 30/11);Bônus de nível (pelo mês de referência);0,00;0,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Bônus de nível (pelo dia do fechamento);100,00;100,00;Sim
 Dashboard: está compensando? (01/11 a 30/11);Ajustes manuais;-5,00;-5,00;Sim
 Dashboard: está compensando? (01/11 a 30/11);Estornos;-15,00;-15,00;Sim
-Dashboard: está compensando? (01/11 a 30/11);Custo do programa;1510,00;1510,00;Sim
-Dashboard: está compensando? (01/11 a 30/11);Lucro via afiliados;6069,90;6069,90;Sim
-Dashboard: está compensando? (01/11 a 30/11);Custo por venda (CPA);14,95;14,95;Sim
-Dashboard: está compensando? (01/11 a 30/11);Lucro por venda: afiliado;60,10;60,10;Sim
+Dashboard: está compensando? (01/11 a 30/11);Custo do programa;1610,00;1610,00;Sim
+Dashboard: está compensando? (01/11 a 30/11);Lucro via afiliados;5969,90;5969,90;Sim
+Dashboard: está compensando? (01/11 a 30/11);Custo por venda (CPA);15,94;15,94;Sim
+Dashboard: está compensando? (01/11 a 30/11);Lucro por venda: afiliado;59,11;59,11;Sim
 Dashboard: está compensando? (01/11 a 30/11);Lucro por venda: direta;75,00;75,00;Sim
 Dashboard: está compensando? (01/11 a 30/11);Nível Bronze: vendas;3;3;Sim
 Dashboard: está compensando? (01/11 a 30/11);Nível Bronze: receita líquida;229,90;229,90;Sim
@@ -28,11 +28,11 @@ Dashboard: está compensando? (01/11 a 30/11);Nível Ouro: custo (vendas x valor
 Dashboard: está compensando? (01/11 a 30/11);Nível Ouro: lucro por venda;45,00;45,00;Sim
 Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Vendas por afiliado;304;304;Sim
 Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Receita líquida;304,3;304,3;Sim
-Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Custo do programa;217,9;217,9;Sim
-Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Lucro;333,6;333,6;Sim
-Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Custo por venda (CPA);-21,3;-21,3;Sim
-Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Período anterior: custo do programa;475,00;475,00;Sim
-Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Período anterior: lucro;1400,00;1400,00;Sim
+Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Custo do programa;329,3;329,3;Sim
+Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Lucro;298;298;Sim
+Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Custo por venda (CPA);6,3;6,3;Sim
+Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Período anterior: custo do programa;375,00;375,00;Sim
+Dashboard: comparação com o período anterior (02/10 a 31/10), em %;Período anterior: lucro;1500,00;1500,00;Sim
 Dashboard: afiliados;Cadastrados;6;6;Sim
 Dashboard: afiliados;Ativos;4;4;Sim
 Dashboard: afiliados;Pendentes;1;1;Sim

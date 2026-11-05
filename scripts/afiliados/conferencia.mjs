@@ -27,7 +27,6 @@ const FECHADOS = ['2026-10'] // o cenário fecha outubro em 30/11
 const CUR = { de: DE, ate: ATE }
 const ANT = { de: '2026-10-02', ate: '2026-10-31' }
 const dentro = (iso, p) => diaBr(iso) >= p.de && diaBr(iso) <= p.ate
-const mesesDe = (p) => [...new Set([p.de.slice(0, 7), p.ate.slice(0, 7)])]
 const pct1 = (a, b) => (b > 0 ? Math.round((a / b) * 1000) / 10 : null)
 const soma = (xs) => xs.reduce((s, x) => s + x, 0)
 
@@ -42,7 +41,8 @@ function periodo(p) {
   const afil = comAf(pg)
   const liq = (v) => v.liq ?? VALOR_CHEIO
   const base = BASE * comAf(vendas).filter((v) => v.estado !== 'cancelada' && dentro(v.quando, p)).length
-  const bonus = soma(mesesDe(p).filter((m) => FECHADOS.includes(m)).flatMap((m) => afiliadosDoMes(m).map((a) => a.n * (nivelDe(a.n).valor - BASE))))
+  // regra de caixa: o bônus entra no dia em que o fechamento o gravou (aqui, 30/11)
+  const bonus = dentro(AGORA.toISOString(), p) ? soma(FECHADOS.flatMap((m) => afiliadosDoMes(m).map((a) => a.n * (nivelDe(a.n).valor - BASE)))) : 0
   const ajustes = soma(AJUSTES.filter((a) => dentro(a.quando, p)).map((a) => a.valor))
   const estornos = -BASE * vendas.filter((v) => v.estado === 'estornada' && dentro(v.refundadoEm, p)).length
   const custo = base + bonus + ajustes + estornos
@@ -78,7 +78,7 @@ linha(S1, '% das vendas vindas de afiliados', a.pct, c.pct_vendas_afiliados, 'pc
 linha(S1, 'Receita líquida via afiliados', a.receita, c.receita_liquida_afiliados_centavos, 'din')
 linha(S1, 'Vendas com valor estimado (sem a taxa do Mercado Pago)', a.estimadas, c.vendas_com_valor_estimado)
 linha(S1, 'Comissões base', a.base, c.custo_programa.base_centavos, 'din')
-linha(S1, 'Bônus de nível (pelo mês de referência)', a.bonus, c.custo_programa.bonus_centavos, 'din')
+linha(S1, 'Bônus de nível (pelo dia do fechamento)', a.bonus, c.custo_programa.bonus_centavos, 'din')
 linha(S1, 'Ajustes manuais', a.ajustes, c.custo_programa.ajustes_centavos, 'din')
 linha(S1, 'Estornos', a.estornos, c.custo_programa.estornos_centavos, 'din')
 linha(S1, 'Custo do programa', a.custo, c.custo_programa.total_centavos, 'din')
