@@ -4,7 +4,6 @@ import { naoEncontrado } from '@/lib/gestao/permissao'
 import { gravarRegistro } from '@/lib/gestao/registro'
 import { comId, emailDe, extDe, idDe, resposta } from '@/lib/gestao/saques-rota'
 import { linkDeDownload } from '@/lib/b2'
-import { caminhoValido } from '@/lib/b2-envio'
 import { marcarPago } from '@/lib/afiliados/saques-gestao'
 import { enviarEmailSaque } from '@/lib/afiliados/saques-email'
 import { montarSaquePago } from '@/lib/emails-afiliado'
@@ -18,19 +17,12 @@ const post = async (req, admin, ctx) => {
   if (!mesmaOrigem(req)) return naoEncontrado()
   const id = await idDe(ctx)
   if (!id) return resposta({ ok: false, erro: 'Saque não encontrado.' }, 404)
-  let corpo = {}
-  try {
-    corpo = await req.json()
-  } catch {
-    /* cai na validação */
-  }
-  const caminho = String(corpo?.caminho || '')
-  if (!caminhoValido(id, caminho)) return resposta({ ok: false, erro: 'Anexe o comprovante antes de marcar como pago.' }, 400)
+  // O corpo { caminho } é aceito por compatibilidade, mas IGNORADO: vale só o comprovante gravado pelo upload.
   const db = getDB()
   if (!db) return resposta({ ok: false, erro: 'Banco indisponível no momento.' }, 503)
 
   const agora = new Date()
-  const r = await marcarPago(db, { saqueId: id, caminhoComprovante: caminho, quem: emailDe(admin), agora })
+  const r = await marcarPago(db, { saqueId: id, quem: emailDe(admin), agora })
   if (!r.ok) return resposta({ ok: false, erro: r.motivo }, r.naoEncontrado ? 404 : r.jaTratado ? 409 : 400)
   const s = r.saque
   await gravarRegistro(db, {
@@ -43,6 +35,7 @@ const post = async (req, admin, ctx) => {
   // O pagamento já está gravado: falha de e-mail só vira aviso na resposta.
   let enviado = false
   try {
+    const caminho = s.comprovante_caminho
     const nome = `comprovante-saque-${id}.${extDe(caminho)}`
     const link = await linkDeDownload(caminho, nome, 3600)
     if (link) {
@@ -51,6 +44,7 @@ const post = async (req, admin, ctx) => {
           { para: s.email, nome: s.nome, valor: s.valor_centavos, pagoEm: diaBr(agora), comprovanteUrl: link, comprovanteNome: nome },
           process.env,
         ),
+        { chave: `saque-pago:${id}` },
       )
     }
   } catch (falhou) {

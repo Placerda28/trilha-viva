@@ -6,6 +6,8 @@
 //   - checagem do fechamento: 1; fecharMes: 3 fixas + 4 por afiliado (fixo, contagem, 2 do lote) -> 3 afiliados = 16
 //   - resumo: 1 de lista + por e-mail 4 na 1ª tentativa (saldo, reserva, aviso, marcar) ou 2 nas repetições
 //   - "faltam": só nos 5 últimos dias; 2 (níveis e candidatos) + 1 por aviso novo + 1 de fila + 2 por e-mail
+// O teto de 16 ainda é reduzido pelo que as etapas anteriores da rodada já gastaram (orcamento.js): afiliados
+// roda por último e usa min(16, 50 - gasto - 4).
 // A ordem é fechamento, resumo, faltam; cada parte só começa se o orçamento restante comporta uma unidade.
 // Cron a cada 10 min = até 18 fechamentos por hora; o que sobrar fica para a rodada seguinte.
 import { fecharMes } from '../../lib/afiliados/fechamento.js'
@@ -14,6 +16,7 @@ import { saldosDoAfiliado, SQL_VENDA_VALIDA } from '../../lib/afiliados/status.j
 import { mesDe, mesParaFechar, somarDias, textoUtc } from '../../lib/afiliados/datas.js'
 import { montarFaltamVendas, montarResumoFechamento, nomeDoMes, reais } from '../../lib/emails-afiliado.js'
 import { normalizarEmailLembrete } from '../../lib/lembrete-assinatura.js'
+import { LIMITE_D1, MARGEM, consultasGastas } from './orcamento.js'
 
 export const ORCAMENTO = 16
 const FECHAMENTOS = 3
@@ -259,7 +262,10 @@ export async function avisarFaltam(env, o, agora, fetchImpl, logger = console) {
 
 export async function executarAfiliados(env, { fetchImpl = globalThis.fetch, logger = console, agora = new Date() } = {}) {
   if (!env.DB) throw new Error('Binding DB não configurado.')
-  const o = comOrcamento(env.DB)
+  // Só o que sobrou: min(16, 50 - já gasto pelas outras etapas - margem). Sem sobra, espera a próxima rodada.
+  const total = Math.min(ORCAMENTO, LIMITE_D1 - consultasGastas(env.DB) - MARGEM)
+  if (total < 1) return { fechamento: null, resumos: null, faltam: null, adiado: true, consultas: 0 }
+  const o = comOrcamento(env.DB, total)
   const resultado = { fechamento: null, resumos: null, faltam: null }
   const etapas = [
     ['fechamento', () => fecharPendentes(env, o, agora, logger)],

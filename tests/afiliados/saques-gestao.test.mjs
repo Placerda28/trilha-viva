@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { pedirSaque } from '../../lib/afiliados/saque.js'
-import { listarSaques, marcarPago, recusar } from '../../lib/afiliados/saques-gestao.js'
+import { gravarComprovante, listarSaques, marcarPago, recusar } from '../../lib/afiliados/saques-gestao.js'
 import { enviarParaB2, caminhoValido, tipoPelosBytes } from '../../lib/b2-envio.js'
 import { montarSaquePago, montarSaqueRecusado } from '../../lib/emails-afiliado.js'
 import { consultarAvisos } from '../../lib/gestao/avisos.js'
@@ -45,7 +45,8 @@ test('listarSaques: pagos, recusados, todos, tempo médio e paginação', async 
   const b = await saqueDe(db)
   const c = await saqueDe(db)
   // a pedido em 08/12 12:00 UTC (FECHA); pago 12 h depois
-  await marcarPago(db, { saqueId: a.id, caminhoComprovante: caminho(a.id), quem: 'a@t.com', agora: new Date('2026-12-09T00:00:00Z') })
+  await gravarComprovante(db, { saqueId: a.id, caminho: caminho(a.id) })
+  await marcarPago(db, { saqueId: a.id, quem: 'a@t.com', agora: new Date('2026-12-09T00:00:00Z') })
   await recusar(db, { saqueId: b.id, motivo: 'Pix errado', quem: 'a@t.com', agora: AGORA })
   const todos = await listarSaques(db, { status: 'todos' }, AGORA)
   assert.equal(todos.total, 3)
@@ -61,11 +62,12 @@ test('listarSaques: pagos, recusados, todos, tempo médio e paginação', async 
 test('marcarPago: exige comprovante, paga os lançamentos, grava aviso e repetir não faz nada', async () => {
   const db = novoDb()
   const { af, id, valor } = await saqueDe(db)
-  let r = await marcarPago(db, { saqueId: id, caminhoComprovante: '', quem: 'x@t.com', agora: AGORA })
-  assert.equal(r.ok, false)
+  let r = await marcarPago(db, { saqueId: id, quem: 'x@t.com', agora: AGORA })
+  assert.deepEqual([r.ok, r.semComprovante], [false, true])
   assert.equal(contar(db, "SELECT COUNT(*) n FROM afiliados_saques WHERE status = 'solicitado'"), 1)
 
-  r = await marcarPago(db, { saqueId: id, caminhoComprovante: caminho(id), quem: 'Master@T.com', agora: AGORA })
+  assert.equal(await gravarComprovante(db, { saqueId: id, caminho: caminho(id) }), true)
+  r = await marcarPago(db, { saqueId: id, quem: 'Master@T.com', agora: AGORA })
   assert.equal(r.ok, true)
   const s = db.banco.prepare('SELECT * FROM afiliados_saques WHERE id = ?').get(id)
   assert.deepEqual([s.status, s.pago_em, s.pago_por, s.comprovante_caminho], ['pago', '2026-12-10 12:00:00', 'master@t.com', caminho(id)])
@@ -76,7 +78,7 @@ test('marcarPago: exige comprovante, paga os lançamentos, grava aviso e repetir
   assert.equal(av[0].titulo, `Seu saque de R$ ${(valor / 100).toFixed(2).replace('.', ',')} foi pago`)
 
   // repetir (mesmo comprovante ou outro, agora diferente): sem efeito
-  r = await marcarPago(db, { saqueId: id, caminhoComprovante: caminho(id), quem: 'outro@t.com', agora: new Date('2026-12-11T12:00:00Z') })
+  r = await marcarPago(db, { saqueId: id, quem: 'outro@t.com', agora: new Date('2026-12-11T12:00:00Z') })
   assert.deepEqual([r.ok, r.jaTratado], [false, true])
   assert.equal(db.banco.prepare('SELECT pago_por FROM afiliados_saques WHERE id = ?').get(id).pago_por, 'master@t.com')
   assert.equal(contar(db, 'SELECT COUNT(*) n FROM afiliados_avisos WHERE afiliado_id = ?', af.id), 1)
@@ -85,7 +87,7 @@ test('marcarPago: exige comprovante, paga os lançamentos, grava aviso e repetir
   r = await recusar(db, { saqueId: id, motivo: 'tarde demais', quem: 'x@t.com', agora: AGORA })
   assert.deepEqual([r.ok, r.jaTratado], [false, true])
   assert.equal(contar(db, "SELECT COUNT(*) n FROM afiliados_lancamentos WHERE status = 'paga'"), 2)
-  assert.equal((await marcarPago(db, { saqueId: 999, caminhoComprovante: caminho(999), quem: 'x', agora: AGORA })).naoEncontrado, true)
+  assert.equal((await marcarPago(db, { saqueId: 999, quem: 'x', agora: AGORA })).naoEncontrado, true)
 })
 
 test('recusar: motivo obrigatório, valores voltam ao saldo, aviso e pedirSaque liberado de novo', async () => {
@@ -178,4 +180,33 @@ test('consultarAvisos conta saques pendentes', async () => {
   assert.equal((await consultarAvisos(db, { master: true })).afiliados_saques_pendentes, 2)
   await recusar(db, { saqueId: id, motivo: 'teste', quem: 'x', agora: AGORA })
   assert.equal((await consultarAvisos(db)).afiliados_saques_pendentes, 1)
+})
+
+test('gravarComprovante só vale para saque solicitado', async () => {
+  const db = novoDb()
+  const { id } = await saqueDe(db)
+  assert.equal(await gravarComprovante(db, { saqueId: id, caminho: caminho(id) }), true)
+  await recusar(db, { saqueId: id, motivo: 'teste', quem: 'x', agora: AGORA })
+  assert.equal(await gravarComprovante(db, { saqueId: id, caminho: 'afiliados-comprovantes/outro.pdf' }), false)
+  assert.equal(db.banco.prepare('SELECT comprovante_caminho c FROM afiliados_saques WHERE id = ?').get(id).c, caminho(id))
+})
+
+test('concorrência: só um vence entre pagar, pagar, recusar e recusar', async () => {
+  const db = novoDb()
+  const a = await saqueDe(db)
+  await gravarComprovante(db, { saqueId: a.id, caminho: caminho(a.id) })
+  const p = await Promise.all([
+    marcarPago(db, { saqueId: a.id, quem: 'um@t.com', agora: AGORA }),
+    marcarPago(db, { saqueId: a.id, quem: 'dois@t.com', agora: AGORA }),
+    recusar(db, { saqueId: a.id, motivo: 'tarde', quem: 'tres@t.com', agora: AGORA }),
+  ])
+  assert.equal(p.filter((r) => r.ok).length, 1)
+  assert.equal(p.filter((r) => r.jaTratado).length, 2)
+  const b = await saqueDe(db)
+  const r = await Promise.all([
+    recusar(db, { saqueId: b.id, motivo: 'mesmo motivo', quem: 'x@t.com', agora: AGORA }),
+    recusar(db, { saqueId: b.id, motivo: 'mesmo motivo', quem: 'x@t.com', agora: AGORA }),
+  ])
+  assert.equal(r.filter((x) => x.ok).length, 1)
+  assert.equal(contar(db, "SELECT COUNT(*) n FROM afiliados_avisos WHERE tipo = 'saque_recusado' AND afiliado_id = ?", b.af.id), 1)
 })

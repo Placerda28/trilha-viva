@@ -5,22 +5,25 @@ import { gravarRegistro } from '@/lib/gestao/registro'
 import { comId, emailDe, extDe, idDe, irPara, resposta } from '@/lib/gestao/saques-rota'
 import { linkDeDownload } from '@/lib/b2'
 import { enviarParaB2, caminhoDoComprovante, envioConfigurado, MAX_COMPROVANTE_BYTES, tipoPelosBytes } from '@/lib/b2-envio'
-import { saquePorId } from '@/lib/afiliados/saques-gestao'
+import { gravarComprovante, saquePorId } from '@/lib/afiliados/saques-gestao'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 // Margem do envelope multipart sobre os 5 MB do arquivo.
-const MAX_CORPO = MAX_COMPROVANTE_BYTES + 64 * 1024
+const MAX_CORPO = MAX_COMPROVANTE_BYTES + 256 * 1024
 
 const post = async (req, admin, ctx) => {
   if (!mesmaOrigem(req)) return naoEncontrado()
   const id = await idDe(ctx)
   if (!id) return resposta({ ok: false, erro: 'Saque não encontrado.' }, 404)
   if (!envioConfigurado()) return resposta({ ok: false, erro: 'Armazenamento de comprovantes não configurado' }, 503)
-  if (Number(req.headers.get('content-length') || 0) > MAX_CORPO) {
-    return resposta({ ok: false, erro: 'O arquivo pode ter até 5 MB.' }, 413)
+  // Sem Content-Length o formData() leria o corpo inteiro: exige o cabeçalho antes de ler qualquer byte.
+  const declarado = Number(req.headers.get('content-length'))
+  if (!req.headers.get('content-length') || !Number.isFinite(declarado)) {
+    return resposta({ ok: false, erro: 'Envie o tamanho do arquivo (Content-Length).' }, 411)
   }
+  if (declarado > MAX_CORPO) return resposta({ ok: false, erro: 'O arquivo pode ter até 5 MB.' }, 413)
   const db = getDB()
   if (!db) return resposta({ ok: false, erro: 'Banco indisponível no momento.' }, 503)
   const saque = await saquePorId(db, id)
@@ -44,6 +47,10 @@ const post = async (req, admin, ctx) => {
   const caminho = caminhoDoComprovante(id, tipo.ext)
   const r = await enviarParaB2({ caminho, corpo, mime: tipo.mime })
   if (!r.ok) return resposta({ ok: false, erro: 'Não foi possível guardar o comprovante agora. Tente de novo.' }, 502)
+  // Só depois do B2 confirmar: este é o caminho que o "pagar" vai usar (o saque pode ter sido tratado nesse meio tempo).
+  if (!(await gravarComprovante(db, { saqueId: id, caminho }))) {
+    return resposta({ ok: false, erro: 'Este saque já foi tratado.' }, 409)
+  }
   await gravarRegistro(db, { quem: emailDe(admin), acao: 'afiliado_comprovante', alvo: saque.codigo, detalhe: { saque_id: id } })
   return resposta({ ok: true, caminho })
 }

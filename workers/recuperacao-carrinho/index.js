@@ -3,6 +3,7 @@ import { atenderWebhook, executarWhatsapp } from './whatsapp.js'
 import { acompanharAcessoLiberado } from './acesso-liberado.js'
 import { executarLeads } from './leads.js'
 import { executarAfiliados } from './afiliados.js'
+import { consultasGastas, contarConsultas } from './orcamento.js'
 import { mascararEmail, montarEmail } from './email-lembrete.js'
 import {
   buscarCandidatosIniciais,
@@ -182,8 +183,12 @@ export { executarWhatsapp }
 
 // Os dois canais são independentes: um erro no e-mail não impede o WhatsApp,
 // e vice-versa.
-export async function executarRodada(env, opcoes = {}) {
+export async function executarRodada(envOriginal, opcoes = {}) {
+  // O D1 grátis aceita 50 consultas por invocação: conta tudo desde o início e repassa a todas as etapas.
+  const env = envOriginal.DB ? { ...envOriginal, DB: contarConsultas(envOriginal.DB) } : envOriginal
   const logger = opcoes.logger || console
+  const medidor = opcoes.medidor
+  const marca = (etapa) => { if (medidor) (medidor.etapas ||= {})[etapa] = consultasGastas(env.DB) }
   let resultado = { enviados: 0, ignorados: 0, apenasLog: 0 }
   let erroEmail = null
   try {
@@ -191,6 +196,7 @@ export async function executarRodada(env, opcoes = {}) {
   } catch (erro) {
     erroEmail = erro
   }
+  marca('email')
 
   // A fila da VS grátis usa o mesmo cron, sem bloquear os outros canais.
   try {
@@ -198,13 +204,7 @@ export async function executarRodada(env, opcoes = {}) {
   } catch (erro) {
     logger.error('Falha na sequência de e-mails da VS grátis:', erro)
   }
-
-  // Fechamento mensal dos afiliados, resumo por e-mail e "faltam X vendas". Etapa própria.
-  try {
-    await executarAfiliados(env, opcoes)
-  } catch (erro) {
-    logger.error('Falha na etapa de afiliados da rodada:', erro)
-  }
+  marca('leads')
 
   resultado.whatsapp = { enviados: 0, ignorados: 0, falhas: 0 }
   try {
@@ -212,6 +212,7 @@ export async function executarRodada(env, opcoes = {}) {
   } catch (erro) {
     logger.error('Falha na etapa de WhatsApp da rodada:', erro)
   }
+  marca('whatsapp')
 
   // Modelo "acesso_liberado" na Meta (status, aviso e teste). Independente
   // dos lembretes: uma falha aqui não atrapalha nada.
@@ -220,6 +221,16 @@ export async function executarRodada(env, opcoes = {}) {
   } catch (erro) {
     logger.error('Falha ao acompanhar o modelo acesso_liberado:', erro)
   }
+  marca('acesso')
+
+  // Afiliados roda POR ÚLTIMO e usa só o que sobrou do orçamento de consultas (ver afiliados.js).
+  try {
+    await executarAfiliados(env, opcoes)
+  } catch (erro) {
+    logger.error('Falha na etapa de afiliados da rodada:', erro)
+  }
+  marca('afiliados')
+  if (medidor) medidor.total = consultasGastas(env.DB)
 
   if (erroEmail) throw erroEmail
   return resultado

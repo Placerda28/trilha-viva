@@ -36,6 +36,7 @@ const post = async (req, admin, ctx) => {
   try {
     enviado = await enviarEmailSaque(
       montarSaqueRecusado({ para: s.email, nome: s.nome, valor: s.valor_centavos, motivo: r.motivo }, process.env),
+      { chave: `saque-recusado:${id}` },
     )
   } catch (falhou) {
     console.error('saque recusado e-mail', falhou?.message)

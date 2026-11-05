@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { listarAfiliados, POR_PAGINA } from '../../lib/afiliados/gestao-lista.js'
 import { statusDoMes } from '../../lib/afiliados/status.js'
 import { pedirSaque } from '../../lib/afiliados/saque.js'
-import { marcarPago } from '../../lib/afiliados/saques-gestao.js'
+import { gravarComprovante, marcarPago } from '../../lib/afiliados/saques-gestao.js'
 import { novoAfiliado, novoDb, vendas } from './_base.mjs'
 
 const AGORA = new Date('2026-11-20T15:00:00Z')
@@ -26,7 +26,8 @@ async function cenario() {
     .run(b.id, idsB[0], MES)
   const sa = await pedirSaque(db, a.id, AGORA)
   assert.equal(sa.ok, true)
-  assert.equal((await marcarPago(db, { saqueId: sa.saqueId, caminhoComprovante: 'afiliados-comprovantes/x.pdf', quem: 'm@t.com', agora: AGORA })).ok, true)
+  await gravarComprovante(db, { saqueId: sa.saqueId, caminho: `afiliados-comprovantes/${sa.saqueId}-x.pdf` })
+  assert.equal((await marcarPago(db, { saqueId: sa.saqueId, quem: 'm@t.com', agora: AGORA })).ok, true)
   assert.equal((await pedirSaque(db, e.id, AGORA)).ok, true)
   for (let i = 0; i < 100; i++) {
     db.banco.prepare("INSERT INTO afiliados_cliques (afiliado_id, criado_em, visitante_hash) VALUES (?, '2026-11-15 12:00:00', ?)").run(c.id, `h${i}`)

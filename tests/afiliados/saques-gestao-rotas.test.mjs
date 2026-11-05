@@ -76,10 +76,15 @@ async function comSaque(db) {
 }
 const ctx = (id) => ({ params: Promise.resolve({ id: String(id) }) })
 const cab = (extra = {}) => ({ host: 'trilhaviva.org', origin: HOST, ...extra })
-const enviarArquivo = (rota, id, bytes, nome = 'c.pdf', cabecalhos = {}) => {
+// Serializa o multipart para mandar com Content-Length (como o navegador faz). `semTamanho` omite o cabeçalho.
+const enviarArquivo = async (rota, id, bytes, nome = 'c.pdf', cabecalhos = {}, semTamanho = false) => {
   const f = new FormData()
   if (bytes) f.append('arquivo', new File([bytes], nome))
-  return rota.POST(new Request(`${HOST}/x`, { method: 'POST', headers: cab(cabecalhos), body: f }), ctx(id))
+  const tmp = new Response(f)
+  const tipo = tmp.headers.get('content-type')
+  const corpo = await tmp.arrayBuffer()
+  const h = cab({ 'content-type': tipo, ...(semTamanho ? {} : { 'content-length': String(corpo.byteLength) }), ...cabecalhos })
+  return rota.POST(new Request(`${HOST}/x`, { method: 'POST', headers: h, body: corpo }), ctx(id))
 }
 const json = (rota, id, corpo, cabecalhos = {}) =>
   rota.POST(new Request(`${HOST}/x`, { method: 'POST', headers: cab({ 'content-type': 'application/json', ...cabecalhos }), body: JSON.stringify(corpo) }), ctx(id))
@@ -150,9 +155,12 @@ test('pagar: sem comprovante, caminho de outro saque, ok com anexo por URL, repe
   const b = await comSaque(db)
   const caminhoA = (await (await enviarArquivo(upload, a.id, PDF)).json()).caminho
 
-  let res = await json(pagar, a.id, {})
+  let res = await json(pagar, b.id, {}) // b nunca teve upload
   assert.equal(res.status, 400)
   res = await json(pagar, b.id, { caminho: caminhoA }) // comprovante do saque A no saque B
+  assert.equal(res.status, 400)
+  // caminho forjado com formato certo, sem upload: 400 (vale só o gravado no banco)
+  res = await json(pagar, b.id, { caminho: `afiliados-comprovantes/${b.id}-0b8e7f3a-1c2d-4e5f-8a9b-0c1d2e3f4a5b.pdf` })
   assert.equal(res.status, 400)
   assert.equal(n(db, "SELECT COUNT(*) n FROM afiliados_saques WHERE status = 'pago'"), 0)
   await status404(() => json(pagar, a.id, { caminho: caminhoA }, { origin: 'https://evil.test' }))
@@ -216,7 +224,7 @@ test('lista da Gestão e comprovante: só admin; afiliado só baixa o próprio s
   globalThis.__admin = ADMIN
 
   const caminhoA = (await (await enviarArquivo(upload, a.id, PDF)).json()).caminho
-  assert.equal((await upload.GET(new Request(`${HOST}/x`), ctx(a.id))).status, 404) // ainda sem comprovante gravado
+  assert.equal((await upload.GET(new Request(`${HOST}/x`), ctx(a.id))).status, 302) // gravado pelo upload
   await json(pagar, a.id, { caminho: caminhoA })
 
   const g = await upload.GET(new Request(`${HOST}/x`), ctx(a.id))
@@ -238,4 +246,41 @@ test('lista da Gestão e comprovante: só admin; afiliado só baixa o próprio s
   assert.equal((await meu.GET(new Request(`${HOST}/x`), ctx(b.id))).status, 404) // pendente, sem comprovante
   globalThis.__cliente = null
   assert.equal((await meu.GET(new Request(`${HOST}/x`), ctx(a.id))).status, 401)
+})
+
+test('upload: sem Content-Length dá 411 e não lê o corpo; grava o caminho no banco', async () => {
+  const { db, rede } = montar()
+  const { id } = await comSaque(db)
+  const res = await enviarArquivo(upload, id, PDF, 'c.pdf', {}, true)
+  assert.equal(res.status, 411)
+  assert.equal(rede.uploads.length, 0)
+  const ok = await (await enviarArquivo(upload, id, PDF)).json()
+  assert.equal(db.banco.prepare('SELECT comprovante_caminho c FROM afiliados_saques WHERE id = ?').get(id).c, ok.caminho)
+})
+
+test('pagar ignora o caminho do cliente e usa o gravado', async () => {
+  const { db } = montar()
+  const a = await comSaque(db)
+  const gravado = (await (await enviarArquivo(upload, a.id, PDF)).json()).caminho
+  const res = await json(pagar, a.id, { caminho: `afiliados-comprovantes/${a.id}-ffffffff-1c2d-4e5f-8a9b-0c1d2e3f4a5b.pdf` })
+  assert.equal(res.status, 200)
+  assert.equal(db.banco.prepare('SELECT comprovante_caminho c FROM afiliados_saques WHERE id = ?').get(a.id).c, gravado)
+})
+
+test('pagar e recusar simultâneos: um só efeito, um só e-mail, Idempotency-Key', async () => {
+  const { db, rede } = montar()
+  const chaves = []
+  const base = globalThis.fetch
+  globalThis.fetch = async (url, init = {}) => {
+    if (url === 'https://api.resend.com/emails') chaves.push(init.headers['Idempotency-Key'])
+    return base(url, init)
+  }
+  const a = await comSaque(db)
+  await enviarArquivo(upload, a.id, PDF)
+  const rs = await Promise.all([json(pagar, a.id, {}), json(pagar, a.id, {}), json(recusar, a.id, { motivo: 'tarde demais' })])
+  assert.deepEqual(rs.map((r) => r.status).sort(), [200, 409, 409])
+  assert.equal(rede.emails.length, 1)
+  assert.equal(n(db, "SELECT COUNT(*) n FROM registro WHERE acao IN ('afiliado_saque_pago', 'afiliado_saque_recusado')"), 1)
+  assert.match(chaves[0], /^saque-(pago|recusado):\d+$/)
+  globalThis.fetch = base
 })
