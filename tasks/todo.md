@@ -9,7 +9,8 @@ Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido reso
 Mapa do código, decisões e fases: `tasks/afiliados.md`.
 - [x] Fase 1: mapa e plano.
 - [x] Fases 2 a 4: banco, cadastro/código/?ref=, checkout e webhook (commits 937a92d a 65039d9). **Migração 0018 aplicada no D1 de produção em 04/11** (bookmark de restauração `00001991-00000004-00005119-44413156251e052479798d370eb9eb58`). O robô ganhou o bloqueio de lembrete para reembolsados: publicar o robô junto com o site.
-- [ ] Fase 5: área do afiliado (painel).
+- [x] Fases 5 a 11 prontas só no PC (05/11, commits 51dc716 a 61b08f1): painel do afiliado, fechamento no robô, saques na Gestão, Gestão > Afiliados completa, página /afiliados, estorno de ponta a ponta e auditoria. 623 testes, build ok.
+- [ ] **Fase 12 e publicação: esperando o Paulo.** Decisões, ordem de publicação (migrações 0019-0021, chave B2, site, robô) e testes dele em `tasks/afiliados-publicar.md`.
 - Decidido: pedido de reembolso (refunded, charged_back, in_mediation) tira o acesso; volta se a mediação terminar a favor (Fase 4).
 - Decidido: comprovante no B2 com chave nova só em `afiliados-comprovantes/` (Paulo cria na Fase 7); e-mail de pago leva o comprovante em anexo.
 
