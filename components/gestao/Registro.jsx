@@ -20,6 +20,8 @@ export const ACOES = {
   contato_teste_removido: 'removeu o contato de teste',
   afiliado_cadastro: 'cadastrou-se como afiliado com o código',
   afiliado_pix: 'trocou a chave Pix do afiliado',
+  lead_parado: 'parou o robô de conversão do lead (VS grátis) número',
+  lead_enviar_agora: 'adiantou o próximo envio do robô para o lead (VS grátis) número',
   afiliado_saque: 'pediu saque como afiliado, código',
   afiliados_fechamento: 'fechou o mês dos afiliados',
   afiliado_comprovante: 'anexou o comprovante do saque do afiliado',

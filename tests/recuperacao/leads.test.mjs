@@ -1,16 +1,16 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { executarRodada } from '../../workers/recuperacao-carrinho/index.js'
 import { assinaturaDescadastroValida } from '../../lib/lembrete-assinatura.js'
 import { destaques } from '../../lib/catalog.js'
 
 function montar() {
   const banco = new DatabaseSync(':memory:')
-  for (const arquivo of ['0000_esquema_atual', '0004_carrinhos', '0005_recuperacao_v2',
-    '0006_whatsapp', '0013_testes', '0017_leads']) {
-    banco.exec(readFileSync(`migrations/${arquivo}.sql`, 'utf8'))
+  // Todas as migrações, na ordem (as colunas de leads e do WhatsApp vêm de várias).
+  for (const arquivo of readdirSync('migrations').filter((n) => n.endsWith('.sql')).sort()) {
+    banco.exec(readFileSync(`migrations/${arquivo}`, 'utf8'))
   }
   const db = { prepare(sql) {
     const q = banco.prepare(sql)
@@ -52,20 +52,31 @@ test('cron manda poucos leads por rodada (orçamento de consultas) e o restante 
   assert.equal(new Set(s.mensagens.map((m) => m.chave)).size, s.mensagens.length) // nenhuma chave repetida
 })
 
-test('cron avança 1→2→3→4, agenda desde o consentimento em UTC e para', async () => {
+test('cron avança 1→8: +3, +5 e +7 dias do consentimento, depois 30 dias depois de cada envio, e para', async () => {
   const s = montar()
   s.inserir(1)
-  for (const [etapa, dias] of [[1, 2], [2, 4], [3, 7], [4, null]]) {
+  for (const [etapa, dias] of [[1, 3], [2, 5], [3, 7], [4, 'mes'], [5, 'mes'], [6, 'mes'], [7, 'mes'], [8, null]]) {
     await s.rodar()
     const l = s.lead()
     assert.equal(l.etapa_email, etapa)
     assert.equal(l.envios, etapa)
     assert.ok(l.ultimo_envio_em)
     if (dias === null) assert.equal(l.proximo_email_em, null)
+    else if (dias === 'mes') assert.equal(Date.parse(l.proximo_email_em + 'Z') - Date.parse(l.ultimo_envio_em + 'Z'), 30 * 86400000)
     else assert.equal(Date.parse(l.proximo_email_em + 'Z') - Date.parse(l.consentimento_em + 'Z'), dias * 86400000)
+    s.banco.exec("UPDATE leads SET proximo_email_em = datetime('now', '-1 minute') WHERE proximo_email_em IS NOT NULL")
   }
   await s.rodar()
-  assert.equal(s.mensagens.length, 4)
+  assert.equal(s.mensagens.length, 8)
+  assert.deepEqual(new Set(s.mensagens.slice(4).map((m) => m.subject)).size, 4)
+  for (const m of s.mensagens.slice(4)) {
+    assert.ok(m.text.includes('R$ 89,90'))
+    assert.doesNotMatch(m.text, /cupom/i)
+    const slugs = m.text.split('https://trilhaviva.org/musicas/').slice(1).map((trecho) => trecho.split(/[ \n]/)[0])
+    assert.equal(new Set(slugs).size, 5)
+    assert.ok(slugs.every((slug) => destaques.some((d) => d.slug === slug)))
+  }
+  assert.equal(s.mensagens.length, 8)
   for (const m of s.mensagens) {
     assert.equal(m.bcc, undefined)
     assert.equal(m.reply_to, 'contato@trilhaviva.org')
@@ -85,7 +96,7 @@ test('cron avança 1→2→3→4, agenda desde o consentimento em UTC e para', a
   const slugs = [...s.mensagens[2].text.matchAll(/https:\/\/trilhaviva.org\/musicas\/([^\s]+)/g)].map((m) => m[1])
   assert.equal(new Set(slugs).size, 5)
   assert.ok(slugs.every((slug) => destaques.some((m) => m.slug === slug)))
-  assert.equal(new Set(s.mensagens.map((m) => m.chave)).size, 4)
+  assert.equal(new Set(s.mensagens.map((m) => m.chave)).size, 8)
 })
 
 test('pula descadastro, falta de consentimento, data futura e compra real; compra de teste não bloqueia', async () => {

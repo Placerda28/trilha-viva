@@ -20,6 +20,7 @@ const { assinarDescadastro } = await import('../../lib/lembrete-assinatura.js')
 function montar() {
   const banco = new DatabaseSync(':memory:')
   banco.exec(readFileSync('migrations/0017_leads.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0023_leads_robo.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0004_carrinhos.sql', 'utf8'))
   banco.exec(`CREATE TABLE compras (stripe_session_id TEXT, status TEXT, teste INTEGER);
     INSERT INTO compras VALUES ('mp_1', 'pago', 0), ('mp_2', 'pago', 1);`)
@@ -228,7 +229,7 @@ test('cadastro envia o link absoluto, texto e descadastro assinado sem cópia oc
   assert.equal(l.etapa_email, 1)
   assert.equal(l.envios, 1)
   assert.ok(l.ultimo_envio_em)
-  assert.equal(Date.parse(l.proximo_email_em + 'Z') - Date.parse(l.consentimento_em + 'Z'), 2 * 86400000)
+  assert.equal(Date.parse(l.proximo_email_em + 'Z') - Date.parse(l.consentimento_em + 'Z'), 3 * 86400000)
 })
 
 test('falha no Resend mantém cadastro e link, com etapa zero disponível para o robô', async () => {

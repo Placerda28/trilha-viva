@@ -44,6 +44,7 @@ class D1Local {
 function banco(quantidade = 30) {
   const b = new DatabaseSync(':memory:')
   b.exec(readFileSync('migrations/0017_leads.sql', 'utf8'))
+  b.exec(readFileSync('migrations/0023_leads_robo.sql', 'utf8'))
   const inserir = b.prepare(`INSERT INTO leads
     (nome, email, whatsapp, token_hash, token_expira_em, criado_em, primeiro_download_em, comprou)
     VALUES (?, ?, '27999990000', ?, '2026-10-28 03:00:00', ?, ?, ?)`)

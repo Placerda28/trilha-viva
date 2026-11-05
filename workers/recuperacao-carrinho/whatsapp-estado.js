@@ -6,7 +6,7 @@ import {
   telefoneSemPais,
   textoIgual,
 } from '../../lib/whatsapp-meta.js'
-import { MODELOS } from '../../lib/whatsapp-sequencia.js'
+import { MODELOS, MODELOS_LEAD } from '../../lib/whatsapp-sequencia.js'
 import {
   CAMINHO_LINK,
   assinarLink,
@@ -216,7 +216,7 @@ async function atualizarModelos(db, env, fetchImpl, logger) {
     return
   }
   const todos = Array.isArray(dados?.data) ? dados.data : []
-  for (const nome of MODELOS) {
+  for (const nome of [...MODELOS, ...MODELOS_LEAD]) {
     const doNome = todos.filter((m) => m?.name === nome)
     const modelo = doNome.find((m) => m.language === 'pt_BR') || doNome[0]
     const status = String(modelo?.status || 'NAO_ENCONTRADO').toUpperCase()

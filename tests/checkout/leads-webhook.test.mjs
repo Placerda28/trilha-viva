@@ -49,6 +49,7 @@ const { POST } = await import('../../app/api/mercadopago/webhook/route.js')
 function montar({ teste = false, falhar = false, enviar = true, testeGravado = false } = {}) {
   const banco = new DatabaseSync(':memory:')
   banco.exec(readFileSync('migrations/0017_leads.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0023_leads_robo.sql', 'utf8'))
   banco.exec(`CREATE TABLE compras (stripe_session_id TEXT PRIMARY KEY, status TEXT, teste INTEGER);
     INSERT INTO leads (nome, email, whatsapp, token_hash, token_expira_em, proximo_email_em)
     VALUES ('Ana', 'ana@example.com', '27999999999', 'hash', '2026-12-01', datetime('now'));`)

@@ -154,14 +154,14 @@ export default function VsGratisForm() {
           value={telefone} onChange={(e) => setTelefone(mascaraCelular(e.target.value))}
           placeholder="(27) 99999-8888" aria-describedby={`${id}-tel-ajuda`} className={campo} />
         <p id={`${id}-tel-ajuda`} className="mt-2 text-[12.5px] text-ink-muted">
-          Para receber novidades e lançamentos.
+          Para receber a VS e novidades da Trilha Viva pelo WhatsApp.
         </p>
       </div>
       <label className="flex min-h-[44px] cursor-pointer items-start gap-3 text-[14px] leading-[1.55] text-ink-muted">
         <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)}
           className="mt-[3px] h-[18px] w-[18px] shrink-0 accent-[#E5152D]" />
         <span>
-          Quero receber a VS e conteúdos da Trilha Viva por e-mail. Posso cancelar quando quiser. Veja a{' '}
+          Quero receber a VS e conteúdos da Trilha Viva por e-mail e WhatsApp. Posso cancelar quando quiser. Veja a{' '}
           <a href="/privacidade" className="link-quiet font-semibold">
             política de privacidade
           </a>

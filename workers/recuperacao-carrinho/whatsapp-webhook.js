@@ -51,18 +51,60 @@ async function atualizarStatus(db, aviso) {
   const em = horaDoAviso(aviso)
   if (status === 'failed') {
     const codigo = Array.isArray(aviso?.errors) ? aviso.errors[0]?.code : null
-    await db.prepare(`
+    const feito = await db.prepare(`
       UPDATE lembretes_enviados SET wa_status = 'failed', wa_erro = ?, wa_status_em = ?
        WHERE wa_msg_id = ? AND COALESCE(wa_status, 'sent') = 'sent'`).bind(codigo == null ? null : String(codigo), em, id).run()
+    // Mensagem de lead (VS grátis) não está em lembretes_enviados: só então procura na tabela dela.
+    if (mudancas(feito) === 0) {
+      await deLead(() => db.prepare(`
+        UPDATE leads_whatsapp SET wa_status = 'failed', wa_erro = ?, wa_status_em = ?
+         WHERE wa_msg_id = ? AND COALESCE(wa_status, 'sent') = 'sent'`).bind(codigo == null ? null : String(codigo), em, id).run())
+    }
     return
   }
   const ordem = ORDEM_STATUS[status]
   if (!ordem) return
-  await db.prepare(`
+  const feito = await db.prepare(`
     UPDATE lembretes_enviados SET wa_status = ?, wa_status_em = ?
      WHERE wa_msg_id = ?
        AND (CASE COALESCE(wa_status, '')
               WHEN 'sent' THEN 1 WHEN 'delivered' THEN 2 WHEN 'read' THEN 3 ELSE 0 END) < ?`).bind(status, em, id, ordem).run()
+  if (mudancas(feito) === 0) {
+    await deLead(() => db.prepare(`
+      UPDATE leads_whatsapp SET wa_status = ?, wa_status_em = ?
+       WHERE wa_msg_id = ?
+         AND (CASE COALESCE(wa_status, '')
+                WHEN 'sent' THEN 1 WHEN 'delivered' THEN 2 WHEN 'read' THEN 3 ELSE 0 END) < ?`).bind(status, em, id, ordem).run())
+  }
+}
+
+// Parte dos leads do webhook: sem a migração 0023 (ou com erro) nunca derruba o aviso dos carrinhos.
+async function deLead(consulta) {
+  try {
+    return await consulta()
+  } catch (erro) {
+    console.error('WhatsApp de lead (VS grátis):', erro?.message || erro)
+    return null
+  }
+}
+
+// Variantes do número do lead: a Meta às vezes manda o celular sem o 9 depois do DDD.
+const variantes = (telefone) => (telefone.length === 10 ? [telefone, `${telefone.slice(0, 2)}9${telefone.slice(2)}`] : [telefone, telefone])
+
+// Lead da VS grátis: "Não quero receber" descadastra dos DOIS canais e encerra o processo; outra resposta
+// só para o WhatsApp (o e-mail segue, o Paulo conversa pela gestão).
+async function pararLead(db, telefone, saida) {
+  const [a, b] = variantes(telefone)
+  await deLead(() => saida
+    ? db.prepare(`UPDATE leads SET descadastrado = 1, proximo_email_em = NULL, proximo_whatsapp_em = NULL,
+        whatsapp_encerrado_em = COALESCE(whatsapp_encerrado_em, datetime('now')),
+        whatsapp_motivo = COALESCE(whatsapp_motivo, 'descadastro'),
+        encerrado_motivo = CASE WHEN encerrado_em IS NULL THEN 'descadastrou' ELSE encerrado_motivo END,
+        encerrado_em = COALESCE(encerrado_em, datetime('now'))
+      WHERE whatsapp IN (?, ?)`).bind(a, b).run()
+    : db.prepare(`UPDATE leads SET whatsapp_encerrado_em = datetime('now'), whatsapp_motivo = 'respondeu',
+        proximo_whatsapp_em = NULL
+      WHERE whatsapp IN (?, ?) AND whatsapp_etapa >= 1 AND whatsapp_encerrado_em IS NULL AND encerrado_em IS NULL`).bind(a, b).run())
 }
 
 // A pessoa escreveu: a sequência deste telefone para na hora. Pedido de saída
@@ -147,6 +189,7 @@ async function tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger) {
       await db.prepare(`INSERT OR IGNORE INTO descadastros (email, canal) VALUES (?, 'whatsapp')`).bind(linha.email).run()
     }
     await pararPelaResposta(db, telefone, 'descadastro')
+    await pararLead(db, telefone, true)
     // O wa_msg_id é único: aviso repetido não manda a confirmação de novo.
     if (!(await guardarMensagem(db, { waId: mensagem.id, telefone, nome, direcao: 'entrada', texto, midia }))) return
     try {
@@ -161,6 +204,7 @@ async function tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger) {
   // Antes de gravar: se algo falhar no meio, a Meta reenvia e a parada (que
   // pode repetir) é refeita.
   await pararPelaResposta(db, telefone, 'respondeu')
+  await pararLead(db, telefone, false)
   // O wa_msg_id é único: aviso repetido da Meta não grava nem encaminha de novo.
   if (!(await guardarMensagem(db, { waId: mensagem.id, telefone, nome, direcao: 'entrada', texto, midia }))) return
   try {

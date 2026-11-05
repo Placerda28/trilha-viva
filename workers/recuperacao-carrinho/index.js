@@ -1,7 +1,8 @@
 import { normalizarEmailLembrete } from '../../lib/lembrete-assinatura.js'
 import { atenderWebhook, executarWhatsapp } from './whatsapp.js'
 import { acompanharAcessoLiberado } from './acesso-liberado.js'
-import { executarLeads } from './leads.js'
+import { encerrarLeads, executarLeads } from './leads.js'
+import { executarLeadsWhatsapp } from './leads-whatsapp.js'
 import { executarAfiliados } from './afiliados.js'
 import { ORCAMENTO } from './afiliados.js'
 import { adiar, adiados, cabe, consultasGastas, contarConsultas, restante } from './orcamento.js'
@@ -248,6 +249,22 @@ export async function executarRodada(envOriginal, opcoes = {}) {
     logger.error('Falha na etapa de WhatsApp da rodada:', erro)
   }
   marca('whatsapp')
+
+  // WhatsApp da VS grátis: fila própria, mesmo orçamento de consultas (leads-whatsapp.js).
+  // (o resultado da rodada não muda de formato: o retorno desta etapa só vai para o log)
+  try {
+    await executarLeadsWhatsapp(env, opcoes)
+  } catch (erro) {
+    logger.error('Falha na etapa de WhatsApp dos leads da rodada:', erro)
+  }
+  // Fecha o processo de quem terminou, comprou ou saiu (1 consulta).
+  try {
+    if (cabe(env.DB, 1)) await encerrarLeads(env.DB)
+    else adiar(env.DB, 'leads', 1)
+  } catch (erro) {
+    logger.error('Falha ao encerrar leads:', erro)
+  }
+  marca('leads_whatsapp')
 
   // Modelo "acesso_liberado" na Meta (status, aviso e teste). Independente
   // dos lembretes: uma falha aqui não atrapalha nada.

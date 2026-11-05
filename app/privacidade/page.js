@@ -52,6 +52,16 @@ export default function PrivacidadePage() {
           e-mail, toque em &quot;Não quero receber&quot; ou responda SAIR no WhatsApp, ou escreva para{' '}
           {site.email}. Pedir para sair em um canal encerra os lembretes nos dois.
         </p>
+        <h2>VS grátis</h2>
+        <p>
+          Quem pede a VS grátis informa nome, e-mail e WhatsApp e aceita receber a VS e conteúdos da
+          Trilha Viva por e-mail e WhatsApp. Enviamos o link da VS na hora e, depois, até{' '}
+          <strong>quatro</strong> mensagens pelo WhatsApp oficial da Trilha Viva (cerca de 5 minutos, 3, 5
+          e 7 dias depois do pedido) e até <strong>oito</strong> e-mails (na hora, 3, 5 e 7 dias depois e
+          mais um por mês durante quatro meses). Depois disso, paramos. Paramos antes se você comprar ou
+          pedir para sair: use o link de descadastro do e-mail, toque em &quot;Não quero receber&quot; no
+          WhatsApp ou escreva para {site.email}.
+        </p>
         <h2>WhatsApp</h2>
         <p>
           As mensagens de WhatsApp da Trilha Viva são enviadas e recebidas pela plataforma
