@@ -21,7 +21,8 @@ function Cartao({ titulo, ajuda, valor, nota, className = '', children }) {
 
 // Os quatro cartões de dinheiro. O primeiro é o que a pessoa mais quer saber
 // ("quanto posso sacar") e leva o botão; o corte vermelho no topo o destaca.
-export default function CartoesDinheiro({ d, config, irPara, onPedido }) {
+// `somenteLeitura`: a Gestão usa este cartão na ficha do afiliado e não mostra o botão de saque.
+export default function CartoesDinheiro({ d, config, irPara, onPedido, somenteLeitura = false }) {
   const { cartoes, saque } = d
   const prox = cartoes.proximaLiberacao
   return (
@@ -36,7 +37,7 @@ export default function CartoesDinheiro({ d, config, irPara, onPedido }) {
           </Ajuda>
         }
       >
-        <SaqueBotao saque={saque} irPara={irPara} onPedido={onPedido} />
+        {!somenteLeitura && <SaqueBotao saque={saque} irPara={irPara} onPedido={onPedido} />}
       </Cartao>
 
       <Cartao

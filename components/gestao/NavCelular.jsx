@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 import { LogoMark } from '../Logo'
 import Icone from './Icone'
-import { Conta, ListaMenu, comPeriodo, textoContador } from './BarraLateral'
+import { Conta, ListaMenu, comPeriodo, contagem, textoContador } from './BarraLateral'
 
 // Celular (< 768 px): barra de baixo com 4 atalhos e "Mais", e a gaveta com o
 // menu inteiro (a mesma lista da barra lateral). O "Mais" e o ☰ do topo abrem
@@ -29,7 +29,7 @@ export default function NavCelular({ menu, ativo, avisos, consulta = '', papel, 
   const noAtalho = new Set(itens.map((i) => i.href))
   const escondidos = menu
     .flatMap((g) => g.itens)
-    .filter((i) => i.contador && !noAtalho.has(i.href) && avisos?.[i.contador] > 0)
+    .filter((i) => !noAtalho.has(i.href) && contagem(i, avisos) > 0)
 
   return (
     <>
@@ -41,7 +41,7 @@ export default function NavCelular({ menu, ativo, avisos, consulta = '', papel, 
         <ul className="grid h-16" style={{ gridTemplateColumns: `repeat(${itens.length + 1}, minmax(0, 1fr))` }}>
           {itens.map((i) => {
             const marcado = ativo === i.href
-            const n = i.contador && avisos ? avisos[i.contador] : 0
+            const n = contagem(i, avisos)
             return (
               <li key={i.href} className="relative">
                 <Link
@@ -87,7 +87,7 @@ export default function NavCelular({ menu, ativo, avisos, consulta = '', papel, 
               Mais
               {escondidos.map((i) => (
                 <span key={i.href} className="sr-only">
-                  {textoContador(i, avisos[i.contador])}
+                  {textoContador(i, contagem(i, avisos))}
                 </span>
               ))}
             </button>

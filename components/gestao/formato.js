@@ -81,12 +81,16 @@ export const ATALHOS = [
   { id: '30d', rotulo: '30 dias' },
   { id: 'mes', rotulo: 'Este mês' },
   { id: 'mes-passado', rotulo: 'Mês passado' },
+  { id: '90d', rotulo: '90 dias' },
+  { id: 'ano', rotulo: 'Este ano' },
 ]
 
 export function intervaloDoAtalho(id, hoje = hojeBrasilia()) {
   if (id === 'hoje') return { de: hoje, ate: hoje }
   if (id === '7d') return { de: somarDias(hoje, -6), ate: hoje }
   if (id === '30d') return { de: somarDias(hoje, -29), ate: hoje }
+  if (id === '90d') return { de: somarDias(hoje, -89), ate: hoje }
+  if (id === 'ano') return { de: hoje.slice(0, 5) + '01-01', ate: hoje }
   const inicioDoMes = hoje.slice(0, 8) + '01'
   if (id === 'mes') return { de: inicioDoMes, ate: hoje }
   // Mês passado: do dia 1 até a véspera do dia 1 deste mês.

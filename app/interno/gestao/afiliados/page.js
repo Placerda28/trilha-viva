@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation'
+import Dashboard from '@/components/gestao/afiliados/dashboard/Dashboard'
 
-// Enquanto Afiliados só tem a sub-aba Saques, a entrada leva direto a ela.
-// Na Fase 8 esta página vira o Dashboard.
+// /gestao/afiliados abre o Dashboard. A permissão (master e membros) é
+// conferida no middleware e no layout; as rotas de dados conferem de novo.
 export default function AfiliadosPage() {
-  redirect('/gestao/afiliados/saques')
+  return <Dashboard />
 }

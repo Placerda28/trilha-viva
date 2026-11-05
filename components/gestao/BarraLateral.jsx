@@ -16,6 +16,9 @@ import Icone from './Icone'
 // não tem página, e `agora` é o endereço que já existe para ele. As duas
 // chaves somem quando a tela nova entra (Campanhas e Downloads: Fase 5; Vendas: Fase 4).
 //
+// `contador` também pode ser uma lista de chaves: o número vermelho é a soma
+// delas (Afiliados soma saques esperando e alertas abertos).
+//
 // `contadorTexto` ([singular, plural]) é o que o leitor de tela diz do número;
 // sem ele vale o do WhatsApp.
 //
@@ -50,8 +53,8 @@ export const MENU = [
         href: '/gestao/afiliados',
         rotulo: 'Afiliados',
         icone: 'afiliados',
-        contador: 'afiliados_saques_pendentes',
-        contadorTexto: ['pedido de saque esperando pagamento', 'pedidos de saque esperando pagamento'],
+        contador: ['afiliados_saques_pendentes', 'afiliados_alertas'],
+        contadorTexto: ['pendência de afiliados (saque ou alerta)', 'pendências de afiliados (saques e alertas)'],
       },
     ],
   },
@@ -68,6 +71,12 @@ export const MENU = [
     ],
   },
 ]
+
+// O número do item: soma das chaves do contador (ou 0 sem avisos).
+export function contagem(item, avisos) {
+  if (!item.contador || !avisos) return 0
+  return [].concat(item.contador).reduce((t, k) => t + (Number(avisos[k]) || 0), 0)
+}
 
 const TEXTO_CONTADOR = ['conversa esperando resposta', 'conversas esperando resposta']
 
@@ -227,7 +236,7 @@ export function ListaMenu({ menu, ativo, avisos, consulta = '', recolhida = fals
                 <Item
                   item={i}
                   ativo={ativo === i.href}
-                  n={i.contador && avisos ? avisos[i.contador] : 0}
+                  n={contagem(i, avisos)}
                   recolhida={recolhida}
                   grande={grande}
                   consulta={consulta}
