@@ -4,6 +4,7 @@ import { listarAfiliados, POR_PAGINA } from '../../lib/afiliados/gestao-lista.js
 import { statusDoMes } from '../../lib/afiliados/status.js'
 import { pedirSaque } from '../../lib/afiliados/saque.js'
 import { gravarComprovante, marcarPago } from '../../lib/afiliados/saques-gestao.js'
+import { caminhoDoComprovante } from '../../lib/b2-envio.js'
 import { novoAfiliado, novoDb, vendas } from './_base.mjs'
 
 const AGORA = new Date('2026-11-20T15:00:00Z')
@@ -26,7 +27,7 @@ async function cenario() {
     .run(b.id, idsB[0], MES)
   const sa = await pedirSaque(db, a.id, AGORA)
   assert.equal(sa.ok, true)
-  await gravarComprovante(db, { saqueId: sa.saqueId, caminho: `afiliados-comprovantes/${sa.saqueId}-x.pdf` })
+  await gravarComprovante(db, { saqueId: sa.saqueId, caminho: caminhoDoComprovante(sa.saqueId, 'pdf') })
   assert.equal((await marcarPago(db, { saqueId: sa.saqueId, quem: 'm@t.com', agora: AGORA })).ok, true)
   assert.equal((await pedirSaque(db, e.id, AGORA)).ok, true)
   for (let i = 0; i < 100; i++) {

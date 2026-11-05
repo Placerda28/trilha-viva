@@ -4,7 +4,7 @@ import { naoEncontrado } from '@/lib/gestao/permissao'
 import { gravarRegistro } from '@/lib/gestao/registro'
 import { comId, emailDe, extDe, idDe, irPara, resposta } from '@/lib/gestao/saques-rota'
 import { linkDeDownload } from '@/lib/b2'
-import { enviarParaB2, caminhoDoComprovante, envioConfigurado, MAX_COMPROVANTE_BYTES, tipoPelosBytes } from '@/lib/b2-envio'
+import { enviarParaB2, caminhoDoComprovante, caminhoValido, envioConfigurado, MAX_COMPROVANTE_BYTES, tipoPelosBytes } from '@/lib/b2-envio'
 import { gravarComprovante, saquePorId } from '@/lib/afiliados/saques-gestao'
 
 export const runtime = 'nodejs'
@@ -61,7 +61,7 @@ const get = async (req, admin, ctx) => {
   const db = getDB()
   if (!db) return resposta({ ok: false, erro: 'Banco indisponível no momento.' }, 503)
   const saque = id ? await saquePorId(db, id) : null
-  if (!saque?.comprovante_caminho) return resposta({ ok: false, erro: 'Comprovante não encontrado.' }, 404)
+  if (!saque?.comprovante_caminho || !caminhoValido(id, saque.comprovante_caminho)) return resposta({ ok: false, erro: 'Comprovante não encontrado.' }, 404)
   const link = await linkDeDownload(saque.comprovante_caminho, `comprovante-saque-${id}.${extDe(saque.comprovante_caminho)}`, 300)
   if (!link) return resposta({ ok: false, erro: 'Não foi possível abrir o comprovante agora.' }, 503)
   return irPara(link)

@@ -293,3 +293,9 @@
 - O build do OpenNext **funciona em `C:\dev\trilha-viva`** (provado em 19/10), mas leva uns 50 minutos neste PC. A etapa "Bundling cache assets" grava cerca de 1 arquivo por segundo (1.950 páginas) e parece travada, mas não está: confira se a pasta `.open-next/cache` cresce antes de encerrar. O provável culpado é o antivírus do Windows examinando cada arquivo; uma exclusão do Defender para `C:\dev` (pede administrador) deve acelerar. Feche o Chrome antes (o build precisa de uns 3 GB livres).
 - Histórico: entre 12/10 e 18/10/2026 publicava-se de uma cópia separada (`~/tv-build`), porque a pasta antiga ("C:dev", com um caractere especial no nome) quebrava o build. Desde 18/10 o projeto fica em `C:\dev\trilha-viva`, e a cópia foi removida em 19/10.
 - O robô se publica à parte: `cd workers/recuperacao-carrinho && npx wrangler deploy`, só com OK.
+
+### Afiliados (Fases 9 e 11: estorno de ponta a ponta e segurança)
+- Prova do estorno: `tests/afiliados/e2e-estorno.test.mjs` (checkout, webhook, painel, robô, saque e Gestão em uma história só, com a conta no comentário). A auditoria completa, a tabela de acesso das rotas e os riscos estão em `tasks/afiliados-seguranca.md`.
+- Comprovante: `caminhoValido` (`lib/b2-envio.js`) agora vale também na LEITURA (`GET` do afiliado, `GET` da Gestão e `marcarPago`): caminho fora de `afiliados-comprovantes/<id>-<uuid>.(pdf|jpg|png)` nunca vira link nem paga.
+- Testes de segurança compartilham `tests/afiliados/_seg.mjs` (sessão real no D1 local, B2 falso, cenário com os afiliados A e B). Casos chamados `LACUNA` descrevem comportamento que o Paulo ainda precisa decidir; se a regra mudar, a expectativa muda junto.
+- `tests/afiliados/dinheiro-no-navegador.test.mjs` falha se aparecer conta de dinheiro em `components/afiliados`, `components/gestao/afiliados` ou `lib/afiliados-*.js` fora da lista de formatações permitidas.

@@ -1,4 +1,5 @@
 import { linkDeDownload } from '@/lib/b2'
+import { caminhoValido } from '@/lib/b2-envio'
 import { afiliadoLogado, erro, irPara } from '@/lib/afiliados/rota'
 
 export const runtime = 'nodejs'
@@ -15,7 +16,7 @@ export async function GET(_req, ctx) {
         .bind(id, afiliado.id)
         .first()
     : null
-  if (!s?.c) return erro('Comprovante não encontrado.', 404)
+  if (!s?.c || !caminhoValido(id, s.c)) return erro('Comprovante não encontrado.', 404)
   try {
     const link = await linkDeDownload(s.c, `comprovante-saque-${id}.${String(s.c).split('.').pop()}`, 300)
     if (link) return irPara(link)
