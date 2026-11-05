@@ -142,7 +142,7 @@ async function saqueOk() {
 }
 
 test('saque: sucesso grava registro e avisa o dono; segundo pedido dá 409 com motivo e sem e-mail', async () => {
-  process.env.ADMIN_MASTER = 'dono@trilhaviva.org'
+  process.env.ADMIN_MASTER = 'dono@trilhaviva.org, Kaylan@trilhaviva.org;'
   const { db, a } = montar()
   await vendaReal(db, a, 'x@x.com')
   const r = await post(rSaque, {}, { origin: HOST })
@@ -153,7 +153,7 @@ test('saque: sucesso grava registro e avisa o dono; segundo pedido dá 409 com m
   assert.equal(globalThis.__emails.length, 1)
   assert.deepEqual(
     [globalThis.__emails[0].para, globalThis.__emails[0].codigo, globalThis.__emails[0].valorCentavos],
-    ['dono@trilhaviva.org', db.banco.prepare('SELECT codigo FROM afiliados WHERE id = ?').get(a.id).codigo, 1500],
+    [['dono@trilhaviva.org', 'kaylan@trilhaviva.org'], db.banco.prepare('SELECT codigo FROM afiliados WHERE id = ?').get(a.id).codigo, 1500],
   )
   assert.equal(n(db, "SELECT COUNT(*) AS n FROM registro WHERE acao = 'afiliado_saque'"), 1)
 

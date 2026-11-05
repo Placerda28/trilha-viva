@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getDB } from '@/lib/d1'
 import { mesmaOrigem } from '@/lib/origem'
+import { mastersDe } from '@/lib/gestao/decidir'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
 import { gravarRegistro } from '@/lib/gestao/registro'
 import { corrigirEmailCliente, emailNovoValido, idClienteValido } from '@/lib/gestao/corrigir-email'
@@ -36,7 +37,7 @@ const post = async (req, admin) => {
 
   const resultado = await corrigirEmailCliente(
     db,
-    { clienteId, novoEmail, protegidos: [process.env.ADMIN_MASTER] },
+    { clienteId, novoEmail, protegidos: mastersDe(process.env.ADMIN_MASTER) },
     { trocarEmailConta }
   )
   if (!resultado.ok) {

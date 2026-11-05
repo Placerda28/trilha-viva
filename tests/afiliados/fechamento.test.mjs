@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fecharMes } from '../../lib/afiliados/fechamento.js'
 import { estornarVenda, gravarComissaoBase } from '../../lib/afiliados/comissao.js'
+import { restaurarCompra } from '../../lib/afiliados/venda.js'
 import { statusDoMes } from '../../lib/afiliados/status.js'
 import { FECHA, NOV, contar, novaVenda, novoAfiliado, novoDb, vendas } from './_base.mjs'
 
@@ -228,4 +229,31 @@ test('estornos concorrentes: só quem agiu recebe acao/criado exatos', async () 
       assert.equal(rs.filter((r) => r.acao === 'ja_cancelada').length, 2)
     }
   }
+})
+
+test('estorno depois do fechamento + compra paga de novo: devolução devolve o saldo, 1 vez só, nível fica', async () => {
+  const db = novoDb()
+  const af = novoAfiliado(db)
+  const ids = await vendas(db, af, 20)
+  await fecharMes(db, '2026-11', FECHA)
+  const depois = new Date('2026-12-15T12:00:00Z')
+  const original = (await statusDoMes(db, af.id, '2026-11', depois)).saldos.disponivel
+  await estornarVenda(db, ids[0], depois) // mediação ou chargeback: o lançamento é o mesmo
+  const sessao = db.banco.prepare('SELECT stripe_session_id s FROM compras WHERE id = ?').get(ids[0]).s
+  await restaurarCompra(db, sessao, null)
+  await restaurarCompra(db, sessao, null) // aviso repetido
+  const dev = db.banco.prepare("SELECT valor_centavos v, status, descricao d FROM afiliados_lancamentos WHERE tipo = 'ajuste'").all()
+  assert.deepEqual(dev.map((l) => [l.v, l.status, l.d]), [[2000, 'pendente', `Devolução: compra #${ids[0]} confirmada`]])
+  const s = await statusDoMes(db, af.id, '2026-11', depois)
+  assert.equal(s.saldos.disponivel, original)
+  assert.equal(s.nivel.nome, 'Prata')
+})
+
+test('restaurarCompra sem estorno não cria devolução', async () => {
+  const db = novoDb()
+  const af = novoAfiliado(db)
+  const [id] = await vendas(db, af, 1)
+  const sessao = db.banco.prepare('SELECT stripe_session_id s FROM compras WHERE id = ?').get(id).s
+  await restaurarCompra(db, sessao, null)
+  assert.equal(contar(db, "SELECT COUNT(*) n FROM afiliados_lancamentos WHERE tipo = 'ajuste'"), 0)
 })

@@ -10,15 +10,16 @@
 //   Fechamento (8/12): Bronze, 19 vendas, base 285, bônus 0, total 285.
 //   1 chargeback DEPOIS (9/12): estorno de -15 (valor por venda do nível FECHADO). O nível do mês fica Bronze.
 //   Saldo disponível = 19 x 15 - 15 = 270. Saque de 270 pago pela Gestão (comprovante no B2 falso).
-//   Mediação (11/12) e aprovação de novo (12/12) de outra compra: o acesso volta; o estorno de -15 fica.
+//   Mediação (11/12) e aprovação de novo (12/12) de outra compra: o acesso volta; o estorno de -15 fica e a devolução de +15 o compensa.
 //   Financeiro (nov a dez):
 //     compras pagas  = 20 - 1 reembolso - 1 chargeback = 18
 //     bruto 18 x 89,90 = 1.618,20 | taxas 18 x 5,00 = 90,00 | líquido 18 x 84,90 = 1.528,20
 //     comissão base (venda não cancelada) = 19 x 15 = 285,00
 //     estornos = -15 (chargeback) -15 (mediação) = -30,00
-//     custo = 285 + 0 + 0 - 30 = 255,00 | lucro = 1.528,20 - 255,00 = 1.273,20
-//     CPA = 255,00 / 18 = 14,1666... -> 14,17
-//   Extrato: 20 vendas + 2 estornos = 22 lançamentos; soma 20 x 15 - 30 = 270 (a venda cancelada entra na soma).
+//     devolução da mediação ganha (ajuste) = +15,00
+//     custo = 285 + 0 + 15 - 30 = 270,00 | lucro = 1.528,20 - 270,00 = 1.258,20
+//     CPA = 270,00 / 18 = 15,00
+//   Extrato: 20 vendas + 2 estornos + 1 devolução = 23 lançamentos; soma 20 x 15 - 30 + 15 = 285 - 15 + 15 = 270 + 0 (a venda cancelada entra na soma).
 import test, { mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { resolve } from 'node:path'
@@ -296,7 +297,7 @@ test('estorno e chargeback de ponta a ponta', async (t) => {
     assert.deepEqual([p.cartoes.disponivel, p.cartoes.jaRecebido], [0, 27000])
   })
 
-  await t.test('10. in_mediation seguido de approved devolve o acesso (o estorno de -R$ 15 fica)', async () => {
+  await t.test('10. in_mediation seguido de approved devolve o acesso e a comissão (estorno -R$ 15 + devolução +R$ 15)', async () => {
     agoraEm('2026-12-11T15:00:00Z')
     await mudar(2, 'in_mediation')
     assert.equal(compraDe(2).status, 'em_mediacao')
@@ -306,17 +307,26 @@ test('estorno e chargeback de ponta a ponta', async (t) => {
     await mudar(2, 'approved')
     assert.equal(compraDe(2).status, 'pago')
     assert.equal(await temCompra(clienteDe(2)), true)
-    // Limitação conhecida (docs/architecture.md, Fase 4): mediação ganha pela loja não devolve a comissão.
+    // Mediação ganha pela loja: o estorno fica e uma devolução de mesmo valor (ajuste) o compensa.
     assert.equal(lancs('estorno').length, 2)
+    const dev = () => lancs('ajuste').filter((l) => l.descricao === `Devolução: compra #${compraDe(2).id} confirmada`)
+    assert.deepEqual(dev().map((l) => l.valor_centavos), [1500])
     const p = await painel('2026-12-12T16:00:00Z')
-    assert.equal(p.cartoes.disponivel, -1500)
+    assert.equal(p.cartoes.disponivel, 0)
     assert.equal(p.saque.pode, false)
+    // Aviso repetido não devolve de novo.
+    await mudar(2, 'approved')
+    assert.equal(dev().length, 1)
+    assert.equal((await painel('2026-12-12T16:30:00Z')).cartoes.disponivel, 0)
+    // O nível do mês fechado não muda.
+    assert.equal(db.banco.prepare("SELECT n.nome FROM afiliados_fechamentos f JOIN afiliados_niveis n ON n.id = f.nivel_id WHERE f.mes_referencia = '2026-11'").get()?.nome, 'Bronze')
   })
 
   await t.test('11. dashboard e financeiro da Gestão batem com a conta do comentário', async () => {
     // Datas do SQLite (que não segue o relógio do teste): ficam as da história.
     db.banco.exec("UPDATE compras SET criado_em = '2026-11-10 15:00:00'")
     db.banco.exec("UPDATE afiliados_eventos SET criado_em = '2026-11-10 15:00:00'")
+    db.banco.exec("UPDATE afiliados_lancamentos SET criado_em = '2026-12-12 15:00:00' WHERE tipo = 'ajuste'")
     agoraEm('2026-12-15T15:00:00Z')
     const PER = '?de=2026-11-01&ate=2026-12-31'
     const d = await (await get(gDashboard, PER)).json()
@@ -324,9 +334,9 @@ test('estorno e chargeback de ponta a ponta', async (t) => {
     const c = d.compensa
     assert.deepEqual([c.vendas_afiliados, c.vendas_total, c.pct_vendas_afiliados], [18, 18, 100])
     assert.equal(c.receita_liquida_afiliados_centavos, 152820)
-    assert.deepEqual(c.custo_programa, { como_contado: c.custo_programa.como_contado, total_centavos: 25500, base_centavos: 28500, bonus_centavos: 0, ajustes_centavos: 0, estornos_centavos: -3000 })
-    assert.equal(c.lucro_afiliados_centavos, 127320)
-    assert.equal(c.cpa_centavos, 1417)
+    assert.deepEqual(c.custo_programa, { como_contado: c.custo_programa.como_contado, total_centavos: 27000, base_centavos: 28500, bonus_centavos: 0, ajustes_centavos: 1500, estornos_centavos: -3000 })
+    assert.equal(c.lucro_afiliados_centavos, 125820)
+    assert.equal(c.cpa_centavos, 1500)
     assert.deepEqual([d.dinheiro.disponivel_centavos, d.dinheiro.liberando_centavos], [0, 0])
     assert.deepEqual(d.dinheiro.saques_pendentes, { quantidade: 0, valor_centavos: 0 })
     assert.deepEqual(d.dinheiro.pago_no_periodo, { quantidade: 1, valor_centavos: 27000 })
@@ -338,9 +348,9 @@ test('estorno e chargeback de ponta a ponta', async (t) => {
     const fin = await (await get(gFinanceiro, PER)).json()
     const [nov, dez] = fin.resumo_mensal.meses
     assert.deepEqual([nov.mes, nov.vendas, nov.bruto, nov.taxas, nov.liquido, nov.comissoes_base, nov.estornos], ['2026-11', 18, 161820, 9000, 152820, 28500, 0])
-    assert.deepEqual([dez.mes, dez.vendas, dez.liquido, dez.comissoes_base, dez.estornos, dez.custo, dez.lucro], ['2026-12', 0, 0, 0, -3000, -3000, 3000])
+    assert.deepEqual([dez.mes, dez.vendas, dez.liquido, dez.comissoes_base, dez.estornos, dez.ajustes, dez.custo, dez.lucro], ['2026-12', 0, 0, 0, -3000, 1500, -1500, 1500])
     const tot = fin.resumo_mensal.totais
-    assert.deepEqual([tot.custo, tot.lucro], [25500, 127320]) // igual ao dashboard
-    assert.deepEqual([fin.extrato.total_itens, fin.extrato.soma_centavos], [22, 25500]) // soma sem as canceladas (1500 vão em canceladas_centavos)
+    assert.deepEqual([tot.custo, tot.lucro], [27000, 125820]) // igual ao dashboard
+    assert.deepEqual([fin.extrato.total_itens, fin.extrato.soma_centavos], [23, 27000]) // soma sem as canceladas (1500 vão em canceladas_centavos)
   })
 })

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getDB } from '@/lib/d1'
 import { mesmaOrigem } from '@/lib/origem'
+import { mastersDe } from '@/lib/gestao/decidir'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
 import { gravarRegistro } from '@/lib/gestao/registro'
 import { idClienteValido } from '@/lib/gestao/corrigir-email'
@@ -20,7 +21,7 @@ const post = async (req, admin) => {
   const quem = String(admin.cliente.email || '').trim().toLowerCase()
   const clienteId = idClienteValido(corpo?.id)
   if (!clienteId || typeof corpo?.bloqueado !== 'boolean') return resposta({ ok: false, erro: 'Informe o cliente e o bloqueio como verdadeiro ou falso.' }, 400)
-  const resultado = await bloquearCliente(db, { clienteId, bloqueado: corpo.bloqueado, protegidos: [process.env.ADMIN_MASTER] })
+  const resultado = await bloquearCliente(db, { clienteId, bloqueado: corpo.bloqueado, protegidos: mastersDe(process.env.ADMIN_MASTER) })
   if (!resultado.ok) return resposta({ ok: false, erro: resultado.erro }, resultado.status)
   await gravarRegistro(db, { quem, acao: corpo.bloqueado ? 'cliente_bloqueado' : 'cliente_liberado', alvo: resultado.email })
   return resposta({ ok: true })

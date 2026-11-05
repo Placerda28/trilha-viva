@@ -4,7 +4,7 @@ O branch `afiliados` (C:\dev\tv-afiliados) tem as fases 1 a 11 prontas e testada
 
 ## Decisões do Paulo (antes de publicar)
 1. **Feito (05/11):** pagar e recusar saques, anexar comprovante, revelar CPF e Pix e baixar o CSV de saques pagos agora são só do master. O membro vê a fila de saques com o Pix mascarado.
-2. **Mediação ganha depois do fechamento:** o acesso volta, mas o estorno da comissão continua. As opções são deixar o ajuste manual ou fazer um ajuste positivo automático.
+2. **Mediação ganha depois do fechamento:** FEITO em 05/11 (decisão do dono: sim). O acesso volta e um ajuste positivo automático devolve a comissão, uma vez só.
 3. **Cliques:** pôr ou não um limite por IP. Sem limite, dá para inflar a contagem de cliques. Isso não afeta o dinheiro.
 4. **Feito (05/11):** o robô tem um orçamento de 46 consultas por rodada, dividido entre todas as etapas. Isso dá uns 14 e-mails por rodada; o que não cabe vai para a rodada seguinte, 10 min depois. Quando o limite é atingido, aparece um aviso no Painel da Gestão. Se o aviso aparecer todo dia, é hora de passar para o plano pago.
 5. **Aprovado (05/11):** textos da página `/afiliados`.

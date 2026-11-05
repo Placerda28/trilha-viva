@@ -141,7 +141,7 @@ test('corrigir: e-mail de outro cliente, da equipe, o mesmo de agora ou cliente 
   assert.equal((await corrigirEmailCliente(db, { clienteId: 1, novoEmail: 'membro@example.com' }, semConta)).status, 409)
   assert.equal((await corrigirEmailCliente(db, { clienteId: 1, novoEmail: 'rafa@gmail.comr' }, semConta)).status, 400)
   const master = await corrigirEmailCliente(db, { clienteId: 2, novoEmail: 'x@example.com', protegidos: ['Outro@Example.com'] }, semConta)
-  assert.deepEqual([master.status, master.erro], [409, 'Esse é o e-mail do administrador master e não muda por aqui.'])
+  assert.deepEqual([master.status, master.erro], [409, 'Esse é o e-mail de um administrador master e não muda por aqui.'])
   assert.equal((await corrigirEmailCliente(db, { clienteId: 99, novoEmail: 'x@example.com' }, semConta)).status, 404)
   assert.equal(b.prepare(`SELECT email FROM clientes WHERE id = 1`).get().email, 'rafa@gmail.comr')
   assert.equal(b.prepare(`SELECT email FROM carrinhos WHERE id = 'k1'`).get().email, 'rafa@gmail.comr')

@@ -330,8 +330,8 @@ export default function Equipe() {
       </Dialog.Root>
       </div>
       <p className="mt-1 text-[14px] text-ink-muted">
-        Você, como administrador master, não aparece aqui: esse papel vem da configuração do site e não pode ser
-        tirado nem dado por esta tela.
+        Os administradores master não aparecem aqui: esse papel vem da configuração do site (variável ADMIN_MASTER,
+        que aceita mais de um e-mail) e não pode ser tirado nem dado por esta tela.
       </p>
       {erro ? (
         <Aviso erro={erro} onTentar={recarregar} />

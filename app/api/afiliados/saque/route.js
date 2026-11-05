@@ -1,4 +1,5 @@
 import { mesmaOrigem } from '@/lib/origem'
+import { mastersDe } from '@/lib/gestao/decidir'
 import { gravarRegistro } from '@/lib/gestao/registro'
 import { enviarSaqueSolicitado } from '@/lib/email'
 import { pedirSaque } from '@/lib/afiliados/saque'
@@ -22,7 +23,7 @@ export async function POST(req) {
     })
     try {
       await enviarSaqueSolicitado({
-        para: process.env.ADMIN_MASTER,
+        para: mastersDe(process.env.ADMIN_MASTER),
         nome: afiliado.nome,
         codigo: afiliado.codigo,
         valorCentavos: r.valor_centavos,

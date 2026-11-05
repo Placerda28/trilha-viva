@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { decidirPapel } from '../../lib/gestao/decidir.js'
+import { decidirPapel, ehMaster, mastersDe } from '../../lib/gestao/decidir.js'
 
 const cliente = {
   id: 1,
@@ -71,4 +71,23 @@ test('e-mail apenas parecido não passa', () => {
     }),
     null
   )
+})
+
+test('ADMIN_MASTER aceita lista por vírgula, ponto e vírgula ou espaço, sem diferenciar maiúsculas', () => {
+  assert.deepEqual(mastersDe(' A@x.com, b@y.com;c@z.com  d@w.com '), ['a@x.com', 'b@y.com', 'c@z.com', 'd@w.com'])
+  assert.equal(decidirPapel({ cliente: { ...cliente, email: 'KAYLAN@y.com' }, adminMaster: 'paulo@x.com, kaylan@y.com' }), 'master')
+  assert.equal(decidirPapel({ cliente: { ...cliente, email: 'paulo@x.com' }, adminMaster: 'paulo@x.com' }), 'master')
+})
+
+test('lista vazia, com lixo ou com item vazio não vira master de ninguém', () => {
+  for (const v of ['', ' , ; ', ',', 'lixo', null, undefined, 42]) assert.deepEqual(mastersDe(v), [])
+  assert.deepEqual(mastersDe('a@x.com,'), ['a@x.com'])
+  assert.equal(ehMaster('', 'a@x.com,'), false)
+  assert.equal(ehMaster('   ', ' , '), false)
+  assert.equal(decidirPapel({ cliente: { ...cliente, email: '' }, adminMaster: 'a@x.com,' }), null)
+})
+
+test('master na lista que também está na equipe continua master; bloqueado é recusado', () => {
+  assert.equal(decidirPapel({ cliente: { ...cliente, email: 'k@y.com', equipe_id: 3 }, adminMaster: 'p@x.com, k@y.com' }), 'master')
+  assert.equal(decidirPapel({ cliente: { ...cliente, email: 'k@y.com', bloqueado: 1 }, adminMaster: 'p@x.com, k@y.com' }), null)
 })
