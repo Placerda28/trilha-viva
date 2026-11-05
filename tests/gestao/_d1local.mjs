@@ -20,7 +20,9 @@ export class D1Local {
     this.consultas += 1
     const preparada = this.banco.prepare(sql)
     let valores = []
+    const escrita = ['INSERT', 'UPDATE', 'DELETE', 'REPLACE'].some((v) => sql.trimStart().toUpperCase().startsWith(v)) && !sql.toUpperCase().includes('RETURNING')
     return {
+      escrita,
       bind(...novos) {
         valores = novos
         return this
@@ -40,6 +42,16 @@ export class D1Local {
 
   async batch(lista) {
     this.lotes += 1
-    return Promise.all(lista.map((s) => s.all()))
+    // Como o D1 real: comando de escrita volta com meta.changes (o lote roda em ordem, numa transação).
+    const saidas = []
+    this.banco.exec('SAVEPOINT lote')
+    try {
+      for (const s of lista) saidas.push(s.escrita ? { results: [], ...(await s.run()) } : await s.all())
+    } catch (erro) {
+      this.banco.exec('ROLLBACK TO lote; RELEASE lote')
+      throw erro
+    }
+    this.banco.exec('RELEASE lote')
+    return saidas
   }
 }

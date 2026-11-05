@@ -216,6 +216,8 @@ async function atualizarModelos(db, env, fetchImpl, logger) {
     return
   }
   const todos = Array.isArray(dados?.data) ? dados.data : []
+  // Uma gravação só (UPSERT de várias linhas): o orçamento de consultas não cresce com a lista de modelos.
+  const linhasModelos = []
   for (const nome of [...MODELOS, ...MODELOS_LEAD]) {
     const doNome = todos.filter((m) => m?.name === nome)
     const modelo = doNome.find((m) => m.language === 'pt_BR') || doNome[0]
@@ -223,11 +225,13 @@ async function atualizarModelos(db, env, fetchImpl, logger) {
     const componentes = Array.isArray(modelo?.components) ? modelo.components : []
     const botoes = componentes.find((c) => String(c?.type || '').toUpperCase() === 'BUTTONS')?.buttons || []
     const botaoUrl = Math.max(0, botoes.findIndex((b) => String(b?.type || '').toUpperCase() === 'URL'))
-    await db.prepare(`
-      INSERT INTO whatsapp_modelos (nome, status, botao_url, conferido_em) VALUES (?, ?, ?, datetime('now'))
-      ON CONFLICT(nome) DO UPDATE SET status = excluded.status, botao_url = excluded.botao_url,
-                                      conferido_em = excluded.conferido_em`).bind(nome, status, botaoUrl).run()
+    linhasModelos.push([nome, status, botaoUrl])
   }
+  await db.prepare(`
+    INSERT INTO whatsapp_modelos (nome, status, botao_url, conferido_em)
+    VALUES ${linhasModelos.map(() => "(?, ?, ?, datetime('now'))").join(', ')}
+    ON CONFLICT(nome) DO UPDATE SET status = excluded.status, botao_url = excluded.botao_url,
+                                    conferido_em = excluded.conferido_em`).bind(...linhasModelos.flat()).run()
 }
 
 // ------------------------------------------ token/acesso recusado ----

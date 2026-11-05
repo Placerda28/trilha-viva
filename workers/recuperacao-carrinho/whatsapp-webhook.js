@@ -78,7 +78,7 @@ async function atualizarStatus(db, aviso) {
   }
 }
 
-// Parte dos leads do webhook: sem a migração 0023 (ou com erro) nunca derruba o aviso dos carrinhos.
+// Status de mensagem de lead (não crítico): erro aqui nunca derruba o aviso dos carrinhos.
 async function deLead(consulta) {
   try {
     return await consulta()
@@ -95,7 +95,8 @@ const variantes = (telefone) => (telefone.length === 10 ? [telefone, `${telefone
 // só para o WhatsApp (o e-mail segue, o Paulo conversa pela gestão).
 async function pararLead(db, telefone, saida) {
   const [a, b] = variantes(telefone)
-  await deLead(() => saida
+  // Sem deLead: erro do D1 sobe, o webhook responde 500 e a Meta reenvia (o UPDATE é idempotente).
+  await (saida
     ? db.prepare(`UPDATE leads SET descadastrado = 1, proximo_email_em = NULL, proximo_whatsapp_em = NULL,
         whatsapp_encerrado_em = COALESCE(whatsapp_encerrado_em, datetime('now')),
         whatsapp_motivo = COALESCE(whatsapp_motivo, 'descadastro'),

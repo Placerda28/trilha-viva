@@ -350,3 +350,111 @@ test('consultas da etapa de WhatsApp dos leads: 3 fixas + 3 por mensagem', async
   assert.equal(s.meta.length, 4)
   assert.equal(s.db.consultas - antes, 3 + 1 + 4 * 3) // estado, contagem, fila + leitura dos modelos (sem WA_WABA_ID) + 3 por lead
 })
+
+// ---------------------------------------------------------------- Fase 1b: falhas reproduzidas pelo Codex ----
+
+// Injeta uma ação (falha ou efeito) quando o robô prepara um SQL que contém `trecho`.
+function interceptar(db, trecho, acao) {
+  const original = db.prepare.bind(db)
+  db.prepare = (sql) => {
+    if (sql.includes(trecho)) acao(sql)
+    return original(sql)
+  }
+  return () => { db.prepare = original }
+}
+const quebrar = (trecho) => (db) => interceptar(db, trecho, () => { throw new Error('D1 fora do ar') })
+
+test('1. gravar o id da Meta falha DEPOIS de ela aceitar: a mensagem não sai de novo', async () => {
+  const s = montar()
+  s.lead(1)
+  const soltar = quebrar('UPDATE leads_whatsapp SET wa_msg_id')(s.db)
+  await s.rodar('2026-11-11T15:00:00Z')
+  assert.equal(s.meta.length, 1)
+  assert.equal(s.ler().whatsapp_etapa, 1) // avançou
+  assert.equal(s.b.prepare('SELECT COUNT(*) AS n FROM leads_whatsapp').get().n, 1) // a reserva ficou
+  soltar()
+  await s.rodar('2026-11-11T15:10:00Z')
+  await s.rodar('2026-11-12T15:00:00Z')
+  assert.equal(s.meta.length, 1, 'nenhum reenvio')
+})
+
+test('1b. resposta incerta da Meta (tempo esgotado, sem código) também não reenvia', async () => {
+  const s = montar()
+  s.lead(1)
+  const fetchImpl = async () => { throw new Error('tempo esgotado') }
+  await executarLeadsWhatsapp(s.env, { agora: new Date('2026-11-11T15:00:00Z'), fetchImpl, logger: mudo })
+  assert.equal(s.ler().whatsapp_etapa, 1)
+  await s.rodar('2026-11-11T15:10:00Z')
+  assert.equal(s.meta.length, 0)
+  assert.equal(s.b.prepare('SELECT COUNT(*) AS n FROM leads_whatsapp').get().n, 1)
+})
+
+test('2. erro do D1 no "Não quero receber" faz o webhook responder 500 (a Meta reenvia) e o reenvio descadastra', async () => {
+  const s = montar()
+  s.lead(1, { etapaEmail: 2, proximoEmail: '2026-11-20 12:00:00', etapaWa: 1, inicio: C0, proximoWa: '2026-11-13 14:30:00' })
+  const corpo = JSON.stringify({ entry: [{ changes: [{ field: 'messages', value: {
+    metadata: { phone_number_id: '123' }, contacts: [{ wa_id: '5527999999999' }],
+    messages: [{ from: '5527999999999', id: 'wamid.in9', type: 'button', button: { text: 'Não quero receber' } }],
+  } }] }] })
+  const pedido = () => new Request('https://robo.example/whatsapp', { method: 'POST', body: corpo,
+    headers: { 'X-Hub-Signature-256': 'sha256=' + createHmac('sha256', 'segredo-app').update(corpo).digest('hex') } })
+  const soltar = quebrar('UPDATE leads SET descadastrado = 1')(s.db)
+  assert.equal((await atenderWebhook(pedido(), s.env, { fetchImpl: s.fetchImpl, logger: mudo })).status, 500)
+  assert.equal(s.ler().descadastrado, 0)
+  soltar()
+  assert.equal((await atenderWebhook(pedido(), s.env, { fetchImpl: s.fetchImpl, logger: mudo })).status, 200)
+  assert.equal(s.ler().descadastrado, 1)
+  assert.equal((await atenderWebhook(pedido(), s.env, { fetchImpl: s.fetchImpl, logger: mudo })).status, 200) // idempotente
+  assert.equal(s.ler().encerrado_motivo, 'descadastrou')
+})
+
+test('3. conferência dos modelos vencida (WA_WABA_ID): 1 gravação só e a rodada cheia não passa de 50 consultas', async () => {
+  const s = montar({ extras: { WA_WABA_ID: 'waba', WA_LEADS_TETO_DIA: '100', WA_TETO_DIA: '100' } })
+  s.b.exec("UPDATE whatsapp_modelos SET status = 'PENDING'; UPDATE whatsapp_estado SET modelo_conferido_em = NULL")
+  for (let i = 0; i < 20; i++) {
+    s.b.prepare("INSERT INTO carrinhos (id, email, telefone, criado_em) VALUES (?, ?, ?, '2026-12-08 10:00:00')")
+      .run(`c${i}`, `c${i}@example.com`, `2799999${String(i).padStart(4, '0')}`)
+  }
+  for (let i = 1; i <= 10; i++) s.lead(i, { consentimento: '2026-10-22 12:00:00', etapaEmail: 4 })
+  s.b.exec("UPDATE leads SET proximo_email_em = datetime('now', '+30 days')")
+  let gravacoes = 0
+  interceptar(s.db, 'INSERT INTO whatsapp_modelos', () => { gravacoes += 1 })
+  const nomes = ['carrinho_lembrete', 'carrinho_preco', 'carrinho_acervo', ...MODELOS]
+  const fetchImpl = async (url, init) => {
+    if (String(url).includes('/message_templates')) {
+      return Response.json({ data: nomes.map((name) => ({ name, status: 'APPROVED', language: 'pt_BR',
+        components: [{ type: 'BUTTONS', buttons: [{ type: 'URL' }] }] })) })
+    }
+    return s.fetchImpl(url, init)
+  }
+  const medidor = {}
+  await executarRodada(s.env, { agora: new Date('2026-12-08T15:00:00Z'), fetchImpl, logger: mudo, medidor })
+  assert.ok(medidor.total <= 50, `gastou ${medidor.total}`)
+  assert.equal(gravacoes, 1)
+  assert.equal(s.b.prepare("SELECT COUNT(*) AS n FROM whatsapp_modelos WHERE status = 'APPROVED'").get().n, 7)
+})
+
+test('4. compra registrada entre a leitura da fila e a reserva bloqueia o envio', async () => {
+  const s = montar()
+  s.lead(1)
+  interceptar(s.db, 'INSERT OR IGNORE INTO leads_whatsapp', () => {
+    s.b.exec("INSERT INTO clientes (id, email) VALUES (1, 'l1@example.com'); INSERT INTO compras (cliente_id, stripe_session_id, status, teste) VALUES (1, 'real', 'pago', 0)")
+  })
+  await s.rodar('2026-11-11T15:00:00Z')
+  assert.equal(s.meta.length, 0)
+  assert.equal(s.ler().whatsapp_etapa, 0)
+  assert.equal(s.b.prepare('SELECT COUNT(*) AS n FROM leads_whatsapp').get().n, 0)
+})
+
+test('5. reserva e avanço do lead são uma transação: se o avanço falha, não sobra reserva e a próxima rodada envia', async () => {
+  const s = montar()
+  s.lead(1)
+  const soltar = quebrar('UPDATE leads SET whatsapp_etapa')(s.db)
+  await assert.rejects(() => s.rodar('2026-11-11T15:00:00Z'))
+  assert.equal(s.meta.length, 0)
+  assert.equal(s.b.prepare('SELECT COUNT(*) AS n FROM leads_whatsapp').get().n, 0)
+  soltar()
+  await s.rodar('2026-11-11T15:10:00Z')
+  assert.equal(s.meta.length, 1)
+  assert.equal(s.ler().whatsapp_etapa, 1)
+})

@@ -74,6 +74,8 @@ function banco() {
     '0011_whatsapp_anexos',
     '0013_testes',
     '0015_whatsapp_aviso_acesso',
+    '0017_leads',
+    '0023_leads_robo',
   ]) {
     b.exec(readFileSync(`migrations/${arquivo}.sql`, 'utf8'))
   }

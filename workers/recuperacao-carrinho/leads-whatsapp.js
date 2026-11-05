@@ -22,7 +22,7 @@ const ATRASO_MAXIMO_MS = DIA
 
 // Consultas ao D1: fixas (estado, contagem do dia, fila) e por mensagem (reserva, marca no lead, id da Meta).
 const FIXO = 3
-const CUSTO_MODELOS = 9 // conferência dos modelos na Meta: no máximo a cada 30 min (1 + 1 + 7 gravações)
+const CUSTO_MODELOS = 3 // conferência dos modelos na Meta (no máx. a cada 30 min): trava + 1 gravação + leitura
 const CUSTO_MENSAGEM = 4 // 3 + 1 de folga para uma falha
 
 // Erros da Meta sobre o número da pessoa (sem WhatsApp, não aceita marketing...): o canal para.
@@ -62,20 +62,29 @@ export async function buscarFilaLeads(db, soTelefone, agoraSql) {
 
 // Reserva atômica da mensagem `etapa`: a linha em leads_whatsapp é a vaga (chave lead + etapa), e o teto do
 // dia e o estado do lead ficam no próprio INSERT. Rodadas simultâneas não mandam duas vezes.
+// A vaga e o avanço do lead saem no MESMO db.batch (uma transação): nunca sobra reserva sem avanço.
+// A compra real é conferida de novo aqui dentro, pois pode ter entrado depois da leitura da fila.
+// Depois que a Meta aceita, a reserva NUNCA é apagada (só quando ela recusa antes de aceitar).
 async function reservar(db, lead, etapa, modelo, tetoDia, agoraSql, inicioSql, proximaSql) {
-  const reserva = await db.prepare(`INSERT OR IGNORE INTO leads_whatsapp (lead_id, etapa, enviado_em, modelo)
+  const insere = db.prepare(`INSERT OR IGNORE INTO leads_whatsapp (lead_id, etapa, enviado_em, modelo)
     SELECT l.id, ?, ?, ? FROM leads l
      WHERE l.id = ? AND l.consentimento = 1 AND l.descadastrado = 0 AND l.comprou = 0
        AND l.encerrado_em IS NULL AND l.whatsapp_encerrado_em IS NULL AND l.whatsapp_etapa = ?
+       AND NOT ${COMPRA_REAL.replaceAll('leads.email', 'l.email')}
        AND (SELECT COUNT(*) FROM leads_whatsapp WHERE enviado_em >= datetime(?, 'start of day')) < ?`)
-    .bind(etapa, agoraSql, modelo, lead.id, etapa - 1, agoraSql, tetoDia).run()
-  if (mudancas(reserva) !== 1) return false
-  const marcado = await db.prepare(`UPDATE leads SET whatsapp_etapa = ?, whatsapp_enviado_em = ?,
+    .bind(etapa, agoraSql, modelo, lead.id, etapa - 1, agoraSql, tetoDia)
+  // Só avança se a vaga acabou de ser criada por esta rodada (sem id da Meta nem status).
+  const avanca = db.prepare(`UPDATE leads SET whatsapp_etapa = ?, whatsapp_enviado_em = ?,
       whatsapp_inicio_em = COALESCE(whatsapp_inicio_em, ?), proximo_whatsapp_em = ?
-    WHERE id = ? AND whatsapp_etapa = ? AND encerrado_em IS NULL AND whatsapp_encerrado_em IS NULL`)
-    .bind(etapa, agoraSql, inicioSql, proximaSql, lead.id, etapa - 1).run()
-  if (mudancas(marcado) === 1) return true
-  await desfazer(db, lead.id, etapa)
+    WHERE id = ? AND whatsapp_etapa = ? AND encerrado_em IS NULL AND whatsapp_encerrado_em IS NULL
+      AND NOT ${COMPRA_REAL}
+      AND EXISTS (SELECT 1 FROM leads_whatsapp w WHERE w.lead_id = leads.id AND w.etapa = ?
+        AND w.enviado_em = ? AND w.wa_msg_id IS NULL AND w.wa_status IS NULL)`)
+    .bind(etapa, agoraSql, inicioSql, proximaSql, lead.id, etapa - 1, etapa, agoraSql)
+  const [a, b] = await db.batch([insere, avanca])
+  if (mudancas(a) === 1 && mudancas(b) === 1) return true
+  // Outra rodada, compra ou teto mudaram o quadro: nada foi enviado, então a vaga pode sair.
+  if (mudancas(a) === 1) await desfazer(db, lead.id, etapa)
   return false
 }
 
@@ -159,12 +168,24 @@ export async function executarLeadsWhatsapp(env, opcoes = {}) {
         modelo,
         botaoUrl: modelos.get(modelo)?.botaoUrl,
       }, env), fetchImpl)
-      await db.prepare(`UPDATE leads_whatsapp SET wa_msg_id = ?, wa_status = 'sent', wa_status_em = ?
-        WHERE lead_id = ? AND etapa = ?`).bind(id, agoraSql, lead.id, etapa).run()
+      // A Meta já aceitou: gravar o id é melhor esforço. Se falhar, só log; a mensagem NÃO sai de novo.
+      try {
+        await db.prepare(`UPDATE leads_whatsapp SET wa_msg_id = ?, wa_status = 'sent', wa_status_em = ?
+          WHERE lead_id = ? AND etapa = ?`).bind(id, agoraSql, lead.id, etapa).run()
+      } catch (erroBanco) {
+        logger.error(`WhatsApp ${etapa}/4 do lead ${lead.id} enviado (${id}), mas o id não foi gravado:`, erroBanco?.message || erroBanco)
+      }
       enviadosHoje += 1
       resultado.enviados += 1
     } catch (erro) {
       const codigo = Number(erro?.codigo)
+      // Sem código da Meta (tempo esgotado, rede): ela pode ter aceitado. Mantém a vaga e o avanço, sem reenviar.
+      if (!Number.isFinite(codigo)) {
+        logger.error(`WhatsApp ${etapa}/4 do lead ${lead.id}: resposta incerta, não reenvia:`, erro?.message || erro)
+        enviadosHoje += 1
+        resultado.falhas += 1
+        continue
+      }
       logger.error(`WhatsApp ${etapa}/4 de lead não enviado para ${mascararTelefone(lead.whatsapp)} (lead ${lead.id}):`,
         erro?.message || erro)
       try {
