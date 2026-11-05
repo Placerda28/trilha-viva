@@ -28,6 +28,12 @@ test('resumirPagamento lê o afiliado da metadata, ignora formato inválido e l�
     transaction_details: { net_received_amount: 84.85 },
   }))
   assert.deepEqual(r.financeiro, { brutoCentavos: 8990, taxaCentavos: 505, liquidoCentavos: 8485 })
+  // Caso real (compra 143, 05/11): fee_details somou 2,24, mas o MP repassou 85,42. A taxa é bruto − líquido.
+  const real = resumirPagamento(doCheckout({
+    fee_details: [{ amount: 2.24 }],
+    transaction_details: { net_received_amount: 85.42 },
+  }))
+  assert.deepEqual(real.financeiro, { brutoCentavos: 8990, taxaCentavos: 448, liquidoCentavos: 8542 })
   const vazio = resumirPagamento(doCheckout()).financeiro
   assert.equal(vazio.taxaCentavos, null)
   assert.equal(vazio.liquidoCentavos, null)
