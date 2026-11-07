@@ -4,7 +4,7 @@ import { moeda, numero } from '../../formato'
 import { dirPadrao, percentual, textoFaltam } from '../afiliadosUtil'
 import { NivelSelo, Status } from './Pecas'
 
-// A lista em dois desenhos: tabela de 13 colunas de 1024 px em diante (rola
+// A lista em dois desenhos: tabela de 14 colunas de 1024 px em diante (rola
 // dentro do próprio bloco, com a coluna do nome parada) e cartões abaixo disso.
 
 const COLUNAS = [
@@ -21,6 +21,7 @@ const COLUNAS = [
   { id: 'disponivel', rotulo: 'Disponível', num: true, cel: (i) => moeda(i.disponivel_centavos) },
   { id: 'pago', rotulo: 'Total pago', num: true, cel: (i) => moeda(i.total_pago_centavos) },
   { id: 'ultima_venda', rotulo: 'Última venda', cel: (i) => (i.ultima_venda ? dataBr(i.ultima_venda) : '—') },
+  { id: 'origem', rotulo: 'Origem', cel: (i) => i.origem || '—' },
 ]
 
 const hrefDe = (base, id) => `${base}?afiliado=${id}`
@@ -122,6 +123,7 @@ function Cartoes({ itens, niveis, base }) {
               {numero(i.cliques_30d)} {i.cliques_30d === 1 ? 'clique' : 'cliques'} em 30 dias, conversão {percentual(i.conversao_pct)}, {numero(i.estornos)} {i.estornos === 1 ? 'estorno' : 'estornos'}
               {i.ultima_venda ? `, última venda em ${dataBr(i.ultima_venda)}` : ', sem vendas ainda'}.
             </p>
+            {i.origem && <p className="mt-1 text-[13.5px] text-ink-muted">Origem: {i.origem}</p>}
             {i.saque_pendente && <p className="mt-3 text-[14px] font-bold text-signal-deep">Saque pendente</p>}
           </Link>
         </li>

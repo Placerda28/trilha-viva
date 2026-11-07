@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import { getDB } from '@/lib/d1'
 import { clienteAtual } from '@/lib/sessao'
 import { mesmaOrigem } from '@/lib/origem'
-import { limparTelefone, telefoneValido } from '@/lib/carrinhos'
+import { limparTelefone, origemDoCarrinho, telefoneValido } from '@/lib/carrinhos'
+import { enviarEventoMeta, ipDoPedido, lerCookiesMeta, lerOrigemVisita } from '@/lib/meta'
+import { ehContatoTeste, enviarMetaSeReal } from '@/lib/teste'
 import { site } from '@/lib/site'
 import { gravarRegistro } from '@/lib/gestao/registro'
 import { enviarBoasVindasAfiliado } from '@/lib/email'
@@ -53,14 +55,17 @@ export async function POST(req) {
       return erro(cod.motivo, /em uso/.test(cod.motivo) ? 409 : 400, 'codigo')
     }
     const status = config.aprovacao_automatica ? 'ativo' : 'pendente'
+    // Origem guardada pelo componente Origem (cookie tv_origem): quem chegou
+    // pelo anúncio em /afiliados e se cadastrou depois. Só diagnóstico.
+    const origem = origemDoCarrinho({ utm: lerOrigemVisita(req)?.ultimo }) || null
     try {
       await db
         .prepare(
-          `INSERT INTO afiliados (cliente_id, codigo, status, nome, cpf, telefone, canal, avisar_cada_venda, termos_aceitos_em)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+          `INSERT INTO afiliados (cliente_id, codigo, status, nome, cpf, telefone, canal, avisar_cada_venda, origem, termos_aceitos_em)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
         )
         .bind(cliente.id, cod.codigo, status, nome, limparCpf(c.cpf), limparTelefone(c.telefone), canal || null,
-          c.avisar_cada_venda === true ? 1 : 0)
+          c.avisar_cada_venda === true ? 1 : 0, origem)
         .run()
     } catch (falha) {
       // Corrida entre dois cadastros: o banco decide quem ficou com a vaga.
@@ -69,15 +74,30 @@ export async function POST(req) {
       if (/afiliados\.codigo/.test(msg)) return erro('Este código já está em uso. Escolha outro.', 409, 'codigo')
       throw falha
     }
-    await gravarRegistro(db, { quem: cliente.email, acao: 'afiliado_cadastro', alvo: cod.codigo, detalhe: { status } })
+    await gravarRegistro(db, { quem: cliente.email, acao: 'afiliado_cadastro', alvo: cod.codigo, detalhe: { status, origem } })
     try {
       const niveis = await niveisDoMes(db, mesDe(new Date()))
       await enviarBoasVindasAfiliado({ para: cliente.email, nome, codigo: cod.codigo, status, niveis })
     } catch (falha) {
       console.error('afiliado boas-vindas', falha?.message)
     }
+    // CompleteRegistration para a Meta, pelo servidor, com o mesmo event_id do
+    // Pixel (a Meta junta os dois). Contato de teste não vai à Meta.
+    const teste = await ehContatoTeste(db, { email: cliente.email, telefone: c.telefone })
+    const eventoId = (typeof c.eventoId === 'string' ? c.eventoId.slice(0, 64) : '') || crypto.randomUUID()
+    await enviarMetaSeReal(teste, {
+      nome: 'CompleteRegistration',
+      id: eventoId,
+      email: cliente.email,
+      telefone: limparTelefone(c.telefone),
+      nomeCliente: nome,
+      ...lerCookiesMeta(req),
+      ip: ipDoPedido(req),
+      ua: (req.headers.get('user-agent') || '').slice(0, 400),
+      url: `${site.url.replace(/\/+$/, '')}/minha-conta/afiliado`,
+    }, enviarEventoMeta)
     const link = `${site.url.replace(/\/+$/, '')}/?ref=${cod.codigo}`
-    return NextResponse.json({ ok: true, codigo: cod.codigo, link, status }, { headers: semCache })
+    return NextResponse.json({ ok: true, codigo: cod.codigo, link, status, pixel: !teste }, { headers: semCache })
   } catch (falha) {
     console.error('afiliado cadastro', falha?.message)
     return erro('Não foi possível cadastrar agora. Tente novamente mais tarde.', 503)

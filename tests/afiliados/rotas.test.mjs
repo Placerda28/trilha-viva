@@ -92,7 +92,7 @@ test('cadastro: grava ativo, manda boas-vindas sem desconto e devolve link do si
   const { db, clienteId } = montar()
   const r = await post(cadastro, FORM, { origin: HOST })
   assert.equal(r.status, 200)
-  assert.deepEqual(await r.json(), { ok: true, codigo: 'ANA2026', link: 'https://trilhaviva.org/?ref=ANA2026', status: 'ativo' })
+  assert.deepEqual(await r.json(), { ok: true, codigo: 'ANA2026', link: 'https://trilhaviva.org/?ref=ANA2026', status: 'ativo', pixel: true })
   const a = db.banco.prepare('SELECT * FROM afiliados WHERE cliente_id = ?').get(clienteId)
   assert.equal(a.status, 'ativo')
   assert.equal(a.cpf, '52998224725')
@@ -102,6 +102,58 @@ test('cadastro: grava ativo, manda boas-vindas sem desconto e devolve link do si
   const boas = globalThis.__emails.find((e) => e.tipo === 'boas')
   assert.equal(boas.para, 'ana@t.com')
   assert.deepEqual(boas.niveis.map((x) => x.nome), ['Bronze', 'Prata', 'Ouro'])
+})
+
+// CompleteRegistration: o servidor manda à Meta o mesmo event_id do Pixel e
+// grava a origem (UTM do anúncio) no afiliado. Contato de teste não vai à Meta.
+async function comMetaFalsa(fn) {
+  const enviados = []
+  const fetchOriginal = globalThis.fetch
+  process.env.META_CAPI_TOKEN = 'tok-teste'
+  globalThis.fetch = async (url, op) => {
+    enviados.push({ url: String(url), corpo: JSON.parse(op.body) })
+    return new Response('{}', { status: 200 })
+  }
+  try {
+    await fn(enviados)
+  } finally {
+    globalThis.fetch = fetchOriginal
+    delete process.env.META_CAPI_TOKEN
+  }
+}
+const COOKIE_ANUNCIO = 'tv_origem=' + encodeURIComponent(JSON.stringify({
+  primeiro: { source: 'meta', medium: 'paid', campaign: 'afiliados' },
+  ultimo: { source: 'meta', medium: 'paid', campaign: 'afiliados', content: 'video1' },
+})) + '; _fbp=fb.1.1.123'
+
+test('cadastro: CompleteRegistration com o event_id do navegador e origem gravada', async () => {
+  await comMetaFalsa(async (enviados) => {
+    const { db, clienteId } = montar()
+    const r = await post(cadastro, { ...FORM, eventoId: 'ev-123' }, { cookie: COOKIE_ANUNCIO, 'cf-connecting-ip': '1.2.3.4' })
+    assert.equal((await r.json()).pixel, true)
+    assert.equal(enviados.length, 1)
+    const ev = enviados[0].corpo.data[0]
+    assert.equal(ev.event_name, 'CompleteRegistration')
+    assert.equal(ev.event_id, 'ev-123')
+    assert.equal(ev.event_source_url, 'https://trilhaviva.org/minha-conta/afiliado')
+    assert.equal(ev.user_data.fbp, 'fb.1.1.123')
+    assert.equal(ev.user_data.client_ip_address, '1.2.3.4')
+    assert.ok(ev.user_data.em)
+    const a = db.banco.prepare('SELECT origem FROM afiliados WHERE cliente_id = ?').get(clienteId)
+    assert.equal(a.origem, 'utm=meta/paid/afiliados/video1')
+  })
+})
+
+test('cadastro: contato de teste não manda evento à Meta nem pede o Pixel; sem UTM a origem fica vazia', async () => {
+  await comMetaFalsa(async (enviados) => {
+    const { db, clienteId } = montar()
+    db.banco.exec("INSERT INTO contatos_teste (valor, tipo) VALUES ('ana@t.com', 'email')")
+    const j = await (await post(cadastro, FORM)).json()
+    assert.equal(j.ok, true)
+    assert.equal(j.pixel, false)
+    assert.equal(enviados.length, 0)
+    assert.equal(db.banco.prepare('SELECT origem FROM afiliados WHERE cliente_id = ?').get(clienteId).origem, null)
+  })
 })
 
 test('cadastro: aprovação manual vira pendente; programa fechado recusa', async () => {

@@ -9,6 +9,7 @@ import {
 } from '@/lib/afiliados-campos'
 import { celularValido, digitosCelular, mascaraCelular } from '@/lib/checkout-campos'
 import { validarFormatoCodigo } from '@/lib/afiliados/codigo'
+import { rastrear } from '@/components/MetaPixel'
 import CadastroConcluido from './CadastroConcluido'
 import CampoCodigo from './CampoCodigo'
 import EscadaNiveis from './EscadaNiveis'
@@ -101,6 +102,8 @@ export default function CadastroAfiliado({ nomeInicial = '', niveis = [], aberto
       return
     }
     setEnviando(true)
+    // O mesmo id vai ao servidor e ao Pixel: a Meta conta um cadastro só.
+    const eventoId = crypto.randomUUID()
     try {
       const res = await fetch('/api/afiliados/cadastro', {
         method: 'POST',
@@ -113,10 +116,12 @@ export default function CadastroAfiliado({ nomeInicial = '', niveis = [], aberto
           codigo,
           aceite: true,
           avisar_cada_venda: avisar,
+          eventoId,
         }),
       })
       const dados = await res.json().catch(() => ({}))
       if (res.ok && dados.ok) {
+        if (dados.pixel) rastrear('CompleteRegistration', { content_name: 'afiliado', status: dados.status }, eventoId)
         setFeito({ codigo: dados.codigo || codigo, link: dados.link, status: dados.status })
         window.scrollTo({ top: 0 })
         return

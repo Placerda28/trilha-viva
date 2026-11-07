@@ -32,7 +32,8 @@ const falsos = {
   '@/lib/leads': modulo('export const verificarTurnstile = async () => null'),
   '@/lib/carrinhos': modulo(`export const limparTelefone = (v) => String(v || '').replace(/\\D/g, '')
     export const telefoneValido = (v) => String(v || '').replace(/\\D/g, '').length >= 10
-    export const limparUtm = (o) => ({ source: o?.source || '', medium: o?.medium || '', campaign: o?.campaign || '', content: o?.content || '' })`),
+    export const limparUtm = (o) => ({ source: o?.source || '', medium: o?.medium || '', campaign: o?.campaign || '', content: o?.content || '' })
+    export const origemDoCarrinho = () => ''`),
   '@/lib/site': modulo("export const site = { url: 'https://trilhaviva.org', email: 'contato@trilhaviva.org' }"),
 }
 registerHooks({
