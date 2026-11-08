@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { clienteAtual, temCompra } from '@/lib/sessao'
-import { usoDeHoje, registrarDownload } from '@/lib/cota'
+import { reservarDownload, desfazerDownload } from '@/lib/cota'
 import { arquivosDe } from '@/lib/arquivos'
 import { getSong } from '@/lib/catalog'
 import { linkDeDownload, b2Configurado } from '@/lib/b2'
@@ -48,8 +48,13 @@ export async function GET(req) {
   const caminho = lista[Number.isInteger(indice) && indice >= 0 ? indice : 0]
   if (!caminho) return voltar('sem-arquivo', BASE)
 
-  const uso = await usoDeHoje(cliente.id)
-  if (uso.restam <= 0) return voltar('cota', BASE)
+  const reserva = await reservarDownload({
+    clienteId: cliente.id,
+    arquivo: caminho,
+    slug,
+    ip: req.headers.get('cf-connecting-ip') || '',
+  })
+  if (!reserva.ok) return voltar('cota', BASE)
 
   // O nome que o cliente vê na pasta dele. O do balde carrega a pasta do
   // artista e às vezes um nome de origem confuso; aqui vai "Banda - Música".
@@ -71,15 +76,9 @@ export async function GET(req) {
   const link = await linkDeDownload(caminho, nome, 300)
   if (!link) {
     console.error('b2 link de download', slug, caminho)
+    await desfazerDownload(reserva.id)
     return voltar('falhou', BASE)
   }
-
-  await registrarDownload({
-    clienteId: cliente.id,
-    arquivo: caminho,
-    slug,
-    ip: req.headers.get('cf-connecting-ip') || '',
-  })
 
   return NextResponse.redirect(link, {
     status: 303,

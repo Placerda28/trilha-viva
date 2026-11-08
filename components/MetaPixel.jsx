@@ -8,15 +8,18 @@ import { site } from '@/lib/site'
 // Pixel da Meta. O código-base oficial carrega o fbevents.js e registra o
 // PageView. Como o Next troca de página sem recarregar, o PageView das páginas
 // seguintes é disparado aqui, a cada mudança de endereço.
+// O endereço da /sucesso traz a chave da compra (payment_id +
+// external_reference); as páginas de senha trazem o token (?t=). Nelas o
+// Pixel não carrega, para nada disso ir à Meta (auditoria de 07/11/2026, M1).
+// A compra chega à Meta pelo servidor (webhook do Mercado Pago).
+export const SEM_PIXEL = ['/sucesso', '/criar-senha', '/redefinir', '/primeiro-acesso']
+
 export default function MetaPixel() {
   const id = site.metaPixelId
   const pathname = usePathname()
   const primeira = useRef(true)
 
-  // O endereço da /sucesso traz a chave da compra (payment_id +
-  // external_reference): o Pixel não carrega ali, para ela não ir à Meta. A
-  // compra chega à Meta pelo servidor (webhook do Mercado Pago).
-  const fora = pathname === '/sucesso'
+  const fora = SEM_PIXEL.includes(pathname)
 
   useEffect(() => {
     if (!id || fora) return

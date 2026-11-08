@@ -76,5 +76,6 @@ test('M-3: aprovado sem date_approved usa a última atualização como data', ()
 
 test('M-3: o Pixel não carrega na /sucesso (o endereço dela traz a chave da compra)', () => {
   const pixel = readFileSync('components/MetaPixel.jsx', 'utf8')
-  assert.match(pixel, /pathname === '\/sucesso'/)
+  assert.match(pixel, /SEM_PIXEL = \[[^\]]*'\/sucesso'/)
+  assert.match(pixel, /const fora = SEM_PIXEL\.includes\(pathname\)/)
 })

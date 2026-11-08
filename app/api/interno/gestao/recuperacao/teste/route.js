@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getDB } from '@/lib/d1'
 import { mesmaOrigem } from '@/lib/origem'
-import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
+import { cabecalhosPrivados, naoEncontrado, soMasterComAviso } from '@/lib/gestao/permissao'
 import { gravarRegistro } from '@/lib/gestao/registro'
 import { emailNovoValido } from '@/lib/gestao/corrigir-email'
 import { marcarTeste } from '@/lib/gestao/testes'
@@ -27,7 +27,7 @@ const post = async (req, admin) => {
 }
 
 export const GET = naoEncontrado
-export const POST = soAdmin(post)
+export const POST = soMasterComAviso(post)
 export const PUT = naoEncontrado
 export const PATCH = naoEncontrado
 export const DELETE = naoEncontrado

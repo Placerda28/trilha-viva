@@ -5,7 +5,7 @@ import { desativarCupom } from '@/lib/gestao/cupons'
 import {
   cabecalhosPrivados,
   naoEncontrado,
-  soAdmin,
+  soMasterComAviso,
 } from '@/lib/gestao/permissao'
 import { gravarRegistro } from '@/lib/gestao/registro'
 
@@ -46,7 +46,7 @@ const post = async (req, admin) => {
 }
 
 export const GET = naoEncontrado
-export const POST = soAdmin(post)
+export const POST = soMasterComAviso(post)
 export const PUT = naoEncontrado
 export const PATCH = naoEncontrado
 export const DELETE = naoEncontrado

@@ -11,6 +11,7 @@ import {
   cabecalhosPrivados,
   naoEncontrado,
   soAdmin,
+  soMasterComAviso,
 } from '@/lib/gestao/permissao'
 import { gravarRegistro } from '@/lib/gestao/registro'
 import { site } from '@/lib/site'
@@ -84,7 +85,7 @@ const post = async (req, admin) => {
 }
 
 export const GET = soAdmin(get)
-export const POST = soAdmin(post)
+export const POST = soMasterComAviso(post)
 export const PUT = naoEncontrado
 export const PATCH = naoEncontrado
 export const DELETE = naoEncontrado

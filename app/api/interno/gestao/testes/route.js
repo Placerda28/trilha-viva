@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getDB } from '@/lib/d1'
 import { mesmaOrigem } from '@/lib/origem'
-import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
+import { cabecalhosPrivados, naoEncontrado, soAdmin, soMasterComAviso } from '@/lib/gestao/permissao'
 import { gravarRegistro } from '@/lib/gestao/registro'
 
 import { normalizarContatoTeste } from '@/lib/gestao/testes'
@@ -35,7 +35,7 @@ export const GET = soAdmin(async () => {
   const resultado = await db.prepare('SELECT valor, tipo, criado_em, criado_por FROM contatos_teste ORDER BY criado_em DESC, valor LIMIT 500').all()
   return resposta({ ok: true, itens: resultado.results || [] })
 })
-export const POST = soAdmin(post)
+export const POST = soMasterComAviso(post)
 export const PUT = naoEncontrado
 export const PATCH = naoEncontrado
 export const DELETE = naoEncontrado
