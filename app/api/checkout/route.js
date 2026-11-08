@@ -16,7 +16,9 @@ import {
 import {
   cancelarReservaCupom,
   consultarCupomValido,
+  erroCupomAntesDoInicio,
   ERRO_CUPOM_PUBLICO,
+  inicioFuturoDoCupom,
   vencimentoDoLinkComCupom,
   normalizarCodigoCupom,
   reservarCupom,
@@ -139,7 +141,8 @@ export async function POST(req) {
       ? await consultarCupomValido(getDB(), codigoInformado, precoBaseCentavos)
       : null
     if (codigoInformado && !cupom) {
-      return NextResponse.json({ error: ERRO_CUPOM_PUBLICO }, { status: 400 })
+      const inicio = await inicioFuturoDoCupom(getDB(), codigoInformado)
+      return NextResponse.json({ error: inicio ? erroCupomAntesDoInicio(inicio) : ERRO_CUPOM_PUBLICO }, { status: 400 })
     }
 
     // Faltando menos de 2 minutos para o cupom vencer, ele é recusado aqui.

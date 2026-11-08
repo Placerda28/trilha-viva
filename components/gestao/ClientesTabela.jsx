@@ -9,6 +9,18 @@ import { rotuloOrigem } from '@/lib/rastreio'
 // colunas não cabem em 375 px sem rolar de lado. Um clique na linha abre o
 // Detalhe do cliente (`onAbrir(id)`), onde ficam as ações.
 
+// Login e download são coisas diferentes: há quem baixe sem entrar de novo.
+function UltimoAcesso({ c }) {
+  return (
+    <>
+      <span className="block">{c.ultimo_acesso ? dataHora(c.ultimo_acesso) : 'Nunca entrou'}</span>
+      {c.ultimo_download && (
+        <span className="block text-[12px] text-ink-faint">Baixou {dataHora(c.ultimo_download)}</span>
+      )}
+    </>
+  )
+}
+
 function Forma({ forma }) {
   if (!forma) return <span className="text-ink-faint">—</span>
   return <span>{FORMAS[forma] || forma}</span>
@@ -146,7 +158,7 @@ export default function ClientesTabela({ itens, whatsapp = false, onAbrir, rastr
                   </td>
                 )}
                 {!rastreio && <td className="figs px-4 py-3.5 text-right text-ink">{numero(c.downloads)}</td>}
-                {!rastreio && <td className="figs px-3 py-3.5 text-ink-muted">{c.ultimo_acesso ? dataHora(c.ultimo_acesso) : 'Nunca entrou'}</td>}
+                {!rastreio && <td className="figs px-3 py-3.5 text-ink-muted"><UltimoAcesso c={c} /></td>}
                 {onEscolherAcao && <td className="px-1 py-2"><MenuAcoes compacto cliente={c} onEscolher={(id) => onEscolherAcao(c, id)} /></td>}
               </tr>
             ))}
@@ -205,7 +217,7 @@ export default function ClientesTabela({ itens, whatsapp = false, onAbrir, rastr
                   </div>}
                 </>
               )}
-              {!rastreio && <div><dt className="text-ink-muted">Último acesso</dt><dd>{c.ultimo_acesso ? dataHora(c.ultimo_acesso) : 'Nunca entrou'}</dd></div>}
+              {!rastreio && <div><dt className="text-ink-muted">Último acesso</dt><dd><UltimoAcesso c={c} /></dd></div>}
               {c.compra?.cupom && (
                 <div className="col-span-2">
                   <dt className="text-ink-muted">Cupom</dt>

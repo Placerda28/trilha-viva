@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDB } from '@/lib/d1'
-import { consultarCupomValido, ERRO_CUPOM_PUBLICO } from '@/lib/gestao/cupons'
+import { consultarCupomValido, erroCupomAntesDoInicio, ERRO_CUPOM_PUBLICO, inicioFuturoDoCupom } from '@/lib/gestao/cupons'
 import { site } from '@/lib/site'
 
 export const runtime = 'nodejs'
@@ -42,8 +42,9 @@ export async function POST(req) {
     Math.round(site.price * 100)
   )
   if (!cupom) {
+    const inicio = await inicioFuturoDoCupom(getDB(), String(corpo.cupom || ''))
     return NextResponse.json(
-      { ok: false, erro: ERRO_CUPOM_PUBLICO },
+      { ok: false, erro: inicio ? erroCupomAntesDoInicio(inicio) : ERRO_CUPOM_PUBLICO },
       { status: 400, headers: semCache }
     )
   }

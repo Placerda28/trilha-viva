@@ -5,7 +5,11 @@ import { DatabaseSync } from 'node:sqlite'
 import {
   calcularPrecoCupom,
   codigoCupomValido,
+  consultarCupomValido,
+  erroCupomAntesDoInicio,
   fimDoDiaBrasiliaUtc,
+  inicioDoDiaBrasiliaUtc,
+  inicioFuturoDoCupom,
   normalizarCodigoCupom,
   estenderReservaCupom,
   vencimentoDoLinkComCupom,
@@ -61,6 +65,7 @@ function bancoCupons() {
   banco.exec(readFileSync('migrations/0013_testes.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0016_acesso_enviado.sql', 'utf8'))
   banco.exec(readFileSync('migrations/0018_afiliados.sql', 'utf8'))
+  banco.exec(readFileSync('migrations/0025_cupom_valido_de.sql', 'utf8'))
   banco.exec(`
     INSERT INTO clientes (id, email, nome) VALUES (1, 'ana@example.com', 'Ana');
     INSERT INTO cupons
@@ -134,9 +139,39 @@ test('validação da criação aponta o campo exato', () => {
     codigo: 'LOUVOR20',
     tipo: 'percentual',
     valor: 20,
+    valido_de: null,
     valido_ate: '2027-01-01 02:59:59',
     limite_usos: 10,
   })
+})
+
+test('início opcional: começa às 0h de Brasília e fica entre hoje e o fim', () => {
+  const agora = new Date('2026-11-08T15:00:00Z')
+  const base = { codigo: 'NATAL30', tipo: 'percentual', valor: 30, valido_ate: '2026-12-31', limite_usos: 50 }
+  const agendado = validarCriacaoCupom({ ...base, valido_de: '2026-11-18' }, 8990, agora)
+  assert.equal(agendado.ok, true)
+  assert.equal(agendado.dados.valido_de, '2026-11-18 03:00:00')
+  assert.equal(inicioDoDiaBrasiliaUtc('2026-02-30'), null)
+  for (const valido_de of ['2026-11-07', '2027-01-01', '2026-13-01']) {
+    assert.equal(validarCriacaoCupom({ ...base, valido_de }, 8990, agora).campo, 'valido_de')
+  }
+  assert.equal(erroCupomAntesDoInicio('2026-11-18T03:00:00Z'), 'Este cupom só vale a partir de 18/11/2026.')
+})
+
+test('cupom agendado não vale nem reserva antes do início, e a mensagem diz quando começa', async () => {
+  const { banco, d1 } = bancoCupons()
+  banco.exec(`
+    INSERT INTO cupons (id, codigo, tipo, valor, valido_de, valido_ate, limite_usos, criado_por)
+    VALUES (2, 'FUTURO10', 'percentual', 10, '2099-01-10 03:00:00', '2099-12-31 02:59:59', 5, 'm@example.com'),
+           (3, 'JACOMECOU', 'percentual', 10, '2000-01-01 03:00:00', '2099-12-31 02:59:59', 5, 'm@example.com');
+  `)
+  assert.equal(await consultarCupomValido(d1, 'futuro10', 8990), null)
+  assert.equal(await inicioFuturoDoCupom(d1, 'futuro10'), '2099-01-10T03:00:00Z')
+  assert.equal(await reservarCupom(d1, { cupomId: 2, referencia: 'ref-futuro', precoCentavos: 8091 }), false)
+
+  assert.equal((await consultarCupomValido(d1, 'JACOMECOU', 8990)).preco_centavos, 8091)
+  assert.equal(await inicioFuturoDoCupom(d1, 'JACOMECOU'), null)
+  assert.equal(await inicioFuturoDoCupom(d1, 'ULTIMA1'), null)
 })
 
 test('reserva atômica deixa apenas uma pessoa pegar o último uso', async () => {

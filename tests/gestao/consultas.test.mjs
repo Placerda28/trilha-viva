@@ -112,6 +112,23 @@ test('clientes usa uma consulta para a página e uma para o total', async () => 
   assert.equal(clienteDaLinha(resultado.linhas[2]).compra.cupom, 'LOUVOR20')
 })
 
+test('último acesso: coluna gravada, senão a sessão mais recente; e o último download à parte', async () => {
+  const banco = bancoComDados()
+  banco.exec(`
+    UPDATE clientes SET ultimo_acesso = '2026-10-01 09:00:00' WHERE id = 3;
+    INSERT INTO sessoes (cliente_id, token_hash, expira_em, criado_em) VALUES
+      (2, 'h1', '2099-01-01 00:00:00', '2026-09-27 10:00:00'),
+      (2, 'h2', '2099-01-01 00:00:00', '2026-09-28 10:00:00');
+  `)
+  const { linhas } = await consultarClientes(new D1Local(banco), { q: '', pagina: 1 })
+  const porId = Object.fromEntries(linhas.map((l) => [l.id, clienteDaLinha(l)]))
+  assert.equal(porId[3].ultimo_acesso, '2026-10-01T09:00:00Z')
+  assert.equal(porId[2].ultimo_acesso, '2026-09-28T10:00:00Z')
+  assert.equal(porId[1].ultimo_acesso, null)
+  assert.equal(porId[1].ultimo_download, '2026-09-24T11:00:00Z')
+  assert.equal(porId[3].ultimo_download, null)
+})
+
 test('busca trata porcentagem e sublinhado como texto literal', async () => {
   const porPorcentagem = await consultarClientes(new D1Local(bancoComDados()), { q: '100%', pagina: 1 })
   assert.deepEqual(porPorcentagem.linhas.map((linha) => linha.id), [1])

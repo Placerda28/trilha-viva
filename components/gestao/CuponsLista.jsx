@@ -18,11 +18,17 @@ function situacao(c) {
   if (!c.ativo) return { rotulo: 'Desativado', cor: 'border-line text-ink-muted' }
   if (c.vencido) return { rotulo: 'Vencido', cor: 'border-line text-ink-muted' }
   if (c.esgotado) return { rotulo: 'Esgotado', cor: 'border-line text-ink-muted' }
+  if (c.agendado) return { rotulo: 'Agendado', cor: 'border-ink text-ink-muted' }
   return { rotulo: 'Ativo', cor: 'border-ink text-ink' }
 }
 
 // Só o dia (DD/MM/AAAA) de uma data ISO, no horário de Brasília.
 const soDia = (iso) => dataHora(iso).slice(0, 10)
+
+// "até dd/mm/aaaa" ou "dd/mm/aaaa a dd/mm/aaaa" quando o cupom tem início marcado.
+function Validade({ c }) {
+  return c.valido_de ? <>{soDia(c.valido_de)} a {soDia(c.valido_ate)}</> : <>até {soDia(c.valido_ate)}</>
+}
 
 // Desativar é definitivo, então pede confirmação ali mesmo, na linha, sem
 // janela por cima da tela.
@@ -151,7 +157,7 @@ export default function Lista({ itens, onMudou }) {
               <th scope="col" className="px-4 py-3 font-semibold">Desconto</th>
               <th scope="col" className="px-4 py-3 font-semibold">Usos</th>
               <th scope="col" className="px-4 py-3 text-right font-semibold">Faturamento</th>
-              <th scope="col" className="px-4 py-3 font-semibold">Vale até</th>
+              <th scope="col" className="px-4 py-3 font-semibold">Validade</th>
               <th scope="col" className="px-4 py-3 font-semibold">
                 <span className="sr-only">Ações</span>
               </th>
@@ -178,7 +184,7 @@ export default function Lista({ itens, onMudou }) {
                   <Usos c={c} />
                 </td>
                 <td className="figs whitespace-nowrap px-4 py-3.5 text-right text-ink">{moeda(c.faturamento_centavos)}</td>
-                <td className="figs whitespace-nowrap px-4 py-3.5 text-ink-muted">{soDia(c.valido_ate)}</td>
+                <td className="figs whitespace-nowrap px-4 py-3.5 text-ink-muted"><Validade c={c} /></td>
                 <td className="px-4 py-3.5">
                   <Acoes c={c} onMudou={onMudou} />
                 </td>
@@ -217,8 +223,8 @@ export default function Lista({ itens, onMudou }) {
                 <dd className="text-ink">{moeda(c.faturamento_centavos)}</dd>
               </div>
               <div>
-                <dt className="text-ink-muted">Vale até</dt>
-                <dd className="text-ink">{soDia(c.valido_ate)}</dd>
+                <dt className="text-ink-muted">Validade</dt>
+                <dd className="text-ink"><Validade c={c} /></dd>
               </div>
             </dl>
           </li>

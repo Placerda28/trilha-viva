@@ -17,6 +17,7 @@ const TIPOS = [
 
 const SITUACOES = [
   { id: 'ativos', rotulo: 'Ativos' },
+  { id: 'agendados', rotulo: 'Agendados' },
   { id: 'vencidos', rotulo: 'Vencidos/esgotados' },
   { id: 'desativados', rotulo: 'Desativados' },
   { id: 'todos', rotulo: 'Todos' },
@@ -26,6 +27,7 @@ const formVazio = () => ({
   codigo: '',
   tipo: 'percentual',
   valor: '',
+  valido_de: '',
   valido_ate: somarDias(hojeBrasilia(), 30),
   limite_usos: '1',
 })
@@ -85,6 +87,7 @@ function NovoCupom({ onCriado }) {
           codigo: form.codigo,
           tipo: form.tipo,
           valor: valorCentavos,
+          valido_de: form.valido_de,
           valido_ate: form.valido_ate,
           limite_usos: Number(form.limite_usos),
         }),
@@ -161,6 +164,19 @@ function NovoCupom({ onCriado }) {
             {erroDe('valor') && <p className="text-[13px] text-signal-deep">{erroDe('valor')}</p>}
           </div>
         </div>
+
+        <Campo id="c-inicio" rotulo="Vale a partir de (opcional)" erro={erroDe('valido_de')} dica="Vazio: vale desde já. Com data: a partir de 0h de Brasília.">
+          <input
+            id="c-inicio"
+            type="date"
+            value={form.valido_de}
+            min={hoje}
+            max={form.valido_ate || somarDias(hoje, 365)}
+            onChange={mudar('valido_de')}
+            aria-invalid={erro.campo === 'valido_de'}
+            className={classeCampo('valido_de')}
+          />
+        </Campo>
 
         <Campo id="c-validade" rotulo="Vale até (inclusive)" erro={erroDe('valido_ate')} dica="Até 23h59 de Brasília.">
           <input
