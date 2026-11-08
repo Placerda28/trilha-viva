@@ -54,6 +54,7 @@ export const ACOES = {
   whatsapp_retomado: 'chamou de novo no WhatsApp (pago)',
   cliente_email_corrigido: 'corrigiu o e-mail do cliente para',
   acesso_reenviado: 'reenviou o acesso para',
+  exportar_csv: 'baixou a planilha de',
   whatsapp_pausar: 'pausou o WhatsApp',
   whatsapp_retomar: 'retomou o WhatsApp',
   whatsapp_ligar: 'ligou o WhatsApp',
@@ -89,7 +90,7 @@ function Linha({ r }) {
 const GRUPOS = [
   ['Afiliados', ['afiliados_fechamento', 'afiliado_comprovante', 'afiliado_saque_pago', 'afiliado_saque_recusado', 'afiliado_aprovado', 'afiliado_suspenso', 'afiliado_reativado', 'afiliado_nivel_travado', 'afiliado_codigo_trocado', 'afiliado_ajuste', 'afiliado_anotacao', 'afiliado_dado_revelado', 'afiliados_metas', 'afiliados_config', 'afiliados_exportar', 'afiliados_alerta_resolvido']],
   ['Cupons', ['cupom_criado', 'cupom_desativado']],
-  ['Clientes', ['cliente_bloqueado', 'cliente_liberado', 'cliente_email_corrigido', 'acesso_reenviado']],
+  ['Clientes', ['cliente_bloqueado', 'cliente_liberado', 'cliente_email_corrigido', 'acesso_reenviado', 'exportar_csv']],
   ['Carrinhos', ['lembretes_parados']],
   ['Equipe', ['membro_adicionado', 'membro_removido', 'acervo_liberado', 'acervo_retirado', 'senha_trocada']],
   ['Testes', ['compra_teste_marcada', 'compra_teste_desmarcada', 'carrinho_teste_marcado', 'carrinho_teste_desmarcado', 'contato_teste_adicionado', 'contato_teste_removido']],

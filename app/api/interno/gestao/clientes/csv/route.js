@@ -7,11 +7,12 @@ import {
   linhaClienteComWhatsappCsv,
 } from '@/lib/gestao/csv'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
+import { registrarExportacao } from '@/lib/gestao/registro'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const get = async (req) => {
+const get = async (req, admin) => {
   const db = getDB()
   if (!db) {
     return Response.json(
@@ -21,6 +22,8 @@ const get = async (req) => {
   }
   const url = new URL(req.url)
   const linhas = await consultarClientesCsv(db, url.searchParams.get('q'))
+  const recusa = await registrarExportacao(db, admin, 'clientes', { busca: url.searchParams.get('q') || '', linhas: linhas.length })
+  if (recusa) return recusa
   return new Response(gerarCsv(CABECALHO_CLIENTES_COM_WHATSAPP, linhas.map(linhaClienteComWhatsappCsv)), {
     headers: {
       ...cabecalhosPrivados,

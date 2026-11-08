@@ -179,9 +179,17 @@ test('descadastro de lead assinado aceita One-Click; GET não cancela; assinatur
   await assert.rejects(gravarLead(db, { ...dados, consentimento: false }))
   assert.equal(lead(banco).descadastrado, 1)
   banco.exec("UPDATE leads SET consentimento_em = '2000-01-01 00:00:00'")
-  assert.equal((await cadastro(db, dados)).status, 200)
-  assert.equal(lead(banco).descadastrado, 0)
-  assert.notEqual(lead(banco).consentimento_em, '2000-01-01 00:00:00')
+  // Recadastro com o mesmo e-mail não prova que é o dono: quem saiu da lista
+  // continua fora, sem consentimento novo (auditoria de 07/11/2026, M6).
+  const recadastro = await cadastro(db, { ...dados, whatsapp: '(11) 98888-7777' })
+  assert.equal(recadastro.status, 200)
+  const corpoRecadastro = await recadastro.json()
+  assert.ok(corpoRecadastro.link.startsWith('/vs-gratis/baixar?t='))
+  assert.ok(!('descadastrado' in corpoRecadastro), 'a resposta não revela quem saiu da lista')
+  assert.equal(lead(banco).descadastrado, 1)
+  assert.equal(lead(banco).consentimento_em, '2000-01-01 00:00:00')
+  assert.equal(lead(banco).proximo_email_em, null)
+  assert.notEqual(lead(banco).whatsapp, '11988887777')
 })
 
 test('compra real marca o lead e para agendamento; teste não marca', async () => {

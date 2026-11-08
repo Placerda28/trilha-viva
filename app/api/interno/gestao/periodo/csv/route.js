@@ -3,11 +3,12 @@ import { CABECALHO_CLIENTES, gerarCsv, linhaClienteCsv } from '@/lib/gestao/csv'
 import { validarPeriodo } from '@/lib/gestao/datas'
 import { consultarPeriodoCsv } from '@/lib/gestao/periodo'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
+import { registrarExportacao } from '@/lib/gestao/registro'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const get = async (req) => {
+const get = async (req, admin) => {
   const url = new URL(req.url)
   const periodo = validarPeriodo(url.searchParams.get('de'), url.searchParams.get('ate'))
   if (!periodo.ok) {
@@ -24,6 +25,8 @@ const get = async (req) => {
     )
   }
   const linhas = await consultarPeriodoCsv(db, periodo)
+  const recusa = await registrarExportacao(db, admin, 'vendas', { de: periodo.de, ate: periodo.ate, linhas: linhas.length })
+  if (recusa) return recusa
   const nome = `vendas-${periodo.de}-a-${periodo.ate}.csv`
   return new Response(gerarCsv(CABECALHO_CLIENTES, linhas.map(linhaClienteCsv)), {
     headers: {

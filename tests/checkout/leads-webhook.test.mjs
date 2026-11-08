@@ -14,7 +14,7 @@ const falsos = {
     export async function executar(db, sql, ...v) { return db.prepare(sql).bind(...v).run() }`,
   '@/lib/mercadopago': `
     export const assinaturaValida = async () => true
-    export const buscarPagamento = async () => globalThis.__pagamento
+    export const buscarPagamento = async () => { if (globalThis.__erroMp) throw globalThis.__erroMp; return globalThis.__pagamento }
     export const resumirPagamento = (p) => p
     export const idPagamentoValido = () => true
     export const mpConfigurado = () => true`,
@@ -96,4 +96,21 @@ test('falha na tabela leads não derruba webhook nem envio do acesso', async (t)
   assert.ok(globalThis.__ordem.includes('email'))
   assert.equal(banco.prepare('SELECT COUNT(*) AS n FROM compras').get().n, 1)
   assert.equal(erros[0][0], 'mp marcar lead comprado')
+})
+
+test('consulta ao MP caiu: rede, 429 e 5xx pedem reenvio (500); 4xx encerra com 200 (auditoria B1)', async (t) => {
+  t.mock.method(console, 'error', () => {})
+  const casos = [
+    [new Error('fetch failed'), 500],
+    [Object.assign(new Error('mercadopago 503'), { status: 503 }), 500],
+    [Object.assign(new Error('mercadopago 429'), { status: 429 }), 500],
+    [Object.assign(new Error('mercadopago 404'), { status: 404 }), 200],
+  ]
+  for (const [erro, esperado] of casos) {
+    const banco = montar()
+    globalThis.__erroMp = erro
+    assert.equal((await chamar()).status, esperado, erro.message)
+    assert.equal(banco.prepare('SELECT COUNT(*) AS n FROM compras').get().n, 0, 'nada foi gravado')
+  }
+  globalThis.__erroMp = null
 })

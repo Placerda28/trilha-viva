@@ -37,6 +37,7 @@ class D1Local {
       bind(...novos) { valores = novos; return this },
       async all() { return { results: preparada.all(...valores) } },
       async first() { return preparada.get(...valores) || null },
+      async run() { return { meta: { changes: Number(preparada.run(...valores).changes || 0) } } },
     }
   }
 }
@@ -45,6 +46,7 @@ function banco(quantidade = 30) {
   const b = new DatabaseSync(':memory:')
   b.exec(readFileSync('migrations/0017_leads.sql', 'utf8'))
   b.exec(readFileSync('migrations/0023_leads_robo.sql', 'utf8'))
+  b.exec('CREATE TABLE registro (id INTEGER PRIMARY KEY AUTOINCREMENT, quem TEXT, acao TEXT, alvo TEXT, detalhe TEXT, criado_em TEXT DEFAULT CURRENT_TIMESTAMP)')
   const inserir = b.prepare(`INSERT INTO leads
     (nome, email, whatsapp, token_hash, token_expira_em, criado_em, primeiro_download_em, comprou)
     VALUES (?, ?, '27999990000', ?, '2026-10-28 03:00:00', ?, ?, ?)`)
@@ -103,7 +105,7 @@ test('leads: rotas negam não admin e troca obrigatória com 404 antes de consul
 
 test('leads: master e membro acessam; JSON e CSV privados, fórmulas protegidas e datas validadas', async () => {
   for (const papel of ['master', 'membro']) {
-    globalThis.__adminLeads = { papel, precisa_trocar_senha: false }
+    globalThis.__adminLeads = { papel, precisa_trocar_senha: false, cliente: { email: `${papel}@t.com` } }
     globalThis.__dbLeads = new D1Local(banco())
     const resposta = await rota.GET(pedido())
     assert.equal(resposta.status, 200)
@@ -117,6 +119,9 @@ test('leads: master e membro acessam; JSON e CSV privados, fórmulas protegidas 
     assert.ok(texto.includes("'=SUM(A1)"))
     assert.ok(texto.includes('21/10/2026 00:00'))
     assert.ok(!texto.includes('hash'))
+    // quem baixou a planilha fica no Registro (auditoria de 07/11/2026, M11)
+    const reg = globalThis.__dbLeads.banco.prepare("SELECT quem, acao, alvo FROM registro WHERE acao = 'exportar_csv'").all()
+    assert.deepEqual(reg.map((l) => [l.quem, l.alvo]), [[`${papel}@t.com`, 'leads']])
     for (const r of [rota, csv]) {
       assert.equal((await r.GET(pedido('de=2026-02-30&ate=2026-03-01'))).status, 400)
       assert.equal((await r.GET(pedido(''))).status, 400)

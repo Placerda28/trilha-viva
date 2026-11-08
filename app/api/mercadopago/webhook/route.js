@@ -113,11 +113,25 @@ export async function POST(req) {
     return NextResponse.json({ received: true, ignored: tipo || 'sem tipo' })
   }
 
+  // O aviso só diz "o pagamento X mudou". O estado verdadeiro é consultado
+  // direto no Mercado Pago, com a nossa chave. Se a consulta cair (rede, 429 ou
+  // 5xx), responder 200 perdia a compra de quem pagou: o erro pede o reenvio
+  // (auditoria de 07/11/2026, B1).
+  let pagamento
+  try {
+    pagamento = await buscarPagamento(dataId)
+  } catch (err) {
+    console.error('mp consultar pagamento', dataId, err?.message)
+    // Rede, timeout, 429 e 5xx passam sozinhos: vale o reenvio. 4xx (pagamento
+    // que não existe, como o "Simular notificação" do painel) não muda.
+    const status = Number(err?.status)
+    if (!status || status === 429 || status >= 500) return NextResponse.json({ received: false }, { status: 500 })
+    return NextResponse.json({ received: true })
+  }
+
   let entregue = true
   try {
-    // O aviso só diz "o pagamento X mudou". O estado verdadeiro é consultado
-    // direto no Mercado Pago, com a nossa chave.
-    const r = resumirPagamento(await buscarPagamento(dataId))
+    const r = resumirPagamento(pagamento)
     if (r.status === 'paid') {
       // Compra para a Meta só pelo servidor (o Pixel não carrega na /sucesso,
       // cujo endereço traz a chave da compra). O Mercado Pago avisa o mesmo

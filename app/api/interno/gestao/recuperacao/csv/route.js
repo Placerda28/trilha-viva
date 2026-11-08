@@ -8,11 +8,12 @@ import {
 } from '@/lib/gestao/recuperacao'
 import { gerarCsv, hojeBrasilia } from '@/lib/gestao/csv'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
+import { registrarExportacao } from '@/lib/gestao/registro'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const get = async (req) => {
+const get = async (req, admin) => {
   const url = new URL(req.url)
   const filtro = url.searchParams.get('filtro') || 'todos'
   if (!filtroRecuperacaoValido(filtro)) {
@@ -35,6 +36,8 @@ const get = async (req) => {
     busca: url.searchParams.get('busca'),
     whatsappAtivo: (await lerEstadoWhatsapp(db)).estado === 'ativo',
   })
+  const recusa = await registrarExportacao(db, admin, 'recuperacao', { filtro, linhas: linhas.length })
+  if (recusa) return recusa
   return new Response(gerarCsv(CABECALHO_RECUPERACAO, linhas.map(linhaRecuperacaoCsv)), {
     headers: {
       ...cabecalhosPrivados,

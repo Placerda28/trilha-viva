@@ -4,7 +4,8 @@ import { site } from '@/lib/site'
 import { criarPreferencia, provedorAtivo } from '@/lib/mercadopago'
 import { enviarEventoMeta, ipDoPedido, lerCookiesMeta, lerOrigemVisita } from '@/lib/meta'
 import { temOrigem } from '@/lib/rastreio'
-import { getDB } from '@/lib/d1'
+import { getDB, getEnv } from '@/lib/d1'
+import { consultarTurnstile } from '@/lib/turnstile'
 import {
   gravarCarrinho,
   limparTelefone,
@@ -81,6 +82,22 @@ export async function POST(req) {
 
   if (!telefoneValido(telefone)) {
     return NextResponse.json({ error: 'Informe seu WhatsApp com DDD.' }, { status: 400 })
+  }
+
+  // Anti-robô antes de qualquer coisa cara: sem ele, um script reservava cupom,
+  // criava carrinho (e com ele e-mail e WhatsApp de recuperação para quem nunca
+  // pediu) e evento falso na Meta à vontade (auditoria de 07/11/2026, M3 a M5).
+  // Cloudflare fora do ar não derruba a venda: só registra e segue.
+  const segredoTurnstile = process.env.TURNSTILE_SECRET_KEY || getEnv().TURNSTILE_SECRET_KEY || ''
+  if (segredoTurnstile) {
+    const verificacao = await consultarTurnstile(req, body.turnstile, segredoTurnstile)
+    if (verificacao === 'sem_token' || verificacao === 'invalido') {
+      return NextResponse.json(
+        { error: 'Falta a verificação anti-robô. Aguarde um instante e toque em pagar de novo.', turnstile: true },
+        { status: 400 }
+      )
+    }
+    if (verificacao === 'indisponivel') console.error('checkout turnstile indisponível: venda segue')
   }
 
   // Endereço de volta do pagamento: sempre o do site. O cabeçalho Origin pode

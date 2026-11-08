@@ -9,7 +9,7 @@ import { novoDb, novoAfiliado, contar } from '../afiliados/_base.mjs'
 const modulo = (codigo) => 'data:text/javascript,' + encodeURIComponent(codigo)
 const falsos = {
   'next/server': modulo('export const NextResponse = Response'),
-  '@/lib/d1': modulo('export const getDB = () => globalThis.__db'),
+  '@/lib/d1': modulo('export const getDB = () => globalThis.__db; export const getEnv = () => ({})'),
   '@/lib/stripe': modulo('export const getStripe = () => null; export const PRODUCT_NAME = "Pacote"'),
   '@/lib/site': modulo("export const site = { price: 89.9, url: 'https://trilhaviva.org' }"),
   '@/lib/mercadopago': modulo(`export const provedorAtivo = () => 'mercadopago'

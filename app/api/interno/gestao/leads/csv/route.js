@@ -3,11 +3,12 @@ import { gerarCsv } from '@/lib/gestao/csv'
 import { validarPeriodo } from '@/lib/gestao/datas'
 import { CABECALHO_LEADS, consultarLeadsCsv, linhaLeadCsv } from '@/lib/gestao/leads'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
+import { registrarExportacao } from '@/lib/gestao/registro'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const get = async (req) => {
+const get = async (req, admin) => {
   const url = new URL(req.url)
   const periodo = validarPeriodo(url.searchParams.get('de'), url.searchParams.get('ate'))
   if (!periodo.ok) {
@@ -18,6 +19,8 @@ const get = async (req) => {
     return Response.json({ ok: false, erro: 'Banco indisponível no momento.' }, { status: 503, headers: cabecalhosPrivados })
   }
   const linhas = await consultarLeadsCsv(db, periodo)
+  const recusa = await registrarExportacao(db, admin, 'leads', { de: periodo.de, ate: periodo.ate, linhas: linhas.length })
+  if (recusa) return recusa
   return new Response(gerarCsv(CABECALHO_LEADS, linhas.map(linhaLeadCsv)), {
     headers: {
       ...cabecalhosPrivados,

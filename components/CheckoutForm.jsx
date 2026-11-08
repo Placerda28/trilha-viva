@@ -5,6 +5,7 @@ import { priceBRL, site } from '@/lib/site'
 import { rastrear } from '@/components/MetaPixel'
 import CheckoutCupom from '@/components/CheckoutCupom'
 import CheckoutIndicacao, { AvisoIndicacao, useIndicacao } from '@/components/CheckoutIndicacao'
+import Turnstile, { useTurnstile } from '@/components/afiliados/Turnstile'
 import {
   celularValido,
   digitosCelular,
@@ -43,6 +44,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [lembrado, setLembrado] = useState(false)
+  const anti = useTurnstile() // anti-robô da Cloudflare, invisível para quase todos
   const id = useId()
   const escuro = tom === 'escuro'
 
@@ -161,6 +163,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
     }
     setTelefone(mascaraCelular(celular))
     guardar({ nome: valores.nome, email: valores.email, telefone: celular })
+    if (anti.falta) return setError('Falta a verificação anti-robô: aguarde um instante (ou marque "Confirme que é humano", se aparecer) e toque em pagar de novo.')
     const codigoAfiliado = indicacao.codigoParaEnvio()
     setLoading(true)
     // Mesmo id no Pixel e no servidor: a Meta conta um evento só.
@@ -170,7 +173,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: valores.nome, email: valores.email, telefone: celular, eventoId, cupom: aplicado ? aplicado.cupom : '', codigo_afiliado: codigoAfiliado, utm }),
+        body: JSON.stringify({ nome: valores.nome, email: valores.email, telefone: celular, eventoId, cupom: aplicado ? aplicado.cupom : '', codigo_afiliado: codigoAfiliado, utm, turnstile: anti.usar() }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {
@@ -314,6 +317,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
         </p>
       )}
 
+      <Turnstile {...anti.props} />
       <button
         type="submit"
         disabled={loading}
