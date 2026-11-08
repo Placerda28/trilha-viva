@@ -3,7 +3,7 @@ import { acharPorEmail, criarToken, podeRecuperar } from '@/lib/clientes'
 import { enviarRecuperarSenha, emailConfigurado } from '@/lib/email'
 import { normalizarEmail } from '@/lib/sessao'
 import { mesmaOrigem } from '@/lib/origem'
-import { emSegundoPlano } from '@/lib/segundo-plano'
+import { emTempoFixo } from '@/lib/tempo-fixo'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -49,8 +49,8 @@ export async function POST(req) {
   }
 
   // Um pedido por minuto por conta. A resposta na tela não muda, nem no tempo:
-  // consulta e envio rodam depois de a resposta sair.
-  await emSegundoPlano('recuperar senha', async () => {
+  // a resposta sai sempre com o mesmo tempo mínimo.
+  await emTempoFixo('recuperar senha', async () => {
     const cliente = await acharPorEmail(email)
     if (cliente && !cliente.bloqueado && (await podeRecuperar(cliente.id))) {
       const token = await criarToken({ clienteId: cliente.id, tipo: 'recuperar', horas: 1 })
