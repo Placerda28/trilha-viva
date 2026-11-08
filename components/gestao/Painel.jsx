@@ -85,6 +85,7 @@ export default function Painel({ painel, avisos, agora, agrupar = 'dia', onAgrup
   const { atual, anterior, serie, fontes, ultimas_vendas: vendas, atividade } = painel
   const porDia = serie.map((s) => s.centavos)
   const porDiaCompras = serie.map((s) => s.compras)
+  const serieVendas = serie.map((s) => ({ chave: s.chave, rotulo: s.rotulo, valor: s.compras }))
 
   return (
     <>
@@ -131,21 +132,33 @@ export default function Painel({ painel, avisos, agora, agrupar = 'dia', onAgrup
         />
       </div>
 
+      <Grafico
+        className="mt-4"
+        altura={300}
+        titulo={'Faturamento por ' + NOME_AGRUPAR[agrupar]}
+        subtitulo={'Total ' + moeda(atual.faturamento_centavos) + ' · antes ' + moeda(anterior.faturamento_centavos)}
+        serie={serie}
+        acoes={
+          <Segmentos
+            opcoes={AGRUPAR}
+            valor={agrupar}
+            onEscolher={onAgrupar}
+            rotulo="Agrupar por"
+            tamanho="compacto"
+          />
+        }
+      />
+
       <div className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
         <div className="xl:col-span-2">
           <Grafico
             className="h-full"
-            titulo={'Faturamento por ' + NOME_AGRUPAR[agrupar]}
-            serie={serie}
-            acoes={
-              <Segmentos
-                opcoes={AGRUPAR}
-                valor={agrupar}
-                onEscolher={onAgrupar}
-                rotulo="Agrupar por"
-                tamanho="compacto"
-              />
-            }
+            altura={260}
+            titulo={'Vendas por ' + NOME_AGRUPAR[agrupar]}
+            subtitulo={numero(atual.vendas) + (atual.vendas === 1 ? ' venda' : ' vendas') + ' · antes ' + numero(anterior.vendas)}
+            serie={serieVendas}
+            formato="numero"
+            unidade="vendas pagas"
           />
         </div>
         <Cartao

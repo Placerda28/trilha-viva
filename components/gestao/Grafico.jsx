@@ -17,10 +17,10 @@ const valorDe = (s) => s.valor ?? s.centavos ?? 0
 // formato="moeda" (padrão): a série traz `centavos` (e `compras`), como no Painel.
 // formato="numero": a série traz `valor`, e `unidade` diz o que conta ("downloads").
 
-const ALTURA = 200
 const MARGEM_ESQ = 56
 const MARGEM_BAIXO = 26
-const MARGEM_TOPO = 10
+// Espaço para o rótulo do pico, acima da barra mais alta.
+const MARGEM_TOPO = 22
 
 // Arredonda o teto do eixo para um número "redondo" (1, 2 ou 5 vezes uma
 // potência de 10), para as linhas de guia caírem em valores legíveis.
@@ -44,7 +44,7 @@ function barra(x, y, w, h) {
   )
 }
 
-export default function Grafico({ serie, titulo, acoes, className = 'mt-6', formato = 'moeda', unidade = '' }) {
+export default function Grafico({ serie, titulo, subtitulo, acoes, className = 'mt-6', formato = 'moeda', unidade = '', altura: ALTURA = 200 }) {
   const inteiro = formato === 'numero'
   const cheio = (v) => (inteiro ? numero(v) : moeda(v))
   const curto = (v) => (inteiro ? COMPACTO.format(v) : moedaCurta(v))
@@ -74,7 +74,11 @@ export default function Grafico({ serie, titulo, acoes, className = 'mt-6', form
   const vao = faixa > 8 ? 2 : 1
   const barraW = Math.max(1, Math.min(40, faixa - vao))
   const passoRotulo = Math.max(1, Math.ceil(n / (largura < 520 ? 4 : 8)))
-  const guias = [0, teto / 2, teto]
+  // Gráfico alto ganha guias a cada quarto; contagem só em números inteiros.
+  const guias = (ALTURA >= 260 ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.5, 1])
+    .map((f) => f * teto)
+    .filter((g) => !inteiro || Number.isInteger(g))
+  const pico = maior > 0 ? serie.findIndex((s) => valorDe(s) === maior) : -1
 
   const indiceNoPonto = (clientX) => {
     const el = caixa.current
@@ -102,8 +106,11 @@ export default function Grafico({ serie, titulo, acoes, className = 'mt-6', form
 
   return (
     <figure className={className + ' rounded-md border border-line bg-white px-4 pb-3 pt-4 sm:px-5'}>
-      <figcaption className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[14.5px] font-semibold text-ink">
-        {titulo}
+      <figcaption className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <span>
+          <span className="block text-[16px] font-bold tracking-[-0.01em] text-ink">{titulo}</span>
+          {subtitulo && <span className="figs block text-[13.5px] text-ink-muted">{subtitulo}</span>}
+        </span>
         {acoes}
       </figcaption>
 
@@ -147,6 +154,18 @@ export default function Grafico({ serie, titulo, acoes, className = 'mt-6', form
                 />
               )
             })}
+
+            {ativo === null && pico >= 0 && (
+              <text
+                x={MARGEM_ESQ + pico * faixa + faixa / 2}
+                y={MARGEM_TOPO + areaH - (maior / teto) * areaH - 6}
+                textAnchor="middle"
+                fontSize="12"
+                className="figs fill-ink font-semibold"
+              >
+                {curto(maior)}
+              </text>
+            )}
 
             {ativo !== null && (
               <line
