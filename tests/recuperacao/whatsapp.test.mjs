@@ -26,6 +26,7 @@ import {
   midiaDaMensagemGuardada,
   responderComAnexo,
   retomarConversa,
+  RETOMAR_POR_DIA,
   validarAnexo,
   lerEstadoWhatsapp,
   mudarEstadoWhatsapp,
@@ -958,4 +959,25 @@ test('chamar de novo: só com a janela fechada, uma vez a cada 24 h, nunca para 
   b.exec(`DELETE FROM whatsapp_mensagens WHERE modelo IS NOT NULL`)
   const m = falsaMetaDeMidia({ falha: 132001 })
   assert.match((await retomarConversa(db, env, { telefone: '27911110000', quem: 'p@example.com' }, m.fetchImpl)).erro, /ainda não foi aprovado/)
+})
+
+test('chamar de novo: número desconhecido não recebe modelo pago; teto diário por pessoa da equipe (auditoria M9)', async () => {
+  const b = banco()
+  carrinho(b, 'c1', 'maria@example.com', '27911110000', '-30 hours', { nome: 'Maria' })
+  const db = new D1Local(b)
+  const env = ambiente(db)
+  const s = falsoServidor()
+
+  const estranho = await retomarConversa(db, env, { telefone: '27955550000', quem: 'p@example.com' }, s.fetchImpl)
+  assert.deepEqual([estranho.ok, estranho.status], [false, 409])
+  assert.match(estranho.erro, /nunca falou/)
+  assert.equal(s.meta().length, 0)
+
+  const inserir = b.prepare(`INSERT INTO whatsapp_mensagens (wa_msg_id, telefone, direcao, texto, enviado_por, modelo)
+    VALUES (?, ?, 'saida', 'x', 'p@example.com', 'retomar_conversa')`)
+  for (let i = 0; i < RETOMAR_POR_DIA; i++) inserir.run(`m${i}`, `2790000${String(i).padStart(4, '0')}`)
+  const cheio = await retomarConversa(db, env, { telefone: '27911110000', quem: 'p@example.com' }, s.fetchImpl)
+  assert.deepEqual([cheio.ok, cheio.status], [false, 429])
+  assert.equal(s.meta().length, 0)
+  assert.equal((await retomarConversa(db, env, { telefone: '27911110000', quem: 'outra@example.com' }, s.fetchImpl)).ok, true)
 })

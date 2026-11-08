@@ -2,7 +2,7 @@
 
 import Script from 'next/script'
 import { usePathname } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { site } from '@/lib/site'
 
 // Pixel da Meta. O código-base oficial carrega o fbevents.js e registra o
@@ -14,12 +14,49 @@ import { site } from '@/lib/site'
 // A compra chega à Meta pelo servidor (webhook do Mercado Pago).
 export const SEM_PIXEL = ['/sucesso', '/criar-senha', '/redefinir', '/primeiro-acesso']
 
+// ?r= é a chave do carrinho do lembrete (lê nome, e-mail e WhatsApp em
+// /api/carrinho): sai do endereço antes de o Pixel carregar. O valor fica na
+// aba (sessionStorage, CHAVE_CARRINHO) para o formulário da /assinar ler, não
+// importa quem rode primeiro. Sem sessionStorage, o endereço fica como está.
+export const CHAVE_CARRINHO = 'tv_carrinho_r'
+
+function limparEndereco() {
+  const url = new URL(window.location.href)
+  const r = url.searchParams.get('r')
+  if (!r) return
+  try {
+    window.sessionStorage.setItem(CHAVE_CARRINHO, r)
+  } catch {
+    return
+  }
+  url.searchParams.delete('r')
+  window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash)
+}
+
+// O carrinho do lembrete desta visita: do endereço ou, se o Pixel já tirou de
+// lá, da aba.
+export function carrinhoDaVisita(busca) {
+  const r = busca.get('r')
+  if (r) return r
+  try {
+    return window.sessionStorage.getItem(CHAVE_CARRINHO)
+  } catch {
+    return null
+  }
+}
+
 export default function MetaPixel() {
   const id = site.metaPixelId
   const pathname = usePathname()
   const primeira = useRef(true)
+  const [limpo, setLimpo] = useState(false)
 
-  const fora = SEM_PIXEL.includes(pathname)
+  useEffect(() => {
+    limparEndereco()
+    setLimpo(true)
+  }, [])
+
+  const fora = SEM_PIXEL.includes(pathname) || !limpo
 
   useEffect(() => {
     if (!id || fora) return

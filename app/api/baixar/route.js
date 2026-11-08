@@ -68,12 +68,15 @@ export async function GET(req) {
   for (const c of PROIBIDOS) limpo = limpo.split(c).join('-')
   const nome = limpo + extensao
 
-  // O arquivo passa a vir DIRETO do Backblaze (link com validade de 5
-  // minutos, gerado só agora que login, compra e cota já foram conferidos).
+  // O arquivo passa a vir DIRETO do Backblaze (link com validade de 60
+  // segundos, gerado só agora que login, compra e cota já foram conferidos).
+  // O navegador segue o link na hora; 60 s bastam para começar e encurtam o
+  // tempo em que um link repassado ainda baixa (auditoria de 07/11/2026, B10).
+  // O B2 confere a validade no início: um download longo não é cortado.
   // Antes o Worker lia e repassava os bytes em fluxo, o que estourava o
   // limite de CPU do plano gratuito da Cloudflare em arquivos grandes e
   // entregava um arquivo corrompido, de tamanho diferente a cada tentativa.
-  const link = await linkDeDownload(caminho, nome, 300)
+  const link = await linkDeDownload(caminho, nome, 60)
   if (!link) {
     console.error('b2 link de download', slug, caminho)
     await desfazerDownload(reserva.id)

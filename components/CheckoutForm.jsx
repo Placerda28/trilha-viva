@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useState } from 'react'
 import { priceBRL, site } from '@/lib/site'
-import { rastrear } from '@/components/MetaPixel'
+import { carrinhoDaVisita, rastrear } from '@/components/MetaPixel'
 import CheckoutCupom from '@/components/CheckoutCupom'
 import CheckoutIndicacao, { AvisoIndicacao, useIndicacao } from '@/components/CheckoutIndicacao'
 import Turnstile, { useTurnstile } from '@/components/afiliados/Turnstile'
@@ -116,7 +116,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       setTelefone((atual) => atual || inicial.telefone)
       setLembrado(inicial.lembrado)
     }
-    const carrinho = busca.get('r')
+    const carrinho = carrinhoDaVisita(busca)
     if (carrinho) {
       fetch('/api/carrinho?r=' + encodeURIComponent(carrinho))
         .then((res) => (res.ok ? res.json() : null))

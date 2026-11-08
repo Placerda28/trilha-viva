@@ -30,10 +30,13 @@ const post = async (req, admin) => {
   const url = new URL(req.url)
   const mime = req.headers.get('content-type') || ''
   const previsto = Number(req.headers.get('content-length') || 0)
+  // Sem o tamanho anunciado, o corpo seria lido inteiro antes do limite
+  // (auditoria de 07/11/2026, B15). O navegador sempre manda para um File.
+  if (!Number.isSafeInteger(previsto) || previsto <= 0) return recusa('Envie o arquivo com o tamanho informado.', 411)
   const pedido = {
     telefone: url.searchParams.get('telefone'),
     mime,
-    tamanho: previsto || 1,
+    tamanho: previsto,
     legenda: url.searchParams.get('legenda') || '',
   }
   // Primeiro confere pelo tamanho anunciado, sem ler o arquivo.
