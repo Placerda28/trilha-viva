@@ -77,6 +77,7 @@ function banco() {
     '0015_whatsapp_aviso_acesso',
     '0017_leads',
     '0023_leads_robo',
+    '0026_whatsapp_mensagens_status',
   ]) {
     b.exec(readFileSync(`migrations/${arquivo}.sql`, 'utf8'))
   }
@@ -391,6 +392,24 @@ test('mensagem comum: grava, encaminha por e-mail uma vez só (aviso repetido n�
   assert.equal(s.emails()[0].corpo.subject, 'WhatsApp de Maria (27911110000)')
   assert.equal(s.emails()[0].corpo.html.includes('<b>'), false)
   assert.equal(s.meta().length, 0)
+})
+
+test('status da mensagem enviada pela gestão: entregue, lida com hora, sem regredir', async () => {
+  const b = banco()
+  b.exec(`INSERT INTO whatsapp_mensagens (wa_msg_id, telefone, direcao, texto, enviado_por)
+    VALUES ('wamid.out1', '27911110000', 'saida', 'Oi, Maria', 'paulo@example.com'),
+           ('wamid.out2', '27911110000', 'saida', 'Falhou', 'paulo@example.com')`)
+  const env = ambiente(new D1Local(b))
+  const s = falsoServidor()
+  const enviar = (status) => atenderWebhook(assinado(aviso({ status })), env, { fetchImpl: s.fetchImpl, logger: mudo })
+  await enviar([{ id: 'wamid.out1', status: 'delivered', timestamp: '1794150000' }])
+  await enviar([{ id: 'wamid.out1', status: 'read', timestamp: '1794150060' }])
+  await enviar([{ id: 'wamid.out1', status: 'delivered', timestamp: '1794150120' }])
+  await enviar([{ id: 'wamid.out2', status: 'failed', errors: [{ code: 131026 }] }])
+  const linhas = b.prepare('SELECT wa_msg_id, wa_status, wa_status_em FROM whatsapp_mensagens ORDER BY id').all().map((l) => ({ ...l }))
+  assert.equal(linhas[0].wa_status, 'read')
+  assert.equal(linhas[0].wa_status_em, '2026-11-08 15:01:00')
+  assert.equal(linhas[1].wa_status, 'failed')
 })
 
 test('aviso de outro número da Meta (ex.: botão "Teste" do painel) é ignorado', async () => {

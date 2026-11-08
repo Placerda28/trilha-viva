@@ -57,6 +57,27 @@ function Anexo({ m, minha }) {
   )
 }
 
+// Confirmação da Meta para o que a gestão enviou. Sem status (mensagem antiga
+// ou aviso ainda não chegou), não mostra nada.
+const AJUDA_LIDA = 'Se o cliente desligou a confirmação de leitura, a mensagem fica em Entregue mesmo depois de lida.'
+
+function StatusEnvio({ m }) {
+  if (!m.status) return null
+  const hora = data(m.status_em)
+  const texto = {
+    sent: '✓ Enviada',
+    delivered: '✓✓ Entregue',
+    read: '✓✓ Lida' + (hora ? ' ' + HORA.format(hora) : ''),
+    failed: 'Não entregue',
+  }[m.status]
+  if (!texto) return null
+  return (
+    <span title={m.status === 'read' || m.status === 'delivered' ? AJUDA_LIDA : undefined} className={m.status === 'read' ? 'font-semibold text-white' : ''}>
+      {' · '}{texto}
+    </span>
+  )
+}
+
 function Bolha({ m }) {
   const minha = m.direcao === 'saida'
   const d = data(m.em)
@@ -74,6 +95,7 @@ function Bolha({ m }) {
         <p className={'figs mt-0.5 text-right text-[11px] ' + (minha ? 'text-white/70' : 'text-ink-muted')}>
           {minha && m.enviado_por ? apelido(m.enviado_por) + ' · ' : ''}
           {d ? HORA.format(d) : ''}
+          {minha && <StatusEnvio m={m} />}
         </p>
       </div>
     </li>

@@ -49,6 +49,7 @@ async function atualizarStatus(db, aviso) {
   const id = String(aviso?.id || '')
   if (!id) return
   const em = horaDoAviso(aviso)
+  await statusDaConversa(db, id, status, em)
   if (status === 'failed') {
     const codigo = Array.isArray(aviso?.errors) ? aviso.errors[0]?.code : null
     const feito = await db.prepare(`
@@ -75,6 +76,27 @@ async function atualizarStatus(db, aviso) {
        WHERE wa_msg_id = ?
          AND (CASE COALESCE(wa_status, '')
                 WHEN 'sent' THEN 1 WHEN 'delivered' THEN 2 WHEN 'read' THEN 3 ELSE 0 END) < ?`).bind(status, em, id, ordem).run())
+  }
+}
+
+// Mensagem enviada pela gestão (aba WhatsApp): mesma regra de não regredir.
+// Não crítico: um erro aqui (ex.: migração 0026 ainda não aplicada) só gera log.
+async function statusDaConversa(db, id, status, em) {
+  const ordem = status === 'failed' ? 0 : ORDEM_STATUS[status]
+  if (ordem === undefined) return
+  try {
+    await (status === 'failed'
+      ? db.prepare(`
+          UPDATE whatsapp_mensagens SET wa_status = 'failed', wa_status_em = ?
+           WHERE wa_msg_id = ? AND direcao = 'saida' AND COALESCE(wa_status, 'sent') = 'sent'`).bind(em, id)
+      : db.prepare(`
+          UPDATE whatsapp_mensagens SET wa_status = ?, wa_status_em = ?
+           WHERE wa_msg_id = ? AND direcao = 'saida'
+             AND (CASE COALESCE(wa_status, '')
+                    WHEN 'sent' THEN 1 WHEN 'delivered' THEN 2 WHEN 'read' THEN 3 ELSE 0 END) < ?`).bind(status, em, id, ordem)
+    ).run()
+  } catch (erro) {
+    console.error('WhatsApp status da conversa:', erro?.message || erro)
   }
 }
 
