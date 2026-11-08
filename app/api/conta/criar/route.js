@@ -17,9 +17,10 @@ const erro = (msg, status) => NextResponse.json({ ok: false, erro: msg }, { stat
 
 // Cria a senha do comprador. Dois caminhos chegam aqui:
 //
-//   session_id  quem acabou de pagar na Stripe e está na página de sucesso
-//   payment_id  o mesmo, pelo Mercado Pago (junto com ref, a referência
-//               aleatória da compra — ver lib/confirmar.js)
+//   payment_id  quem acabou de pagar pelo Mercado Pago e está na página de
+//               sucesso (junto com ref, a referência aleatória da compra —
+//               ver lib/confirmar.js). O caminho antigo da Stripe (session_id)
+//               saiu em 07/11/2026 (auditoria, B6).
 //   token       quem fechou a aba e voltou pelo link do e-mail
 //
 // Em nenhum deles o visitante escolhe o e-mail: ele vem da compra. É isso
@@ -60,7 +61,7 @@ export async function POST(req) {
     if (r.status === 'error') return erro('Não localizamos esse pagamento.', 404)
     if (r.status !== 'paid') return erro('O pagamento ainda não foi confirmado.', 409)
     // A chave da compra fica no endereço da /sucesso: só vale nas primeiras 24 h.
-    if (corpo.payment_id && !chaveDaCompraNoPrazo(r.aprovadoEm)) {
+    if (!chaveDaCompraNoPrazo(r.aprovadoEm)) {
       return erro('Este link de confirmação venceu. Use o link do e-mail ou "Primeiro acesso" na tela Entrar.', 410)
     }
 

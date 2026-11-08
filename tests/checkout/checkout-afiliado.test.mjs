@@ -65,6 +65,8 @@ test('código válido no corpo: preço cheio, código no pagamento e evento chec
   assert.equal('aviso_afiliado' in corpo, false)
   assert.equal(globalThis.__preferencias[0].afiliado, codigo)
   assert.equal(globalThis.__preferencias[0].valorCentavos, 8990)
+  // sem cupom, o link de pagamento vence em 7 dias (auditoria B4)
+  assert.equal(globalThis.__preferencias[0].expiraEmMin, 7 * 24 * 60)
   assert.equal(eventos(db, 'checkout_iniciado'), 1)
 })
 

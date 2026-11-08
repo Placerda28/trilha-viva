@@ -24,7 +24,6 @@
     "radix-ui": "^1.6.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "stripe": "17.5.0",
     "tailwind-merge": "^2.6.1"
   },
   "devDependencies": {

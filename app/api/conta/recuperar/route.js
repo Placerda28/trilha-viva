@@ -3,6 +3,7 @@ import { acharPorEmail, criarToken, podeRecuperar } from '@/lib/clientes'
 import { enviarRecuperarSenha, emailConfigurado } from '@/lib/email'
 import { normalizarEmail } from '@/lib/sessao'
 import { mesmaOrigem } from '@/lib/origem'
+import { emSegundoPlano } from '@/lib/segundo-plano'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -47,13 +48,15 @@ export async function POST(req) {
     )
   }
 
-  const cliente = await acharPorEmail(email)
-  // Um pedido por minuto por conta. A resposta na tela não muda: quem estiver
-  // tentando incomodar não descobre nada por isso.
-  if (cliente && !cliente.bloqueado && (await podeRecuperar(cliente.id))) {
-    const token = await criarToken({ clienteId: cliente.id, tipo: 'recuperar', horas: 1 })
-    if (token) await enviarRecuperarSenha({ para: email, token })
-  }
+  // Um pedido por minuto por conta. A resposta na tela não muda, nem no tempo:
+  // consulta e envio rodam depois de a resposta sair.
+  await emSegundoPlano('recuperar senha', async () => {
+    const cliente = await acharPorEmail(email)
+    if (cliente && !cliente.bloqueado && (await podeRecuperar(cliente.id))) {
+      const token = await criarToken({ clienteId: cliente.id, tipo: 'recuperar', horas: 1 })
+      if (token) await enviarRecuperarSenha({ para: email, token })
+    }
+  })
 
   return mesmaResposta()
 }

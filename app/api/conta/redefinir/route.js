@@ -36,7 +36,7 @@ export async function POST(req) {
   // por e-mail é o plano B, para contas criadas antes dessa coluna existir.
   const guardado = await umaLinha(
     getDB(),
-    'SELECT supabase_id FROM clientes WHERE id = ?',
+    'SELECT supabase_id, bloqueado FROM clientes WHERE id = ?',
     linha.cliente_id
   )
   let id = guardado?.supabase_id || null
@@ -55,6 +55,8 @@ export async function POST(req) {
   // o acesso dele morre aqui.
   await executar(getDB(), 'DELETE FROM sessoes WHERE cliente_id = ?', linha.cliente_id)
 
-  await criarSessao(linha.cliente_id, req)
+  // Conta bloqueada troca a senha, mas não sai logada: a tela de entrar
+  // explica o bloqueio (auditoria de 07/11/2026, I2).
+  if (!Number(guardado?.bloqueado)) await criarSessao(linha.cliente_id, req)
   return NextResponse.json({ ok: true }, { headers: semCache })
 }

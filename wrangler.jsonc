@@ -7,6 +7,12 @@
   // Desde 12/09/2026 o site tambem responde em trilhaviva.org, ligado pelo
   // painel como Custom Domain.
   "name": "www",
+  // Desde 07/11/2026 o endereco www.trilha-viva.workers.dev fica desligado: era
+  // uma segunda porta para o site, fora das regras de seguranca do dominio
+  // (auditoria, B19). As previas de versao (<nome>-www.trilha-viva.workers.dev)
+  // continuam ligadas, para testar antes de publicar.
+  "workers_dev": false,
+  "preview_urls": true,
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-09-23",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -26,8 +32,8 @@
       "database_id": "2dac1356-eb0b-432b-a3d2-1c5cbbb9c29c"
     }
   ],
-  // As variaveis (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY,
-  // etc.) sao cadastradas no painel do Cloudflare, nao neste arquivo. Sem esta
+  // As variaveis (MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET, RESEND_API_KEY, etc.)
+  // sao cadastradas no painel do Cloudflare, nao neste arquivo. Sem esta
   // linha, cada "wrangler deploy" apagaria todas elas e o site quebraria.
   "keep_vars": true,
   // Sem segredo: o número do WhatsApp (API da Meta) usado para responder

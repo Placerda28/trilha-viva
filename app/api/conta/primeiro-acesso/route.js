@@ -4,6 +4,7 @@ import { criarToken } from '@/lib/clientes'
 import { emailConfigurado, enviarCriarSenha } from '@/lib/email'
 import { mesmaOrigem } from '@/lib/origem'
 import { RESPOSTA_PRIMEIRO_ACESSO, pedirPrimeiroAcesso } from '@/lib/primeiro-acesso'
+import { emSegundoPlano } from '@/lib/segundo-plano'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -36,16 +37,12 @@ export async function POST(req) {
     /* segue e cai na resposta padrão */
   }
 
-  try {
-    const resultado = await pedirPrimeiroAcesso(
-      getDB(),
-      { email: corpo.email, ip: req.headers.get('cf-connecting-ip') },
-      { criarToken, enviarCriarSenha }
-    )
+  // Nem a falha nem o tempo mudam a resposta: os dois diriam algo sobre o
+  // e-mail. Consulta e envio rodam depois de a resposta sair (auditoria B8).
+  const ip = req.headers.get('cf-connecting-ip')
+  await emSegundoPlano('primeiro acesso', async () => {
+    const resultado = await pedirPrimeiroAcesso(getDB(), { email: corpo.email, ip }, { criarToken, enviarCriarSenha })
     if (resultado === 'falhou') console.error('primeiro acesso: link não enviado')
-  } catch (erro) {
-    // Nem a falha muda a resposta: ela também diria algo sobre o e-mail.
-    console.error('primeiro acesso', erro?.message)
-  }
+  })
   return mesmaResposta()
 }

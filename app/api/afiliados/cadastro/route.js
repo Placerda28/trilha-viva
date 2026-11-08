@@ -49,6 +49,11 @@ export async function POST(req) {
     if (!config) return erro('Indisponível no momento. Tente novamente mais tarde.', 503)
     if (!config.programa_aberto) return erro('Cadastros encerrados no momento.', 403)
     if (await afiliadoDoCliente(db, cliente.id)) return erro('Você já tem um cadastro de afiliado.', 409)
+    // Um CPF, um cadastro: a mesma pessoa não abre várias contas de afiliado
+    // (auditoria de 07/11/2026, B11). Conferência no app, sem índice no banco:
+    // cadastros antigos repetidos continuam aparecendo no alerta da Gestão.
+    const cpfEmUso = await db.prepare('SELECT 1 AS sim FROM afiliados WHERE cpf = ? LIMIT 1').bind(limparCpf(c.cpf)).first()
+    if (cpfEmUso) return erro('Este CPF já tem um cadastro de afiliado. Fale com o suporte.', 409, 'cpf')
 
     const cod = await consultarCodigo(db, typeof c.codigo === 'string' ? c.codigo.slice(0, 40) : '')
     if (!cod.disponivel) {

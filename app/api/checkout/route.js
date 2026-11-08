@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { getStripe, PRODUCT_NAME } from '@/lib/stripe'
 import { site } from '@/lib/site'
 import { criarPreferencia, provedorAtivo } from '@/lib/mercadopago'
 import { enviarEventoMeta, ipDoPedido, lerCookiesMeta, lerOrigemVisita } from '@/lib/meta'
@@ -30,8 +29,12 @@ import { codigoDoCookie } from '@/lib/afiliados-ref'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+const PRODUCT_NAME = 'Trilha Viva — Pacote Completo com 2.000 Multitracks Gospel'
 const DESCRICAO =
   'Acesso vitalício ao acervo com mais de 2.000 multitracks gospel (VS) com clique, guia e canais separados.'
+// Sem cupom, o link de pagamento vale 7 dias: antes não vencia nunca e
+// guardava o preço do dia para sempre (auditoria de 07/11/2026, B4).
+const VALIDADE_SEM_CUPOM_MIN = 7 * 24 * 60
 
 // O código do afiliado nunca bloqueia a compra: se não vale, a compra segue sem afiliado e a
 // tela pode mostrar este aviso. Código inexistente e inativo têm o mesmo texto de propósito.
@@ -209,6 +212,7 @@ export async function POST(req) {
         // cupom vencer antes): não fica um carrinho com desconto aberto
         // esperando alguém.
         venceEmMs: venceLink,
+        expiraEmMin: cupom ? undefined : VALIDADE_SEM_CUPOM_MIN,
         rastreio,
         telefone,
         utm,
@@ -231,64 +235,10 @@ export async function POST(req) {
     }
   }
 
-  if (codigoInformado) {
-    return NextResponse.json(
-      { error: 'Cupom indisponível no momento.' },
-      { status: 400 }
-    )
-  }
-
-  const stripe = getStripe()
-
-  if (!stripe) {
-    const link = process.env.NEXT_PUBLIC_PAYMENT_LINK
-    if (link) {
-      const url = new URL(link)
-      url.searchParams.set('prefilled_email', email)
-      return NextResponse.json({ url: url.toString(), mode: 'link' })
-    }
-    return NextResponse.json(
-      { error: 'O checkout ainda não foi configurado. Fale com o suporte.' },
-      { status: 503 }
-    )
-  }
-
-  try {
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      locale: 'pt-BR',
-      customer_email: email,
-      client_reference_id: nome || undefined,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: 'brl',
-            unit_amount: Math.round(site.price * 100),
-            product_data: {
-              name: PRODUCT_NAME,
-              description: DESCRICAO,
-            },
-          },
-        },
-      ],
-      metadata: { nome, telefone, produto: 'pacote-4000-vs', ...rastreio },
-      payment_intent_data: {
-        description: 'Trilha Viva — Pacote 2.000 Multitracks Gospel',
-        metadata: { nome, email },
-      },
-      success_url: `${origin}/sucesso?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/assinar?cancelado=1`,
-      allow_promotion_codes: true,
-    })
-
-    await inicioCheckout()
-    return NextResponse.json({ url: session.url, mode: 'checkout' })
-  } catch (err) {
-    console.error('checkout error', err?.message)
-    return NextResponse.json(
-      { error: 'Não conseguimos abrir o pagamento agora. Tente novamente em instantes.' },
-      { status: 500 }
-    )
-  }
+  // Sem o Mercado Pago configurado não há como cobrar (a Stripe saiu em
+  // 07/11/2026, auditoria B6).
+  return NextResponse.json(
+    { error: 'O checkout ainda não foi configurado. Fale com o suporte.' },
+    { status: 503 }
+  )
 }

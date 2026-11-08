@@ -195,6 +195,15 @@ test('cadastro: 409 para cliente repetido e para código em uso; 400/401/403 nas
   assert.equal(n(db, 'SELECT COUNT(*) AS n FROM afiliados'), 1)
 })
 
+test('cadastro: CPF que já tem cadastro de afiliado dá 409 (auditoria B11)', async () => {
+  const { db } = montar()
+  db.banco.exec("INSERT INTO clientes (id, email) VALUES (998, 'outra@t.com')")
+  db.banco.exec("INSERT INTO afiliados (cliente_id, codigo, status, nome, cpf) VALUES (998, 'OUTRA01', 'ativo', 'Outra', '52998224725')")
+  const r = await post(cadastro, FORM)
+  assert.deepEqual([r.status, (await r.json()).campo], [409, 'cpf'])
+  assert.equal(n(db, 'SELECT COUNT(*) AS n FROM afiliados'), 1)
+})
+
 test('clique: grava 1 por visitante em 24 h; código inexistente ou inativo devolve 204 sem gravar', async () => {
   process.env.LEMBRETE_SEGREDO = 'segredo-de-teste'
   const { db } = montar()

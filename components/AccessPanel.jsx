@@ -12,13 +12,12 @@ import { CHAVE_EMAIL_ENTRAR, INTERVALO_MS, proximoPasso } from '@/lib/pos-pagame
 // aqui é criar a senha — sem link alternativo, sem menu, sem distração.
 export default function AccessPanel() {
   const params = useSearchParams()
-  // Stripe volta com ?session_id=. O Mercado Pago volta com ?payment_id= e
-  // ?external_reference= (a referência aleatória que prova que a compra é
-  // desta pessoa). Sem os dois juntos, nada é consultado.
-  const sessionId = params.get('session_id')
+  // O Mercado Pago volta com ?payment_id= e ?external_reference= (a
+  // referência aleatória que prova que a compra é desta pessoa). Sem os dois
+  // juntos, nada é consultado.
   const paymentId = params.get('payment_id')
   const ref = params.get('external_reference')
-  const temCompra = Boolean(sessionId || (paymentId && paymentId !== 'null' && ref))
+  const temCompra = Boolean(paymentId && paymentId !== 'null' && ref)
   const [state, setState] = useState({ status: temCompra ? 'loading' : 'missing' })
   const [passo, setPasso] = useState(temCompra ? 'esperar' : 'missing')
   const [rodada, setRodada] = useState(0)
@@ -28,7 +27,7 @@ export default function AccessPanel() {
       const res = await fetch('/api/acesso', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sessionId ? { session_id: sessionId } : { payment_id: paymentId, ref }),
+        body: JSON.stringify({ payment_id: paymentId, ref }),
         cache: 'no-store',
       })
       return await res.json()
@@ -37,7 +36,7 @@ export default function AccessPanel() {
       // "ainda pendente" e a próxima consulta tenta de novo.
       return { status: 'pending' }
     }
-  }, [sessionId, paymentId, ref])
+  }, [paymentId, ref])
 
   // Confere a cada 3 segundos, por até 3 minutos. "Já paguei, conferir de
   // novo" começa uma nova rodada de 3 minutos.
