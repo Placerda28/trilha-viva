@@ -21,7 +21,9 @@ test('todas as situações existem no roteiro, e o roteiro é de tamanho seguro'
   for (const codigo of CODIGOS_SITUACAO) assert.ok(ROTEIRO.includes('### ' + codigo), codigo)
   assert.ok(ROTEIRO.length < 40000, `roteiro com ${ROTEIRO.length} caracteres`)
   assert.doesNotMatch(ROTEIRO, /[`\\]/, 'sem crase nem barra invertida no roteiro')
-  assert.ok(ROTEIRO.includes('A CONFIRMAR PELO PAULO'))
+  assert.doesNotMatch(ROTEIRO, /A CONFIRMAR/)
+  assert.ok(ROTEIRO.includes('equipe Trilha Viva'))
+  assert.ok(ROTEIRO.includes('Você tem 7 dias para pedir o reembolso, conforme o Código de Defesa do Consumidor. É só responder o e-mail da compra e devolvemos o valor integral.'))
 })
 
 test('campanha só vale dentro das datas (dia de Brasília)', () => {
@@ -43,7 +45,7 @@ test('prompt: roteiro inteiro, busca e campanha só quando vigente; cupom penden
   const com = montarPrompt({ mensagens: msgs, busca, campanha: CAMPANHAS[0] })
   const textoCom = com.sistema.map((b) => b.texto).join('\n')
   assert.match(textoCom, /CAMPANHA VIGENTE: Black Friday 2026.*R\$ 79,90/)
-  assert.match(textoCom, /NÃO cite cupom/)
+  assert.match(textoCom, /Cupom: BLACK10/)
   assert.equal(sem.sistema[0].cache, true)
 })
 

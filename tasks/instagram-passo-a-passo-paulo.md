@@ -6,16 +6,24 @@ Mesmo estilo do passo a passo do WhatsApp: em cada etapa está o que me mandar n
 
 **Caminho usado:** Instagram Messaging pela Plataforma Messenger, com **login do Facebook** e uma **Página do Facebook ligada ao Instagram**. Usamos o **mesmo app da Meta do WhatsApp** (`Trilha Viva Recuperacao`).
 
-Tempo estimado: 40 a 60 min. A revisão do app (passo 9) leva dias.
+Tempo estimado: 40 a 60 min. A revisão do app (passo 10) leva dias.
+
+## Andamento (10/11/2026)
+- [x] Passo 1 feito: perfil **@trilhavivamultitracks**.
+- [x] Passo 2 feito: conta profissional ligada à Página do Facebook **"Trilhaviva"**, dentro do portfólio **"Trilha Viva"**.
+- [x] Mesmo app da Meta: **Trilha Viva Recuperacao**, já em modo **Ativo** (*Live*).
+- IDs (não são segredo): `IG_PAGE_ID` = 1368656562994626 e `IG_ACCOUNT_ID` = 17841429323970363.
+- **Falta (bloqueio atual):** o usuário do sistema ainda não tem acesso à Página nem ao Instagram. Faça o **passo 7** (primeiro dar acesso, só depois gerar o token). Os passos 3 a 6 e 9 também seguem pendentes.
+
+> **Regra do token:** o token **nunca** vai para o chat, nem para arquivo, nem para anotação. Ele só entra no comando `npx wrangler secret put IG_TOKEN`, quando eu pedir.
 
 ---
 
-## 1. Confirmar qual é o perfil
-Qual é o Instagram da Trilha Viva: `@trilhavivamultitracks` ou `@_trilhaviva`?
+## 1. Confirmar qual é o perfil — FEITO
+O perfil é `@trilhavivamultitracks`. Todo o resto abaixo é feito com ele.
 
-> **Me mande no chat:** o @ certo. Todo o resto abaixo é feito com esse perfil.
-
-## 2. Ligar a conta profissional a uma Página do Facebook
+## 2. Ligar a conta profissional a uma Página do Facebook — FEITO
+Já está ligada à Página "Trilhaviva", no portfólio "Trilha Viva". Os itens abaixo ficam só como referência (o 4 e o 5 vale conferir).
 1. No app do Instagram (celular), entre no perfil certo. Vá em **Configurações** → **Tipo de conta e ferramentas** → confirme que é **Conta profissional** (comercial ou criador de conteúdo). Se for conta pessoal, troque para profissional. **A CONFERIR NA TELA** (o nome do menu muda).
 2. Ainda no Instagram: **Editar perfil** → **Página** (ou **Links** → **Página**) → **Conectar uma Página existente**. Escolha a Página da Trilha Viva. **A CONFERIR NA TELA.**
 3. Confira que essa Página está no portfólio empresarial **Trilha Viva**: em **https://business.facebook.com/settings** → **Contas** → **Páginas**. Se não estiver, **Adicionar** → **Adicionar uma Página**.
@@ -59,15 +67,27 @@ POST https://graph.facebook.com/{versão}/{IG_PAGE_ID}/subscribed_apps
 
 Para essa chamada o token precisa de `pages_manage_metadata` e `pages_messaging`. Rodamos juntos no PowerShell; você cola o token só no terminal.
 
-## 7. Gerar o token permanente (usuário do sistema)
-Você já tem o usuário do sistema `robo-trilha-viva` / `Trilhavivarobo` do WhatsApp. Vamos reusar.
+## 7. Dar acesso ao usuário do sistema e só depois gerar o token
+Você já tem o usuário do sistema `robo-trilha-viva` / `Trilhavivarobo` do WhatsApp. Vamos reusar. **A ordem importa:** primeiro o acesso à Página e ao Instagram (7.1 a 7.3), depois o token (7.4). Um token gerado antes de o usuário ter acesso à Página não enxerga a Página.
 
-1. **https://business.facebook.com/settings** → **Usuários → Usuários do sistema** → selecione o usuário.
-2. **Atribuir ativos**:
-   - **Apps** → `Trilha Viva Recuperacao` → **Controle total** (já feito no WhatsApp).
-   - **Páginas** → a Página da Trilha Viva → **Controle total** (gerenciar mensagens incluído).
-   - **Contas do Instagram** → o perfil da Trilha Viva → **Controle total**. **A CONFERIR NA TELA** (pode ser necessário em **Contas → Contas do Instagram** ligar o perfil ao portfólio antes).
-3. **Gerar novo token** → app `Trilha Viva Recuperacao` → validade **Nunca** → marque as permissões:
+### 7.1 Dar acesso à Página "Trilhaviva"
+1. Abra **https://business.facebook.com/settings** (Configurações do negócio) e confira, no seletor do topo, que está no portfólio **Trilha Viva**.
+2. Menu da esquerda: **Usuários** → **Usuários do sistema**. Clique no usuário `Trilhavivarobo` / `robo-trilha-viva`.
+3. Botão **Atribuir ativos** (*Assign assets*) → na coluna da esquerda escolha **Páginas** (*Pages*) → marque **Trilhaviva**.
+4. Do lado direito, ligue **Controle total** (*Full control*). A documentação da Meta exige, para este caminho, as tarefas de **mensagens** (`MESSAGE`, para enviar) e de **moderar** (`MODERATE`, para ler nome e @ e para inscrever a Página no webhook). Controle total já inclui as duas. Se a tela deixar escolher tarefa por tarefa, marque pelo menos essas duas (nome na tela: **A CONFERIR NA TELA**). Na dúvida, Controle total.
+5. **Salvar alterações** (*Save changes*).
+
+### 7.2 Dar acesso à conta do Instagram @trilhavivamultitracks
+1. Ainda no usuário do sistema: **Atribuir ativos** → **Contas do Instagram** (*Instagram accounts*) → marque **@trilhavivamultitracks** → **Controle total** → **Salvar alterações**.
+2. Se a conta **não aparecer** na lista: **Contas** → **Contas do Instagram** → **Adicionar** e entre com o login do perfil; depois volte ao 7.2. **A CONFERIR NA TELA.**
+
+### 7.3 Conferir
+- **Atribuir ativos** → **Apps** → `Trilha Viva Recuperacao` → **Controle total** (já feito no WhatsApp; só confirme que continua).
+- **Contas** → **Páginas** → **Trilhaviva** → aba de pessoas / usuários do sistema: o usuário do sistema deve aparecer agora, junto com você e a Kaylan. **A CONFERIR NA TELA.** Se não aparecer, repita o 7.1.
+
+### 7.4 Gerar o token (só depois do 7.1 a 7.3)
+1. Volte em **Usuários → Usuários do sistema** → selecione o usuário → **Gerar novo token** (*Generate new token*).
+2. App `Trilha Viva Recuperacao` → validade **Nunca** (*Never*) → marque as permissões:
    - `instagram_basic`
    - `instagram_manage_messages`
    - `pages_manage_metadata`
@@ -77,13 +97,27 @@ Você já tem o usuário do sistema `robo-trilha-viva` / `Trilhavivarobo` do Wha
    - `business_management`
 
    Se alguma não aparecer na lista: **A CONFERIR NA TELA**. Algumas só aparecem quando o produto do passo 4 já foi adicionado.
-4. Copie o token (começa com `EAA...`). Ele aparece uma vez só.
+3. Clique em **Gerar token** e copie o token (começa com `EAA...`). Ele aparece uma vez só. Deixe a tela aberta ou guarde só no gerenciador de senhas até o 7.5.
 
-⚠️ **Pegadinha da documentação:** o envio de mensagem pede um **token de Página** ("Page access token"), não o token do usuário do sistema direto. A Meta diz que, quando o token do usuário é de longa duração (o do usuário do sistema "Nunca" é), o token da Página que sai dele **não vence**. Quem tira o token da Página sou eu, com uma chamada `GET /{IG_PAGE_ID}?fields=access_token` feita no seu terminal. O `IG_TOKEN` que vai para a Cloudflare será esse token da Página. **A CONFERIR NA TELA**: se o token do usuário do sistema já funcionar direto no envio, usamos ele mesmo; eu testo antes.
+### 7.5 Trocar o token do usuário pelo token da PÁGINA (esse é o `IG_TOKEN`)
+A Meta diz que o envio de mensagem pede um **token de Página** (*Page access token*), não o do usuário do sistema. E diz que, quando o token do usuário é de longa duração (o do usuário do sistema com validade "Nunca" é), o token da Página que sai dele **não tem data de validade**.
 
-> **NUNCA cole o token no chat.** Ele vai direto para a Cloudflare (passo 8).
+Como tirar o token da Página (só na sua máquina, no PowerShell; nada disto vai para o chat):
+1. Abra o **Explorador da Graph API** (*Graph API Explorer*): **https://developers.facebook.com/tools/explorer/** → escolha o app `Trilha Viva Recuperacao` → no campo **Token de acesso**, cole o token do 7.4 (**A CONFERIR NA TELA**: se o Explorador não aceitar o token do usuário do sistema, eu faço a mesma chamada pelo PowerShell com você, colando o token só no terminal).
+2. Rode: `GET /1368656562994626?fields=access_token` (versão da API: a mesma de `WA_GRAPH_VERSION`).
+3. A resposta traz `access_token` (esse é o token da Página) e `id`. Se vier erro de permissão ou sem `access_token`, o 7.1 não foi salvo direito ou faltou permissão no 7.4.
+4. Copie o `access_token` da resposta. **Esse** é o `IG_TOKEN`.
 
-## 8. Achar os números `IG_PAGE_ID` e `IG_ACCOUNT_ID` (não são segredo)
+### 7.6 Conferir no Depurador de token que ele não expira
+1. **https://developers.facebook.com/tools/debug/accesstoken/** (*Depurador de token de acesso*).
+2. Cole o token da Página (7.5) e clique em **Depurar**.
+3. Confira: **Tipo** = Página (*Page*); **Expira** = **Nunca** (*Never*); **App** = `Trilha Viva Recuperacao`; e na lista de **Escopos / Permissões** aparece `instagram_manage_messages` (e, de preferência, `instagram_basic`, `pages_manage_metadata`, `pages_messaging`). **A CONFERIR NA TELA** se o depurador mostrar os escopos de um token de Página como lista completa; se mostrar vazia, tudo bem, o teste real do envio confirma depois.
+4. Se aparecer uma data de validade (por exemplo 1 hora ou 60 dias), pare e me avise: o token do 7.4 não saiu com validade "Nunca".
+
+> **O token NUNCA vai para o chat, nem para arquivo, nem para anotação.** Só entra no comando `npx wrangler secret put IG_TOKEN` (passo 8), quando eu pedir. O que pode mandar no chat é só o resultado da conferência: "tipo Página, expira Nunca, tem instagram_manage_messages".
+
+## 8. Números `IG_PAGE_ID` e `IG_ACCOUNT_ID` — JÁ CONFERIDOS (10/11)
+`IG_PAGE_ID` = 1368656562994626 e `IG_ACCOUNT_ID` = 17841429323970363. Não precisa procurar de novo; o texto abaixo fica só como referência. Falta apenas colar os segredos (bloco mais abaixo), e **só quando eu pedir**.
 - **IG_PAGE_ID** (número da Página do Facebook): na Página, **Configurações → Transparência da Página** ou **Sobre → Identificação da Página**; ou em **business.facebook.com/settings → Contas → Páginas** (o número aparece ao selecionar a Página). Também aparece no campo `id` da chamada `GET /me/accounts`.
 - **IG_ACCOUNT_ID** (número da conta profissional do Instagram, começa com `1784...`): em **business.facebook.com/settings → Contas → Contas do Instagram** (ao selecionar a conta), ou na tela **Messenger → Configurações do Instagram** do app. **A CONFERIR NA TELA**: a documentação não explica onde fica no painel. Se não achar, eu descubro com `GET /{IG_PAGE_ID}?fields=instagram_business_account` quando tivermos o token.
 
@@ -99,7 +133,7 @@ npx wrangler secret put IG_VERIFY_TOKEN
 cd "$HOME\C*dev\tv-instagram"
 npx wrangler secret put IG_TOKEN
 ```
-(`IG_TOKEN` = token do passo 7; `IG_VERIFY_TOKEN` = frase do passo 5.) A assinatura do aviso usa a **Chave secreta do app** que já está no robô como `WA_APP_SECRET`; como é o mesmo app, não precisa de nada novo.
+(`IG_TOKEN` = token da **Página** do passo 7.5; `IG_VERIFY_TOKEN` = frase do passo 5.) A assinatura do aviso usa a **Chave secreta do app** que já está no robô como `WA_APP_SECRET`; como é o mesmo app, não precisa de nada novo.
 
 > **Me avise no chat: "segredos do Instagram colados".** Só publico depois do seu OK.
 

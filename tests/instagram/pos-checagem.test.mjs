@@ -64,10 +64,15 @@ test('oferta: respostas normais passam', () => {
 })
 
 test('oferta: cupom so passa se for o da campanha vigente e ja confirmado', () => {
+  assert.equal(CAMPANHAS[0].cupom, 'BLACK10')
   const confirmada = { ...CAMPANHAS[0], cupom: 'BF26' }
   assert.equal(ofertaSuspeita('Use o cupom BF26: R$ 79,90', confirmada), null)
   assert.equal(ofertaSuspeita('Use o cupom OUTRO', confirmada), 'cupom')
-  assert.equal(ofertaSuspeita('Use o cupom BF26', CAMPANHAS[0]), 'cupom') // cupom ainda "A CONFIRMAR"
+  assert.equal(ofertaSuspeita('Use o cupom BLACK10: R$ 79,90', CAMPANHAS[0]), null)
+  assert.equal(conferir('Use o cupom BLACK10 e pague R$ 79,90 na Black Friday!', { campanha: CAMPANHAS[0] }).precisaHumano, false)
+  assert.equal(conferir('Use o cupom BLACK10 e pague R$ 79,90 na Black Friday!').precisaHumano, true) // fora da data
+  assert.equal(conferir('Use o cupom BLACK10', { campanha: CAMPANHAS[0] }).precisaHumano, false)
+  assert.equal(conferir('Use o cupom BLACK20 por R$ 79,90', { campanha: CAMPANHAS[0] }).precisaHumano, true)
   assert.equal(temPrecoDiferente('Por 79,90', ['89,90', '79,90']), false)
 })
 
@@ -90,4 +95,14 @@ test('corte em bytes nao deixa link cortado ao meio', () => {
   assert.ok(Buffer.byteLength(r.texto) <= 1000)
   const sem = cortarEmBytes('b'.repeat(990) + ' ' + 'c'.repeat(100))
   assert.ok(Buffer.byteLength(sem.texto) <= 1000)
+})
+
+test('S09, S10 e S99 sempre vão para o Paulo, mesmo se a IA disser que não', async () => {
+  const { conferirResposta } = await import('../../lib/instagram-ia/pos-checagem.js')
+  for (const situacao of ['S09_acesso_nao_aparece', 'S10_estorno_insatisfacao', 'S99_outro']) {
+    const r = conferirResposta({ json: { resposta: 'Obrigado pela mensagem!', situacao, precisa_humano: false }, textosDoCliente: ['oi'], campanha: null })
+    assert.equal(r.precisaHumano, true, situacao)
+  }
+  const ok = conferirResposta({ json: { resposta: 'Roda sim no celular.', situacao: 'S03_celular', precisa_humano: false }, textosDoCliente: ['roda no celular?'], campanha: null })
+  assert.equal(ok.precisaHumano, false)
 })

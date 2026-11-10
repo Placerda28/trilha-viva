@@ -1,0 +1,8 @@
+{
+  "name": "instagram-ia-ponte-local",
+  "main": "index.js",
+  "compatibility_date": "2025-09-23",
+  "account_id": "218d034ad99d2eaf4e9eb277866901ef",
+  "ai": { "binding": "AI" },
+  "dev": { "port": 8799, "ip": "127.0.0.1" }
+}

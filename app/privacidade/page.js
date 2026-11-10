@@ -69,6 +69,10 @@ export default function PrivacidadePage() {
           política de privacidade dela. Guardamos as mensagens trocadas com você para dar suporte e
           podemos apagá-las a pedido.
         </p>
+        <h2>Instagram</h2>
+        <p>
+          Quando você nos envia uma mensagem pelo Instagram, guardamos a conversa para responder e acompanhar o seu atendimento.
+        </p>
         <h2>Anúncios e medição (Meta)</h2>
         <p>
           Usamos o Pixel da Meta e a API de Conversões da Meta (Facebook e Instagram) para saber

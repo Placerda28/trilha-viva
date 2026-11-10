@@ -5,6 +5,8 @@
 //   node scripts/instagram-ia-avaliar.mjs --falso                       (IA falsa, nao gasta nada)
 //   CLOUDFLARE_API_TOKEN=... node scripts/instagram-ia-avaliar.mjs --modelos "@cf/meta/llama-3.3-70b-instruct-fp8-fast,@cf/google/gemma-4-26b-a4b-it"
 //   ANTHROPIC_API_KEY=... node scripts/instagram-ia-avaliar.mjs --provedor anthropic --modelos MODELO
+//   node scripts/instagram-ia-avaliar.mjs --ponte http://127.0.0.1:8799  (login do wrangler, sem token;
+//     antes: npx wrangler dev --config scripts/instagram-ia-ponte/wrangler.jsonc)
 // Opcoes: --casos caminho.json  --saida relatorio.md  --so id1,id2
 import { readFileSync, writeFileSync } from 'node:fs'
 import { buscarAcervo, normalizar } from '../lib/instagram-ia/acervo-busca.js'
@@ -26,6 +28,7 @@ function lerArgs(argv) {
     else if (k === '--casos') a.casos = argv[++i]
     else if (k === '--saida') a.saida = argv[++i]
     else if (k === '--so') a.so = argv[++i].split(',')
+    else if (k === '--ponte') a.ponte = argv[++i]
   }
   return a
 }
@@ -67,16 +70,29 @@ function iaRest(token) {
   }
 }
 
+// Workers AI pela ponte local (wrangler dev com o binding AI e o login do wrangler).
+function iaPonte(url) {
+  return {
+    async run(modelo, entrada) {
+      const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ modelo, entrada }) })
+      const corpo = await r.json()
+      if (!corpo.ok) throw new Error(corpo.erro)
+      return corpo.resultado
+    },
+  }
+}
+
 function montarEnv(args, modelo) {
   if (args.provedor === 'anthropic') return { IG_IA_PROVEDOR: 'anthropic', IG_IA_MODELO: modelo, ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY }
-  return { IG_IA_PROVEDOR: 'workers-ai', IG_IA_MODELO: modelo, AI: args.falso ? iaFalsa() : iaRest(process.env.CLOUDFLARE_API_TOKEN) }
+  const ai = args.falso ? iaFalsa() : args.ponte ? iaPonte(args.ponte) : iaRest(process.env.CLOUDFLARE_API_TOKEN)
+  return { IG_IA_PROVEDOR: 'workers-ai', IG_IA_MODELO: modelo, AI: ai }
 }
 
 async function rodarCaso(env, caso, modelo) {
   const mensagens = [{ direcao: 'entrada', texto: caso.mensagem }]
-  const campanha = campanhaVigente(new Date())
+  const campanha = campanhaVigente(caso.data_simulada ? new Date(caso.data_simulada) : new Date())
   const pedido = montarPrompt({ mensagens, busca: buscarAcervo(caso.mensagem), campanha })
-  const opcoes = /qwen/i.test(modelo) ? { maxTokens: 2000 } : {}
+  const opcoes = {}
   try {
     const r = await pedirComRetry(env, pedido, opcoes)
     const c = conferirResposta({ json: r.json, textosDoCliente: [caso.mensagem], campanha })
@@ -154,7 +170,7 @@ export async function avaliarModelo(args, modelo, casos) {
 
 async function principal() {
   const args = lerArgs(process.argv.slice(2))
-  if (!args.falso && args.provedor === 'workers-ai' && !process.env.CLOUDFLARE_API_TOKEN) throw new Error('Defina CLOUDFLARE_API_TOKEN (ou use --falso).')
+  if (!args.falso && !args.ponte && args.provedor === 'workers-ai' && !process.env.CLOUDFLARE_API_TOKEN) throw new Error('Defina CLOUDFLARE_API_TOKEN (ou use --falso).')
   if (!args.falso && args.provedor === 'anthropic' && !process.env.ANTHROPIC_API_KEY) throw new Error('Defina ANTHROPIC_API_KEY (ou use --falso).')
   let casos = JSON.parse(readFileSync(args.casos, 'utf8')).casos
   if (args.so) casos = casos.filter((c) => args.so.includes(c.id))

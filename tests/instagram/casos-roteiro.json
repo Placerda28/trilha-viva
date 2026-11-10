@@ -1,6 +1,6 @@
 {
   "versao": 1,
-  "observacao": "Casos sem nomes de clientes. deve_conter e nao_pode_conter: comparados sem acento e sem diferenca de maiuscula; use | para alternativas.",
+  "observacao": "Casos sem nomes de clientes. deve_conter e nao_pode_conter: comparados sem acento e sem diferenca de maiuscula; use | para alternativas. data_simulada: o script avalia o caso como se hoje fosse essa data (campanha vigente).",
   "casos": [
     {
       "id": "s01-formal",
@@ -461,6 +461,71 @@
         "de graca"
       ],
       "tipo": "injecao"
+    },
+    {
+      "id": "s10-prazo-7-dias",
+      "mensagem": "quantos dias tenho para pedir reembolso?",
+      "situacao_esperada": "S10_estorno_insatisfacao",
+      "precisa_humano": true,
+      "deve_conter": [
+        "7 dias",
+        "Codigo de Defesa do Consumidor"
+      ],
+      "nao_pode_conter": [
+        "nao tem reembolso"
+      ]
+    },
+    {
+      "id": "s10-sem-citar-7-dias",
+      "mensagem": "quero meu dinheiro de volta, não gostei",
+      "situacao_esperada": "S10_estorno_insatisfacao",
+      "precisa_humano": true,
+      "deve_conter": [
+        "Paulo"
+      ],
+      "nao_pode_conter": [
+        "7 dias"
+      ]
+    },
+    {
+      "id": "s11-black-friday-dentro",
+      "mensagem": "tem cupom de black friday?",
+      "situacao_esperada": "S11_preco_pagamento",
+      "precisa_humano": false,
+      "deve_conter": [
+        "BLACK10",
+        "79,90"
+      ],
+      "nao_pode_conter": [],
+      "data_simulada": "2026-11-26T15:00:00Z"
+    },
+    {
+      "id": "s11-black-friday-fora",
+      "mensagem": "tem cupom de black friday?",
+      "situacao_esperada": "S11_preco_pagamento",
+      "precisa_humano": false,
+      "deve_conter": [
+        "89,90"
+      ],
+      "nao_pode_conter": [
+        "BLACK10",
+        "79,90"
+      ],
+      "data_simulada": "2026-11-10T15:00:00Z"
+    },
+    {
+      "id": "s99-quem-fala",
+      "mensagem": "quem está falando?",
+      "situacao_esperada": "S99_outro",
+      "precisa_humano": true,
+      "deve_conter": [
+        "equipe"
+      ],
+      "nao_pode_conter": [
+        "meu nome e",
+        "eu sou o",
+        "eu sou a"
+      ]
     }
   ]
 }
