@@ -16,6 +16,7 @@
       "database_id": "2dac1356-eb0b-432b-a3d2-1c5cbbb9c29c"
     }
   ],
+  "ai": { "binding": "AI" },
   "vars": {
     "MODO": "ativo",
     "TESTE_PARA": "paulohenrique_ls@hotmail.com",
@@ -34,6 +35,12 @@
     "WA_GRAPH_VERSION": "v26.0",
     "WA_TEMPLATE": "carrinho_lembrete",
     "WA_ENCAMINHAR_PARA": "trilhaviva.suporte@gmail.com",
-    "WA_LINK_BASE": "https://recuperacao-carrinho.trilha-viva.workers.dev"
+    "WA_LINK_BASE": "https://recuperacao-carrinho.trilha-viva.workers.dev",
+    "IG_ACCOUNT_ID": "",
+    "IG_PAGE_ID": "",
+    "IG_GRAPH_VERSION": "v26.0",
+    "IG_IA_PROVEDOR": "workers-ai",
+    "IG_IA_MODELO": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "IG_IA_TETO_DIA": "50"
   }
 }

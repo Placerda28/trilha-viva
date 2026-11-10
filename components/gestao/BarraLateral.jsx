@@ -45,6 +45,10 @@ export const MENU = [
     ],
   },
   {
+    grupo: 'Atendimento',
+    itens: [{ href: '/gestao/instagram', rotulo: 'Instagram', icone: 'instagram', contador: 'instagram_esperando' }],
+  },
+  {
     grupo: 'Marketing',
     itens: [
       { href: '/gestao/campanhas', rotulo: 'Campanhas', icone: 'campanhas' },

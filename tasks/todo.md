@@ -4,6 +4,15 @@ Só o que ainda está aberto. O detalhe de cada frente fica em `tasks/arquivo/`,
 
 Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido resolvidos por trabalho posterior. Confirme antes de agir e apague o que já estiver feito.
 
+## Instagram IA — Fase 1 (início 10/11/2026, branch `instagram-ia-fase1`, pasta `C:\dev\tv-instagram`)
+
+Especificação: `tasks/instagram-ia-fase1.md`. O código (Etapas 1 a 3, 5 a 7) está pronto só no PC; nada publicado.
+- [ ] **Paulo, Etapa 0:** seguir `tasks/instagram-passo-a-passo-paulo.md` (Página ligada, permitir mensagens, webhook, token, conta testadora, App Review) e responder: qual @ (`@trilhavivamultitracks` ou `@_trilhaviva`), a Página está no portfólio "Trilha Viva", usar o mesmo app do WhatsApp.
+- [ ] **Paulo revisa o roteiro** em `docs/instagram-roteiro.md` e responde os "A CONFIRMAR PELO PAULO" (cupom da Black Friday, assinar com o nome, passo a passo do MainStage, se o S10 cita os 7 dias que a FAQ promete).
+- [ ] **Etapa 4, escolher o modelo:** precisa de um token da Cloudflare só para Workers AI (`CLOUDFLARE_API_TOKEN`) para rodar `node scripts/instagram-ia-avaliar.mjs` com llama-3.3-70b, gemma-4-26b e qwen3-30b; o Paulo escolhe pelo relatório. Ajustar `IG_IA_TETO_DIA` à cota do modelo escolhido.
+- [ ] **Privacidade:** aprovar a frase para `/privacidade` antes de ligar a IA.
+- [ ] **Publicar (só com OK):** migração 0027 no D1 → segredos do robô e do site → `wrangler deploy` do robô → merge em `main` → teste real com a conta testadora (roteiro na seção 13 da especificação).
+
 ## Programa de afiliados (início 04/11/2026, branch `afiliados`, pasta `C:\dev\tv-afiliados`)
 
 Mapa do código, decisões e fases: `tasks/afiliados.md`.

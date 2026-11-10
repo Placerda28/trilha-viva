@@ -27,6 +27,15 @@ export function avisosDaApi(d, agora) {
       href: '/gestao/recuperacao/whatsapp',
     })
   }
+  if (d.instagram_esperando > 0) {
+    lista.push({
+      id: 'instagram',
+      icone: 'instagram',
+      texto: plural(d.instagram_esperando, 'conversa esperando resposta', 'conversas esperando resposta') + ' no Instagram',
+      acao: 'Ver conversas',
+      href: '/gestao/instagram',
+    })
+  }
   // estado vem de whatsapp_estado (aguardando_modelo, teste_enviado, ativo, pausado) e
   // modelo_status é o da Meta (PENDING, APPROVED, REJECTED...). Esperar a Meta
   // aprovar não pede ação do Paulo; recusa, pausa e "falta ligar" pedem.

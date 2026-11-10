@@ -46,6 +46,13 @@ const D = {
     </>
   ),
   whatsapp: <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />,
+  instagram: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r=".5" fill="currentColor" />
+    </>
+  ),
   campanhas: (
     <>
       <circle cx="12" cy="12" r="10" />

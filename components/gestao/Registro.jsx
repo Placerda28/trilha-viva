@@ -60,6 +60,11 @@ export const ACOES = {
   whatsapp_ligar: 'ligou o WhatsApp',
   whatsapp_sequencia_parar: 'parou a sequência de WhatsApp',
   whatsapp_sequencia_retomar: 'retomou a sequência de WhatsApp',
+  instagram_respondido: 'respondeu no Instagram',
+  instagram_descartado: 'descartou um rascunho do Instagram',
+  instagram_regenerado: 'pediu um novo rascunho no Instagram',
+  instagram_ia_ligada: 'ligou a IA do Instagram',
+  instagram_ia_desligada: 'desligou a IA do Instagram',
 }
 
 function Linha({ r }) {
@@ -95,6 +100,7 @@ const GRUPOS = [
   ['Equipe', ['membro_adicionado', 'membro_removido', 'acervo_liberado', 'acervo_retirado', 'senha_trocada']],
   ['Testes', ['compra_teste_marcada', 'compra_teste_desmarcada', 'carrinho_teste_marcado', 'carrinho_teste_desmarcado', 'contato_teste_adicionado', 'contato_teste_removido']],
   ['WhatsApp', ['whatsapp_respondido', 'whatsapp_anexo', 'whatsapp_retomado', 'whatsapp_pausar', 'whatsapp_retomar', 'whatsapp_ligar', 'whatsapp_sequencia_parar', 'whatsapp_sequencia_retomar']],
+  ['Instagram', ['instagram_respondido', 'instagram_descartado', 'instagram_regenerado', 'instagram_ia_ligada', 'instagram_ia_desligada']],
 ]
 
 export default function Registro() {
