@@ -220,7 +220,7 @@ test('texto do cliente vai delimitado como dado e marcador falso e neutralizado'
   assert.equal(msg.role, 'user')
   assert.match(msg.content, /^<<<MENSAGEM_DO_CLIENTE>>>/)
   assert.equal(msg.content.split('<<<FIM_MENSAGEM_DO_CLIENTE>>>').length, 2)
-  assert.ok(ai.chamadas[0].corpo.max_tokens <= 600)
+  assert.ok(ai.chamadas[0].corpo.max_tokens <= 2000) // qwen3 raciocina: limite maior
   assert.equal(ai.chamadas[0].corpo.response_format.type, 'json_schema')
 })
 

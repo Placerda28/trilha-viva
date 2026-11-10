@@ -4,7 +4,7 @@ Só o que ainda está aberto. O detalhe de cada frente fica em `tasks/arquivo/`,
 
 Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido resolvidos por trabalho posterior. Confirme antes de agir e apague o que já estiver feito.
 
-## Instagram IA — Fase 1 (início 10/11/2026, branch `instagram-ia-fase1`, pasta `C:\dev	v-instagram`)
+## Instagram IA — Fase 1 (início 10/11/2026, branch `instagram-ia-fase1`, pasta `C:\dev\tv-instagram`)
 
 Especificação: `tasks/instagram-ia-fase1.md`. Código pronto só no PC; nada publicado.
 - [x] Paulo respondeu (10/11): perfil @trilhavivamultitracks, Página "Trilhaviva" no portfólio, mesmo app do WhatsApp; IDs no `wrangler.jsonc` do site e do robô.
