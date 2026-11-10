@@ -40,7 +40,7 @@
     "IG_PAGE_ID": "1368656562994626",
     "IG_GRAPH_VERSION": "v26.0",
     "IG_IA_PROVEDOR": "workers-ai",
-    "IG_IA_MODELO": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "IG_IA_MODELO": "@cf/qwen/qwen3-30b-a3b-fp8",
     "IG_IA_TETO_DIA": "50"
   }
 }
