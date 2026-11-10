@@ -97,6 +97,8 @@ Você já tem o usuário do sistema `robo-trilha-viva` / `Trilhavivarobo` do Wha
    - `business_management`
 
    Se alguma não aparecer na lista: **A CONFERIR NA TELA**. Algumas só aparecem quando o produto do passo 4 já foi adicionado.
+
+   **Confirmado em 10/11/2026:** só o caso de uso do Instagram não dá `pages_manage_metadata`, e sem ela a Meta recusa a inscrição do app na Página (`(#200) Requires pages_manage_metadata permission to manage the object`). Solução: no painel do app → **Casos de uso** → **Adicionar caso de uso** → **Gerenciar tudo na sua Página** (*Manage everything on your Page*) → em **Personalizar**, adicionar só `pages_manage_metadata`. Caso de uso adicionado não pode ser removido do app. Depois, gerar o token de novo (7.4) com `pages_manage_metadata` marcada e conferir com `scripts/instagram-conferir-token.ps1` (passo 3 deve ler sem erro).
 3. Clique em **Gerar token** e copie o token (começa com `EAA...`). Ele aparece uma vez só. Deixe a tela aberta ou guarde só no gerenciador de senhas até o 7.5.
 
 ### 7.5 Trocar o token do usuário pelo token da PÁGINA (esse é o `IG_TOKEN`)
