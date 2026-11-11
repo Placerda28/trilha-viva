@@ -11,6 +11,7 @@ import {
 import { paraSql } from '../../lib/whatsapp-sequencia.js'
 import { CAMINHO_LINK_WHATSAPP, atenderLink, testeNaoEntregue } from './whatsapp-estado.js'
 import { linhas, mascararTelefone, mudancas } from './whatsapp-banco.js'
+import { cabe, contarConsultas } from './orcamento.js'
 
 // O webhook do WhatsApp (/whatsapp): status das mensagens, respostas e
 // pedidos de saída. whatsapp.js reexporta atenderWebhook.
@@ -178,7 +179,7 @@ async function encaminharPorEmail(env, { nome, telefone, texto, estrangeiro = fa
   if (!resposta.ok) throw new Error(`Resend respondeu com HTTP ${resposta.status}`)
 }
 
-async function tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger) {
+async function tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger, novos) {
   const telefone = telefoneSemPais(mensagem?.from)
   if (!telefone) return
   const nome = nomes.get(String(mensagem.from)) || null
@@ -230,6 +231,7 @@ async function tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger) {
   await pararLead(db, telefone, false)
   // O wa_msg_id é único: aviso repetido da Meta não grava nem encaminha de novo.
   if (!(await guardarMensagem(db, { waId: mensagem.id, telefone, nome, direcao: 'entrada', texto, midia }))) return
+  novos?.add(telefone)
   try {
     await encaminharPorEmail(env, { nome, telefone, texto: resumo }, fetchImpl)
   } catch (erro) {
@@ -238,7 +240,7 @@ async function tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger) {
   }
 }
 
-async function processarAvisos(db, env, corpo, fetchImpl, logger) {
+async function processarAvisos(db, env, corpo, fetchImpl, logger, novos) {
   for (const entrada of Array.isArray(corpo?.entry) ? corpo.entry : []) {
     for (const mudanca of Array.isArray(entrada?.changes) ? entrada.changes : []) {
       if (mudanca?.field !== 'messages') continue
@@ -253,13 +255,29 @@ async function processarAvisos(db, env, corpo, fetchImpl, logger) {
         if (aviso?.status === 'failed') await testeNaoEntregue(db, env, aviso, fetchImpl, logger)
       }
       for (const mensagem of Array.isArray(valor.messages) ? valor.messages : []) {
-        await tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger)
+        await tratarMensagem(db, env, mensagem, nomes, fetchImpl, logger, novos)
       }
     }
   }
 }
 
 const naoExiste = () => new Response(null, { status: 404 })
+
+// Rascunho da IA para quem acabou de escrever (no máximo 2 por pedido; o resto o cron pega pela fila).
+// O módulo da IA só é carregado aqui. REGRA DE OURO: rascunho nunca é enviado; só a Gestão envia, com clique.
+const RASCUNHOS_POR_PEDIDO = 2
+async function pedirRascunhos(env, telefones, opcoes, logger) {
+  try {
+    const m = opcoes.rascunho || (await import('../../lib/instagram-ia/rascunho.js'))
+    for (const telefone of telefones.slice(0, RASCUNHOS_POR_PEDIDO)) {
+      if (!cabe(env.DB, m.CUSTO_RASCUNHO)) return logger.log('WhatsApp: sem consultas sobrando no pedido; o cron gera o rascunho.')
+      const r = await m.gerarRascunho(env, telefone, { canal: 'whatsapp', ai: opcoes.ai, logger })
+      logger.log(`WhatsApp rascunho ${mascararTelefone(telefone)}: ${r?.status || '?'}`)
+    }
+  } catch (erro) {
+    logger.error('WhatsApp rascunho falhou:', erro?.message || erro)
+  }
+}
 
 // Atende só /whatsapp. GET = verificação da Meta; POST = avisos assinados.
 export async function atenderWebhook(request, env, opcoes = {}) {
@@ -295,13 +313,20 @@ export async function atenderWebhook(request, env, opcoes = {}) {
     return new Response('ok', { status: 200 })
   }
 
+  const novos = new Set()
+  const contado = { ...env, DB: contarConsultas(env.DB) }
   try {
     if (!env.DB) throw new Error('Binding DB não configurado.')
-    await processarAvisos(env.DB, env, corpo, opcoes.fetchImpl || globalThis.fetch, logger)
+    await processarAvisos(contado.DB, contado, corpo, opcoes.fetchImpl || globalThis.fetch, logger, novos)
   } catch (erro) {
     // 500 faz a Meta reenviar o aviso; o wa_msg_id único impede duplicar.
     logger.error('Falha ao processar aviso do WhatsApp:', erro)
     return new Response(null, { status: 500 })
+  }
+  if (novos.size) {
+    const tarefa = pedirRascunhos(contado, [...novos], opcoes, logger)
+    if (opcoes.ctx?.waitUntil) opcoes.ctx.waitUntil(tarefa)
+    else await tarefa
   }
   return new Response('ok', { status: 200 })
 }

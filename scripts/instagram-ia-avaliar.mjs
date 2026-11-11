@@ -88,7 +88,7 @@ function montarEnv(args, modelo) {
   return { IG_IA_PROVEDOR: 'workers-ai', IG_IA_MODELO: modelo, AI: ai }
 }
 
-async function rodarCaso(env, caso, modelo) {
+async function rodarCaso(env, caso) {
   const mensagens = [{ direcao: 'entrada', texto: caso.mensagem }]
   const campanha = campanhaVigente(caso.data_simulada ? new Date(caso.data_simulada) : new Date())
   const pedido = montarPrompt({ mensagens, busca: buscarAcervo(caso.mensagem), campanha })
@@ -164,7 +164,7 @@ function detalhe(a) {
 export async function avaliarModelo(args, modelo, casos) {
   const env = montarEnv(args, modelo)
   const avals = []
-  for (const caso of casos) avals.push(avaliar(caso, await rodarCaso(env, caso, modelo)))
+  for (const caso of casos) avals.push(avaliar(caso, await rodarCaso(env, caso)))
   return avals
 }
 

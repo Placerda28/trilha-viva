@@ -16,6 +16,7 @@ import {
   ultimaMensagem,
 } from './whatsappUtil'
 import { Mensagens } from './WhatsappMensagens'
+import SugestaoIa from './WhatsappSugestao'
 import Compositor from './WhatsappCompositor'
 
 // ---------------------------------------------------- conversas ----
@@ -114,6 +115,7 @@ function ConversaAberta({ c, configurado, onEnviado, onVoltar }) {
         </span>
       </div>
       <Mensagens c={c} />
+      <SugestaoIa c={c} onFeito={onEnviado} />
       <Compositor c={c} configurado={configurado} onEnviado={onEnviado} />
     </div>
   )

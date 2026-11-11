@@ -3,6 +3,7 @@ import { getDB, getEnv } from '@/lib/d1'
 import { mesmaOrigem } from '@/lib/origem'
 import { responderConversa, validarResposta } from '@/lib/gestao/whatsapp'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
+import { marcarRespondidoNoApp } from '@/lib/gestao/whatsapp-rascunho'
 import { gravarRegistro } from '@/lib/gestao/registro'
 
 export const runtime = 'nodejs'
@@ -55,6 +56,7 @@ const post = async (req, admin) => {
     )
   }
 
+  await marcarRespondidoNoApp(db, validacao.telefone, quem)
   await gravarRegistro(db, { quem, acao: 'whatsapp_respondido', alvo: validacao.telefone })
   return NextResponse.json({ ok: true }, { headers: cabecalhosPrivados })
 }

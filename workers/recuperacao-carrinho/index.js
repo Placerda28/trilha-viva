@@ -6,7 +6,7 @@ import { executarLeadsWhatsapp } from './leads-whatsapp.js'
 import { executarAfiliados } from './afiliados.js'
 import { ORCAMENTO } from './afiliados.js'
 import { atenderInstagram } from './instagram-webhook.js'
-import { executarInstagram } from './instagram.js'
+import { executarInstagram, executarWhatsappIa } from './instagram.js'
 import { adiar, adiados, cabe, consultasGastas, contarConsultas, restante } from './orcamento.js'
 import { mascararEmail, montarEmail } from './email-lembrete.js'
 import {
@@ -291,7 +291,13 @@ export async function executarRodada(envOriginal, opcoes = {}) {
   }
   marca('afiliados')
 
-  // Instagram (rascunhos da IA) roda depois de tudo, só com a sobra; nunca envia nada.
+  // Rascunhos da IA (WhatsApp e Instagram) rodam depois de tudo, só com a sobra; nunca enviam nada.
+  try {
+    await executarWhatsappIa(env, opcoes)
+  } catch (erro) {
+    logger.error('Falha na etapa de rascunhos do WhatsApp da rodada:', erro)
+  }
+  marca('whatsapp-ia')
   try {
     await executarInstagram(env, opcoes)
   } catch (erro) {
@@ -309,7 +315,7 @@ export default {
   // Webhooks: /instagram e /whatsapp. Qualquer outro endereço: 404.
   fetch(request, env, ctx) {
     if (new URL(request.url).pathname === '/instagram') return atenderInstagram(request, env, ctx)
-    return atenderWebhook(request, env)
+    return atenderWebhook(request, env, { ctx })
   },
 
   scheduled(_controller, env, ctx) {

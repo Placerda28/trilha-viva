@@ -52,6 +52,8 @@ Na tela do passo 4 (Messenger → Configurações do Instagram), na parte **Webh
 4. Em **Campos do webhook**, no objeto **Instagram**, clique em **Assinar** (*Subscribe*) em **messages**. Se aparecerem, assine também: `message_reactions`, `messaging_seen`, `messaging_postbacks`, `messaging_referral`. A Fase 1 só grava texto, mas é inofensivo. O campo de edição de mensagem (`message_edit`) pode aparecer na lista: **A CONFERIR NA TELA** (assinar não é obrigatório).
 5. **Importante:** a Meta só manda avisos de webhook se o app estiver em modo **Ativo/Publicado** (*Live*). Veja no topo da página do app o interruptor **Modo do app**. O app do WhatsApp já pode estar publicado: **A CONFERIR NA TELA**. Se estiver em "Desenvolvimento", publique (é preciso ter política de privacidade e ícone; o site já tem `/privacidade`).
 
+**Feito em 11/11/2026 (pelo Cowork):** a tela com URL e token ficou em Casos de uso → "Gerenciar mensagens e conteúdo no Instagram" → Personalizar → "API setup with Unified login" → "3. Configurar webhooks" (no caminho do login do Facebook só há um link "Saiba mais"). Verificado e salvo; campos assinados no objeto Instagram (v27.0): messages, message_reactions, messaging_seen. App em modo Ativo.
+
 > **Me avise no chat:** "webhook salvo". **Nunca mande** a frase do `IG_VERIFY_TOKEN`.
 
 ## 6. Inscrever a Página no app (`subscribed_apps`)

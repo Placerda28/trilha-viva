@@ -6,6 +6,7 @@ import { Aviso, Esqueleto, Vazio } from './Estados'
 import { moeda, numero } from './formato'
 import SequenciaWhatsapp from './SequenciaWhatsapp'
 import AcaoGestao from './AcaoGestao'
+import { InterruptorIa } from './WhatsappSugestao'
 import { EstadoWhatsapp, Total, porcentagem } from './WhatsappEstado'
 import Conversas from './WhatsappConversasPainel'
 import { PRECO, aguardandoVoce, celular } from './whatsappUtil'
@@ -201,6 +202,7 @@ export default function WhatsappConversas() {
           {parte === 'robo' && (
             <div className="mt-5">
               {dados.estado && <EstadoWhatsapp estado={dados.estado} onMudou={recarregar} />}
+              {dados.ia && <InterruptorIa ia={dados.ia} onMudou={recarregar} />}
               {t && (
                 <dl className="grid grid-cols-2 gap-px overflow-hidden rounded border border-line bg-line lg:grid-cols-5">
                   <Total rotulo="Mensagens enviadas" valor={numero(t.enviados)} detalhe={numero(t.pessoas) + (t.pessoas === 1 ? ' pessoa' : ' pessoas') + (t.falharam ? ' · ' + numero(t.falharam) + ' não entregues' : '')} />

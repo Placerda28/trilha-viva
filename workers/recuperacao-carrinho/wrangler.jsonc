@@ -41,6 +41,7 @@
     "IG_GRAPH_VERSION": "v26.0",
     "IG_IA_PROVEDOR": "workers-ai",
     "IG_IA_MODELO": "@cf/qwen/qwen3-30b-a3b-fp8",
-    "IG_IA_TETO_DIA": "50"
+    "IG_IA_TETO_DIA": "50",
+    "WA_IA_TETO_DIA": "50"
   }
 }
