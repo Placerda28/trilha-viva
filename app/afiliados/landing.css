@@ -290,25 +290,34 @@
 }
 
 /* ---- convite de afiliado no /acervo (components/afiliados/ConviteAfiliado) */
+/* Título: dourado com reflexo que passa (texto parado, sem filhos animados). */
 .convite-ouro {
-  background: linear-gradient(100deg, #fde68a 0%, #eab308 45%, #fff7d6 55%, #ca8a04 100%);
-  background-size: 220% 100%;
+  background: linear-gradient(100deg, #fde68a 0%, #eab308 42%, #fffbe6 52%, #eab308 62%, #ca8a04 100%);
+  background-size: 240% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
+/* Valor do simulador: cor lisa, porque os dígitos rolam (transform + blur) e
+   o recorte de fundo no texto some durante a animação em alguns navegadores. */
+.convite-dourado {
+  color: #fcd34d;
+}
 .convite-brilho {
-  background: radial-gradient(closest-side, rgba(234, 179, 8, 0.28), rgba(234, 179, 8, 0.06) 60%, transparent);
+  --convite-cor: #eab308;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--convite-cor) 34%, transparent), color-mix(in srgb, var(--convite-cor) 7%, transparent) 60%, transparent);
+  transition: background 500ms ease;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .convite-afiliado {
+  .convite-afiliado,
+  .convite-faixa {
     animation: convite-entra 520ms var(--afi-ease) both;
   }
   .convite-afiliado.convite-saindo {
-    animation: convite-sai 260ms ease-in both;
+    animation: convite-sai 240ms ease-in both;
   }
   .convite-ouro {
-    animation: convite-reflexo 3.2s ease-in-out infinite;
+    animation: convite-reflexo 3.6s ease-in-out infinite;
   }
   .convite-ponto {
     animation: convite-pulso 1.6s ease-out infinite;
@@ -319,7 +328,7 @@
   to { opacity: 1; transform: none; }
 }
 @keyframes convite-sai {
-  to { opacity: 0; transform: translateY(-8px) scale(0.985); }
+  to { opacity: 0; transform: scale(0.97); }
 }
 @keyframes convite-reflexo {
   0%, 100% { background-position: 100% 0; }

@@ -24,11 +24,20 @@ export const metadata = {
 }
 
 // Números do convite de afiliado, prontos no carregamento do módulo (é pouca
-// conta: 3 simulações). Mesma tabela pública da landing /afiliados.
-const OURO = NIVEIS_PUBLICOS[NIVEIS_PUBLICOS.length - 1]
-const EXEMPLOS_CONVITE = [10, 50, 100].map((n) => {
+// conta: 4 simulações). Mesma tabela pública da landing /afiliados. Um exemplo
+// por degrau (Bronze, Prata, Ouro) e o de 100 vendas, que é o do título.
+const VALOR_MAXIMO = moedaCurta(Math.max(...NIVEIS_PUBLICOS.map((n) => n.valor_por_venda_centavos)))
+const EXEMPLOS_CONVITE = [10, 20, 50, 100].map((n) => {
   const s = simular(n)
-  return { vendas: n, nivel: s.nivel, total: moeda(s.total).replace(/,00$/, '') }
+  const nivel = NIVEIS_PUBLICOS[s.grau - 1]
+  return {
+    vendas: n,
+    nivel: s.nivel,
+    grau: s.grau,
+    cor: nivel.cor,
+    porVenda: moedaCurta(nivel.valor_por_venda_centavos),
+    total: moeda(s.total).replace(/,00$/, ''),
+  }
 })
 
 const AVISOS = {
@@ -102,12 +111,7 @@ export default async function AcervoPage({ searchParams }) {
       )}
 
       {convidar && (
-        <ConviteAfiliado
-          exemplos={EXEMPLOS_CONVITE}
-          corOuro={OURO.cor}
-          valorOuro={moedaCurta(OURO.valor_por_venda_centavos)}
-          vendasOuro={OURO.vendas_minimas}
-        />
+        <ConviteAfiliado exemplos={EXEMPLOS_CONVITE} valorMaximo={VALOR_MAXIMO} />
       )}
 
       {!comprou && admin ? (
