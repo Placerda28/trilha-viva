@@ -288,3 +288,44 @@
   background:
     radial-gradient(circle at 50% 50%, transparent 0 34%, rgba(255, 255, 255, 0.07) 34.2% 34.6%, transparent 34.8% 52%, rgba(255, 255, 255, 0.05) 52.2% 52.5%, transparent 52.7% 70%, rgba(255, 255, 255, 0.035) 70.2% 70.5%, transparent 70.7%);
 }
+
+/* ---- convite de afiliado no /acervo (components/afiliados/ConviteAfiliado) */
+.convite-ouro {
+  background: linear-gradient(100deg, #fde68a 0%, #eab308 45%, #fff7d6 55%, #ca8a04 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.convite-brilho {
+  background: radial-gradient(closest-side, rgba(234, 179, 8, 0.28), rgba(234, 179, 8, 0.06) 60%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .convite-afiliado {
+    animation: convite-entra 520ms var(--afi-ease) both;
+  }
+  .convite-afiliado.convite-saindo {
+    animation: convite-sai 260ms ease-in both;
+  }
+  .convite-ouro {
+    animation: convite-reflexo 3.2s ease-in-out infinite;
+  }
+  .convite-ponto {
+    animation: convite-pulso 1.6s ease-out infinite;
+  }
+}
+@keyframes convite-entra {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes convite-sai {
+  to { opacity: 0; transform: translateY(-8px) scale(0.985); }
+}
+@keyframes convite-reflexo {
+  0%, 100% { background-position: 100% 0; }
+  50% { background-position: 0 0; }
+}
+@keyframes convite-pulso {
+  0% { box-shadow: 0 0 0 0 rgba(229, 21, 45, 0.6); }
+  100% { box-shadow: 0 0 0 9px rgba(229, 21, 45, 0); }
+}

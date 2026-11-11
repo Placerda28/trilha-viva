@@ -7,6 +7,10 @@ import SairBotao from '@/components/SairBotao'
 import AcervoLista from '@/components/AcervoLista'
 import RelatarProblema from '@/components/RelatarProblema'
 import { adminAtual } from '@/lib/gestao/permissao'
+import { getDB } from '@/lib/d1'
+import { deveConvidarAfiliado } from '@/lib/afiliados/conta'
+import { NIVEIS_PUBLICOS, moeda, moedaCurta, simular } from '@/lib/afiliados-simulador'
+import ConviteAfiliado from '@/components/afiliados/ConviteAfiliado'
 
 export const runtime = 'nodejs'
 // Lê o cookie da sessão, então é montada a cada visita. Por isso o que ela
@@ -18,6 +22,14 @@ export const metadata = {
   description: 'Sua área de downloads do acervo Trilha Viva.',
   robots: { index: false, follow: false },
 }
+
+// Números do convite de afiliado, prontos no carregamento do módulo (é pouca
+// conta: 3 simulações). Mesma tabela pública da landing /afiliados.
+const OURO = NIVEIS_PUBLICOS[NIVEIS_PUBLICOS.length - 1]
+const EXEMPLOS_CONVITE = [10, 50, 100].map((n) => {
+  const s = simular(n)
+  return { vendas: n, nivel: s.nivel, total: moeda(s.total).replace(/,00$/, '') }
+})
 
 const AVISOS = {
   cota: null, // texto montado com a hora, mais abaixo
@@ -43,6 +55,8 @@ export default async function AcervoPage({ searchParams }) {
   // O link da gestão só é desenhado para quem é da gestão. Como sai pronto
   // do servidor, o endereço nem chega ao navegador de um cliente comum.
   const admin = await adminAtual()
+  // Convite de afiliado: só para cliente comum que ainda não é afiliado.
+  const convidar = !admin && (await deveConvidarAfiliado(getDB(), cliente.id))
 
   const params = (await searchParams) || {}
   const chave = String(params.aviso || '')
@@ -85,6 +99,15 @@ export default async function AcervoPage({ searchParams }) {
         >
           {aviso}
         </p>
+      )}
+
+      {convidar && (
+        <ConviteAfiliado
+          exemplos={EXEMPLOS_CONVITE}
+          corOuro={OURO.cor}
+          valorOuro={moedaCurta(OURO.valor_por_venda_centavos)}
+          vendasOuro={OURO.vendas_minimas}
+        />
       )}
 
       {!comprou && admin ? (
