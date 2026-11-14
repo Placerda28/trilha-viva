@@ -87,7 +87,7 @@ test('marcar e desmarcar muda listas e totais; mostrar testes nunca contamina re
   b.close()
 })
 
-test('recuperação exclui testes dos totais de pessoas, mensagens e CSV mesmo ao mostrar testes', async () => {
+test('recuperação exclui testes por padrão e os inclui na lista e no CSV quando solicitado', async () => {
   const { b, db } = banco()
   b.exec("INSERT INTO lembretes_enviados (carrinho_id, canal, etapa) VALUES ('teste', 'email', 1), ('teste', 'whatsapp', 1)")
   await marcarTeste(db, { email: 'pessoa@example.com', teste: true, quem: 'admin' })
@@ -101,6 +101,10 @@ test('recuperação exclui testes dos totais de pessoas, mensagens e CSV mesmo a
   assert.equal((await consultarRecuperacao(db)).totais.pessoas, 1)
   assert.equal((await consultarRecuperacao(db)).totais.emails_enviados, 0)
   assert.equal((await consultarRecuperacaoCsv(db)).length, 1)
+  assert.equal((await consultarRecuperacaoCsv(db, { mostrarTestes: true })).length, 2)
+  const recorte = { inicioUtc: '2026-10-10 00:00:00', fimUtc: '2026-10-11 00:00:00' }
+  assert.equal((await consultarRecuperacaoCsv(db, { periodo: recorte })).length, 0)
+  assert.equal((await consultarRecuperacao(db, { periodo: recorte })).itens.length, 0)
   b.close()
 })
 

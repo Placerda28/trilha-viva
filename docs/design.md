@@ -16,6 +16,7 @@ O conceito é "preto no branco, corte vermelho". Os tokens ficam em `tailwind.co
 
 - O vermelho nunca ocupa área grande.
 - Sem sombras.
+- Os gráficos da gestão usam prismas isométricos feitos em SVG/CSS, sem biblioteca: frente `ink`, lado `ink-muted`, topo `mist-deep`. A barra ativa troca para `signal`, `signal-deep` e `signal-lite`; o vermelho fica só no detalhe. Números usam `.figs`.
 
 ## Tipografia
 - **Archivo** (variável) na interface. **Source Serif 4** (variável) nos textos longos.

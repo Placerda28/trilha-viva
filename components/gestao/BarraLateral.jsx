@@ -14,7 +14,7 @@ import Icone from './Icone'
 //
 // Enquanto faltam telas (menu `parcial`): `soDepois` esconde o item que ainda
 // não tem página, e `agora` é o endereço que já existe para ele. As duas
-// chaves somem quando a tela nova entra (Campanhas e Downloads: Fase 5; Vendas: Fase 4).
+// chaves somem quando a tela nova entra (Campanhas e Downloads: Fase 5; Pedidos: Fase 4).
 //
 // `contador` também pode ser uma lista de chaves: o número vermelho é a soma
 // delas (Afiliados soma saques esperando e alertas abertos).
@@ -23,7 +23,7 @@ import Icone from './Icone'
 // sem ele vale o do WhatsApp.
 //
 // `consulta` ('de=...&ate=...') é o período global: os links o levam junto,
-// para Painel, Vendas, Campanhas, Leads e Downloads mostrarem o mesmo período.
+// para Painel, Pedidos, Campanhas, Leads e Downloads mostrarem o mesmo período.
 export const MENU = [
   {
     grupo: 'Visão geral',
@@ -32,21 +32,18 @@ export const MENU = [
   {
     grupo: 'Vendas',
     itens: [
-      { href: '/gestao/vendas', rotulo: 'Vendas', icone: 'vendas' },
+      { href: '/gestao/vendas', rotulo: 'Pedidos', icone: 'vendas' },
       { href: '/gestao/clientes', rotulo: 'Clientes', icone: 'clientes' },
       { href: '/gestao/cupons', rotulo: 'Cupons', icone: 'cupons' },
-    ],
-  },
-  {
-    grupo: 'Recuperação',
-    itens: [
       { href: '/gestao/recuperacao', rotulo: 'Carrinhos', icone: 'carrinhos' },
-      { href: '/gestao/recuperacao/whatsapp', rotulo: 'WhatsApp', icone: 'whatsapp', contador: 'whatsapp_esperando' },
     ],
   },
   {
     grupo: 'Atendimento',
-    itens: [{ href: '/gestao/instagram', rotulo: 'Instagram', icone: 'instagram', contador: 'instagram_esperando' }],
+    itens: [
+      { href: '/gestao/recuperacao/whatsapp', rotulo: 'WhatsApp', icone: 'whatsapp', contador: 'whatsapp_esperando' },
+      { href: '/gestao/instagram', rotulo: 'Instagram', icone: 'instagram', contador: 'instagram_esperando' },
+    ],
   },
   {
     grupo: 'Marketing',

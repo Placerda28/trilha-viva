@@ -55,13 +55,13 @@ function ItemDaLista({ c, ativa, onAbrir }) {
         <Avatar c={c} />
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline justify-between gap-2">
-            <span className="truncate font-semibold text-ink">{nomeDe(c)}</span>
+            <span title={nomeDe(c)} className="truncate font-semibold text-ink">{nomeDe(c)}</span>
             <span className={'figs shrink-0 text-[12px] ' + (esperando ? 'font-semibold text-ink' : 'text-ink-muted')}>
               {quandoCurto(data(c.ultima_em))}
             </span>
           </span>
           <span className="mt-0.5 flex items-center justify-between gap-2">
-            <span className="truncate text-[13.5px] text-ink-muted">
+            <span title={ultima ? (ultima.direcao === 'saida' ? 'Você: ' : '') + ultima.texto : 'Sem mensagens'} className="truncate text-[13.5px] text-ink-muted">
               {ultima ? (ultima.direcao === 'saida' ? 'Você: ' : '') + ultima.texto : 'Sem mensagens'}
             </span>
             {esperando && (
@@ -98,12 +98,12 @@ function ConversaAberta({ c, configurado, onEnviado, onVoltar }) {
         </button>
         <Avatar c={c} pequeno />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-ink">{nomeDe(c)}</p>
-          <p className="figs truncate text-[12.5px] text-ink-muted">
+          <p title={nomeDe(c)} className="truncate font-semibold text-ink">{nomeDe(c)}</p>
+          <p title={celular(c.telefone) + (c.email ? ' · ' + c.email : '')} className="figs truncate text-[12.5px] text-ink-muted">
             {celular(c.telefone)}
             {c.email ? ' · ' + c.email : ''}
           </p>
-          <p className="figs truncate text-[12px] text-ink-muted sm:hidden">{janela}</p>
+          <p title={janela} className="figs truncate text-[12px] text-ink-muted sm:hidden">{janela}</p>
         </div>
         <span
           className={

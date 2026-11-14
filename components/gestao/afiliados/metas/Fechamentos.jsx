@@ -6,6 +6,7 @@ import { moeda, numero } from '../../formato'
 import { urlCsvFechamento } from '../apiAfiliados'
 import { nomeDoMesMinusculo, textoFechamento } from '../afiliadosUtil'
 import RodarFechamento from './RodarFechamento'
+import { baixarCsv } from '../../Estados'
 
 // Os 6 meses anteriores ao de hoje: status do fechamento, relatório por nível
 // e a planilha. O mês de `destaque` (vindo do alerta, ?mes=AAAA-MM) fica
@@ -15,6 +16,15 @@ const MARCA = { rodado: 'bg-ink', parcial: 'border border-signal bg-white', pend
 
 function Mes({ f, master, destaque, aoRodar }) {
   const ref = useRef(null)
+  const [baixando, setBaixando] = useState(false)
+  const [erroCsv, setErroCsv] = useState('')
+  async function baixar() {
+    setErroCsv('')
+    setBaixando(true)
+    const falha = await baixarCsv(urlCsvFechamento(f.mes))
+    setBaixando(false)
+    if (falha) setErroCsv(falha)
+  }
   useEffect(() => {
     if (destaque) ref.current?.scrollIntoView?.({ block: 'center' })
   }, [destaque])
@@ -71,11 +81,12 @@ function Mes({ f, master, destaque, aoRodar }) {
         )}
         {f.status !== 'rodado' && !f.liberado && <p className="self-center text-[14px] text-ink-muted">Ainda não chegou o dia de fechar este mês.</p>}
         {f.afiliados > 0 && (
-          <a href={urlCsvFechamento(f.mes)} download className="btn-quiet min-h-11 !px-5 !py-2.5 !text-[14.5px]">
-            Exportar planilha<span className="sr-only"> de {nome}</span>
-          </a>
+          <button type="button" onClick={baixar} disabled={baixando} className="btn-quiet min-h-11 !px-5 !py-2.5 !text-[14.5px] disabled:opacity-60">
+            {baixando ? 'Baixando…' : 'Exportar planilha'}<span className="sr-only"> de {nome}</span>
+          </button>
         )}
       </div>
+      {erroCsv && <p role="alert" className="mt-2 text-[13px] text-signal-deep">{erroCsv}</p>}
     </li>
   )
 }

@@ -112,7 +112,7 @@ export default function Recuperacao() {
         {t && !t.whatsapp_ativo ? ' (desligado no momento)' : ''}.
       </Collapsible.Content>
       </Collapsible.Root>
-      <p className="mt-2 text-[13px] text-ink-muted">O período filtra os cartões. A lista e a planilha mostram todo o histórico; a planilha não inclui testes.</p>
+      <p className="mt-2 text-[13px] text-ink-muted">O período filtra os cartões, a lista e a planilha. Testes entram na planilha quando você marca Mostrar testes.</p>
 
       <div className="mt-6 space-y-4">
         <Segmentos
@@ -134,7 +134,7 @@ export default function Recuperacao() {
             aria-label="Buscar por nome, e-mail ou celular"
             className="w-full rounded border border-line bg-white px-4 py-3 text-[15px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
           />
-          <BaixarPlanilha href={'/api/gestao/recuperacao/csv?' + busca} />
+          <BaixarPlanilha href={'/api/gestao/recuperacao/csv?' + busca + '&de=' + periodo.de + '&ate=' + periodo.ate + (testes ? '&testes=1' : '')} />
         </div>
         <MostrarTestes
           valor={testes}

@@ -93,6 +93,8 @@ test('migração acrescenta forma e índice', () => {
 
 test('parâmetros de clientes têm limites seguros', () => {
   assert.equal(paginaValida('2'), 2)
+  assert.equal(paginaValida('10000'), 10000)
+  assert.equal(paginaValida('10001'), 1)
   assert.equal(paginaValida('0'), 1)
   assert.equal(paginaValida('1.5'), 1)
   assert.equal(paginaValida('999999999999999999999'), 1)

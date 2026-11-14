@@ -58,13 +58,13 @@ function ListaLeads({ q, periodo }) {
       <form onSubmit={pesquisar} className="mt-5 flex flex-wrap items-end gap-3">
         <label className="min-w-0 flex-1 basis-60">
           <span className="text-[13px] text-ink-muted">Nome, e-mail ou WhatsApp</span>
-          <input type="search" value={termo} onChange={(e) => setTermo(e.target.value)} maxLength={254}
+          <input type="search" value={termo} onChange={(e) => setTermo(e.target.value)} maxLength={80}
             placeholder="Busque com pelo menos 2 caracteres" className={campo + ' mt-1 min-h-[44px]'} />
         </label>
         <button type="submit" className="btn-quiet min-h-[44px]">Buscar</button>
         {valido && <BaixarPlanilha href={'/api/gestao/leads/csv?' + busca} />}
       </form>
-      {q && <p className="mt-3 break-all text-[14px] text-ink-muted">Busca: {q}. Os cartões e a planilha incluem todos os leads do período.</p>}
+      {q && <p className="mt-3 break-all text-[14px] text-ink-muted">Busca: {q}. Os cartões incluem todos os leads do período; a planilha inclui os resultados da busca.</p>}
       {!valido && <p role="alert" className="mt-3 text-[14px] text-signal-deep">{periodo.erro}</p>}
 
       {erro ? (

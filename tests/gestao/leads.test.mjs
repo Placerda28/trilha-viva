@@ -10,7 +10,7 @@ import { validarPeriodo } from '../../lib/gestao/datas.js'
 
 const modulo = (codigo) => 'data:text/javascript,' + encodeURIComponent(codigo)
 const falsos = {
-  'next/navigation': modulo(`export function notFound() { throw Object.assign(new Error('404'), { codigo: 'NAO_ENCONTRADO' }) }`),
+  'next/navigation': modulo(`export function notFound() { throw Object.assign(new Error('404'), { codigo: 'NAO_ENCONTRADO' }) }; export function useRouter() {}; export function useSearchParams() {}`),
   'next/headers': modulo(`export async function cookies() { return { get() { return { value: 'token' } } } }`),
   '@/lib/gestao/sessao': modulo(`export async function adminPeloToken() { return globalThis.__adminLeads || null }`),
   '@/lib/d1': modulo(`export function getDB() { return globalThis.__dbLeads || null }`),
@@ -18,6 +18,9 @@ const falsos = {
 registerHooks({
   resolve(especificador, contexto, proximo) {
     if (falsos[especificador]) return { shortCircuit: true, url: falsos[especificador] }
+    if (especificador === './formato' && contexto.parentURL?.endsWith('/usePeriodo.js')) {
+      return { shortCircuit: true, url: pathToFileURL(resolve('components/gestao/formato.js')).href }
+    }
     if (especificador.startsWith('@/')) {
       return { shortCircuit: true, url: pathToFileURL(resolve(especificador.slice(2) + '.js')).href }
     }
@@ -26,6 +29,8 @@ registerHooks({
 })
 const rota = await import('../../app/api/interno/gestao/leads/route.js')
 const csv = await import('../../app/api/interno/gestao/leads/csv/route.js')
+const csvRecuperacao = await import('../../app/api/interno/gestao/recuperacao/csv/route.js')
+const { erroDoPeriodo } = await import('../../components/gestao/usePeriodo.js')
 
 class D1Local {
   constructor(banco) { this.banco = banco; this.consultas = 0 }
@@ -81,10 +86,44 @@ test('leads: paginação, totais e fronteiras de Brasília; download histórico 
   assert.deepEqual(vazio.totais, { cadastros: 0, baixaram: 0, compraram: 0, taxa_conversao: 0 })
 })
 
-test('leads: CSV limita consulta a 5000 linhas sem token', async () => {
+test('leads: CSV detecta a linha 5001 sem token', async () => {
   const linhas = await consultarLeadsCsv(new D1Local(banco(5001)), periodo)
-  assert.equal(linhas.length, 5000)
+  assert.equal(linhas.length, 5001)
   assert.ok(linhas.every((linha) => !('token_hash' in linha)))
+  const busca = await consultarLeadsCsv(new D1Local(banco(30)), { ...periodo, q: 'Pessoa 11' })
+  assert.deepEqual(busca.map((l) => l.nome), ['Pessoa 11'])
+})
+
+test('leads: a rota filtra a planilha e recusa mais de 5000 linhas', async () => {
+  globalThis.__adminLeads = { papel: 'master', precisa_trocar_senha: false, cliente: { email: 'master@t.com' } }
+  globalThis.__dbLeads = new D1Local(banco(30))
+  const filtrada = await csv.GET(pedido('de=2026-10-21&ate=2026-10-21&q=Pessoa%2011'))
+  assert.equal(filtrada.status, 200)
+  const texto = await filtrada.text()
+  assert.match(texto, /Pessoa 11/)
+  assert.doesNotMatch(texto, /Pessoa 12/)
+  globalThis.__dbLeads = new D1Local(banco(5001))
+  const grande = await csv.GET(pedido())
+  assert.equal(grande.status, 400)
+  assert.match((await grande.json()).erro, /mais de 5000 linhas/)
+  assert.equal(globalThis.__dbLeads.banco.prepare('SELECT COUNT(*) AS n FROM registro').get().n, 0)
+})
+
+test('período: navegador e servidor rejeitam datas impossíveis e pares incompletos com o mesmo texto', () => {
+  for (const [de, ate] of [['2026-02-31', '2026-03-01'], ['2026-10-01', ''], ['', '2026-10-01']]) {
+    assert.equal(erroDoPeriodo(de, ate), validarPeriodo(de, ate).erro)
+  }
+})
+
+test('carrinhos: CSV rejeita período incompleto ou inválido antes de consultar o banco', async () => {
+  globalThis.__adminLeads = { papel: 'master', precisa_trocar_senha: false, cliente: { email: 'master@t.com' } }
+  globalThis.__dbLeads = new D1Local(banco())
+  for (const q of ['de=2026-10-21', 'ate=2026-10-21', 'de=2026-02-31&ate=2026-03-01']) {
+    const r = await csvRecuperacao.GET(pedido(q))
+    assert.equal(r.status, 400)
+    assert.match((await r.json()).erro, /data/i)
+  }
+  assert.equal(globalThis.__dbLeads.consultas, 0)
 })
 
 test('leads: rotas negam não admin e troca obrigatória com 404 antes de consultar', async () => {

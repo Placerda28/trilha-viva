@@ -49,7 +49,20 @@ export default function ResumoMensal({ resumo }) {
       {meses.length === 0 ? (
         <p className="mt-4 rounded border border-dashed border-mist-deep px-4 py-6 text-center text-[14px] text-ink-muted">Nenhum mês neste período.</p>
       ) : (
-        <div className="relative -mx-4 mt-3 overflow-x-auto sm:mx-0 sm:rounded sm:border sm:border-line" tabIndex={0} role="region" aria-label="Resumo mensal, role para os lados para ver todas as colunas">
+        <>
+        <ul className="mt-3 space-y-3 md:hidden">
+          {[...meses, { ...totais, mes: 'Total' }].map((m) => (
+            <li key={m.mes} className="rounded border border-line p-3">
+              <h3 className="font-semibold text-ink">{m.mes === 'Total' ? 'Total' : mesLongo(m.mes)}</h3>
+              <dl className="mt-2 grid grid-cols-2 gap-2 text-[13.5px]">
+                {COLUNAS.map(([chave, rotulo, formato]) => (
+                  <div key={chave}><dt className="text-ink-muted">{rotulo}</dt><dd className={'figs ' + (chave === 'lucro' && m[chave] < 0 ? 'text-signal-deep' : 'text-ink')}>{formato(m[chave])}{chave === 'liquido' && m.estimadas > 0 ? ' *' : ''}</dd></div>
+                ))}
+              </dl>
+            </li>
+          ))}
+        </ul>
+        <div className="relative mt-3 hidden overflow-x-auto rounded border border-line md:block" tabIndex={0} role="region" aria-label="Resumo mensal, role para os lados para ver todas as colunas">
           <table className="w-full min-w-max border-collapse">
             <thead className="bg-mist">
               <tr>
@@ -83,6 +96,7 @@ export default function ResumoMensal({ resumo }) {
             </tfoot>
           </table>
         </div>
+        </>
       )}
       {estimadas > 0 && (
         <p className="mt-3 text-[13px] text-ink-muted">
