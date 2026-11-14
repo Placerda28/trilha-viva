@@ -67,8 +67,8 @@ function Tabela({ itens, niveis, ordem, dir, base, aoOrdenar }) {
             <tr key={i.id} className="group hover:bg-paper/70">
               <th scope="row" className="sticky left-0 z-10 border-r border-line bg-white p-0 text-left font-normal group-hover:bg-[#f7f8f9]">
                 <Link href={hrefDe(base, i.id)} prefetch={false} className="block min-h-11 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink">
-                  <span className="block truncate text-[15px] font-semibold text-ink underline decoration-transparent decoration-2 underline-offset-4 group-hover:decoration-signal">{i.nome}</span>
-                  <span className="block truncate text-[13px] text-ink-muted">{i.email}</span>
+                  <span title={i.nome} className="block truncate text-[15px] font-semibold text-ink underline decoration-transparent decoration-2 underline-offset-4 group-hover:decoration-signal">{i.nome}</span>
+                  <span title={i.email} className="block truncate text-[13px] text-ink-muted">{i.email}</span>
                   {i.saque_pendente && <span className="mt-0.5 block text-[13px] font-bold text-signal-deep">Saque pendente</span>}
                 </Link>
               </th>

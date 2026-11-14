@@ -4,6 +4,7 @@ import { Dialog } from 'radix-ui'
 import { useGestao } from './useGestao'
 import { Aviso, Esqueleto, Vazio } from './Estados'
 import { dataHora, numero } from './formato'
+import AcaoGestao from './AcaoGestao'
 // Só o master chega aqui: a rota da página e as rotas de dados recusam o
 // resto. Esconder a aba no menu é conforto; a trava de verdade é no servidor.
 const MINIMO = 10
@@ -82,9 +83,10 @@ function NovoMembro({ onMudou }) {
             }}
             placeholder="pessoa@exemplo.com"
             aria-invalid={erro.campo === 'email'}
+            aria-describedby={erro.campo === 'email' ? 'm-email-erro' : undefined}
             className={campo('email') + ' mt-1'}
           />
-          {erro.campo === 'email' && <p className="mt-1 text-[13px] text-signal-deep">{erro.msg}</p>}
+          {erro.campo === 'email' && <p id="m-email-erro" role="alert" className="mt-1 text-[13px] text-signal-deep">{erro.msg}</p>}
         </div>
         <div>
           <label htmlFor="m-senha" className="text-[13px] text-ink-muted">
@@ -102,6 +104,7 @@ function NovoMembro({ onMudou }) {
                 if (erro.campo === 'senha') setErro({ campo: '', msg: '' })
               }}
               aria-invalid={erro.campo === 'senha'}
+              aria-describedby={erro.campo === 'senha' ? 'm-senha-erro' : undefined}
               className={campo('senha') + ' font-semibold tracking-[0.02em]'}
             />
             <button
@@ -112,7 +115,7 @@ function NovoMembro({ onMudou }) {
               Gerar
             </button>
           </div>
-          {erro.campo === 'senha' && <p className="mt-1 text-[13px] text-signal-deep">{erro.msg}</p>}
+          {erro.campo === 'senha' && <p id="m-senha-erro" role="alert" className="mt-1 text-[13px] text-signal-deep">{erro.msg}</p>}
         </div>
       </div>
       <div className="mt-5 flex flex-wrap items-center justify-end gap-4 border-t border-line pt-4">
@@ -191,6 +194,7 @@ function Acervo({ m, onMudou }) {
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
   if (!m.ativo) return <span className="text-[13.5px] text-ink-muted">—</span>
+  if (m.libera_acervo) return <AcaoGestao rotulo="Acervo liberado" explicacao={'Retirar o acesso ao acervo de ' + m.email + '?'} confirmar="Sim, retirar" url="/api/gestao/equipe/acervo" corpo={{ id: m.id, libera: false }} onFeito={onMudou} />
   async function alternar() {
     setEnviando(true)
     setErro('')
@@ -219,7 +223,7 @@ function Acervo({ m, onMudou }) {
       >
         {m.libera_acervo ? 'Acervo liberado' : 'Liberar acervo'}
       </button>
-      {erro && <span className="text-[13px] text-signal-deep">{erro}</span>}
+      {erro && <span role="alert" className="text-[13px] text-signal-deep">{erro}</span>}
     </span>
   )
 }
@@ -241,7 +245,6 @@ function Remover({ m, onMudou }) {
       setEnviando(false)
     }
   }
-
   if (!confirmando) {
     return (
       <button type="button" onClick={() => setConfirmando(true)} className="link-quiet min-h-[44px] px-2 text-[13.5px] font-semibold">
@@ -263,11 +266,10 @@ function Remover({ m, onMudou }) {
       <button type="button" onClick={() => setConfirmando(false)} className="min-h-[44px] px-2 text-[13px] text-ink-muted hover:text-ink">
         Cancelar
       </button>
-      {erro && <span className="text-[13px] text-signal-deep">{erro}</span>}
+      {erro && <span role="alert" className="text-[13px] text-signal-deep">{erro}</span>}
     </span>
   )
 }
-
 function Lista({ itens, onMudou }) {
   return (
     <ul className="mt-6 divide-y divide-line rounded border border-line bg-white">
@@ -295,7 +297,6 @@ function Lista({ itens, onMudou }) {
     </ul>
   )
 }
-
 export default function Equipe() {
   const [tentativa, setTentativa] = useState(0)
   const { dados, erro } = useGestao('/api/gestao/equipe', tentativa)

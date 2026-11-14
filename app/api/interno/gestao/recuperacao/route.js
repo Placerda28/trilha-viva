@@ -45,6 +45,7 @@ const get = async (req) => {
     busca: url.searchParams.get('busca'),
     pagina: url.searchParams.get('pagina'),
     periodo,
+    listaSemPeriodo: url.searchParams.get('alcance') === 'tudo',
     mostrarTestes: url.searchParams.get('testes') === '1',
     whatsappAtivo: (await lerEstadoWhatsapp(db)).estado === 'ativo',
   })

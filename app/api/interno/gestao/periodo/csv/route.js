@@ -25,6 +25,7 @@ const get = async (req, admin) => {
     )
   }
   const linhas = await consultarPeriodoCsv(db, periodo)
+  if (linhas.length > 5000) return Response.json({ ok: false, erro: 'O período tem mais de 5000 linhas. Escolha um período menor.' }, { status: 400, headers: cabecalhosPrivados })
   const recusa = await registrarExportacao(db, admin, 'vendas', { de: periodo.de, ate: periodo.ate, linhas: linhas.length })
   if (recusa) return recusa
   const nome = `vendas-${periodo.de}-a-${periodo.ate}.csv`

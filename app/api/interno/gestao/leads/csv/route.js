@@ -18,7 +18,8 @@ const get = async (req, admin) => {
   if (!db) {
     return Response.json({ ok: false, erro: 'Banco indisponível no momento.' }, { status: 503, headers: cabecalhosPrivados })
   }
-  const linhas = await consultarLeadsCsv(db, periodo)
+  const linhas = await consultarLeadsCsv(db, { ...periodo, q: url.searchParams.get('q') })
+  if (linhas.length > 5000) return Response.json({ ok: false, erro: 'O período tem mais de 5000 linhas. Escolha um período ou filtro menor.' }, { status: 400, headers: cabecalhosPrivados })
   const recusa = await registrarExportacao(db, admin, 'leads', { de: periodo.de, ate: periodo.ate, linhas: linhas.length })
   if (recusa) return recusa
   return new Response(gerarCsv(CABECALHO_LEADS, linhas.map(linhaLeadCsv)), {

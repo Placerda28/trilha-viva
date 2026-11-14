@@ -20,13 +20,16 @@ function Bloco({ className }) {
 function EsqueletoPainel() {
   return (
     <div aria-hidden="true">
+      <Bloco className="mb-4 h-[88px]" />
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
           <Bloco key={i} className="h-[116px] sm:h-[124px]" />
         ))}
       </div>
+      <Bloco className="mt-4 h-[330px]" />
       <div className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        <Bloco className="h-[290px] xl:col-span-2" />
+        <Bloco className="h-[290px]" />
+        <Bloco className="h-[290px]" />
         <Bloco className="h-[290px]" />
       </div>
       <Bloco className="mt-4 h-24" />

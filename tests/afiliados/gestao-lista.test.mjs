@@ -1,6 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { listarAfiliados, POR_PAGINA } from '../../lib/afiliados/gestao-lista.js'
+import { extrato } from '../../lib/afiliados/gestao-financeiro.js'
+import { validarPeriodo } from '../../lib/gestao/datas.js'
 import { statusDoMes } from '../../lib/afiliados/status.js'
 import { pedirSaque } from '../../lib/afiliados/saque.js'
 import { gravarComprovante, marcarPago } from '../../lib/afiliados/saques-gestao.js'
@@ -49,6 +51,7 @@ test('a lista bate com statusDoMes para afiliados em níveis diferentes', async 
   const l = await listarAfiliados(db, { ordem: 'codigo', dir: 'asc' }, AGORA)
   assert.equal(l.mes, MES)
   assert.equal(l.total, 5)
+  assert.equal((await extrato(db, { periodo: validarPeriodo('2026-11-01', '2026-11-30'), pagina: 10001 })).pagina, 1)
   for (const af of [a, b, c, d, e]) {
     const s = await statusDoMes(db, af.id, MES, AGORA)
     const i = l.itens.find((x) => x.id === af.id)

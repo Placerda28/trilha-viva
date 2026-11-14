@@ -7,7 +7,9 @@ import BarrasHorizontais from './BarrasHorizontais'
 import { CabecalhoPagina } from './Casca'
 import { useDetalhe } from './DetalheCliente'
 import Grafico from './Grafico'
+import Funil3D from './Funil3D'
 import Kpi, { variacao } from './Kpi'
+import { serieDeTicket } from '@/lib/gestao/datas'
 import Segmentos from './Segmentos'
 import { FORMAS, dataHora, diaPorExtenso, moeda, numero } from './formato'
 
@@ -85,6 +87,7 @@ export default function Painel({ painel, avisos, agora, agrupar = 'dia', onAgrup
   const { atual, anterior, serie, fontes, ultimas_vendas: vendas, atividade } = painel
   const porDia = serie.map((s) => s.centavos)
   const porDiaCompras = serie.map((s) => s.compras)
+  const tickets = serieDeTicket(serie)
   const serieVendas = serie.map((s) => ({ chave: s.chave, rotulo: s.rotulo, valor: s.compras }))
 
   return (
@@ -99,6 +102,16 @@ export default function Painel({ painel, avisos, agora, agrupar = 'dia', onAgrup
         }
         comPeriodo
       />
+
+      {painel.agora && <section aria-label="Agora" className="mb-4 grid grid-cols-3 gap-2 rounded-md border border-line bg-paper p-3 sm:gap-4 sm:p-5">
+        {[
+          ['Hoje', painel.agora.hoje], ['Ontem', painel.agora.ontem], ['Este mês', painel.agora.mes],
+        ].map(([rotulo, dados]) => <div key={rotulo} className="min-w-0 border-r border-line last:border-0">
+          <p className="text-[12px] text-ink-muted sm:text-[14px]">{rotulo}</p>
+          <p className="figs mt-1 text-[15px] font-bold text-ink sm:text-[22px]">{reais(dados.centavos)}</p>
+          <p className="figs text-[11px] text-ink-muted sm:text-[13px]">{numero(dados.vendas)} {dados.vendas === 1 ? 'venda' : 'vendas'}</p>
+        </div>)}
+      </section>}
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Kpi
@@ -120,11 +133,13 @@ export default function Painel({ painel, avisos, agora, agrupar = 'dia', onAgrup
           rotulo="Ticket médio"
           valor={moeda(atual.ticket_centavos)}
           variacao={variacao(atual.ticket_centavos, anterior.ticket_centavos)}
+          serie={tickets}
+          rotuloSerie="Ticket médio por dia"
         />
         <Kpi
           rotulo="Carrinho para compra"
           valor={PCT.format(atual.conversao / 100)}
-          variacao={variacao(atual.conversao, anterior.conversao)}
+          pontos={anterior.carrinhos > 0 ? atual.conversao - anterior.conversao : null}
           detalhe={
             numero(atual.carrinhos) + (atual.carrinhos === 1 ? ' carrinho, ' : ' carrinhos, ') +
             numero(atual.recuperados) + (atual.recuperados === 1 ? ' recuperado' : ' recuperados')
@@ -136,7 +151,7 @@ export default function Painel({ painel, avisos, agora, agrupar = 'dia', onAgrup
         className="mt-4"
         altura={300}
         titulo={'Faturamento por ' + NOME_AGRUPAR[agrupar]}
-        subtitulo={'Total ' + moeda(atual.faturamento_centavos) + ' · antes ' + moeda(anterior.faturamento_centavos)}
+        subtitulo={'Total ' + moeda(atual.faturamento_centavos) + ' · antes ' + moeda(anterior.faturamento_centavos) + ' · bruto, sem taxas'}
         serie={serie}
         acoes={
           <Segmentos
@@ -150,7 +165,7 @@ export default function Painel({ painel, avisos, agora, agrupar = 'dia', onAgrup
       />
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        <div className="xl:col-span-2">
+        <div>
           <Grafico
             className="h-full"
             altura={260}
@@ -161,6 +176,16 @@ export default function Painel({ painel, avisos, agora, agrupar = 'dia', onAgrup
             unidade="vendas pagas"
           />
         </div>
+        <Cartao id="funil-checkout" titulo="Funil do checkout">
+          <p className="mt-1 text-[12px] text-ink-muted">Carrinho = pessoa que deixou nome, e-mail e celular no checkout.</p>
+          <div className="mt-4">
+            <Funil3D rotulo="Funil do checkout" etapas={[
+              { id: 'carrinhos', rotulo: 'Carrinhos', valor: atual.carrinhos },
+              { id: 'pagaram', rotulo: 'Pagaram', valor: atual.carrinhos_pagos },
+              { id: 'recuperados', rotulo: 'Recuperados por lembrete', valor: atual.recuperados },
+            ]} />
+          </div>
+        </Cartao>
         <Cartao
           id="de-onde-vieram"
           titulo="De onde vieram as vendas"

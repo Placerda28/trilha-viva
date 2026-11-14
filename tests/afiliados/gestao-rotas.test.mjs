@@ -97,6 +97,9 @@ test('lista: membro lê; filtros e ordem chegam do endereço', async () => {
   assert.equal((await (await get(R.lista, `?q=${encodeURIComponent(c.itens[0].codigo.toLowerCase())}`)).json()).total, 1)
   assert.equal((await (await get(R.lista)).json()).total, 2)
   assert.ok(a.id)
+  const invalido = await get(R.lista, '?mes=2026-13')
+  assert.equal(invalido.status, 400)
+  assert.match((await invalido.json()).erro, /Mês inválido/)
 })
 
 test('ficha: dados mascarados, id inválido ou inexistente dá 404', async () => {

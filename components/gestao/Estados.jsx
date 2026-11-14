@@ -1,3 +1,7 @@
+'use client'
+
+import { useState } from 'react'
+
 // Os estados que toda tela de gestão precisa: carregando, erro, vazio e a
 // troca de página.
 
@@ -81,12 +85,44 @@ export function Paginacao({ pagina, porPagina, total, onIr }) {
   )
 }
 
-// Botão de planilha. É um link comum: o navegador baixa o arquivo direto,
-// com o cookie da sessão, sem passar por JavaScript.
+export async function baixarCsv(href) {
+  try {
+    const res = await fetch(href, { cache: 'no-store' })
+    if (!res.ok) {
+      const corpo = await res.json().catch(() => null)
+      return res.status === 404 ? 'Sua sessão acabou. Entre de novo para continuar na gestão.' : corpo?.erro || 'Não consegui baixar a planilha agora.'
+    }
+    const nome = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') || '')?.[1] || 'planilha.csv'
+    const url = URL.createObjectURL(await res.blob())
+    const a = document.createElement('a')
+    a.href = url
+    a.download = nome
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 4000)
+    return ''
+  } catch {
+    return 'Falha de conexão. Confira a internet e tente de novo.'
+  }
+}
+
 export function BaixarPlanilha({ href }) {
+  const [baixando, setBaixando] = useState(false)
+  const [erro, setErro] = useState('')
+  async function baixar() {
+    setErro('')
+    setBaixando(true)
+    const falha = await baixarCsv(href)
+    setBaixando(false)
+    if (falha) setErro(falha)
+  }
   return (
-    <a href={href} download className="btn-quiet min-h-11 !px-4 !py-3 !text-[14.5px] whitespace-nowrap">
-      Baixar planilha
-    </a>
+    <span className="inline-flex flex-col items-start gap-1">
+      <button type="button" onClick={baixar} disabled={baixando} className="btn-quiet min-h-11 !px-4 !py-3 !text-[14.5px] whitespace-nowrap disabled:opacity-60">
+        {baixando ? 'Baixando…' : 'Baixar planilha'}
+      </button>
+      {erro && <span role="alert" className="text-[13px] text-signal-deep">{erro}</span>}
+    </span>
   )
 }

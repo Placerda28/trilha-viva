@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useGestao } from './useGestao'
-import { postarGestao, linkAcao } from './AcaoGestao'
+import AcaoGestao, { postarGestao } from './AcaoGestao'
 import { Aviso, Esqueleto } from './Estados'
 import { dataHora } from './formato'
 import { formatarCelular } from '@/lib/gestao/csv'
@@ -94,9 +94,9 @@ export default function ContatosTeste() {
                   Adicionado por {c.criado_por}{c.criado_em ? ' em ' + dataHora(c.criado_em.replace(' ', 'T') + (c.criado_em.endsWith('Z') ? '' : 'Z')).slice(0, 5) : ''}
                 </span>}
               </span>
-              <button type="button" onClick={() => enviar('remover', c.valor)} disabled={salvando} className={linkAcao}>
-                Remover
-              </button>
+              <AcaoGestao rotulo="Remover" explicacao={'Remover o contato de teste ' + c.valor + '?'} confirmar="Sim, remover"
+                url="/api/gestao/testes" corpo={{ acao: 'remover', valor: c.valor }}
+                onFeito={(r) => { setMsg({ tipo: 'ok', texto: r.aviso || 'Removido.' }); setTentativa((n) => n + 1) }} />
             </li>
           ))}
         </ul>

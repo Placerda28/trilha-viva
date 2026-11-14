@@ -84,7 +84,7 @@ export default function Instagram() {
               <input id="busca-instagram" type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nome ou @" className="mt-2 min-h-11 w-full rounded-full border border-line bg-paper px-4 py-2 text-[14px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none" />
             </div>
             {lista.length === 0 ? (
-              <p className="px-4 py-6 text-center text-[13.5px] text-ink-muted">Nenhuma conversa encontrada.</p>
+              <p className="px-4 py-6 text-center text-[13.5px] text-ink-muted">Nenhuma entre as 50 conversas mais recentes.</p>
             ) : (
               <ul className="min-h-0 flex-1 overflow-y-auto" aria-label="Conversas">
                 {lista.map((c) => <ItemDaLista key={c.igsid} c={c} ativa={c.igsid === aberta} onAbrir={setAberta} />)}
