@@ -9,8 +9,8 @@ const valorDe = (s) => s.valor ?? s.centavos ?? 0
 // Barras por faixa (dia, semana ou mês), em SVG feito à mão: uma biblioteca de
 // gráficos pesaria mais que a tela inteira.
 //
-// Uma série só, então sem legenda: o título diz o que é. Barras em preto; a
-// que está sob o dedo ou o mouse fica vermelha e mostra o valor. O vermelho
+// Uma série só, então sem legenda: o título diz o que é. Prismas em preto; o
+// que está sob o dedo, mouse ou teclado fica vermelho e mostra o valor. O vermelho
 // nunca pinta o gráfico todo, só a barra apontada. As cores vêm dos tokens do
 // Tailwind (fill-ink, stroke-line...), para uma troca de paleta chegar aqui.
 //
@@ -22,27 +22,17 @@ const MARGEM_BAIXO = 26
 // Espaço para o rótulo do pico, acima da barra mais alta.
 const MARGEM_TOPO = 22
 
-// Arredonda o teto do eixo para um número "redondo" (1, 2 ou 5 vezes uma
-// potência de 10), para as linhas de guia caírem em valores legíveis.
+// Arredonda o teto do eixo para um número "redondo" (1, 2, 3, 4, 5, 6 ou 8
+// vezes uma potência de 10), para as linhas de guia caírem em valores legíveis
+// sem deixar metade do gráfico vazia.
 function tetoRedondo(v) {
   if (v <= 0) return 100
   const p = Math.pow(10, Math.floor(Math.log10(v)))
-  for (const m of [1, 2, 5, 10]) if (v <= m * p) return m * p
+  for (const m of [1, 2, 3, 4, 5, 6, 8, 10]) if (v <= m * p) return m * p
   return 10 * p
 }
 
-// Barra com os dois cantos de cima arredondados, presa na linha de base.
-function barra(x, y, w, h) {
-  const r = Math.min(4, w / 2, h)
-  return (
-    'M' + x + ' ' + (y + h) +
-    'V' + (y + r) +
-    'Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y +
-    'H' + (x + w - r) +
-    'Q' + (x + w) + ' ' + y + ' ' + (x + w) + ' ' + (y + r) +
-    'V' + (y + h) + 'Z'
-  )
-}
+const pontos = (...pares) => pares.map(([x, y]) => x + ',' + y).join(' ')
 
 export default function Grafico({ serie, titulo, subtitulo, acoes, className = 'mt-6', formato = 'moeda', unidade = '', altura: ALTURA = 200 }) {
   const inteiro = formato === 'numero'
@@ -68,11 +58,15 @@ export default function Grafico({ serie, titulo, subtitulo, acoes, className = '
   const maior = serie.reduce((m, s) => Math.max(m, valorDe(s)), 0)
   // Contagem: teto par, para a guia do meio cair num número inteiro.
   const teto = inteiro ? Math.ceil(tetoRedondo(Math.max(maior, 4)) / 2) * 2 : tetoRedondo(maior)
-  const areaW = Math.max(0, largura - MARGEM_ESQ)
-  const areaH = ALTURA - MARGEM_TOPO - MARGEM_BAIXO
+  const areaW = Math.max(0, largura - MARGEM_ESQ - 12)
   const faixa = n ? areaW / n : 0
-  const vao = faixa > 8 ? 2 : 1
-  const barraW = Math.max(1, Math.min(40, faixa - vao))
+  // Em série densa, a profundidade encolhe para preservar a frente seguinte.
+  const profundidade = Math.max(2, Math.min(12, faixa / 3, (faixa - 1) / 2))
+  const barraW = Math.max(1, Math.min(40, faixa - profundidade))
+  const dx = profundidade
+  const dy = -profundidade * 0.6
+  const areaH = ALTURA - MARGEM_TOPO - MARGEM_BAIXO + dy
+  const base = MARGEM_TOPO + areaH - dy
   const passoRotulo = Math.max(1, Math.ceil(n / (largura < 520 ? 4 : 8)))
   // Gráfico alto ganha guias a cada quarto; contagem só em números inteiros.
   const guias = (ALTURA >= 260 ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.5, 1])
@@ -130,10 +124,11 @@ export default function Grafico({ serie, titulo, subtitulo, acoes, className = '
         {largura > 0 && (
           <svg width={largura} height={ALTURA} aria-hidden="true" className="block">
             {guias.map((g) => {
-              const y = MARGEM_TOPO + areaH - (g / teto) * areaH
+              const y = base - (g / teto) * areaH
               return (
                 <g key={g}>
-                  <line x1={MARGEM_ESQ} x2={largura} y1={y} y2={y} className="stroke-line" strokeWidth="1" />
+                  <line x1={MARGEM_ESQ + dx} x2={largura} y1={y + dy} y2={y + dy} className="stroke-line" strokeWidth="1" />
+                  <line x1={MARGEM_ESQ} x2={MARGEM_ESQ + dx} y1={y} y2={y + dy} className="stroke-line" strokeWidth="1" />
                   <text x={MARGEM_ESQ - 8} y={y + 4} textAnchor="end" fontSize="11.5" className="figs fill-ink-muted">
                     {curto(g)}
                   </text>
@@ -141,24 +136,27 @@ export default function Grafico({ serie, titulo, subtitulo, acoes, className = '
               )
             })}
 
+            <polygon points={pontos([MARGEM_ESQ, base], [largura - dx, base], [largura, base + dy], [MARGEM_ESQ + dx, base + dy])} className="fill-paper stroke-line" strokeWidth="0.5" />
+
             {serie.map((s, i) => {
               const h = (valorDe(s) / teto) * areaH
               if (h <= 0) return null
               const x = MARGEM_ESQ + i * faixa + (faixa - barraW) / 2
-              const y = MARGEM_TOPO + areaH - h
+              const y = base - h
+              const destaque = i === ativo
               return (
-                <path
-                  key={s.chave}
-                  d={barra(x, y, barraW, h)}
-                  className={(i === ativo ? 'fill-signal' : 'fill-ink') + ' transition-[fill] duration-150'}
-                />
+                <g key={s.chave}>
+                  <polygon points={pontos([x + barraW, y], [x + barraW + dx, y + dy], [x + barraW + dx, base + dy], [x + barraW, base])} className={(destaque ? 'fill-signal-deep' : 'fill-ink-muted') + ' transition-[fill] duration-150'} />
+                  <polygon points={pontos([x, y], [x + dx, y + dy], [x + barraW + dx, y + dy], [x + barraW, y])} className={(destaque ? 'fill-signal-lite' : 'fill-mist-deep') + ' stroke-line transition-[fill] duration-150'} strokeWidth="0.5" />
+                  <rect x={x} y={y} width={barraW} height={h} className={(destaque ? 'fill-signal' : 'fill-ink') + ' transition-[fill] duration-150'} />
+                </g>
               )
             })}
 
             {ativo === null && pico >= 0 && (
               <text
                 x={MARGEM_ESQ + pico * faixa + faixa / 2}
-                y={MARGEM_TOPO + areaH - (maior / teto) * areaH - 6}
+                y={base - (maior / teto) * areaH + dy - 6}
                 textAnchor="middle"
                 fontSize="12"
                 className="figs fill-ink font-semibold"
@@ -172,7 +170,7 @@ export default function Grafico({ serie, titulo, subtitulo, acoes, className = '
                 x1={centroX}
                 x2={centroX}
                 y1={MARGEM_TOPO}
-                y2={MARGEM_TOPO + areaH}
+                y2={base}
                 className="stroke-mist-deep"
                 strokeWidth="1"
                 strokeDasharray="3 3"

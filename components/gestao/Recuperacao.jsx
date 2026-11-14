@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useGestao } from './useGestao'
 import Segmentos from './Segmentos'
 import { Aviso, Esqueleto, Vazio, BaixarPlanilha } from './Estados'
@@ -27,6 +27,11 @@ const FILTROS = [
   { id: 'sem_envio', rotulo: 'Sem envio' },
 ]
 
+const ALCANCES = [
+  { id: 'periodo', rotulo: 'No período' },
+  { id: 'tudo', rotulo: 'Todo o histórico' },
+]
+
 const VAZIO = {
   todos: ['Ninguém por aqui ainda', 'Quem preencher o formulário de compra e não pagar aparece aqui.'],
   andamento: ['Ninguém em recuperação agora', 'Quem está esperando ou recebendo a sequência de e-mails aparece aqui.'],
@@ -36,6 +41,8 @@ const VAZIO = {
 }
 
 export default function Recuperacao() {
+  const router = useRouter()
+  const params = useSearchParams()
   const periodo = usePeriodo()
   const [filtro, setFiltro] = useState('todos')
   const [texto, setTexto] = useState('')
@@ -45,7 +52,8 @@ export default function Recuperacao() {
   const [testes, setTestes] = useState(false)
 
   // A busca do topo leva até aqui com ?q=: a caixa já abre preenchida.
-  const qDaUrl = useSearchParams().get('q')
+  const qDaUrl = params.get('q')
+  const alcance = params.get('alcance') === 'tudo' ? 'tudo' : 'periodo'
   useEffect(() => {
     if (qDaUrl) setTexto(qDaUrl.slice(0, 80))
   }, [qDaUrl])
@@ -61,7 +69,7 @@ export default function Recuperacao() {
 
   const busca = 'filtro=' + filtro + '&busca=' + encodeURIComponent(q)
   const { dados, erro, carregando } = useGestao(
-    periodo.valido ? '/api/gestao/recuperacao?' + busca + '&de=' + periodo.de + '&ate=' + periodo.ate + '&pagina=' + pagina + (testes ? '&testes=1' : '') : null,
+    periodo.valido ? '/api/gestao/recuperacao?' + busca + '&de=' + periodo.de + '&ate=' + periodo.ate + '&pagina=' + pagina + (alcance === 'tudo' ? '&alcance=tudo' : '') + (testes ? '&testes=1' : '') : null,
     tentativa
   )
   const t = dados?.totais
@@ -112,9 +120,21 @@ export default function Recuperacao() {
         {t && !t.whatsapp_ativo ? ' (desligado no momento)' : ''}.
       </Collapsible.Content>
       </Collapsible.Root>
-      <p className="mt-2 text-[13px] text-ink-muted">O período filtra os cartões. A lista e a planilha mostram todo o histórico; a planilha não inclui testes.</p>
+      <p className="mt-2 text-[13px] text-ink-muted">Os cartões seguem o período. A lista e a planilha seguem o período ou todo o histórico, conforme o alcance escolhido. Testes entram quando Mostrar testes está marcado.</p>
 
       <div className="mt-6 space-y-4">
+        <Segmentos
+          opcoes={ALCANCES}
+          valor={alcance}
+          onEscolher={(id) => {
+            const proximo = new URLSearchParams(params.toString())
+            if (id === 'tudo') proximo.set('alcance', 'tudo')
+            else proximo.delete('alcance')
+            setPagina(1)
+            router.replace('?' + proximo.toString(), { scroll: false })
+          }}
+          rotulo="Alcance da lista"
+        />
         <Segmentos
           opcoes={FILTROS}
           valor={filtro}
@@ -134,7 +154,7 @@ export default function Recuperacao() {
             aria-label="Buscar por nome, e-mail ou celular"
             className="w-full rounded border border-line bg-white px-4 py-3 text-[15px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
           />
-          <BaixarPlanilha href={'/api/gestao/recuperacao/csv?' + busca} />
+          <BaixarPlanilha href={'/api/gestao/recuperacao/csv?' + busca + (alcance === 'tudo' ? '' : '&de=' + periodo.de + '&ate=' + periodo.ate) + (testes ? '&testes=1' : '')} />
         </div>
         <MostrarTestes
           valor={testes}

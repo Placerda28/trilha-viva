@@ -2,6 +2,7 @@ import { getDB } from '@/lib/d1'
 import { naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
 import { resposta } from '@/lib/gestao/saques-rota'
 import { listarAfiliados } from '@/lib/afiliados/gestao-lista'
+import { MES_VALIDO } from '@/lib/afiliados/relatorio'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,6 +11,8 @@ const get = async (req) => {
   const db = getDB()
   if (!db) return resposta({ ok: false, erro: 'Banco indisponível no momento.' }, 503)
   const q = new URL(req.url).searchParams
+  const mes = q.get('mes')
+  if (mes && !MES_VALIDO.test(mes)) return resposta({ ok: false, erro: 'Mês inválido. Use AAAA-MM.' }, 400)
   const lista = await listarAfiliados(db, {
     q: q.get('q'),
     status: q.get('status'),

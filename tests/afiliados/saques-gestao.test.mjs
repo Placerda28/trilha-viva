@@ -23,6 +23,7 @@ test('listarSaques: fila com Pix inteiro, créditos, dias esperando e resumo', a
   const { id, valor } = await saqueDe(db)
   const l = await listarSaques(db, { status: 'pendentes', pagina: 1 }, AGORA)
   assert.equal(l.total, 1)
+  assert.equal((await listarSaques(db, { pagina: 10001 }, AGORA)).pagina, 1)
   const s = l.itens[0]
   assert.equal(s.id, id)
   assert.equal(s.valor_centavos, valor)

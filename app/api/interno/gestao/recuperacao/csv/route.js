@@ -9,6 +9,7 @@ import {
 import { gerarCsv, hojeBrasilia } from '@/lib/gestao/csv'
 import { cabecalhosPrivados, naoEncontrado, soAdmin } from '@/lib/gestao/permissao'
 import { registrarExportacao } from '@/lib/gestao/registro'
+import { validarPeriodo } from '@/lib/gestao/datas'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -22,6 +23,12 @@ const get = async (req, admin) => {
       { status: 400, headers: cabecalhosPrivados }
     )
   }
+  const de = url.searchParams.get('de')
+  const ate = url.searchParams.get('ate')
+  const periodo = de || ate ? validarPeriodo(de, ate) : null
+  if (periodo && !periodo.ok) {
+    return Response.json({ ok: false, erro: periodo.erro }, { status: 400, headers: cabecalhosPrivados })
+  }
 
   const db = getDB()
   if (!db) {
@@ -34,8 +41,11 @@ const get = async (req, admin) => {
   const linhas = await consultarRecuperacaoCsv(db, {
     filtro,
     busca: url.searchParams.get('busca'),
+    periodo,
+    mostrarTestes: url.searchParams.get('testes') === '1',
     whatsappAtivo: (await lerEstadoWhatsapp(db)).estado === 'ativo',
   })
+  if (linhas.length > 5000) return Response.json({ ok: false, erro: 'O período tem mais de 5000 linhas. Escolha um período ou filtro menor.' }, { status: 400, headers: cabecalhosPrivados })
   const recusa = await registrarExportacao(db, admin, 'recuperacao', { filtro, linhas: linhas.length })
   if (recusa) return recusa
   return new Response(gerarCsv(CABECALHO_RECUPERACAO, linhas.map(linhaRecuperacaoCsv)), {

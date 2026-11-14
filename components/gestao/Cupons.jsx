@@ -40,7 +40,7 @@ function Campo({ id, rotulo, erro, dica, children }) {
       </label>
       <div className="mt-1">{children}</div>
       {erro ? (
-        <p id={id + '-erro'} className="mt-1 text-[13px] text-signal-deep">
+        <p id={id + '-erro'} role="alert" className="mt-1 text-[13px] text-signal-deep">
           {erro}
         </p>
       ) : dica ? (
@@ -159,9 +159,10 @@ function NovoCupom({ onCriado }) {
               placeholder={form.tipo === 'percentual' ? 'Ex.: 30 (%)' : 'Ex.: 20,00 (R$)'}
               aria-label={form.tipo === 'percentual' ? 'Porcentagem de desconto' : 'Desconto em reais'}
               aria-invalid={erro.campo === 'valor'}
+              aria-describedby={erro.campo === 'valor' ? 'c-valor-erro' : undefined}
               className={classeCampo('valor')}
             />
-            {erroDe('valor') && <p className="text-[13px] text-signal-deep">{erroDe('valor')}</p>}
+            {erroDe('valor') && <p id="c-valor-erro" role="alert" className="text-[13px] text-signal-deep">{erroDe('valor')}</p>}
           </div>
         </div>
 
@@ -174,6 +175,7 @@ function NovoCupom({ onCriado }) {
             max={form.valido_ate || somarDias(hoje, 365)}
             onChange={mudar('valido_de')}
             aria-invalid={erro.campo === 'valido_de'}
+            aria-describedby={erro.campo === 'valido_de' ? 'c-inicio-erro' : undefined}
             className={classeCampo('valido_de')}
           />
         </Campo>
@@ -187,6 +189,7 @@ function NovoCupom({ onCriado }) {
             max={somarDias(hoje, 365)}
             onChange={mudar('valido_ate')}
             aria-invalid={erro.campo === 'valido_ate'}
+            aria-describedby={erro.campo === 'valido_ate' ? 'c-validade-erro' : undefined}
             className={classeCampo('valido_ate')}
           />
         </Campo>
@@ -201,6 +204,7 @@ function NovoCupom({ onCriado }) {
             value={form.limite_usos}
             onChange={mudar('limite_usos')}
             aria-invalid={erro.campo === 'limite_usos'}
+            aria-describedby={erro.campo === 'limite_usos' ? 'c-limite-erro' : undefined}
             className={classeCampo('limite_usos')}
           />
         </Campo>
