@@ -16,7 +16,7 @@ export default function SairBotao() {
   }
 
   return (
-    <button type="button" onClick={sair} disabled={saindo} className="link-quiet text-[13.5px] font-semibold">
+    <button type="button" onClick={sair} disabled={saindo} className="link-quiet inline-flex min-h-11 items-center text-[13.5px] font-semibold">
       {saindo ? 'Saindo…' : 'Sair desta conta'}
     </button>
   )

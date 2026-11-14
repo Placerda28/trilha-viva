@@ -63,15 +63,14 @@ export default function RelatarProblema({ nomeInicial = '', emailInicial = '' })
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Relatar um problema"
-        title="Relatar um problema"
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line text-ink-muted transition-colors hover:border-signal-deep hover:text-signal-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+        className="inline-flex min-h-11 items-center gap-2 rounded border border-line px-3 text-ink-muted transition-colors hover:border-ink hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
       >
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
           <circle cx="9" cy="9" r="7.2" stroke="currentColor" strokeWidth="1.5" />
           <path d="M9 5.4v4.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           <circle cx="9" cy="12.3" r="0.95" fill="currentColor" />
         </svg>
+        <span>Relatar um problema</span>
       </button>
 
       <DialogContent>

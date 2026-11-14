@@ -3,9 +3,7 @@ import { clienteAtual, temCompra } from '@/lib/sessao'
 import { usoDeHoje, POR_DIA, quandoVolta } from '@/lib/cota'
 import { b2Configurado } from '@/lib/b2'
 import { acervoPronto } from '@/lib/arquivos'
-import SairBotao from '@/components/SairBotao'
-import AcervoLista from '@/components/AcervoLista'
-import RelatarProblema from '@/components/RelatarProblema'
+import AcervoPainel from '@/components/AcervoPainel'
 import { adminAtual } from '@/lib/gestao/permissao'
 import { getDB } from '@/lib/d1'
 import { deveConvidarAfiliado } from '@/lib/afiliados/conta'
@@ -82,23 +80,12 @@ export default async function AcervoPage({ searchParams }) {
     <div className="shell max-w-4xl pb-24 pt-14">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-ink-faint">
-            Sua conta
-          </p>
-          <h1 className="mt-3 font-bold text-[32px] leading-[1.12] text-ink sm:text-[38px]">
+          <h1 className="font-bold text-[32px] leading-[1.12] text-ink sm:text-[38px]">
             {primeiroNome ? `Olá, ${primeiroNome}` : 'Meu acervo'}
           </h1>
           <p className="mt-2 text-[14px] text-ink-muted">{cliente.email}</p>
         </div>
-        <div className="flex items-center gap-4">
-          {admin && (
-            <a href="/gestao" className="link-quiet text-[14.5px] font-semibold">
-              Gestão
-            </a>
-          )}
-          <RelatarProblema nomeInicial={cliente.nome || ''} emailInicial={cliente.email || ''} />
-          <SairBotao />
-        </div>
+        {admin && <a href="/gestao" className="link-quiet inline-flex min-h-11 items-center text-[14.5px] font-semibold">Gestão</a>}
       </div>
 
       {aviso && (
@@ -114,6 +101,7 @@ export default async function AcervoPage({ searchParams }) {
         <ConviteAfiliado exemplos={EXEMPLOS_CONVITE} valorMaximo={VALOR_MAXIMO} />
       )}
 
+      <AcervoPainel nome={cliente.nome || ''} email={cliente.email || ''} restam={uso.restam} limite={uso.limite} volta={quandoVolta()} liberado={Boolean(comprou && pronto)}>
       {!comprou && admin ? (
         // Quem é da equipe de gestão e não comprou (nem teve o acervo liberado)
         // não está "sem compra": está no lugar errado. Leva direto à gestão.
@@ -146,19 +134,8 @@ export default async function AcervoPage({ searchParams }) {
             e-mail quando estiver liberado.
           </p>
         </div>
-      ) : (
-        <AcervoLista restam={uso.restam} limite={uso.limite} />
-      )}
-
-      <p className="mt-10 text-[13px] leading-relaxed text-ink-faint">
-        São {POR_DIA} downloads por dia, renovando à meia-noite — o limite protege o acervo de cópia
-        em massa, não o seu ministério. Este acesso é pessoal; compartilhar a senha pode suspender a
-        conta, conforme os{' '}
-        <a href="/termos" className="link-quiet font-semibold">
-          termos de uso
-        </a>
-        .
-      </p>
+      ) : null}
+      </AcervoPainel>
     </div>
   )
 }
