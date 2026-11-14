@@ -57,6 +57,15 @@ export function avisosDaApi(d, agora) {
       href: '/gestao/clientes',
     })
   }
+  if (d.sem_download > 0) {
+    lista.push({
+      id: 'sem-download',
+      icone: 'downloads',
+      texto: plural(d.sem_download, 'cliente comprou', 'clientes compraram') + ' e ainda não ' + (d.sem_download === 1 ? 'baixou' : 'baixaram') + ' nada',
+      acao: 'Ver clientes',
+      href: '/gestao/clientes',
+    })
+  }
   if (d.meta_falhou_30d > 0) {
     lista.push({
       id: 'meta',

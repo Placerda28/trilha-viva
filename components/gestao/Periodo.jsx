@@ -87,7 +87,7 @@ function Vendas({ periodo }) {
 
   return (
     <section className="[&_.figs]:break-words">
-      <CabecalhoPagina titulo="Vendas" texto="Compras pagas e comparação com o período anterior de mesma duração." comPeriodo />
+      <CabecalhoPagina titulo="Pedidos" texto="Compras pagas e comparação com o período anterior de mesma duração." comPeriodo />
       {!valido ? <p role="alert">{periodo.erro}</p> : erro ? <Aviso erro={erro} onTentar={recarregar} /> : !dados ? <Esqueleto linhas={4} /> : (
         <div aria-busy={carregando} className={carregando ? 'opacity-60' : ''}>
           {comparacao.erro && <Aviso erro={comparacao.erro} onTentar={recarregar} />}

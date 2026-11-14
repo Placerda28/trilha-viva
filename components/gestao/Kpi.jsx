@@ -9,15 +9,23 @@ export function variacao(atual, anterior) {
 }
 
 const PERCENTUAL = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 })
+const PONTOS = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+
+export function compararKpi(variacao, pontos) {
+  const emPontos = pontos !== undefined && pontos !== null
+  const valor = emPontos ? pontos : variacao
+  const sem = valor === null || valor === undefined || Number.isNaN(valor)
+  const zero = !sem && Math.abs(valor) < (emPontos ? 0.05 : 0.0005)
+  return { emPontos, sem, zero, negativa: !sem && !zero && valor < 0,
+    texto: emPontos ? PONTOS.format(Math.abs(valor)) + ' p.p.' : PERCENTUAL.format(Math.abs(valor)) }
+}
 
 // Cartão de número único (plano 5.3). Variação: ▲ em preto, ▼ em vermelho de
 // texto e "—" sem comparação. Nunca verde: a paleta não tem.
 // `invertida`: para números que pioram quando sobem (custo), o vermelho vai na subida.
-export default function Kpi({ rotulo, valor, variacao: v, detalhe, serie, rotuloSerie, invertida = false }) {
-  const sem = v === null || v === undefined || Number.isNaN(v)
-  const zero = !sem && Math.abs(v) < 0.0005
-  const negativa = !sem && !zero && v < 0
-  const ruim = invertida ? !sem && !zero && v > 0 : negativa
+export default function Kpi({ rotulo, valor, variacao: v, pontos, detalhe, serie, rotuloSerie, invertida = false }) {
+  const { emPontos, sem, zero, negativa, texto } = compararKpi(v, pontos)
+  const ruim = invertida ? !sem && !zero && !negativa : negativa
   return (
     <div className="rounded-md border border-line bg-white p-4 sm:p-5">
       <p className="text-[13.5px] text-ink-muted">{rotulo}</p>
@@ -32,8 +40,8 @@ export default function Kpi({ rotulo, valor, variacao: v, detalhe, serie, rotulo
           ) : (
             <>
               <Icone nome={negativa ? 'desce' : 'sobe'} tamanho={9} />
-              <span>{PERCENTUAL.format(Math.abs(v))}</span>
-              <span className="sr-only">{negativa ? 'abaixo do período anterior' : 'acima do período anterior'}</span>
+              <span>{texto}</span>
+              <span className="sr-only">{(emPontos ? 'pontos percentuais ' : '') + (negativa ? 'abaixo do período anterior' : 'acima do período anterior')}</span>
             </>
           )}
         </p>

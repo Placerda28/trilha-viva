@@ -56,7 +56,7 @@ export default function ClientesLista() {
       <div className="mt-3">
         <Segmentos
           rotulo="Filtrar clientes"
-          opcoes={[{ id: 'todos', rotulo: 'Todos' }, { id: 'sem_senha', rotulo: 'Sem senha' }, { id: 'bloqueados', rotulo: 'Bloqueados' }, { id: 'testes', rotulo: 'Testes' }]}
+          opcoes={[{ id: 'todos', rotulo: 'Todos' }, { id: 'sem_senha', rotulo: 'Sem senha' }, { id: 'bloqueados', rotulo: 'Bloqueados' }, { id: 'testes', rotulo: 'Incluir testes' }]}
           valor={filtro}
           onEscolher={(v) => {
             setFiltro(v)

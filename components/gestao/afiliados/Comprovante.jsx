@@ -75,7 +75,7 @@ export default function Comprovante({ saqueId, enviado, aoEnviar, aoOcupar }) {
       <div className="flex items-center gap-3">
         <Miniatura arquivo={arquivo} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-semibold text-ink">{arquivo.name}</p>
+          <p title={arquivo.name} className="truncate text-[15px] font-semibold text-ink">{arquivo.name}</p>
           <p className="figs text-[13.5px] text-ink-muted">
             {tipoDoArquivo(arquivo)}, {tamanhoTexto(arquivo.size)}
           </p>

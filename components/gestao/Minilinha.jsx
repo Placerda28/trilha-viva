@@ -25,12 +25,12 @@ export default function Minilinha({ serie, rotulo = 'Tendência no período', cl
       <polyline
         points={pontos.map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}
         fill="none"
-        stroke="#0D0D0D"
+        className="stroke-ink"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx={ultimo[0]} cy={ultimo[1]} r="2.5" fill="#E5152D" />
+      <circle cx={ultimo[0]} cy={ultimo[1]} r="2.5" className="fill-signal" />
     </svg>
   )
 }

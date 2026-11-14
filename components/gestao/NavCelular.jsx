@@ -10,8 +10,8 @@ import { Conta, ListaMenu, comPeriodo, contagem, textoContador } from './BarraLa
 // menu inteiro (a mesma lista da barra lateral). O "Mais" e o ☰ do topo abrem
 // a mesma gaveta, que é controlada pela Casca.
 
-// Achados pelo ícone, que não muda quando o endereço muda (Vendas, na Fase 1,
-// ainda mora em /gestao/periodo). Item que não existe no menu fica de fora.
+// Achados pelo ícone: o atalho de Pedidos usa `vendas` e mantém o endereço.
+// Item que não existe no menu fica de fora.
 const ATALHOS = ['painel', 'vendas', 'clientes', 'whatsapp']
 
 function achaItem(menu, icone) {

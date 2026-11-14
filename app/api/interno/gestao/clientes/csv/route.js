@@ -22,6 +22,7 @@ const get = async (req, admin) => {
   }
   const url = new URL(req.url)
   const linhas = await consultarClientesCsv(db, url.searchParams.get('q'))
+  if (linhas.length > 5000) return Response.json({ ok: false, erro: 'A planilha tem mais de 5000 linhas. Escolha um filtro menor.' }, { status: 400, headers: cabecalhosPrivados })
   const recusa = await registrarExportacao(db, admin, 'clientes', { busca: url.searchParams.get('q') || '', linhas: linhas.length })
   if (recusa) return recusa
   return new Response(gerarCsv(CABECALHO_CLIENTES_COM_WHATSAPP, linhas.map(linhaClienteComWhatsappCsv)), {
