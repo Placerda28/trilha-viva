@@ -14,6 +14,7 @@
 - `app/`: páginas e rotas. As públicas são home, `musicas/`, `artistas/`, `blog/`, `como-usar/`, `faq/`, `assinar/`, `sucesso/`, `entrar/`, `criar-senha/`, `primeiro-acesso/`, `recuperar/`, `redefinir/`, `acervo/`, `privacidade/` e `termos/`.
 - `app/interno/gestao/`: menu de gestão (Painel, Vendas, Clientes, Cupons, Recuperação — com as conversas de WhatsApp em `recuperacao/whatsapp` —, Equipe, Registro). Só admin entra.
 - `app/api/`: `checkout`, `mercadopago`, `webhook`, `acesso`, `baixar`, `carrinho`, `conta`, `cupom`, `descadastrar` e `interno` (a gestão).
+- `GET /api/conta/downloads` lista somente os downloads da sessão, agrupados por música; `/dev-acervo` mostra uma prévia local sem login só em desenvolvimento.
 - `components/`: componentes do site. `components/gestao/` reúne as telas da gestão.
 - `lib/`: regras do negócio. `lib/gestao/` guarda o backend da gestão (permissão em `permissao.js`).
 - `lib/catalog.js` + `lib/catalog-dados-1…8.js`: o acervo, já pronto e ordenado. **Arquivo gerado, não edite à mão.** O gerador (`gerar_catalogo.py`) fica no Drive, em `01 - DEV (ARQUIVOS DO SITE)\Claude outputs\gerar catalogo`.

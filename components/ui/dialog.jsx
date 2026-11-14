@@ -50,10 +50,10 @@ const DialogContent = React.forwardRef(function DialogContent(
         {...props}
       >
         {children}
-        {/* 40x40 de área clicável para um ícone de 18px: o padrão do shadcn dá
+        {/* 44x44 de área clicável para um ícone de 18px: o padrão do shadcn dá
             26px, que passa raspando no mínimo da WCAG 2.2 e é apertado para o
             dedo. O ícone não muda de tamanho, só o alvo. */}
-        <DialogPrimitive.Close className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded text-ink-muted transition-colors hover:bg-mist hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none">
+        <DialogPrimitive.Close className="absolute right-3 top-3 grid h-11 w-11 place-items-center rounded text-ink-muted transition-colors hover:bg-mist hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:pointer-events-none">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
             <path d="M4.5 4.5l9 9M13.5 4.5l-9 9" stroke="currentColor" strokeWidth="1.8" />
           </svg>
