@@ -6,7 +6,7 @@ import { EmBreve, Icone } from './ds'
 import { esquecerUsuario } from './usuario'
 
 // Menu da conta (/minha-conta/*, MUDANÇAS §7).
-//   Computador (a partir de 1000 px): lista fixa, no lugar da coluna de 260 px.
+//   Computador (a partir de 1080 px, o mesmo `nav:` do cabeçalho): lista fixa, no lugar da coluna de 260 px.
 //   Celular: uma barra "Minha conta · [página atual]" que abre a lista inteira.
 //
 //   <MenuConta ativo="acervo" palco={palcoEstado()} plano="nenhum" nome="Ana Souza" email="ana@gmail.com" />

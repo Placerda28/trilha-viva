@@ -6,7 +6,7 @@ module.exports = {
       // Largura em que o cabeçalho passa do layout de celular (barra + menu em
       // tela cheia) para o de computador (links na barra). Um lugar só: usar
       // `nav:` nas classes do Header em vez de um valor solto.
-      screens: { nav: '1000px' },
+      screens: { nav: '1080px' },
       colors: {
         // Paleta "Preto no branco, corte vermelho" (06/09/2026). Base
         // acromatica: preto no texto e nos paineis, cinza-clarissimo de fundo,
