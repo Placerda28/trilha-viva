@@ -62,6 +62,14 @@ textarea {
     font-variant-numeric: tabular-nums;
   }
 
+  /* Capa da música (components/catalogo/Capa.jsx). Sem arquivo da capa, o Chrome
+     desenharia o ícone de imagem quebrada: o ::after (que só aparece quando a
+     imagem falha) cobre o ícone com o quadrado preto e as iniciais. */
+  .capa-img::after {
+    @apply absolute inset-0 flex items-center justify-center bg-ink text-white;
+    content: attr(data-sigla);
+  }
+
   /* Rótulo curto em caixa alta do DESIGN.md (label 13 px). Uso raro: só onde o
      desenho do componente pede, nunca como "etiqueta" acima de toda seção. */
   .rotulo {
