@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { criarBanco, D1Local } from '../gestao/_d1local.mjs'
 import { dataBrasilia, pedidosDoCliente, valorEmReais } from '../../lib/conta-pedidos.js'
 
-test('pedidos: só do cliente, sem teste, recentes primeiro, sem dados privados e numa consulta', async () => {
+test('pedidos: só do cliente, com compra de teste, recentes primeiro, sem dados privados e numa consulta', async () => {
   const banco = criarBanco()
   try {
     banco.exec(`INSERT INTO clientes (id, email) VALUES (911, 'um@exemplo.com'), (912, 'dois@exemplo.com');
@@ -17,6 +17,7 @@ test('pedidos: só do cliente, sem teste, recentes primeiro, sem dados privados 
     const itens = await pedidosDoCliente(db, 911)
     assert.equal(db.consultas, 1)
     assert.deepEqual(itens, [
+      { id: 3, criadoEm: '2026-10-01 15:00:00', valorCentavos: 100, forma: null, status: 'pago' },
       { id: 1, criadoEm: '2026-09-12 15:00:00', valorCentavos: 8990, forma: 'pix', status: 'pago' },
       { id: 2, criadoEm: '2026-03-02 15:00:00', valorCentavos: 8990, forma: 'cartao', status: 'reembolsado' },
     ])

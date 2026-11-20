@@ -23,5 +23,15 @@
     "sha256": "c41a8917a959b364b742682aa6da0af2175fef751ed103b6b8f9c2ca8297c5f6",
     "bytes": 88604,
     "parts": 15
+  },
+  "banda-palco-1600.webp": {
+    "sha256": "75f6c1934fc06541961fc8f0e58a334ffe1992928bd581c2798ec648bcabe1c8",
+    "bytes": 130470,
+    "parts": 22
+  },
+  "banda-palco-2560.webp": {
+    "sha256": "b5bf9050b9fc385a5cd41b5ee4d8b91100299c98eedb0c74814d5b2d75e3f087",
+    "bytes": 200826,
+    "parts": 34
   }
 }

@@ -4,6 +4,24 @@ Só o que ainda está aberto. O detalhe de cada frente fica em `tasks/arquivo/`,
 
 Os itens marcados "conferir" vieram de frentes antigas e podem já ter sido resolvidos por trabalho posterior. Confirme antes de agir e apague o que já estiver feito.
 
+## Depois do redesenho (registrado em 20/11/2026, a pedido do Paulo)
+
+O redesenho está no ar desde 20/11/2026 (PR #3, `444ed06`).
+- [ ] **Quando o Palco entrar no ar, trocar as páginas pelas telas "Palco lançado" do pacote do redesenho.**
+  - A chave é `PALCO_LANCADO` / `PALCO_DATA_LANCAMENTO` em `lib/palco.js`. Ela já tira o selo "Em breve" do cabeçalho, do menu da conta e do ConvitePalco, e mostra a seção "Assinatura do Palco" dos termos.
+  - Falta construir as telas do Palco lançado, seguindo o desenho:
+    - `/palco` vendendo a assinatura;
+    - `/palco/baixar`, `/palco/ativar` e `/palco/ajuda`;
+    - "Assinatura" e "Computadores" em `/minha-conta`;
+    - mensalidades em Pedidos.
+  - Depende do backend de assinatura do Palco.
+  - Referência: telas `Palco.dc.html`, `PalcoPaginas.dc.html`, `Ativar.dc.html`, `ConvitePalco.dc.html` e `Rodada 3 - Minha conta.dc.html` em `C:\dev\tv-redesenho-handoff\telas\`, e a cópia do pacote "Review Site" em `01 - DEV (ARQUIVOS DO SITE)` no Drive.
+  - Antes de publicar, a seção dos termos precisa de revisão jurídica.
+- [ ] **Fazer só depois de terminar as etapas em andamento:** baixar as capas de todas as VS do site e colocá-las nas prévias e listas, no lugar das iniciais.
+  - Lugares: catálogo, ficha da música, Minhas VS, artistas e coleções.
+  - Hoje só a home tem capa (`public/capas/<slug>.webp`, 112 px). Seguir o mesmo formato: um webp por slug, pequeno, com `<img>` simples, porque o Worker tem só 10 ms de CPU.
+  - Antes de começar, decidir com o Paulo de onde vêm as capas (Spotify, YouTube ou pasta do Drive) e combinar o uso das capas das gravadoras.
+
 ## Instagram IA — Fase 1 (início 10/11/2026, branch `instagram-ia-fase1`, pasta `C:\dev\tv-instagram`)
 
 Especificação: `tasks/instagram-ia-fase1.md`. Código pronto só no PC; nada publicado.
