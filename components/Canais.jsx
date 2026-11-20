@@ -19,8 +19,9 @@ import { Icone } from './ds'
 // `pasta` + arq + '.mp3' (preload="none": nada baixa antes do clique). Se um
 // arquivo não existir ainda, o player avisa e volta ao início, sem travar a página.
 
-// Prévia: Obediência (FHOP Music), trecho 2:40–3:10 da VS, -3 dB por canal para
-// a soma dos 8 não estourar. A VS não tem vocal.
+// Prévia: Obediência (FHOP Music), trecho 2:40–3:10 da VS. Ganho por canal: guia
+// ×0,71 (-3 dB), clique 20% abaixo disso (×0,57) e instrumentos 20% acima (×0,85),
+// pedido do Paulo em 20/11; a soma dos 8 fica em -2,5 dB de pico. A VS não tem vocal.
 export const CANAIS_PREVIA = [
   { nome: 'Clique', dest: 'FONE', n: 62, sinal: true, arq: 'clique' },
   { nome: 'Guia', dest: 'FONE', n: 46, sinal: true, arq: 'guia' },
