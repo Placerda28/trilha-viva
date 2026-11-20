@@ -13,11 +13,11 @@ import { Icone } from './ds'
 // os 8 da prévia de Obediência. Dado de música: SÓ da lista real do catálogo
 // (lib/ficha.js); o padrão existe para o player de demonstração.
 //
-// Player: 8 <audio> disparados juntos, um por canal; o nome do canal liga e
-// desliga (aria-pressed); para sozinho aos 30 s; os medidores sobem e descem
-// enquanto toca; a barra vermelha mostra o progresso. Os mp3 ficam em
-// `pasta` + arq + '.mp3' (preload="none": nada baixa antes do clique). Se um
-// arquivo não existir ainda, o player avisa e volta ao início, sem travar a página.
+// Player: Web Audio, um canal por mp3, todos começando no mesmo instante; o nome
+// do canal liga e desliga (aria-pressed); para sozinho aos 30 s; os medidores
+// sobem e descem enquanto toca; a barra vermelha mostra o progresso. Os mp3 ficam
+// em `pasta` + arq + '.mp3' e só baixam no primeiro clique (~2,9 MB). Se nenhum
+// arquivo existir, o player avisa e volta ao início, sem travar a página.
 
 // Prévia: Obediência (FHOP Music), trecho 2:40–3:10 da VS. Ganho por canal: guia
 // ×0,71 (-3 dB), clique 20% abaixo disso (×0,57) e instrumentos 20% acima (×0,85),
@@ -80,7 +80,14 @@ export default function Canais({
   const [seg, setSeg] = useState(0)
   const [desligados, setDesligados] = useState({})
   const [semAudio, setSemAudio] = useState(false)
-  const audios = useRef(null)
+  const [carregando, setCarregando] = useState(false)
+  // Web Audio: os 8 canais são baixados e decodificados antes e começam no mesmo
+  // instante do relógio de áudio (start(quando)). Com 8 <audio> soltos, o celular
+  // dava a partida em cada um com alguns ms de diferença e o som "flangeava".
+  const ctx = useRef(null)
+  const buffers = useRef(null)
+  const ganhos = useRef([])
+  const fontes = useRef([])
   const timer = useRef(null)
   const inicio = useRef(0)
   const desl = useRef(desligados)
@@ -88,56 +95,76 @@ export default function Canais({
 
   const parar = () => {
     clearInterval(timer.current)
-    ;(audios.current || []).forEach((a) => {
+    fontes.current.forEach((f) => {
       try {
-        a.pause()
+        f.stop()
       } catch {
-        /* áudio já descartado */
+        /* já parou */
       }
     })
+    fontes.current = []
   }
   useEffect(
     () => () => {
-      clearInterval(timer.current)
-      ;(audios.current || []).forEach((a) => a.pause())
+      parar()
+      ctx.current?.close().catch(() => {})
     },
     []
   )
 
-  function tocar() {
-    if (!audios.current) {
-      let falhas = 0
-      audios.current = canais.map((c) => {
-        const a = new Audio(pasta + (c.arq || c.nome.toLowerCase()) + '.mp3')
-        a.preload = 'none'
-        a.addEventListener('error', () => {
-          // Todos faltando = a prévia ainda não foi enviada: avisa e desliga o player.
-          falhas += 1
-          if (falhas >= canais.length) {
-            clearInterval(timer.current)
-            audios.current = null
-            setTocando(false)
-            setSemAudio(true)
-          }
-        })
-        return a
+  async function tocar() {
+    // O AudioContext nasce no clique (o celular só libera som com gesto da pessoa).
+    if (!ctx.current) {
+      const AC = window.AudioContext || window.webkitAudioContext
+      ctx.current = new AC()
+      // iPhone: Web Audio respeita a chave do silencioso; "playback" toca como o <audio> tocava
+      try {
+        if (navigator.audioSession) navigator.audioSession.type = 'playback'
+      } catch {
+        /* navegador sem audioSession */
+      }
+    }
+    const ac = ctx.current
+    ac.resume().catch(() => {})
+    setSemAudio(false)
+    if (!buffers.current) {
+      setCarregando(true)
+      buffers.current = await Promise.all(
+        canais.map((c) =>
+          fetch(pasta + (c.arq || c.nome.toLowerCase()) + '.mp3')
+            .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+            .then((b) => ac.decodeAudioData(b))
+            .catch(() => null)
+        )
+      )
+      setCarregando(false)
+      // Todos faltando = a prévia ainda não foi enviada: avisa e desliga o player.
+      if (buffers.current.every((b) => !b)) {
+        buffers.current = null
+        setSemAudio(true)
+        return
+      }
+      ganhos.current = canais.map(() => {
+        const g = ac.createGain()
+        g.connect(ac.destination)
+        return g
       })
     }
-    setSemAudio(false)
+    parar()
     const comeco = seg >= DURACAO ? 0 : seg
-    audios.current.forEach((a, i) => {
-      try {
-        a.currentTime = comeco
-        a.muted = !!desl.current[i]
-        a.play().catch(() => {})
-      } catch {
-        /* sem metadados ainda: o play() entra quando o arquivo chegar */
-      }
-    })
-    inicio.current = performance.now() - comeco * 1000
-    clearInterval(timer.current)
+    const quando = ac.currentTime + 0.08 // folga para os 8 começarem juntos
+    fontes.current = buffers.current.map((b, i) => {
+      if (!b) return null
+      ganhos.current[i].gain.value = desl.current[i] ? 0 : 1
+      const f = ac.createBufferSource()
+      f.buffer = b
+      f.connect(ganhos.current[i])
+      f.start(quando, comeco, Math.max(0, DURACAO - comeco))
+      return f
+    }).filter(Boolean)
+    inicio.current = quando - comeco
     timer.current = setInterval(() => {
-      const s = (performance.now() - inicio.current) / 1000
+      const s = Math.max(0, ac.currentTime - inicio.current)
       if (s >= DURACAO) {
         parar()
         setTocando(false)
@@ -152,7 +179,7 @@ export default function Canais({
 
   function alternarCanal(i) {
     const prox = { ...desligados, [i]: !desligados[i] }
-    if (audios.current?.[i]) audios.current[i].muted = !!prox[i]
+    if (ganhos.current[i]) ganhos.current[i].gain.value = prox[i] ? 0 : 1
     setDesligados(prox)
   }
 
@@ -170,11 +197,12 @@ export default function Canais({
           {previa && (
             <button
               type="button"
-              onClick={() => (tocando ? (parar(), setTocando(false)) : tocar())}
-              aria-label={tocando ? 'Pausar a prévia' : 'Tocar 30 segundos'}
+              onClick={() => (carregando ? null : tocando ? (parar(), setTocando(false)) : tocar())}
+              aria-label={carregando ? 'Carregando a prévia' : tocando ? 'Pausar a prévia' : 'Tocar 30 segundos'}
+              aria-busy={carregando || undefined}
               className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-control transition-colors motion-reduce:transition-none ${t.play}`}
             >
-              <Icone nome={tocando ? 'pausa' : 'play'} tamanho={20} />
+              <Icone nome={tocando ? 'pausa' : 'play'} tamanho={20} className={carregando ? 'animate-pulse' : undefined} />
             </button>
           )}
           {previa && capa && (
