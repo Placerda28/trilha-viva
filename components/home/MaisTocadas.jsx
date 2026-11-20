@@ -9,8 +9,9 @@ import { artistList } from '@/lib/artists'
 //
 // A lista é a do desenho (fixada à mão, como a vitrine antiga). Título, artista
 // e endereço vêm do catálogo: se um slug sumir do acervo, a linha some em vez de
-// apontar para uma ficha que não existe. Sem capa no catálogo, o quadrado preto
-// com as iniciais (o catálogo ainda não tem capas).
+// apontar para uma ficha que não existe. Capa em public/capas/<slug>.webp
+// (112 px, enviadas pelo Paulo); só esta seção usa capa. Trocar uma música da
+// lista exige pôr o webp dela na pasta.
 //
 // Links com prefetch={false}: são 20 na tela e quase ninguém abre mais de um.
 
@@ -27,13 +28,6 @@ const MAIS_TOCADAS = [
 
 const musicas = MAIS_TOCADAS.map((slug) => getSong(slug)).filter(Boolean)
 const artistas = artistList.slice(0, 12)
-
-// "A Casa É Sua" vira "CS"; "1000 Graus" vira "1G". Palavras de 1 ou 2 letras
-// ("A", "de") ficam de fora, menos os números.
-function sigla(titulo) {
-  const palavras = titulo.split(/\s+/).filter((p) => p.length > 2 || /^\d/.test(p))
-  return palavras.slice(0, 2).map((p) => p[0].toUpperCase()).join('') || titulo.slice(0, 2).toUpperCase()
-}
 
 export default function MaisTocadas() {
   return (
@@ -56,12 +50,16 @@ export default function MaisTocadas() {
               className="-mx-3 flex min-h-[76px] items-center gap-3.5 px-3 py-2.5 text-ink hover:bg-surface-pressed"
             >
               <span className="w-5 shrink-0 text-right text-[14px] font-bold tabular-nums text-text-3">{i + 1}</span>
-              <span
-                aria-hidden="true"
-                className="flex h-[52px] w-[52px] shrink-0 items-center justify-center bg-ink font-semi-condensed text-[16px] font-bold tracking-[.02em] text-white"
-              >
-                {sigla(m.title)}
-              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element -- img simples: sem custo de CPU no Worker */}
+              <img
+                src={`/capas/${m.slug}.webp`}
+                alt=""
+                width={52}
+                height={52}
+                loading="lazy"
+                decoding="async"
+                className="h-[52px] w-[52px] shrink-0 bg-ink object-cover"
+              />
               <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
                 <span className="text-[16px] font-semibold leading-[1.3]">{m.title}</span>
                 <span className="text-[14px] text-text-3">{m.artist}</span>
