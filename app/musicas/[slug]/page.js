@@ -140,7 +140,7 @@ export default async function SongPage({ params }) {
         <div className="-mt-4 flex flex-wrap items-start gap-x-16 gap-y-8">
           <div className="flex flex-[1_1_440px] flex-col gap-5">
             <div className="flex items-end gap-5">
-              <Capa titulo={song.title} grande />
+              <Capa slug={song.slug} titulo={song.title} grande />
               <div className="flex min-w-0 flex-col gap-1.5">
                 <p className="rotulo text-text-3">
                   {ehVs ? 'VS · playback mixado' : 'Multitrack'} · {song.categoria}

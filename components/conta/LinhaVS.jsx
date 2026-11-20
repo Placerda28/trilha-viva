@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { Icone } from '@/components/ds'
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { detalheDaMusica, rotuloDaVersao, sigla } from './acervo-dados'
+import Capa from '@/components/catalogo/Capa'
+import { detalheDaMusica, rotuloDaVersao } from './acervo-dados'
 
 // Botão de baixar do desenho: contorno preto, vira preto no mouse. No celular só o ícone.
 const BOTAO =
@@ -88,12 +89,7 @@ export default function LinhaVS({ musica, baixado, acabou, preparando, onBaixar 
   const detalhe = detalheDaMusica(musica)
   return (
     <li className="flex min-h-[76px] items-center gap-3.5 border-t border-line py-2">
-      <span
-        aria-hidden="true"
-        className="font-semi-condensed flex h-[52px] w-[52px] shrink-0 items-center justify-center bg-ink text-[16px] font-bold text-white"
-      >
-        {sigla(musica.title)}
-      </span>
+      <Capa slug={musica.slug} titulo={musica.title} />
       <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
         <Link
           href={'/musicas/' + musica.slug}

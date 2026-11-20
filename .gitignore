@@ -20,3 +20,6 @@ contexto-compactado-*.md
 
 # Grafo do graphify (gerado; refazer com graphify extract)
 graphify-out/
+
+# originais das capas tiradas dos zips das VS (scripts/capas-dos-zips.py): grandes, ficam só no PC
+tasks/capas/das-vs/
