@@ -1,6 +1,6 @@
-/* Estilos só da landing /afiliados (moeda 3D, revelar ao rolar, barra fixa,
-   controle do simulador). Carrega apenas nesta rota. Tudo que se mexe fica sob
-   `prefers-reduced-motion: no-preference`; sem isso, a página é estática. */
+﻿/* Estilos da landing /afiliados (barra fixa do celular) e do convite de afiliado
+   no /acervo (moeda 3D e convite-*, que importa este arquivo). Tudo que se mexe
+   fica sob `prefers-reduced-motion: no-preference`; sem isso, é estático. */
 
 :root {
   --afi-ease: cubic-bezier(0.22, 1, 0.36, 1); /* ease-out quint */
@@ -52,12 +52,6 @@
   width: 100%;
   height: 100%;
 }
-/* Moeda do topo: maior no computador. */
-@media (min-width: 1024px) {
-  .moeda-lg {
-    --t: 264px !important;
-  }
-}
 .moeda-verso {
   filter: brightness(0.82);
 }
@@ -108,49 +102,6 @@
   }
 }
 
-/* ---- revelar ao rolar -------------------------------------------------- */
-/* O padrão é VISÍVEL. Só depois do JS marcar o elemento com data-rv-estado
-   ("antes", para o que está abaixo da dobra) é que ele fica escondido, e a
-   volta é por IntersectionObserver. Sem JS ou sem movimento, nada some. */
-@media (prefers-reduced-motion: no-preference) {
-  [data-rv] {
-    transition:
-      opacity 0.55s var(--afi-ease),
-      transform 0.7s var(--afi-ease);
-    transition-delay: calc(var(--i, 0) * 80ms);
-  }
-  [data-rv='sobe'] {
-    transition-property: opacity, transform, filter;
-  }
-  [data-rv='sobe'][data-rv-estado='antes'] {
-    opacity: 0;
-    transform: translateY(14px);
-    filter: blur(3px);
-  }
-  [data-rv='barra'] {
-    transform-origin: left center;
-    transition-duration: 0.9s;
-  }
-  [data-rv='barra'][data-rv-estado='antes'] {
-    transform: scaleX(0);
-  }
-  [data-rv='linha'] {
-    transform-origin: top center;
-    transition-duration: 0.9s;
-  }
-  [data-rv='linha'][data-rv-estado='antes'] {
-    transform: scaleY(0);
-  }
-  @media (min-width: 1024px) {
-    [data-rv='linha'] {
-      transform-origin: left center;
-    }
-    [data-rv='linha'][data-rv-estado='antes'] {
-      transform: scaleX(0);
-    }
-  }
-}
-
 /* ---- barra fixa do celular -------------------------------------------- */
 .barra-afi {
   transform: translateY(0);
@@ -171,122 +122,6 @@
       transform 0.3s var(--afi-ease),
       visibility 0s linear 0.3s;
   }
-}
-
-/* ---- simulador: sensação de toque ------------------------------------- */
-@media (prefers-reduced-motion: no-preference) {
-  /* Dígito que mudou: entra rolando de baixo (sobe) ou de cima (desce), com
-     desfoque que some. Só o dígito que mudou recebe a classe. */
-  .dig-roda {
-    display: inline-block;
-    animation: dig-sobe 0.34s var(--afi-ease) 1;
-  }
-  .dig-roda[data-dir='desce'] {
-    animation-name: dig-desce;
-  }
-  @keyframes dig-sobe {
-    from {
-      opacity: 0;
-      transform: translateY(0.38em) scale(0.8);
-      filter: blur(5px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-      filter: blur(0);
-    }
-  }
-  @keyframes dig-desce {
-    from {
-      opacity: 0;
-      transform: translateY(-0.38em) scale(0.8);
-      filter: blur(5px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-      filter: blur(0);
-    }
-  }
-  .sim-toque {
-    transition:
-      transform 0.14s var(--afi-ease),
-      background-color 0.15s,
-      border-color 0.15s,
-      color 0.15s;
-  }
-  .sim-toque:active {
-    transform: scale(0.96);
-  }
-}
-
-/* Controle deslizante: puxador mais alto (alvo de toque) e a ponta vermelha
-   cresce quando é segurado. */
-.range-vendas-2 {
-  display: block;
-  height: 48px;
-  width: 100%;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  background: transparent;
-  touch-action: pan-y;
-}
-.range-vendas-2:focus-visible {
-  outline: none;
-}
-.range-vendas-2::-webkit-slider-runnable-track {
-  height: 8px;
-  background: linear-gradient(to right, #fff var(--pct), rgba(255, 255, 255, 0.22) var(--pct));
-}
-.range-vendas-2::-moz-range-track {
-  height: 8px;
-  background: rgba(255, 255, 255, 0.22);
-}
-.range-vendas-2::-moz-range-progress {
-  height: 8px;
-  background: #fff;
-}
-.range-vendas-2::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 22px;
-  height: 40px;
-  margin-top: -16px;
-  background: #fff;
-  border: 0;
-  border-right: 5px solid #e5152d;
-  border-radius: 2px;
-}
-.range-vendas-2::-moz-range-thumb {
-  box-sizing: border-box;
-  width: 22px;
-  height: 40px;
-  background: #fff;
-  border: 0;
-  border-right: 5px solid #e5152d;
-  border-radius: 2px;
-}
-.range-vendas-2:focus-visible::-webkit-slider-thumb {
-  outline: 2px solid #fff;
-  outline-offset: 3px;
-}
-.range-vendas-2:focus-visible::-moz-range-thumb {
-  outline: 2px solid #fff;
-  outline-offset: 3px;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .range-vendas-2::-webkit-slider-thumb {
-    transition: transform 0.15s var(--afi-ease);
-  }
-  .range-vendas-2:active::-webkit-slider-thumb {
-    transform: scaleY(1.12);
-  }
-}
-
-/* Anéis do fundo do topo (decoração, só linha). */
-.aneis-topo {
-  background:
-    radial-gradient(circle at 50% 50%, transparent 0 34%, rgba(255, 255, 255, 0.07) 34.2% 34.6%, transparent 34.8% 52%, rgba(255, 255, 255, 0.05) 52.2% 52.5%, transparent 52.7% 70%, rgba(255, 255, 255, 0.035) 70.2% 70.5%, transparent 70.7%);
 }
 
 /* ---- convite de afiliado no /acervo (components/afiliados/ConviteAfiliado) */
@@ -337,4 +172,41 @@
 @keyframes convite-pulso {
   0% { box-shadow: 0 0 0 0 rgba(229, 21, 45, 0.6); }
   100% { box-shadow: 0 0 0 9px rgba(229, 21, 45, 0); }
+}
+
+/* ---- dígitos que rolam (ValorAnimado, usado no convite do /acervo) ------ */
+@media (prefers-reduced-motion: no-preference) {
+  /* Dígito que mudou: entra rolando de baixo (sobe) ou de cima (desce), com
+     desfoque que some. Só o dígito que mudou recebe a classe. */
+  .dig-roda {
+    display: inline-block;
+    animation: dig-sobe 0.34s var(--afi-ease) 1;
+  }
+  .dig-roda[data-dir='desce'] {
+    animation-name: dig-desce;
+  }
+  @keyframes dig-sobe {
+    from {
+      opacity: 0;
+      transform: translateY(0.38em) scale(0.8);
+      filter: blur(5px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      filter: blur(0);
+    }
+  }
+  @keyframes dig-desce {
+    from {
+      opacity: 0;
+      transform: translateY(-0.38em) scale(0.8);
+      filter: blur(5px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      filter: blur(0);
+    }
+  }
 }
