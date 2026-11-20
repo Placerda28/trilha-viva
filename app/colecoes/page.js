@@ -1,5 +1,7 @@
 import Link from 'next/link'
-import { Breadcrumbs } from '@/components/ui'
+import Pagina from '@/components/catalogo/Pagina'
+import CabecaPagina from '@/components/catalogo/CabecaPagina'
+import { Icone } from '@/components/ds'
 import { OG_IMAGEM, site } from '@/lib/site'
 import colecoes from '@/data/colecoes.json'
 
@@ -15,26 +17,25 @@ export const metadata = {
 
 export default function ColecoesPage() {
   return (
-    <div className="shell max-w-4xl pt-12">
-      <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Coleções' }]} />
-      <header className="mt-8 border-b border-line pb-12">
-        <h1 className="text-d1 text-ink">Coleções</h1>
-        <p className="mt-6 max-w-text font-read text-[18px] leading-[1.7] text-ink-muted">
-          Repertórios montados por ocasião, com o BPM e o tom de cada música e uma sugestão de setlist.
-        </p>
-      </header>
-      <ul className="divide-y divide-line border-b border-line">
+    <Pagina largura={1080}>
+      <CabecaPagina
+        migalhas={[{ href: '/', label: 'Início' }, { label: 'Coleções' }]}
+        titulo="Coleções"
+        intro="Repertórios montados por ocasião, com o BPM e o tom de cada música e uma sugestão de setlist."
+      />
+      <ul className="m-0 flex list-none flex-col border-b border-line p-0">
         {Object.entries(colecoes).map(([slug, c]) => (
-          <li key={slug}>
-            <Link href={`/colecoes/${slug}`} className="group block py-7">
-              <span className="block text-[21px] font-bold tracking-[-0.015em] text-ink group-hover:underline">
-                {c.nome}
+          <li key={slug} className="border-t border-line first:border-t-ink">
+            <Link href={`/colecoes/${slug}`} className="flex min-h-[76px] items-center gap-3 py-3 hover:bg-surface">
+              <span className="flex flex-1 flex-col gap-1">
+                <span className="font-semi-condensed text-[clamp(20px,2.4cqi,26px)] font-bold leading-[1.2]">{c.nome}</span>
+                <span className="figs text-[14px] text-text-3">{c.musicas.length} músicas</span>
               </span>
-              <span className="mt-1.5 block text-[15.5px] text-ink-muted">{c.musicas.length} músicas</span>
+              <Icone nome="seta-direita" tamanho={20} traco={1.5} />
             </Link>
           </li>
         ))}
       </ul>
-    </div>
+    </Pagina>
   )
 }

@@ -1,6 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Breadcrumbs, Faq } from '@/components/ui'
+import Pagina from '@/components/catalogo/Pagina'
+import CabecaPagina from '@/components/catalogo/CabecaPagina'
+import SemPacote from '@/components/catalogo/SemPacote'
+import { H2 } from '@/components/catalogo/Titulos'
+import { BotaoCompra, ListaSanfona, MolduraAccent } from '@/components/ds'
 import Texto, { textoPuro } from '@/components/Texto'
 import { posts, getPost, dataIsoPost } from '@/lib/posts'
 import { site, priceBRL } from '@/lib/site'
@@ -35,6 +39,13 @@ const fmt = (d) =>
     month: 'long',
     year: 'numeric',
   })
+
+// Estilos do texto do artigo (MUDANÇAS §14): título de seção de 30 px, parágrafo
+// de 18 px com entrelinha 1,7, listas simples. O texto em si não muda.
+const H2_ARTIGO = 'font-semi-condensed mt-5 text-[30px] font-[750] leading-[1.1]'
+const H3_ARTIGO = 'font-semi-condensed mt-3 text-[22px] font-bold leading-[1.15]'
+const P_ARTIGO = 'text-[18px] leading-[1.7] text-[#262626] [&_a]:underline [&_a]:underline-offset-4'
+const LISTA = 'm-0 flex flex-col gap-2 pl-[22px] text-[18px] leading-[1.6] text-[#262626] [&_a]:underline [&_a]:underline-offset-4'
 
 export default async function PostPage({ params }) {
   const { slug } = await params
@@ -75,35 +86,26 @@ export default async function PostPage({ params }) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(faqLd ? [ld, faqLd] : ld) }} />
-      <article className="shell max-w-3xl pt-12">
-        <Breadcrumbs
-          items={[
-            { href: '/', label: 'Início' },
-            { href: '/blog', label: 'Blog' },
-            { label: post.tag },
-          ]}
+      <Pagina largura={1080} espaco="clamp(28px,4cqi,44px)">
+        <CabecaPagina
+          migalhas={[{ href: '/', label: 'Início' }, { href: '/blog', label: 'Blog' }, { label: post.title }]}
+          sobre={post.tag}
+          titulo={post.title}
+          intro={post.description}
+          grande
         />
+        <p className="-mt-3 text-[14px] text-text-3">
+          Publicado em {fmt(post.date)} · {post.read} de leitura
+        </p>
 
-        <header className="mt-8 border-b border-line pb-10">
-          <div className="flex items-center gap-4 text-[14px] font-semibold">
-            <span className="font-semibold text-ink">{post.tag}</span>
-            <span className="text-ink-muted">{post.read} de leitura</span>
-          </div>
-          <h1 className="mt-6 font-bold text-[34px] leading-[1.12] text-ink sm:text-[46px]">
-            {post.title}
-          </h1>
-          <p className="mt-5 text-[17.5px] leading-[1.65] text-ink-muted">{post.description}</p>
-          <p className="mt-6 text-[13.5px] text-ink-muted">Publicado em {fmt(post.date)}</p>
-        </header>
-
-        <div className="prose-tv pb-6">
+        <article className="flex max-w-[720px] flex-col gap-5">
           {post.body.map((block, i) => {
-            if (block.h2) return <h2 key={i}>{block.h2}</h2>
-            if (block.h3) return <h3 key={i}>{block.h3}</h3>
+            if (block.h2) return <h2 key={i} className={H2_ARTIGO}>{block.h2}</h2>
+            if (block.h3) return <h3 key={i} className={H3_ARTIGO}>{block.h3}</h3>
             if (block.ul || block.ol) {
               const Lista = block.ol ? 'ol' : 'ul'
               return (
-                <Lista key={i}>
+                <Lista key={i} className={`${LISTA} ${block.ol ? 'list-decimal' : 'list-disc'}`}>
                   {(block.ul || block.ol).map((li) => (
                     <li key={li}>
                       <Texto>{li}</Texto>
@@ -113,50 +115,47 @@ export default async function PostPage({ params }) {
               )
             }
             return (
-              <p key={i}>
+              <p key={i} className={P_ARTIGO}>
                 <Texto>{block.p}</Texto>
               </p>
             )
           })}
-        </div>
+        </article>
 
         {post.faq?.length > 0 && (
-          <section className="mt-6 border-t border-line pt-10">
-            <h2 className="text-[26px] font-bold leading-[1.18] text-ink sm:text-[30px]">Perguntas frequentes</h2>
-            <Faq items={post.faq.map((f) => ({ q: f.q, a: <Texto>{f.a}</Texto> }))} className="mt-6" />
+          <section aria-labelledby="faq-post" className="flex max-w-[720px] flex-col gap-3.5">
+            <H2 id="faq-post" pequeno>
+              Perguntas frequentes
+            </H2>
+            <ListaSanfona itens={post.faq.map((f) => ({ titulo: f.q, conteudo: <Texto>{f.a}</Texto> }))} />
           </section>
         )}
 
-        <aside className="mt-16 bg-ink p-9 text-white sm:p-12">
-          <h2 className="font-bold text-[26px] leading-[1.18] sm:text-[32px]">
-            Mais de 2.000 multitracks gospel, em um pacote só
-          </h2>
-          <p className="mt-4 max-w-lg text-[15.5px] leading-[1.7] text-white/60">
-            Clique, guia e canais separados. Pagamento único, acesso vitalício.
-          </p>
-          <Link href="/assinar" className="btn-signal mt-8">
-            Liberar acesso vitalício por {priceBRL(site.price)}
-          </Link>
-        </aside>
+        <SemPacote>
+          <MolduraAccent as="aside" traco={48} className="flex max-w-[720px] flex-wrap items-center gap-x-6 gap-y-3.5 p-[22px]">
+            <div className="flex flex-[1_1_260px] flex-col gap-1">
+              <strong className="font-semi-condensed text-[20px] font-[750]">2.000 multitracks com clique e guia</strong>
+              <span className="text-[15px] text-text-2">Pagamento único de {priceBRL(site.price)}, acesso vitalício.</span>
+            </div>
+            <BotaoCompra className="flex-[0_1_240px]" />
+          </MolduraAccent>
+        </SemPacote>
 
-        <section className="mt-16 border-t border-line pt-10">
-          <p className="text-[19px] font-bold tracking-[-0.015em] text-ink">Continue lendo</p>
-          <div className="mt-6 divide-y divide-line border-y border-line">
-            {others.map((p) => (
-              <Link
-                key={p.slug}
-                href={`/blog/${p.slug}`}
-                className="group flex items-baseline justify-between gap-6 py-4"
-              >
-                <span className="font-bold text-[18px] text-ink group-hover:underline group-hover:decoration-signal group-hover:decoration-2 group-hover:underline-offset-4">
-                  {p.title}
-                </span>
-                <span className="shrink-0 text-[13px] text-ink-muted">{p.read}</span>
-              </Link>
-            ))}
-          </div>
+        <section aria-labelledby="leia-tambem" className="flex max-w-[720px] flex-col">
+          <H2 id="leia-tambem" pequeno className="mb-1.5">
+            Leia também
+          </H2>
+          {others.map((p) => (
+            <Link
+              key={p.slug}
+              href={`/blog/${p.slug}`}
+              className="flex min-h-[52px] items-center border-t border-line py-2 text-[17px] font-semibold underline-offset-4 hover:underline"
+            >
+              {p.title}
+            </Link>
+          ))}
         </section>
-      </article>
+      </Pagina>
     </>
   )
 }

@@ -1,7 +1,9 @@
-import Link from 'next/link'
-import { Breadcrumbs, Faq } from '@/components/ui'
+import Pagina from '@/components/catalogo/Pagina'
+import CabecaPagina from '@/components/catalogo/CabecaPagina'
+import { ListaSanfona } from '@/components/ds'
 import { faq } from '@/lib/faq'
-import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
+import { PALCO_LANCADO } from '@/lib/palco'
+import { OG_IMAGEM, site, EMAIL_SUPORTE } from '@/lib/site'
 
 const title = 'Dúvidas frequentes sobre multitracks gospel'
 const description =
@@ -14,53 +16,72 @@ export const metadata = {
   openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/faq` },
 }
 
+// Perguntas do Palco (MUDANÇAS §14): o grupo só entra depois do lançamento
+// (PALCO_LANCADO, lib/palco.js), e o FAQPage do Google acompanha o que está na tela.
+const PERGUNTAS_DO_PALCO = [
+  {
+    q: 'Preciso ter o pacote para usar o Palco?',
+    a: 'Não. Sem o pacote você testa 3 dias grátis e importa as suas próprias VS. Com o pacote, o teste é de 7 dias e as 2.000 VS já aparecem dentro do Palco.',
+  },
+  {
+    q: 'O pacote e o Palco são a mesma compra?',
+    a: 'Não. O pacote é um pagamento único pelas 2.000 VS. O Palco é uma assinatura de R$ 19,90 por mês pelo programa.',
+  },
+  {
+    q: 'Funciona sem internet?',
+    a: 'Funciona. A internet só serve para vincular o Palco à nuvem: a VS que você põe no setlist baixa e fica no computador. No culto, ele toca sem internet.',
+  },
+]
+
+const grupos = [
+  { id: 'pacote', titulo: 'Pacote e pagamento', itens: faq.filter((f) => f.grupo === 'pacote') },
+  { id: 'arquivos', titulo: 'Arquivos e uso', itens: faq.filter((f) => f.grupo === 'arquivos') },
+  ...(PALCO_LANCADO ? [{ id: 'palco', titulo: 'Palco', itens: PERGUNTAS_DO_PALCO }] : []),
+]
+
 const ld = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faq.map((f) => ({
-    '@type': 'Question',
-    name: f.q,
-    acceptedAnswer: { '@type': 'Answer', text: f.a },
-  })),
+  mainEntity: grupos
+    .flatMap((g) => g.itens)
+    .map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
 }
 
 export default function FaqPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
-      <div className="shell max-w-4xl pt-12">
-        <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Dúvidas' }]} />
-
-        <header className="mt-8 max-w-2xl border-b border-line pb-12">
-          <h1 className="font-bold text-[36px] leading-[1.1] text-ink sm:text-[48px]">
-            Dúvidas frequentes
-          </h1>
-          <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
-            Se a sua pergunta não estiver aqui, é só escrever para{' '}
-            <span className="text-ink">{site.email}</span> — respondemos todo mundo.
-          </p>
-        </header>
-
-        <div className="mt-12">
-          {faq
-            .filter((f) => f.id)
-            .map((f) => (
-              <span key={f.id} id={f.id} className="block scroll-mt-24" />
-            ))}
-          <Faq items={faq} />
-        </div>
-
-        <div className="mt-16 border-b border-line pb-16 text-center">
-          <h2 className="font-bold tracking-[-0.025em] text-ink text-[28px] sm:text-[34px]">Pronto para liberar o acervo?</h2>
-          <p className="mx-auto mt-4 max-w-lg text-[16px] leading-[1.7] text-ink-muted">
-            Mais de {site.totalTracks.toLocaleString('pt-BR')} multitracks gospel por{' '}
-            {priceBRL(site.price)}, pagamento único.
-          </p>
-          <Link href="/assinar" className="btn-signal mt-8">
-            Quero meu acesso
-          </Link>
-        </div>
-      </div>
+      <Pagina largura={1080} espaco="clamp(28px,4cqi,44px)">
+        <CabecaPagina
+          migalhas={[{ href: '/', label: 'Início' }, { label: 'Dúvidas' }]}
+          titulo="Perguntas frequentes"
+          intro="Sobre o pacote, os arquivos e o uso no culto."
+          grande
+        />
+        {grupos.map((g) => (
+          <section key={g.id} className="flex flex-wrap gap-x-16 gap-y-4 border-t border-ink pt-5">
+            <h2 id={g.id} className="font-semi-condensed flex-[1_1_220px] scroll-mt-24 text-[24px] font-[750] leading-[1.1]">
+              {g.titulo}
+            </h2>
+            {/* O id de cada pergunta (programas, tablet, garantia) é âncora: /faq#garantia abre a sanfona. */}
+            <ListaSanfona
+              className="flex-[3_1_480px]"
+              itens={g.itens.map((f) => ({ id: f.id, titulo: f.q, conteudo: f.a }))}
+            />
+          </section>
+        ))}
+        <p className="text-[16px] text-text-2">
+          Não achou a resposta? Escreva para{' '}
+          <a href={`mailto:${EMAIL_SUPORTE}`} className="font-semibold text-ink underline underline-offset-[3px]">
+            {EMAIL_SUPORTE}
+          </a>
+          .
+        </p>
+      </Pagina>
     </>
   )
 }

@@ -1,5 +1,7 @@
 import Link from 'next/link'
-import { Breadcrumbs } from '@/components/ui'
+import Pagina from '@/components/catalogo/Pagina'
+import CabecaPagina from '@/components/catalogo/CabecaPagina'
+import { Icone } from '@/components/ds'
 import { posts, dataIsoPost } from '@/lib/posts'
 import { OG_IMAGEM, site } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
@@ -14,13 +16,6 @@ export const metadata = {
   alternates: { canonical: '/blog' },
   openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/blog` },
 }
-
-const fmt = (d) =>
-  new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  })
 
 export default function BlogPage() {
   const ld = {
@@ -41,37 +36,30 @@ export default function BlogPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(ld) }} />
-      <div className="shell pt-12">
-        <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Blog' }]} />
-
-        <header className="mt-8 max-w-2xl border-b border-line pb-12">
-          <h1 className="font-bold text-[36px] leading-[1.1] text-ink sm:text-[48px]">
-            Blog do ministério de louvor
-          </h1>
-          <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
-            Conteúdo direto ao ponto sobre multitrack, clique, guia e como tirar o melhor da sua
-            equipe no domingo.
-          </p>
-        </header>
-
-        <div className="divide-y divide-line">
+      <Pagina largura={1080} espaco="clamp(28px,4cqi,44px)">
+        <CabecaPagina
+          migalhas={[{ href: '/', label: 'Início' }, { label: 'Blog' }]}
+          titulo="Blog do ministério de louvor"
+          intro="Guias para quem roda multitrack na igreja."
+          grande
+        />
+        <ul className="m-0 flex list-none flex-col border-b border-line p-0">
           {posts.map((p) => (
-            <Link key={p.slug} href={`/blog/${p.slug}`} className="group block py-9">
-              <div className="flex items-center gap-4 text-[14px] font-semibold">
-                <span className="text-ink">{p.tag}</span>
-                <span className="text-ink-muted">{p.read} de leitura</span>
-                <span className="text-ink-muted">{fmt(p.date)}</span>
-              </div>
-              <h2 className="mt-4 max-w-3xl font-bold text-[24px] leading-[1.22] text-ink group-hover:underline group-hover:decoration-signal group-hover:decoration-2 group-hover:underline-offset-4 sm:text-[30px]">
-                {p.title}
-              </h2>
-              <p className="mt-3 max-w-2xl text-[16px] leading-[1.7] text-ink-muted">
-                {p.description}
-              </p>
-            </Link>
+            <li key={p.slug} className="border-t border-line first:border-t-ink">
+              <Link
+                href={`/blog/${p.slug}`}
+                className="flex flex-wrap items-baseline gap-x-6 gap-y-1.5 py-[22px] hover:bg-surface"
+              >
+                <span className="rotulo flex-[0_0_120px] text-text-3">{p.tag}</span>
+                <span className="font-semi-condensed flex-[1_1_420px] text-[clamp(20px,2.4cqi,26px)] font-bold leading-[1.2]">
+                  {p.title}
+                </span>
+                <Icone nome="seta-direita" tamanho={20} traco={1.5} className="self-center" />
+              </Link>
+            </li>
           ))}
-        </div>
-      </div>
+        </ul>
+      </Pagina>
     </>
   )
 }

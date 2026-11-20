@@ -2,6 +2,7 @@
 
 import Script from 'next/script'
 import { useEffect, useId, useRef, useState } from 'react'
+import { Aviso, Botao, Campo, classesDoBotao } from '@/components/ds'
 import { celularValido, digitosCelular, mascaraCelular } from '@/lib/checkout-campos'
 import { COOKIE_ORIGEM, lerCookie, lerCookieOrigem, origemDoEndereco } from '@/lib/rastreio'
 
@@ -19,9 +20,13 @@ function origemDaVisita() {
 // de novo, grava o lead e devolve o link do download, que aparece na hora.
 // Anti-robô: Cloudflare Turnstile. Sem a chave pública no build, só o next dev
 // usa a chave de teste oficial (sempre passa); em produção o servidor recusa.
+// Redesenho: só o visual mudou (campos e botão do design system); campos,
+// validações, API e Turnstile são os de antes.
 const CHAVE_TESTE = '1x00000000000000000000AA'
 const CHAVE =
   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || (process.env.NODE_ENV === 'production' ? '' : CHAVE_TESTE)
+
+const CAIXA = 'flex-[1_1_360px] max-w-[480px] border border-ink p-6'
 
 export default function VsGratisForm() {
   const id = useId()
@@ -101,82 +106,55 @@ export default function VsGratisForm() {
 
   if (pronto) {
     return (
-      <div role="status" className="bg-white p-7 text-ink sm:p-9">
-        <p className="text-[22px] font-bold tracking-[-0.015em]">Pronto, {pronto.nome}!</p>
-        <p className="mt-3 text-[15.5px] leading-[1.65] text-ink-muted">
-          O download está liberado. Também mandamos o link para <strong className="text-ink">{pronto.email}</strong>: ele
-          vale por 7 dias e baixa até 3 vezes.
-        </p>
-        <a href={pronto.link} className="btn-signal mt-6">
+      <div role="status" className={`${CAIXA} flex flex-col gap-2.5`}>
+        <strong className="font-semi-condensed text-[22px] font-[750] leading-[1.15]">
+          Pronto, {pronto.nome}. A VS está liberada.
+        </strong>
+        <span className="text-[15px] leading-[1.55] text-text-2">
+          Também mandamos o link para <strong className="font-[650] text-ink">{pronto.email}</strong>: ele vale por 7
+          dias e baixa até 3 vezes. Não chegou em alguns minutos? Olhe a caixa de spam e a de promoções.
+        </span>
+        {/* <a> simples, não <Link>: o endereço é uma rota que redireciona para o arquivo e conta o download. */}
+        <a href={pronto.link} className={classesDoBotao({ tamanho: 'lg', className: 'mt-1 self-start' })}>
           Baixar a VS agora
         </a>
-        <p className="mt-4 text-[13.5px] text-ink-muted">
-          Não achou o e-mail depois? Confira a caixa de spam e a de promoções.
-        </p>
+        <a href="/como-usar" className="inline-flex min-h-11 items-center self-start text-[15px] font-semibold underline underline-offset-[3px]">
+          Ver como usar a VS
+        </a>
       </div>
     )
   }
 
-  const rotulo = 'block text-[14px] font-semibold text-ink'
-  const campo =
-    'mt-2 w-full rounded border border-line bg-white px-4 py-3.5 text-[16px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none'
-
   return (
-    <form onSubmit={enviar} noValidate className="space-y-4 bg-white p-7 sm:p-9">
-      {aviso && (
-        <p role="status" className="border border-ink bg-mist px-4 py-3 text-[14.5px] font-semibold text-ink">
-          {aviso}
-        </p>
-      )}
+    <form onSubmit={enviar} noValidate className={`${CAIXA} flex flex-col gap-4`}>
+      {aviso && <Aviso variante="info">{aviso}</Aviso>}
       {CHAVE && (
         <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" onReady={desenharTurnstile} />
       )}
-      <div>
-        <label htmlFor={`${id}-nome`} className={rotulo}>
-          Seu nome
-        </label>
-        <input id={`${id}-nome`} name="name" type="text" autoComplete="name" autoCapitalize="words" required maxLength={80}
-          value={nome} onChange={(e) => setNome(e.target.value)} className={campo} />
-      </div>
-      <div>
-        <label htmlFor={`${id}-email`} className={rotulo}>
-          E-mail
-        </label>
-        <input id={`${id}-email`} name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="off"
-          spellCheck={false} required value={email} onChange={(e) => setEmail(e.target.value)}
-          placeholder="voce@email.com" className={campo} />
-      </div>
-      <div>
-        <label htmlFor={`${id}-tel`} className={rotulo}>
-          WhatsApp
-        </label>
-        <input id={`${id}-tel`} name="tel" type="tel" inputMode="tel" autoComplete="tel" required
-          value={telefone} onChange={(e) => setTelefone(mascaraCelular(e.target.value))}
-          placeholder="(27) 99999-8888" aria-describedby={`${id}-tel-ajuda`} className={campo} />
-        <p id={`${id}-tel-ajuda`} className="mt-2 text-[12.5px] text-ink-muted">
-          Para receber a VS e novidades da Trilha Viva pelo WhatsApp.
-        </p>
-      </div>
-      <label className="flex min-h-[44px] cursor-pointer items-start gap-3 text-[14px] leading-[1.55] text-ink-muted">
-        <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)}
-          className="mt-[3px] h-[18px] w-[18px] shrink-0 accent-[#E5152D]" />
+      <Campo rotulo="Seu nome" name="name" autoComplete="name" autoCapitalize="words" required maxLength={80}
+        value={nome} onChange={(e) => setNome(e.target.value)} />
+      <Campo rotulo="E-mail para receber a VS" name="email" tipo="email" inputMode="email" autoComplete="email"
+        autoCapitalize="off" spellCheck={false} required placeholder="voce@email.com"
+        value={email} onChange={(e) => setEmail(e.target.value)} />
+      <Campo rotulo="WhatsApp" name="tel" tipo="tel" inputMode="tel" autoComplete="tel" required
+        placeholder="(27) 99999-8888" ajuda="Para receber a VS e novidades da Trilha Viva pelo WhatsApp."
+        value={telefone} onChange={(e) => setTelefone(mascaraCelular(e.target.value))} />
+      <label htmlFor={`${id}-aceite`} className="flex min-h-11 cursor-pointer items-start gap-3 text-[14px] leading-[1.5] text-text-3">
+        <input id={`${id}-aceite`} type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)}
+          className="mt-0.5 h-[22px] w-[22px] shrink-0 accent-ink" />
         <span>
           Quero receber a VS e conteúdos da Trilha Viva por e-mail e WhatsApp. Posso cancelar quando quiser. Veja a{' '}
-          <a href="/privacidade" className="link-quiet font-semibold">
+          <a href="/privacidade" className="font-semibold text-ink underline underline-offset-[3px]">
             política de privacidade
           </a>
           .
         </span>
       </label>
       <div ref={caixa} />
-      {erro && (
-        <p role="alert" className="text-[14px] font-semibold text-signal-deep">
-          {erro}
-        </p>
-      )}
-      <button type="submit" disabled={enviando} className="btn-signal w-full disabled:opacity-60">
-        {enviando ? 'Liberando…' : 'Quero minha VS grátis'}
-      </button>
+      {erro && <Aviso variante="erro">{erro}</Aviso>}
+      <Botao type="submit" tamanho="lg" bloco carregando={enviando}>
+        Quero a VS grátis
+      </Botao>
     </form>
   )
 }
