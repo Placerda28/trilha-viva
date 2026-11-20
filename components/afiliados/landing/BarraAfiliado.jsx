@@ -1,15 +1,16 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { Botao } from '@/components/ds'
 import { ROTA_AFILIADO } from './rotas'
 
-// Barra fixa no pé da tela, só no celular, com os dois caminhos da página:
-// "Quero ser afiliado" e "Já sou afiliado". Entra quando o bloco `inicio` (os
-// botões do topo) sai da tela e sai quando o bloco `fim` (a chamada final) ou o
-// rodapé entram, para nunca repetir botão nem cobrir link. Sem salto de layout:
-// é `fixed`. Escondida, fica fora da ordem de tabulação (`inert`).
-export default function BarraAfiliado({ inicio = 'topo-acesso', fim = 'chamada-final' }) {
+// Barra fixa no pé da tela, só no celular (MUDANÇAS §8): "Até R$ 30 por venda" e
+// o botão "Quero ser afiliado". Entra quando o bloco `inicio` (os botões do topo)
+// sai da tela e sai quando o bloco `fim` (a chamada final) ou o rodapé entram,
+// para nunca repetir botão nem cobrir link. Sem salto de layout: é `fixed`, por
+// isso fica FORA do elemento com container-type da página. Escondida, fica fora
+// da ordem de tabulação (`inert`).
+export default function BarraAfiliado({ maximo, inicio = 'topo-acesso', fim = 'chamada-final' }) {
   const [visivel, setVisivel] = useState(false)
 
   useEffect(() => {
@@ -27,17 +28,17 @@ export default function BarraAfiliado({ inicio = 'topo-acesso', fim = 'chamada-f
 
   return (
     <div
-      className="barra-afi fixed inset-x-0 bottom-0 z-40 border-t border-white/15 bg-ink text-white lg:hidden"
+      className="barra-afi fixed inset-x-0 bottom-0 z-40 border-t border-line-2 bg-white text-ink lg:hidden"
       data-escondida={visivel ? undefined : ''}
       inert={!visivel}
     >
-      <div className="grid grid-cols-2 gap-2.5 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-        <Link href={ROTA_AFILIADO} className="btn-signal min-h-12 !px-3">
+      <div className="flex items-center justify-between gap-3 px-4 pb-[max(0.625rem,env(safe-area-inset-bottom))] pt-2.5">
+        <span className="text-[14px] leading-[1.3] text-text-2">
+          Até <strong className="font-bold tabular-nums text-ink">{maximo}</strong> por venda
+        </span>
+        <Botao variante="compra" href={ROTA_AFILIADO} tamanho="md" className="shrink-0">
           Quero ser afiliado
-        </Link>
-        <Link href={ROTA_AFILIADO} className="btn-onink min-h-12 !px-3">
-          Já sou afiliado
-        </Link>
+        </Botao>
       </div>
     </div>
   )

@@ -1,10 +1,9 @@
 import Link from 'next/link'
-import { Breadcrumbs, Faq, SectionHead } from '@/components/ui'
+import { Botao, Icone, ListaSanfona, Migalhas } from '@/components/ds'
 import Simulador from '@/components/afiliados/Simulador'
 import EscadaMetas from '@/components/afiliados/landing/EscadaMetas'
-import Moeda3D from '@/components/afiliados/landing/Moeda3D'
+import MedalhaPB from '@/components/afiliados/landing/MedalhaPB'
 import BarraAfiliado from '@/components/afiliados/landing/BarraAfiliado'
-import RevelarAoRolar from '@/components/afiliados/landing/RevelarAoRolar'
 import { ROTA_AFILIADO } from '@/components/afiliados/landing/rotas'
 import { NIVEIS_PUBLICOS, REGRAS_PUBLICAS, moeda, moedaCurta, saltos, tabelaDoSimulador } from '@/lib/afiliados-simulador'
 import { OG_IMAGEM, priceBRL, site } from '@/lib/site'
@@ -113,20 +112,28 @@ const ld = {
   mainEntity: PERGUNTAS.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
 }
 
+// Largura e respiro das seções (DESIGN.md: contêiner de 1280 px).
+const SECAO = 'mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-[clamp(20px,4cqi,32px)] pt-[clamp(64px,8cqi,104px)]'
+const H2 = 'font-semi-condensed text-[clamp(32px,4.4cqi,52px)] font-[750] leading-[1.02] tracking-[-0.02em] [text-wrap:balance]'
+const LINK_RED =
+  'inline-flex min-h-11 items-center text-[16px] font-semibold underline decoration-red decoration-2 underline-offset-4'
+
+// O rótulo de "Já sou afiliado" é longo: no celular quebra em duas linhas em vez de vazar.
+const QUEBRA = 'max-w-full whitespace-normal py-2 text-center leading-[1.25]'
 
 function Regras({ titulo, itens, proibido = false }) {
   return (
-    <div>
-      <h3 className="text-[19px] font-bold text-ink">{titulo}</h3>
-      <ul className="mt-5 space-y-4">
-        {itens.map((t, i) => (
-          <li key={t} data-rv="sobe" style={{ '--i': i }} className="grid grid-cols-[1.5rem_1fr] gap-x-2 text-[16.5px] leading-[1.6] text-ink">
+    <div className="flex flex-col gap-[18px]">
+      <h3 className="text-[19px] font-bold">{titulo}</h3>
+      <ul className="flex flex-col gap-3.5">
+        {itens.map((t) => (
+          <li key={t} className="grid grid-cols-[20px_minmax(0,1fr)] gap-2 text-[16px] leading-[1.6]">
             {proibido ? (
-              <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" className="mt-[7px] text-signal">
+              <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" className="mt-[7px] text-red">
                 <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="2" />
               </svg>
             ) : (
-              <span aria-hidden="true" className="mt-[9px] h-[8px] w-[8px] bg-signal" />
+              <span aria-hidden="true" className="mt-[9px] h-2 w-2 bg-red" />
             )}
             <span>{t}</span>
           </li>
@@ -136,152 +143,124 @@ function Regras({ titulo, itens, proibido = false }) {
   )
 }
 
-function IconePessoa() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true" className="mr-2.5 shrink-0">
-      <circle cx="9" cy="6" r="3.2" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M2.8 16c.6-3.3 3-5 6.2-5s5.6 1.7 6.2 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 // Os dois caminhos da página. Quem já tem cadastro entra pela segunda opção, que
 // leva ao painel (logado) ou ao "Entrar" com volta garantida (deslogado).
 export default function AfiliadosPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(ld) }} />
-      <RevelarAoRolar />
-      <BarraAfiliado />
+      {/* Fora do elemento com container-type: ele vira o bloco de contenção do `fixed`. */}
+      <BarraAfiliado maximo={moedaCurta(maximo)} />
 
-      <section className="relative overflow-hidden bg-ink text-white">
-        <div className="shell relative pb-16 pt-10 sm:pb-24 sm:pt-12">
-          <div className="[&_a]:inline-flex [&_a]:min-h-11 [&_a]:min-w-11 [&_a]:items-center [&_a]:text-white/60 [&_span]:text-white/80">
-            <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Seja afiliado' }]} />
-          </div>
-          <div className="mt-8 grid items-center gap-12 sm:mt-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-20">
-            <div>
-              <h1 className="text-d1 max-w-4xl text-white [text-wrap:balance]">
-                Indique a Trilha Viva e ganhe até {moedaCurta(maximo)} por venda
-              </h1>
-              <p className="mt-6 max-w-2xl text-[18px] leading-[1.65] text-white/70 sm:text-[20px]">
-                Você divulga seu link. Quem compra paga o preço normal e a venda fica registrada no seu nome. O pagamento é por Pix.
-              </p>
-              <div id="topo-acesso" className="mt-9 flex flex-col gap-3 sm:flex-row">
-                <Link href={ROTA_AFILIADO} className="btn-signal min-h-12">
-                  Quero ser afiliado
-                </Link>
-                <Link href={ROTA_AFILIADO} className="btn-onink min-h-12">
-                  <IconePessoa />
-                  {ROTULO_JA_SOU}
-                </Link>
+      <div data-rodape-colado className="bg-white [container-type:inline-size]">
+        <div data-tema="escuro" className="bg-ink text-white">
+          <section aria-labelledby="h-af" className="mx-auto w-full max-w-[1280px] px-[clamp(20px,4cqi,32px)] pb-[clamp(56px,7cqi,104px)] pt-[clamp(24px,3cqi,40px)]">
+            <Migalhas tema="escuro" itens={[{ href: '/', label: 'Início' }, { label: 'Seja afiliado' }]} />
+            <div className="mt-[clamp(16px,3cqi,32px)] flex flex-wrap items-center gap-x-20 gap-y-12">
+              <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-[22px]">
+                <h1 id="h-af" className="font-semi-condensed max-w-[760px] text-[clamp(40px,6cqi,76px)] font-extrabold leading-[0.98] tracking-[-0.025em] [text-wrap:balance]">
+                  Indique a Trilha Viva e ganhe até {moedaCurta(maximo)} por venda
+                </h1>
+                <p className="max-w-[620px] text-[clamp(18px,1.6cqi,20px)] leading-[1.6] text-dark-text-2 [text-wrap:pretty]">
+                  Você divulga seu link. Quem compra paga o preço normal e a venda fica registrada no seu nome. O pagamento é por Pix.
+                </p>
+                <div id="topo-acesso" className="mt-1.5 flex flex-wrap gap-3">
+                  <Botao variante="compra" href={ROTA_AFILIADO}>Quero ser afiliado</Botao>
+                  <Botao variante="noEscuro" href={ROTA_AFILIADO} tamanho="lg" className={QUEBRA}>
+                    <Icone nome="usuario" tamanho={18} />
+                    {ROTULO_JA_SOU}
+                  </Botao>
+                </div>
+                <p className="flex flex-wrap items-center gap-x-1.5 text-[15px] text-dark-text-3">
+                  Quer saber antes como funciona?
+                  <Link href="#regras" className="inline-flex min-h-11 items-center font-semibold text-white underline decoration-red decoration-2 underline-offset-4">
+                    Ver as regras
+                  </Link>
+                </p>
               </div>
-              <p className="mt-5 hidden text-[15px] leading-snug text-white/65 sm:block">
-                Quer saber antes como funciona?{' '}
-                <Link href="#regras" className="inline-flex min-h-11 items-center font-semibold text-white underline decoration-signal-lite decoration-2 underline-offset-4">
-                  Ver as regras
-                </Link>
-              </p>
-            </div>
-
-            <div className="relative mx-auto flex w-full max-w-[300px] flex-col items-center lg:mx-0">
-              <div aria-hidden="true" className="aneis-topo pointer-events-none absolute left-1/2 top-[100px] h-[460px] w-[460px] -translate-x-1/2 -translate-y-1/2 lg:top-[132px] lg:h-[620px] lg:w-[620px]" />
-              <Moeda3D cor={ouro.cor} grau={3} tamanho={200} className="moeda-lg relative z-10" />
-              <p className="relative z-10 mt-8 text-center text-[15.5px] leading-[1.5] text-white/80">
-                Ouro: <span className="figs font-bold text-white">{moedaCurta(ouro.valor_por_venda_centavos)}</span> por venda, a partir de {ouro.vendas_minimas} vendas no mês.
-              </p>
-              <p className="relative z-10 mt-1 text-center text-[13.5px] text-white/65 lg:hidden">Toque na moeda para girar.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="shell pt-16 sm:pt-24">
-        <SectionHead
-          title="Quanto mais vendas no mês, mais cada venda vale"
-          sub="A meta é mensal. Veja o valor de cada degrau e simule o seu mês."
-        />
-        <div className="mt-10 grid gap-6 lg:grid-cols-[5fr_7fr] lg:items-start lg:gap-8">
-          <div className="card-line px-5 py-7 sm:px-8 sm:py-9">
-            <EscadaMetas niveis={NIVEIS_PUBLICOS} larguras={larguras} />
-          </div>
-          <Simulador niveis={NIVEIS_PUBLICOS} tabela={tabela} saltos={degraus} />
-        </div>
-      </section>
-
-      <section className="shell pt-16 sm:pt-24" aria-labelledby="passos-titulo">
-        <h2 id="passos-titulo" className="text-d2 max-w-4xl text-ink">Como funciona</h2>
-        <ol className="mt-10 grid gap-0 lg:grid-flow-col lg:auto-cols-fr lg:gap-10">
-          {PASSOS.map(([nome, texto], i) => (
-            <li
-              key={nome}
-              data-rv="sobe"
-              style={{ '--i': i }}
-              className="relative grid grid-cols-[2.75rem_1fr] gap-x-5 pb-9 last:pb-0 lg:grid-cols-1 lg:content-start lg:gap-y-5 lg:pb-0"
-            >
-              {i < PASSOS.length - 1 && (
-                <span
-                  aria-hidden="true"
-                  data-rv="linha"
-                  style={{ '--i': i + 1 }}
-                  className="absolute bottom-0 left-[21px] top-11 w-[2px] bg-line lg:bottom-auto lg:left-11 lg:right-[-2.5rem] lg:top-[21px] lg:h-[2px] lg:w-auto"
-                />
-              )}
-              <span className="figs relative z-10 grid h-11 w-11 place-items-center bg-ink text-[18px] font-extrabold text-white">{i + 1}</span>
-              <div>
-                <h3 className="text-[21px] font-bold leading-snug tracking-[-0.015em] text-ink">{nome}</h3>
-                <p className="mt-2 max-w-md font-read text-[17px] leading-[1.7] text-ink-muted">{texto}</p>
+              <div className="mx-auto flex flex-[0_1_320px] flex-col items-center gap-5 text-center">
+                <div aria-hidden="true" className="relative flex h-[240px] w-[240px] items-center justify-center">
+                  <span className="absolute -inset-10 rounded-full border border-dark-pressed" />
+                  <span className="absolute inset-0 rounded-full border border-dark-frame" />
+                  <MedalhaPB grau={3} tamanho={176} variante="sobrePreto" anel />
+                </div>
+                <p className="text-[16px] leading-[1.5] text-dark-text-2">
+                  Ouro: <strong className="font-bold tabular-nums text-white">{moedaCurta(ouro.valor_por_venda_centavos)}</strong> por venda, a partir de {ouro.vendas_minimas} vendas no mês.
+                </p>
               </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section id="regras" className="shell scroll-mt-24 pt-16 sm:pt-24" aria-labelledby="regras-titulo">
-        <h2 id="regras-titulo" className="text-d2 max-w-4xl text-ink">Regras do programa</h2>
-        <div className="card-line mt-10 grid gap-10 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-2 lg:gap-14">
-          <Regras titulo="Como o dinheiro funciona" itens={REGRAS_DINHEIRO} />
-          <Regras titulo="O que não pode" itens={REGRAS_PROIBIDO} proibido />
+            </div>
+          </section>
         </div>
-      </section>
 
-      <section className="shell max-w-4xl pt-16 sm:pt-24" aria-labelledby="faq-titulo">
-        <h2 id="faq-titulo" className="text-d2 text-ink">Perguntas frequentes</h2>
-        <Faq items={PERGUNTAS} className="mt-8" />
-        <div className="mt-10">
-          <h3 className="text-[17px] font-bold text-ink">Quer conhecer o que você vai indicar?</h3>
-          <ul className="mt-2 flex flex-col sm:flex-row sm:flex-wrap sm:gap-x-8">
-            {[['/assinar', 'Ver o pacote completo'], ['/musicas', 'Ver as músicas do acervo'], ['/faq', 'Dúvidas de quem compra']].map(([href, rotulo]) => (
-              <li key={href}>
-                <Link href={href} className="link-signal min-h-11">{rotulo}</Link>
+        <section aria-labelledby="h-metas" className={SECAO}>
+          <div className="flex max-w-[760px] flex-col gap-3">
+            <h2 id="h-metas" className={H2}>Quanto mais vendas no mês, mais cada venda vale</h2>
+            <p className="text-[17px] leading-[1.6] text-text-2">A meta é mensal. Veja o valor de cada degrau e simule o seu mês.</p>
+          </div>
+          <div className="flex flex-wrap items-start gap-x-8 gap-y-6">
+            <div className="min-w-0 flex-[5_1_380px]">
+              <EscadaMetas niveis={NIVEIS_PUBLICOS} larguras={larguras} />
+            </div>
+            <Simulador niveis={NIVEIS_PUBLICOS} tabela={tabela} saltos={degraus} />
+          </div>
+        </section>
+
+        <section aria-labelledby="h-passos" className={SECAO}>
+          <h2 id="h-passos" className={H2}>Como funciona</h2>
+          <ol className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-x-10 gap-y-7">
+            {PASSOS.map(([nome, texto], i) => (
+              <li key={nome} className="flex flex-col gap-3 border-t border-ink pt-4">
+                <span className="flex h-11 w-11 items-center justify-center bg-ink text-[18px] font-extrabold tabular-nums text-white">{i + 1}</span>
+                <h3 className="text-[21px] font-bold leading-[1.25]">{nome}</h3>
+                <p className="max-w-[420px] text-[16px] leading-[1.65] text-text-2 [text-wrap:pretty]">{texto}</p>
               </li>
             ))}
-          </ul>
-        </div>
-      </section>
+          </ol>
+        </section>
 
-      <section id="chamada-final" className="shell pt-16 sm:pt-24">
-        <div className="panel grid gap-7 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-12">
-          <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center gap-x-5 sm:gap-x-7">
-            <Moeda3D cor={bronze.cor} grau={1} tamanho={96} />
-            <div>
-              <h2 className="text-d3 text-white">Comece pela sua primeira venda</h2>
-              <p className="mt-3 max-w-xl text-[16.5px] leading-[1.65] text-white/75">
-                A primeira venda já te coloca no Bronze, a {moedaCurta(bronze.valor_por_venda_centavos)} por venda. Cadastre-se e pegue o seu link.
-              </p>
+        <section id="regras" aria-labelledby="h-regras" className={`${SECAO} scroll-mt-24`}>
+          <h2 id="h-regras" className={H2}>Regras do programa</h2>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))] gap-x-14 gap-y-10 border border-ink p-[clamp(20px,3cqi,40px)]">
+            <Regras titulo="Como o dinheiro funciona" itens={REGRAS_DINHEIRO} />
+            <Regras titulo="O que não pode" itens={REGRAS_PROIBIDO} proibido />
+          </div>
+        </section>
+
+        <section aria-labelledby="faq-titulo" className="mx-auto flex w-full max-w-[1280px] flex-wrap gap-x-20 gap-y-8 px-[clamp(20px,4cqi,32px)] pt-[clamp(64px,8cqi,104px)]">
+          <div className="flex flex-[1_1_300px] flex-col gap-5">
+            <h2 id="faq-titulo" className={H2}>Perguntas frequentes</h2>
+            <div className="flex flex-col">
+              <h3 className="mb-1 text-[16px] font-bold">Quer conhecer o que você vai indicar?</h3>
+              {[['/assinar', 'Ver o pacote completo'], ['/musicas', 'Ver as músicas do acervo'], ['/faq', 'Dúvidas de quem compra']].map(([href, rotulo]) => (
+                <Link key={href} href={href} className={`${LINK_RED} self-start`}>{rotulo}</Link>
+              ))}
             </div>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-            <Link href={ROTA_AFILIADO} className="btn-signal min-h-12 shrink-0">
-              Quero ser afiliado
-            </Link>
-            <Link href={ROTA_AFILIADO} className="btn-onink min-h-12 shrink-0">
-              <IconePessoa />
-              {ROTULO_JA_SOU}
-            </Link>
+          <div className="min-w-0 flex-[2_1_480px]">
+            <ListaSanfona itens={PERGUNTAS.map((p) => ({ titulo: p.q, conteudo: p.a }))} />
           </div>
-        </div>
-      </section>
+        </section>
+
+        <section id="chamada-final" aria-labelledby="h-final-af" className="mx-auto w-full max-w-[1280px] px-[clamp(20px,4cqi,32px)] py-[clamp(64px,8cqi,104px)]">
+          <div data-tema="escuro" className="flex flex-wrap items-center justify-between gap-x-12 gap-y-7 bg-ink p-[clamp(24px,4cqi,48px)] text-white">
+            <div className="grid flex-[1_1_420px] grid-cols-[72px_minmax(0,1fr)] items-center gap-5">
+              <MedalhaPB grau={1} variante="vazada" />
+              <div className="flex flex-col gap-2">
+                <h2 id="h-final-af" className="font-semi-condensed text-[clamp(26px,3cqi,36px)] font-[750] leading-[1.05]">Comece pela sua primeira venda</h2>
+                <p className="text-[16px] leading-[1.6] text-dark-text-2">
+                  A primeira venda já te coloca no Bronze, a {moedaCurta(bronze.valor_por_venda_centavos)} por venda. Cadastre-se e pegue o seu link.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-[0_1_360px] flex-col gap-3">
+              <Botao variante="compra" href={ROTA_AFILIADO} bloco>Quero ser afiliado</Botao>
+              <Botao variante="noEscuro" href={ROTA_AFILIADO} tamanho="lg" bloco className={`${QUEBRA} px-4 text-[15px]`}>
+                {ROTULO_JA_SOU}
+              </Botao>
+            </div>
+          </div>
+        </section>
+      </div>
     </>
   )
 }
