@@ -18,5 +18,10 @@
     "sha256": "91c14e8e85ea91634341f867e326c2159866b661c3aa87bab76890faa1fb2ef1",
     "bytes": 1063518,
     "parts": 178
+  },
+  "palco-ao-vivo.webp": {
+    "sha256": "c41a8917a959b364b742682aa6da0af2175fef751ed103b6b8f9c2ca8297c5f6",
+    "bytes": 88604,
+    "parts": 15
   }
 }

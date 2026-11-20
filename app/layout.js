@@ -1,5 +1,7 @@
 import './globals.css'
-import '@fontsource-variable/archivo'
+// wdth.css traz os dois eixos (peso e largura): sem o `wdth`, font-stretch: 87.5%
+// dos títulos não faz nada. Mesma família "Archivo Variable" do import padrão.
+import '@fontsource-variable/archivo/wdth.css'
 import '@fontsource-variable/source-serif-4'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
