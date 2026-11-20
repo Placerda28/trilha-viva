@@ -10,7 +10,7 @@ import { LINHA_PRECO, MINHA_CONTA, TEXTO_COMPRA, nav, navSecundario } from '@/li
 
 // Cabeçalho do redesenho (DESIGN.md, MUDANÇAS §1).
 //
-// Tema: escuro (fundo preto, disco branco) na home e em /palco; claro no resto.
+// Tema: escuro (fundo preto, disco branco) na home, em /palco e em /afiliados; claro no resto.
 // Modo compra (/assinar): só a marca e "Pagamento seguro", sem menu.
 // Página atual: traço vermelho de 2 px embaixo do link (computador) ou quadrado
 // vermelho de 6 px (menu do celular).
@@ -60,7 +60,8 @@ export default function Header({ palco = 'em-breve' }) {
   const [aberto, setAberto] = useState(false)
   const botaoMenu = useRef(null)
 
-  const escuro = pathname === '/' || pathname === '/palco' || pathname.startsWith('/palco/')
+  const escuro =
+    pathname === '/' || pathname === '/afiliados' || pathname === '/palco' || pathname.startsWith('/palco/')
   const compra = pathname === '/assinar' || pathname.startsWith('/assinar/')
   const ativo = ativoDe(pathname)
   const emBreve = palco !== 'lancado'
