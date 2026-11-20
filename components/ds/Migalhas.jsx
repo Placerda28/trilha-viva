@@ -23,7 +23,7 @@ export function Migalhas({ itens, tema = 'claro', className }) {
                 <Link
                   href={it.href}
                   className={cn(
-                    'inline-flex min-h-11 items-center text-[14px] underline-offset-4 hover:underline',
+                    'inline-flex min-h-11 min-w-11 items-center text-[14px] underline-offset-4 hover:underline',
                     escuro ? 'text-dark-text-2' : 'text-text-3 hover:text-ink'
                   )}
                 >
@@ -32,7 +32,7 @@ export function Migalhas({ itens, tema = 'claro', className }) {
               ) : (
                 <span
                   aria-current={ultimo ? 'page' : undefined}
-                  className={cn('inline-flex min-h-11 items-center text-[14px] font-[650]', escuro ? 'text-white' : 'text-ink')}
+                  className={cn('inline-flex min-h-11 min-w-11 items-center text-[14px] font-[650]', escuro ? 'text-white' : 'text-ink')}
                 >
                   {it.label}
                 </span>
