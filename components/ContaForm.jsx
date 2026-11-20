@@ -1,9 +1,11 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { Aviso, Botao, Campo } from '@/components/ds'
 import CampoSenha from '@/components/acesso/CampoSenha'
 import { LinkEnviado, LinkVencido, SenhaTrocada, TITULO } from '@/components/acesso/Estados'
+import { MODOS } from '@/components/acesso/modos'
+import Rodape from '@/components/acesso/Rodape'
 import { CHAVE_EMAIL_ENTRAR, mascararEmail } from '@/lib/pos-pagamento'
 import { voltaPermitida } from '@/lib/afiliados-campos'
 import { EMAIL_SUPORTE } from '@/lib/site'
@@ -18,105 +20,10 @@ import { EMAIL_SUPORTE } from '@/lib/site'
 // `emailFixo`: na /sucesso o e-mail vem da compra; aparece travado.
 const DESTINO = '/minha-conta/acervo'
 
-const MODOS = {
-  entrar: {
-    rota: '/api/conta/entrar',
-    titulo: 'Entrar',
-    sub: 'Use o e-mail da sua compra.',
-    botao: 'Entrar',
-    enviando: 'Entrando…',
-    pedeEmail: true,
-    pedeSenha: true,
-    confirma: false,
-  },
-  criar: {
-    rota: '/api/conta/criar',
-    titulo: 'Crie sua senha',
-    sub: 'É o último passo. A conta usa o e-mail da sua compra.',
-    botao: 'Criar senha e abrir Minhas VS',
-    enviando: 'Criando sua conta…',
-    pedeEmail: false,
-    pedeSenha: true,
-    confirma: true,
-  },
-  // Comprou e fechou a tela sem criar a senha: pede o link de criar senha.
-  primeiro: {
-    rota: '/api/conta/primeiro-acesso',
-    titulo: 'Primeiro acesso',
-    sub: 'Comprou e ainda não criou sua senha? Digite o e-mail que você usou no pagamento. Mandamos um link para criar a senha.',
-    botao: 'Enviar link',
-    enviando: 'Enviando…',
-    pedeEmail: true,
-    pedeSenha: false,
-    confirma: false,
-  },
-  recuperar: {
-    rota: '/api/conta/recuperar',
-    titulo: 'Esqueci a senha',
-    sub: 'Digite seu e-mail. Mandamos um link para você criar uma senha nova.',
-    botao: 'Enviar link',
-    enviando: 'Enviando…',
-    pedeEmail: true,
-    pedeSenha: false,
-    confirma: false,
-  },
-  redefinir: {
-    rota: '/api/conta/redefinir',
-    titulo: 'Senha nova',
-    sub: 'Escolha a nova senha. Ao salvar, quem estiver logado nesta conta em outros aparelhos será desconectado.',
-    botao: 'Salvar senha nova',
-    enviando: 'Salvando…',
-    pedeEmail: false,
-    pedeSenha: true,
-    confirma: true,
-  },
-}
-
 const EMAIL_OK = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
-const LINK = 'inline-flex min-h-11 items-center font-semibold text-ink underline underline-offset-[3px]'
 
 // Mensagem do servidor que diz que o link de uso único já foi usado ou venceu.
 const linkVencido = (status, texto) => status === 410 || (status === 400 && /link/i.test(texto || ''))
-
-function Rodape({ modo }) {
-  if (modo === 'entrar') {
-    return (
-      <div className="flex flex-col border-t border-line pt-3 text-[15px] text-text-2">
-        <p className="flex flex-wrap items-center gap-x-1.5">
-          Comprou e ainda não tem senha?{' '}
-          <a href="/primeiro-acesso" className={LINK}>
-            Fazer o primeiro acesso
-          </a>
-        </p>
-        <p className="flex flex-wrap items-center gap-x-1.5">
-          Ainda não tem o pacote?{' '}
-          <a href="/assinar" className={LINK}>
-            Liberar as 2.000 VS
-          </a>
-        </p>
-      </div>
-    )
-  }
-  if (modo === 'redefinir') {
-    return (
-      <p className="border-t border-line pt-3 text-[15px] text-text-2">
-        O link vence em 1 hora e vale uma vez só. Se ele não funcionar mais,{' '}
-        <a href="/recuperar" className={LINK}>
-          peça outro
-        </a>
-        .
-      </p>
-    )
-  }
-  return (
-    <p className="flex flex-wrap items-center gap-x-1.5 border-t border-line pt-3 text-[15px] text-text-2">
-      {modo === 'criar' ? 'Já criou a senha antes?' : 'Já tem senha?'}{' '}
-      <a href="/entrar" className={LINK}>
-        Entrar
-      </a>
-    </p>
-  )
-}
 
 export default function ContaForm({ modo, emailFixo = '', embutido = false }) {
   const cfg = MODOS[modo]
