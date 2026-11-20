@@ -1,9 +1,11 @@
-import Link from 'next/link'
 import CatalogBrowser from '@/components/CatalogBrowser'
-import { Breadcrumbs } from '@/components/ui'
+import Pagina from '@/components/catalogo/Pagina'
+import CabecaPagina from '@/components/catalogo/CabecaPagina'
+import { CompraNoTopo } from '@/components/catalogo/SemPacote'
 import { songs } from '@/lib/catalog'
 import { artistList } from '@/lib/artists'
-import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
+import { ESTILOS, acervoEmTuplas } from '@/lib/catalogo-lista'
+import { OG_IMAGEM, site } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 
 export const metadata = {
@@ -25,21 +27,10 @@ export const metadata = {
 // Quem le os dois parametros agora e o CatalogBrowser, no navegador.
 
 // O CatalogBrowser roda no navegador, entao tudo que a gente entrega a ele
-// viaja dentro do HTML, musica por musica. Vai so o que a lista usa: o resto
-// (tom, BPM, versoes, cor) fica no servidor, e o acervo pesa metade.
-const lista = songs.map((s) => ({
-  slug: s.slug,
-  title: s.title,
-  artist: s.artist,
-  categoria: s.categoria,
-  seed: s.seed,
-  ...(s.tambem ? { tambem: s.tambem } : {}),
-}))
-
-const artistas = artistList
-  .map((a) => ({ name: a.name, total: a.songs.length }))
-  .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
-
+// viaja dentro do HTML, musica por musica. Vai so o que a lista usa (titulo,
+// artista, estilo, tom e BPM), em listas curtas e nao em objetos: ver
+// lib/catalogo-lista.js. A lista de 362 artistas que vinha antes das musicas
+// saiu da pagina; os artistas agora sao um filtro e a pagina /artistas.
 const ld = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
@@ -60,30 +51,20 @@ const ld = {
 }
 
 export default function MusicasPage() {
+  const { musicas, tons } = acervoEmTuplas()
+  const nomesDosArtistas = artistList.map((a) => a.name).sort(new Intl.Collator('pt-BR').compare)
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(ld) }} />
-      <div className="shell pt-12">
-        <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Acervo' }]} />
-
-        <div className="mt-8 flex flex-wrap items-end justify-between gap-8 border-b border-line pb-12">
-          <div className="max-w-2xl">
-            <h1 className="font-bold text-[36px] leading-[1.1] text-ink sm:text-[48px]">
-              Acervo de multitracks gospel
-            </h1>
-            <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
-              Multitracks de {artistas.length} artistas e ministérios, todos com clique, guia e os
-              instrumentos em canais separados. O acervo continua crescendo, e o que entra depois
-              vem no mesmo pacote.
-            </p>
-          </div>
-          <Link href="/assinar" className="btn-signal shrink-0">
-            Liberar tudo por {priceBRL(site.price)}
-          </Link>
-        </div>
-
-        <CatalogBrowser songs={lista} artistas={artistas} />
-      </div>
+      <Pagina>
+        <CabecaPagina
+          migalhas={[{ href: '/', label: 'Início' }, { label: 'Acervo' }]}
+          titulo="Acervo de multitracks gospel"
+          intro={`Multitracks de ${nomesDosArtistas.length} artistas e ministérios, todos com clique, guia e os instrumentos em canais separados. O acervo continua crescendo, e o que entra depois vem no mesmo pacote.`}
+          acao={<CompraNoTopo />}
+        />
+        <CatalogBrowser musicas={musicas} estilos={ESTILOS} artistas={nomesDosArtistas} tons={tons} />
+      </Pagina>
     </>
   )
 }

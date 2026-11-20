@@ -1,3 +1,5 @@
+import { H2 } from '@/components/catalogo/Titulos'
+
 // Seção "Como mudar o tom e o BPM" da /como-usar (âncora #mudar-tom-e-bpm),
 // para onde apontam a ficha e o parágrafo de BPM de cada música.
 //
@@ -38,35 +40,48 @@ const PROGRAMAS = [
   },
 ]
 
-export default function MudarTomBpm() {
+const P = 'text-[16px] leading-[1.6] text-text-2'
+const H3 = 'text-[17px] font-[650] leading-[1.3]'
+
+// `numero`: o "05" do índice da /como-usar, na mesma posição das outras seções.
+export default function MudarTomBpm({ numero }) {
   return (
-    <section id="mudar-tom-e-bpm" className="shell scroll-mt-24 pt-24 sm:pt-32">
-      <div className="prose-tv max-w-3xl">
-        <h2 className="!mt-0">Como mudar o tom e o BPM da multitrack</h2>
-        <p>
-          O tom e o BPM informados em cada música são os da versão original. Os dois podem ser
-          ajustados no programa que roda a VS, sem baixar outro arquivo.
-        </p>
-        <h3>Mudar o andamento (BPM)</h3>
-        <p>
-          A mudança vale para todas as faixas ao mesmo tempo, inclusive o clique. Se uma faixa ficar
-          de fora, a banda sai do tempo. Prefira ajustes pequenos, de até cerca de 10% para mais ou
-          para menos: mudanças grandes deixam o som artificial.
-        </p>
-        <h3>Mudar o tom</h3>
-        <p>
-          Transponha os instrumentos e os vocais, mas <strong>não</strong> o clique nem a guia: a guia
-          falada fica com a voz estranha. Prefira até 2 ou 3 semitons para cima ou para baixo.
-        </p>
+    <section id="mudar-tom-e-bpm" className="flex scroll-mt-24 flex-col gap-8 border-t border-line pt-6">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-x-14 gap-y-4">
+        <div className="flex flex-col gap-2">
+          {numero && <span className="figs text-[14px] font-bold text-text-3">{numero}</span>}
+          <H2>Como mudar o tom e o BPM da multitrack</H2>
+          <p className={P}>
+            O tom e o BPM informados em cada música são os da versão original. Os dois podem ser ajustados no programa
+            que roda a VS, sem baixar outro arquivo.
+          </p>
+        </div>
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-1.5">
+            <h3 className={H3}>Mudar o andamento (BPM)</h3>
+            <p className={P}>
+              A mudança vale para todas as faixas ao mesmo tempo, inclusive o clique. Se uma faixa ficar de fora, a
+              banda sai do tempo. Prefira ajustes pequenos, de até cerca de 10% para mais ou para menos: mudanças
+              grandes deixam o som artificial.
+            </p>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <h3 className={H3}>Mudar o tom</h3>
+            <p className={P}>
+              Transponha os instrumentos e os vocais, mas <strong className="font-[650] text-ink">não</strong> o clique
+              nem a guia: a guia falada fica com a voz estranha. Prefira até 2 ou 3 semitons para cima ou para baixo.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-12 grid gap-10 lg:grid-cols-3">
+      <div className="grid gap-x-10 gap-y-8 lg:grid-cols-3">
         {PROGRAMAS.map((p) => (
-          <div key={p.nome} className="border-t-2 border-ink pt-6">
-            <h3 className="text-[19px] font-bold tracking-[-0.015em] text-ink">{p.nome}</h3>
-            <ol className="mt-5 space-y-3">
+          <div key={p.nome} className="border-t border-ink pt-5">
+            <h3 className="font-semi-condensed text-[20px] font-bold leading-tight">{p.nome}</h3>
+            <ol className="m-0 mt-4 flex list-none flex-col gap-3 p-0">
               {p.passos.map((passo, i) => (
-                <li key={passo} className="flex gap-3 text-[15px] leading-[1.65] text-ink-muted">
+                <li key={passo} className="flex gap-3 text-[15px] leading-[1.6] text-text-2">
                   <span className="figs shrink-0 font-bold text-ink">{i + 1}.</span>
                   <span>{passo}</span>
                 </li>
