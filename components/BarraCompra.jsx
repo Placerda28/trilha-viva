@@ -1,8 +1,9 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { priceBRL, site } from '@/lib/site'
+import { Botao } from './ds'
+import { useUsuario } from './usuario'
+import { TEXTO_COMPRA, priceBRL, site } from '@/lib/site'
 
 // Barra de compra fixa no pe da tela, so no celular (some a partir de lg).
 //
@@ -14,10 +15,14 @@ import { priceBRL, site } from '@/lib/site'
 // Tudo roda no navegador com IntersectionObserver; o servidor so entrega a
 // pagina pronta, sem custo nenhum de processamento.
 //
+// Redesenho: o botao e o unico texto de compra do site ("Liberar as 2.000 VS"),
+// e quem ja tem o pacote nao ve a barra (estado do usuario: components/usuario.js).
+//
 // Sem animacao de entrada: pela regra de movimento do site, o unico movimento
 // e o ponto do clique no painel de sessao. A barra so aparece e some.
 export default function BarraCompra({ inicio = 'topo', fim = 'preco', href = '/assinar' }) {
   const [visivel, setVisivel] = useState(false)
+  const comPacote = useUsuario() === 'com-pacote'
 
   useEffect(() => {
     const primeiro = document.getElementById(inicio)
@@ -39,8 +44,10 @@ export default function BarraCompra({ inicio = 'topo', fim = 'preco', href = '/a
 
   return (
     <div
-      className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink text-white lg:hidden ${
-        visivel ? '' : 'hidden'
+      data-cta-compra=""
+      data-tema="escuro"
+      className={`fixed inset-x-0 bottom-0 z-40 border-t border-dark-line bg-ink text-white lg:hidden ${
+        visivel && !comPacote ? '' : 'hidden'
       }`}
     >
       <div className="flex items-center justify-between gap-4 px-4 pb-[max(0.625rem,env(safe-area-inset-bottom))] pt-2.5">
@@ -48,11 +55,11 @@ export default function BarraCompra({ inicio = 'topo', fim = 'preco', href = '/a
           <span className="figs block text-[17px] font-extrabold tracking-[-0.02em]">
             {priceBRL(site.price)}
           </span>
-          <span className="block text-[12.5px] text-white/70">acesso vitalício</span>
+          <span className="block text-[12.5px] text-dark-text-3">pagamento único</span>
         </p>
-        <Link href={href} className="btn-signal !px-6 !py-3">
-          Comprar
-        </Link>
+        <Botao variante="compra" tamanho="md" href={href} className="px-5">
+          {TEXTO_COMPRA}
+        </Botao>
       </div>
     </div>
   )

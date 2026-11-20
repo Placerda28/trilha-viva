@@ -31,6 +31,13 @@ body {
   box-shadow: 0 0 0 2px #0d0d0d;
 }
 
+/* O rodapé tem 96 px de folga em cima (páginas antigas, sobre fundo cinza). Página
+   redesenhada cuja última faixa vai de ponta a ponta marca a raiz com
+   data-rodape-colado e o rodapé encosta nela. */
+main:has([data-rodape-colado]) + footer[data-site-chrome] {
+  margin-top: 0;
+}
+
 /* Campos com 16 px: abaixo disso o Safari do iPhone dá zoom ao focar. Raiz baixa
    de propósito (sem classe): quem define o próprio tamanho com utilitário
    continua mandando. */

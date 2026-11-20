@@ -1,0 +1,11 @@
+// Componentes base do redesenho (DESIGN.md). Um lugar só para importar:
+//   import { Botao, BotaoCompra, Campo, Aviso, EmBreve, MolduraAccent } from '@/components/ds'
+export { Icone } from './Icone'
+export { Botao, BotaoCompra, classesDoBotao } from './Botao'
+export { Campo } from './Campo'
+export { Aviso } from './Aviso'
+export { EmBreve, Contador, Quadrado } from './Etiquetas'
+export { MolduraAccent } from './Moldura'
+export { ListaCarregando, ListaVazia, ListaErro } from './Estados'
+export { Sanfona, ListaSanfona } from './Sanfona'
+export { Migalhas } from './Migalhas'

@@ -9,6 +9,7 @@ import MetaPixel from '@/components/MetaPixel'
 import Origem from '@/components/Origem'
 import RefCaptura from '@/components/RefCaptura'
 import { site } from '@/lib/site'
+import { palcoEstado } from '@/lib/palco'
 
 export const metadata = {
   metadataBase: new URL(site.url),
@@ -109,9 +110,9 @@ export default function RootLayout({ children }) {
         >
           Pular para o conteúdo
         </a>
-        <Header />
+        <Header palco={palcoEstado()} />
         <main id="conteudo">{children}</main>
-        <Footer />
+        <Footer palco={palcoEstado()} ano={new Date().getFullYear()} />
         <MetaPixel />
         <Origem />
         <RefCaptura />
