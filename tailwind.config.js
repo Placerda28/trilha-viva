@@ -3,6 +3,10 @@ module.exports = {
   content: ['./app/**/*.{js,jsx}', './components/**/*.{js,jsx}', './lib/**/*.{js,jsx}'],
   theme: {
     extend: {
+      // Largura em que o cabeçalho passa do layout de celular (barra + menu em
+      // tela cheia) para o de computador (links na barra). Um lugar só: usar
+      // `nav:` nas classes do Header em vez de um valor solto.
+      screens: { nav: '1080px' },
       colors: {
         // Paleta "Preto no branco, corte vermelho" (06/09/2026). Base
         // acromatica: preto no texto e nos paineis, cinza-clarissimo de fundo,
@@ -13,16 +17,49 @@ module.exports = {
         // `signal-lite` e o degrau claro, para vermelho dentro de painel preto.
         ink: {
           DEFAULT: '#0D0D0D',
-          soft: '#232323', // hover de botao preto
-          muted: '#5C5C5C', // texto secundario, 6.02 sobre o fundo
-          faint: '#8A8A8A', // numeracao e metadado discreto
+          soft: '#232323', // hover de botao preto (legado)
+          muted: '#5C5C5C', // texto secundario, 6.02 sobre o fundo (legado)
+          faint: '#8A8A8A', // numeracao e metadado discreto (legado)
+          hover: '#2B2B2B', // DESIGN.md: botao principal, mouse em cima
+          pressed: '#000000', // DESIGN.md: botao principal, pressionado
         },
         paper: '#F2F3F5', // cinza-clarissimo do fundo
         mist: {
           DEFAULT: '#E7E8EB', // faixas de secao
           deep: '#DADCE0',
         },
-        line: '#E0E2E6',
+        // ---- Redesenho (DESIGN.md do site, 20/11/2026) -----------------------
+        // Nomes iguais aos do DESIGN.md. Os de cima (paper, mist, signal, accent)
+        // seguem para as telas que ainda nao foram redesenhadas e para a gestao;
+        // saem quando a ultima pagina trocar de sistema.
+        // `red` e o vermelho de botao de compra, traco e sinal. Para TEXTO use
+        // `red-text` (fundo claro) ou `red-text-dark` (fundo preto).
+        red: {
+          DEFAULT: '#E5152D',
+          hover: '#C8102A',
+          pressed: '#A60C22',
+          text: '#C10F20',
+          'text-dark': '#FF5C6A',
+          tint: '#FBE4E6',
+          'tint-pressed': '#F6CDD2',
+        },
+        surface: { DEFAULT: '#F4F4F3', pressed: '#E3E3E1' },
+        'text-2': '#3D3D3D', // paragrafos
+        'text-3': '#4D4D4D', // rotulos e metadados
+        'text-4': '#5E5E5E', // so texto riscado ou grande
+        'field-border': '#8C8C8C', // borda de campo e de botao contorno no escuro
+        'line-2': '#C9C9C6', // moldura de cartao secundario
+        dark: {
+          surface: '#111111',
+          hover: '#1F1F1F',
+          pressed: '#262626',
+          line: '#2B2B2B',
+          frame: '#3A3A3A',
+          border: '#5C5C5C',
+          'text-2': '#D9D9D9',
+          'text-3': '#B3B3B3',
+        },
+        line: '#E3E3E1',
         signal: {
           DEFAULT: '#E5152D', // vermelho de borda, onda e marca de canal
           deep: '#C40F24', // texto e fundo de botao
@@ -52,6 +89,8 @@ module.exports = {
       },
       borderRadius: {
         none: '0',
+        tag: '2px', // etiquetas "Em breve" e contadores
+        control: '4px', // botoes e campos
         sm: '3px',
         DEFAULT: '4px',
         md: '6px',

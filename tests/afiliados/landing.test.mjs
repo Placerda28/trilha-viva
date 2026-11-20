@@ -25,13 +25,15 @@ test('regras: mês fecha no dia 8 com reembolsos descontados e Pix no CPF do afi
   assert.match(PAGINA, /chave no CPF do próprio afiliado/)
 })
 
-test('acesso rápido: botão "Já sou afiliado" no topo, na barra fixa e no fim, todos para a área do afiliado', () => {
+test('acesso rápido: "Já sou afiliado" no topo e no fim; barra fixa do celular com "Quero ser afiliado"; tudo para a área do afiliado', () => {
   assert.equal(ROTA_AFILIADO, '/minha-conta/afiliado')
   assert.equal(voltaPermitida(ROTA_AFILIADO), ROTA_AFILIADO) // a volta do login é permitida
   assert.equal((PAGINA.match(/ROTULO_JA_SOU\}/g) || []).length, 2) // topo e chamada final
   assert.match(PAGINA, /Já sou afiliado: entrar na minha área/)
-  assert.match(PAGINA, /<BarraAfiliado \/>/)
-  assert.match(ler('components/afiliados/landing/BarraAfiliado.jsx'), /Já sou afiliado/)
+  assert.match(PAGINA, /<BarraAfiliado maximo=/)
+  const barra = ler('components/afiliados/landing/BarraAfiliado.jsx')
+  assert.match(barra, /Quero ser afiliado/)
+  assert.match(barra, /href=\{ROTA_AFILIADO\}/)
 })
 
 test('a página segue estática: sem cookie, banco, searchParams nem dynamic', () => {
@@ -42,9 +44,16 @@ test('simulador: sem as linhas de garantido e bônus, com a frase "N vendas = N�
   assert.match(SIM, /= \$\{nomeNivel\} = \$\{moeda\(total\)\} no mês/)
 })
 
-test('movimento só com permissão: moeda, revelar e barra respeitam prefers-reduced-motion', () => {
+test('movimento só com permissão: moeda (convite do acervo) e barra respeitam prefers-reduced-motion', () => {
   assert.match(ler('components/afiliados/landing/Moeda3D.jsx'), /prefers-reduced-motion: reduce/)
-  assert.match(ler('components/afiliados/landing/RevelarAoRolar.jsx'), /prefers-reduced-motion: reduce/)
   const css = readFileSync('app/afiliados/landing.css', 'utf8')
   assert.match(css, /@media \(prefers-reduced-motion: no-preference\)/)
+  assert.match(css, /\.barra-afi\b/)
+})
+
+test('visual novo: medalhas preto e branco na landing, sem a moeda 3D colorida', () => {
+  for (const [nome, fonte] of [['page', PAGINA], ['Simulador', SIM], ['EscadaMetas', ESCADA]]) {
+    assert.doesNotMatch(fonte, /Moeda3D|corMetal|nivel\.cor|ouro\.cor|bronze\.cor/, nome)
+  }
+  assert.match(PAGINA, /MedalhaPB/)
 })

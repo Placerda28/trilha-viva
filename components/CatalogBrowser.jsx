@@ -1,130 +1,108 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { SongGrid } from './ui'
+import { Botao, ListaVazia } from '@/components/ds'
+import BuscaEFiltros from '@/components/catalogo/BuscaEFiltros'
+import { LinhaMusica, ListaMusicas } from '@/components/catalogo/ListaMusicas'
+import { FAIXAS_BPM, musicaDaTupla, naFaixa, plano } from '@/lib/catalogo-util'
 
-const PAGE = 40
+// Lista do acervo com busca e filtros (Artista, Estilo, Tom e BPM), toda no
+// navegador. Serve /musicas (com os quatro filtros e "Carregar mais") e
+// /artistas/[slug] (só a busca, a lista inteira).
+//
+// As músicas chegam como tuplas (lib/catalogo-lista.js) já com tom e BPM: nada
+// de buscar de novo. ?artista= e ?q= são lidos aqui, no navegador, e não no
+// servidor: assim a página continua sendo montada uma vez só, na publicação
+// (ler a barra de endereço no servidor derrubou o acervo em setembro: erro 1102).
+const VAZIO = { q: '', artista: '', estilo: '', tom: '', faixa: '' }
 
-function norm(s) {
-  return s
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .toLowerCase()
-}
+export default function CatalogBrowser({
+  musicas,
+  estilos = [],
+  artistas = [],
+  tons = [],
+  comFiltros = true,
+  porPagina = 40,
+  rotuloBusca = 'Buscar música ou artista',
+}) {
+  const [f, setF] = useState(VAZIO)
+  const [limite, setLimite] = useState(porPagina)
+  const lista = useMemo(() => musicas.map((t) => musicaDaTupla(t, estilos)), [musicas, estilos])
 
-export default function CatalogBrowser({ songs, artistas = [] }) {
-  const [q, setQ] = useState('')
-  const [artist, setArtist] = useState('')
-  const [limit, setLimit] = useState(PAGE)
-
-  // ?artista= e ?q= sao lidos aqui, no navegador, e nao no servidor: assim a
-  // pagina do acervo continua sendo montada uma vez so, na publicacao. Roda
-  // depois que a lista ja apareceu na tela, entao um link com filtro abre o
-  // acervo inteiro por um instante e em seguida filtra.
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search)
-    const a = sp.get('artista')
-    const busca = sp.get('q')
-    if (a) setArtist(a)
-    if (busca) setQ(busca)
+    const artista = sp.get('artista')
+    const q = sp.get('q')
+    if (artista || q) setF((v) => ({ ...v, artista: artista || '', q: q || '' }))
   }, [])
 
-  const filtered = useMemo(() => {
-    const nq = norm(q.trim())
-    return songs.filter((s) => {
-      if (artist && s.artist !== artist && s.tambem !== artist) return false
-      if (!nq) return true
-      return norm(s.title).includes(nq) || norm(s.artist).includes(nq)
-    })
-  }, [songs, q, artist])
+  const muda = (campo) => (valor) => {
+    setF((v) => ({ ...v, [campo]: valor }))
+    setLimite(porPagina)
+  }
 
-  const shown = filtered.slice(0, limit)
+  const achadas = useMemo(() => {
+    const termo = plano(f.q.trim())
+    return lista.filter((m) => {
+      if (f.artista && m.artista !== f.artista && m.convidado !== f.artista) return false
+      if (f.estilo && m.estilo !== f.estilo) return false
+      if (f.tom && m.tom !== f.tom) return false
+      if (f.faixa && !(m.bpm && naFaixa(m.bpm, f.faixa))) return false
+      return !termo || plano(m.titulo).includes(termo) || plano(m.artista).includes(termo)
+    })
+  }, [lista, f])
+
+  const mostradas = achadas.slice(0, limite)
+  const filtros = comFiltros
+    ? [
+        { id: 'artista', rotulo: 'Artista', valor: f.artista, onChange: muda('artista'), opcoes: artistas },
+        { id: 'estilo', rotulo: 'Estilo', valor: f.estilo, onChange: muda('estilo'), opcoes: estilos },
+        { id: 'tom', rotulo: 'Tom', valor: f.tom, onChange: muda('tom'), opcoes: tons },
+        {
+          id: 'bpm',
+          rotulo: 'BPM',
+          valor: f.faixa,
+          onChange: muda('faixa'),
+          opcoes: FAIXAS_BPM.map((b) => ({ valor: b.id, rotulo: b.rotulo })),
+        },
+      ]
+    : []
 
   return (
     <>
-      <div className="mt-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative w-full lg:max-w-sm">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint"
-            aria-hidden="true"
-          >
-            <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.7" />
-            <path d="M11 11l4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-          </svg>
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value)
-              setLimit(PAGE)
-            }}
-            placeholder="Buscar por música ou artista"
-            aria-label="Buscar multitrack por música ou artista"
-            className="w-full rounded border border-line bg-white py-3.5 pl-11 pr-4 text-[15px] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
-          />
-        </div>
+      <BuscaEFiltros rotuloBusca={rotuloBusca} busca={f.q} onBusca={muda('q')} filtros={filtros} />
 
-        {/* Filtro por artista: com 77 bandas no acervo, e por artista que a
-            pessoa procura, nao por categoria. */}
-        <div className="w-full lg:w-auto">
-          <label htmlFor="filtro-artista" className="sr-only">
-            Filtrar por artista ou ministério
-          </label>
-          <select
-            id="filtro-artista"
-            value={artist}
-            onChange={(e) => {
-              setArtist(e.target.value)
-              setLimit(PAGE)
-            }}
-            className="w-full rounded border border-line bg-white px-4 py-3.5 text-[15px] text-ink focus:border-ink focus:outline-none lg:w-auto"
-          >
-            <option value="">Todos os artistas</option>
-            {artistas.map((a) => (
-              <option key={a.name} value={a.name}>
-                {a.name} ({a.total})
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* A contagem so aparece quando ha filtro ou busca, que e quando ela diz
-          alguma coisa ("49 musicas de Fernandinho"). Sem filtro ela so anunciava
-          o tamanho do acervo, e o site nao fala em numero de musicas. O <p> fica
-          sempre no lugar para o leitor de tela anunciar a mudanca. */}
-      <p className="figs mt-6 min-h-[1.4em] text-[14px] text-ink-muted" aria-live="polite">
-        {artist || q.trim()
-          ? `${filtered.length} ${filtered.length === 1 ? 'música' : 'músicas'}${
-              artist ? ` de ${artist}` : ''
-            }.`
-          : ''}
+      <p aria-live="polite" className="figs flex justify-between gap-3 text-[14px] text-text-3">
+        <span>
+          {achadas.length.toLocaleString('pt-BR')} {achadas.length === 1 ? 'música' : 'músicas'}
+        </span>
+        {comFiltros && <span>Ordem alfabética</span>}
       </p>
 
-      {shown.length === 0 ? (
-        <div className="mt-10 rounded-lg bg-mist px-6 py-16 text-center">
-          <p className="text-[19px] font-bold text-ink">Nada encontrado com esse termo.</p>
-          <p className="mx-auto mt-2 max-w-md text-[14.5px] text-ink-muted">
-            Tente só uma palavra do título, ou procure pelo nome do artista. O acervo continua
-            crescendo, e novas trilhas entram no mesmo pacote.
-          </p>
-        </div>
+      {achadas.length === 0 ? (
+        <ListaVazia
+          icone="inbox"
+          titulo={f.q.trim() ? `Nenhuma música encontrada para "${f.q.trim()}"` : 'Nenhuma música encontrada'}
+          descricao="Confira a escrita, procure pelo nome do artista ou tire algum filtro."
+          acao={
+            <Botao variante="contorno" onClick={() => setF(VAZIO)}>
+              Ver todas as músicas
+            </Botao>
+          }
+          className="items-start px-0 py-7 text-left"
+        />
       ) : (
-        <div className="mt-8 border-t-2 border-ink">
-          <SongGrid songs={shown} />
-        </div>
+        <ListaMusicas>
+          {mostradas.map((m) => (
+            <LinhaMusica key={m.slug} musica={m} />
+          ))}
+        </ListaMusicas>
       )}
 
-      {limit < filtered.length && (
-        <div className="mt-12 text-center">
-          <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="btn-quiet">
-            Carregar mais músicas
-          </button>
-        </div>
+      {limite < achadas.length && (
+        <Botao variante="contorno" className="self-center" onClick={() => setLimite((l) => l + porPagina)}>
+          Carregar mais músicas
+        </Botao>
       )}
     </>
   )

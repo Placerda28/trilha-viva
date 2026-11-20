@@ -15,16 +15,36 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Foco de teclado visível em tudo. As linhas do setlist e os links de texto
-   não tinham indicação nenhuma; agora têm um contorno com folga. */
+/* Foco de teclado (DESIGN.md): contorno de 2 px na cor do texto, 2 px de folga
+   e um anel de 2 px na cor do fundo, para o contorno não sumir em cima de
+   botão preto ou vermelho. No escuro o contorno é branco e o anel é preto.
+   Não mexe em border-radius: quem tem raio de 4 px continua com 4 px. */
 :focus-visible {
   outline: 2px solid #0d0d0d;
   outline-offset: 2px;
-  border-radius: 2px;
+  box-shadow: 0 0 0 2px #ffffff;
 }
-.panel :focus-visible,
-.bg-ink :focus-visible {
-  outline-color: #ff5566;
+/* :where() zera a especificidade do contexto: os botões antigos (.btn, com
+   focus-visible:ring-2) continuam ganhando deste bloco. */
+:where(.panel, .bg-ink, .bg-dark-surface, [data-tema='escuro']) :focus-visible {
+  outline-color: #ffffff;
+  box-shadow: 0 0 0 2px #0d0d0d;
+}
+
+/* O rodapé tem 96 px de folga em cima (páginas antigas, sobre fundo cinza). Página
+   redesenhada cuja última faixa vai de ponta a ponta marca a raiz com
+   data-rodape-colado e o rodapé encosta nela. */
+main:has([data-rodape-colado]) + footer[data-site-chrome] {
+  margin-top: 0;
+}
+
+/* Campos com 16 px: abaixo disso o Safari do iPhone dá zoom ao focar. Raiz baixa
+   de propósito (sem classe): quem define o próprio tamanho com utilitário
+   continua mandando. */
+input,
+select,
+textarea {
+  font-size: 16px;
 }
 
 ::selection {
@@ -40,6 +60,12 @@ body {
   /* Números que precisam alinhar em coluna: canais, faixas, preço. */
   .figs {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Rótulo curto em caixa alta do DESIGN.md (label 13 px). Uso raro: só onde o
+     desenho do componente pede, nunca como "etiqueta" acima de toda seção. */
+  .rotulo {
+    @apply text-[13px] font-semibold uppercase tracking-[0.08em];
   }
 
   /* ---- botões ---------------------------------------------------------- */
@@ -252,6 +278,14 @@ body {
   }
   .prose-tv a {
     @apply text-ink underline decoration-signal decoration-2 underline-offset-4;
+  }
+}
+
+/* Archivo semicondensada nos títulos (DESIGN.md: font-stretch 87,5%). Precisa do
+   eixo `wdth`, por isso o app/layout.js importa @fontsource-variable/archivo/wdth.css. */
+@layer utilities {
+  .font-semi-condensed {
+    font-stretch: 87.5%;
   }
 }
 

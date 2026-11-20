@@ -1,8 +1,10 @@
-import Link from 'next/link'
-import { ChannelStrip } from '@/components/Track'
-import { Breadcrumbs } from '@/components/ui'
+import Pagina from '@/components/catalogo/Pagina'
+import CabecaPagina from '@/components/catalogo/CabecaPagina'
+import ArtistasIndice from '@/components/catalogo/ArtistasIndice'
+import { CompraNoTopo } from '@/components/catalogo/SemPacote'
 import { artistList } from '@/lib/artists'
-import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
+import { plano } from '@/lib/catalogo-util'
+import { OG_IMAGEM, site } from '@/lib/site'
 
 const title = 'Artistas e ministérios com multitrack gospel'
 const description =
@@ -15,6 +17,26 @@ export const metadata = {
   openGraph: { images: OG_IMAGEM, title, description, url: `${site.url}/artistas` },
 }
 
+// Uma letra para cada artista: sem acento e em minúscula; número ou símbolo vai
+// para o grupo "0-9" (id 'num').
+const letraDe = (nome) => {
+  const c = plano(nome)[0] ?? ''
+  return /[a-z]/.test(c) ? c : 'num'
+}
+
+function agrupar() {
+  const ordem = new Intl.Collator('pt-BR', { sensitivity: 'base' })
+  const itens = artistList.map((a) => [a.slug, a.name, a.songs.length]).sort((a, b) => ordem.compare(a[1], b[1]))
+  const porLetra = new Map()
+  for (const item of itens) {
+    const id = letraDe(item[1])
+    if (!porLetra.has(id)) porLetra.set(id, [])
+    porLetra.get(id).push(item)
+  }
+  const ids = [...porLetra.keys()].sort((a, b) => (a === 'num' ? -1 : b === 'num' ? 1 : a < b ? -1 : 1))
+  return ids.map((id) => ({ id, letra: id === 'num' ? '0-9' : id.toUpperCase(), itens: porLetra.get(id) }))
+}
+
 export default function ArtistasPage() {
   const ld = {
     '@context': 'https://schema.org',
@@ -23,42 +45,21 @@ export default function ArtistasPage() {
     url: `${site.url}/artistas`,
     inLanguage: 'pt-BR',
   }
+  // artistList já vem do maior acervo para o menor.
+  const destaques = artistList.slice(0, 12).map((a) => [a.slug, a.name, a.songs.length])
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
-      <div className="shell pt-12">
-        <Breadcrumbs items={[{ href: '/', label: 'Início' }, { label: 'Artistas' }]} />
-
-        <div className="mt-8 max-w-2xl border-b border-line pb-12">
-          <h1 className="text-d1 text-ink">Artistas e ministérios</h1>
-          <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
-            Os louvores que a sua igreja canta, com multitrack pronto para o culto. Todos incluídos
-            no mesmo pacote por {priceBRL(site.price)}.
-          </p>
-        </div>
-
-        <div className="mt-2 grid divide-y divide-line sm:grid-cols-2 sm:gap-x-14 lg:grid-cols-3">
-          {artistList.map((a) => (
-            <Link
-              key={a.slug}
-              href={`/artistas/${a.slug}`}
-              className="group flex items-center gap-4 py-5"
-            >
-              <ChannelStrip seed={a.songs[0].seed} height={26} className="shrink-0" />
-              <div className="min-w-0">
-                <h2 className="truncate text-[17px] font-bold tracking-[-0.015em] text-ink group-hover:underline group-hover:decoration-signal group-hover:decoration-2 group-hover:underline-offset-4">
-                  {a.name}
-                </h2>
-                <p className="figs mt-0.5 text-[13px] text-ink-muted">
-                  {a.songs.length}{' '}
-                  {a.songs.length === 1 ? 'multitrack no acervo' : 'multitracks no acervo'}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
+      <Pagina>
+        <CabecaPagina
+          migalhas={[{ href: '/', label: 'Início' }, { label: 'Artistas' }]}
+          titulo="Artistas e ministérios"
+          intro={`${artistList.length} artistas e ministérios no acervo, do congregacional à ministração. Os louvores que a sua igreja canta, com multitrack pronto para o culto.`}
+          acao={<CompraNoTopo />}
+        />
+        <ArtistasIndice destaques={destaques} grupos={agrupar()} />
+      </Pagina>
     </>
   )
 }

@@ -9,8 +9,9 @@
 // **O disco inverte com o fundo** (decisao do Paulo): sobre fundo claro o disco
 // e preto com canais brancos, que e o selo do favicon; sobre fundo preto vai a
 // versao invertida — disco branco com canais pretos. O clique fica vermelho nos
-// dois casos, porque e a marca do produto. No site o cabecalho e o rodape sao
-// pretos, entao os dois usam tone="light" e mostram o disco branco.
+// dois casos, porque e a marca do produto. No site o cabecalho e escuro na home
+// e em /palco (tone="light") e claro no resto (tone="ink"); o rodape e sempre
+// preto (tone="light").
 //
 // Nao ha clipPath: a barra mais extrema (x=7.4) cabe folgada na corda do
 // circulo naquele ponto, entao nao ha nada para recortar — e um clipPath
@@ -56,15 +57,22 @@ export function LogoMark({ size = 26, tone = 'ink', className = '' }) {
   )
 }
 
-// markSize 28, nao 24: e o tamanho em que o disco fica um degrau mais alto que
-// as letras, que e a proporcao do mockup que o Paulo mandou.
-export function Logo({ tone = 'ink', markSize = 28 }) {
+// Redesenho (DESIGN.md): o disco inline abaixo e a mesma geometria dos arquivos
+// icon.svg (fundo claro, disco preto) e icon-invertido.svg (fundo escuro, disco
+// branco) do pacote de design; fica inline para nao custar uma requisicao.
+// O texto "Trilha Viva" e em peso 650, 17 px no celular e 19 px no computador,
+// ao lado do disco (28 px no celular, 32 px no computador).
+export function Logo({ tone = 'ink', markSize, className = '' }) {
   const light = tone === 'light'
   return (
-    <span className="inline-flex items-center gap-3">
-      <LogoMark size={markSize} tone={tone} />
+    <span className={`inline-flex items-center gap-2 sm:gap-2.5 ${className}`}>
+      {markSize ? (
+        <LogoMark size={markSize} tone={tone} />
+      ) : (
+        <LogoMark size={32} tone={tone} className="h-7 w-7 sm:h-8 sm:w-8" />
+      )}
       <span
-        className={`text-[19px] font-extrabold tracking-[-0.03em] ${
+        className={`whitespace-nowrap text-[17px] font-[650] tracking-[-0.01em] sm:text-[19px] ${
           light ? 'text-white' : 'text-ink'
         }`}
       >
@@ -74,6 +82,6 @@ export function Logo({ tone = 'ink', markSize = 28 }) {
   )
 }
 
-export function LogoInverse({ markSize = 28 }) {
+export function LogoInverse({ markSize }) {
   return <Logo tone="light" markSize={markSize} />
 }

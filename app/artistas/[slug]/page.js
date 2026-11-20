@@ -1,8 +1,13 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Breadcrumbs, SongGrid } from '@/components/ui'
+import CatalogBrowser from '@/components/CatalogBrowser'
+import Pagina from '@/components/catalogo/Pagina'
+import CabecaPagina from '@/components/catalogo/CabecaPagina'
+import { CompraNoTopo } from '@/components/catalogo/SemPacote'
+import { Icone } from '@/components/ds'
 import { artistList, getArtist } from '@/lib/artists'
-import { OG_IMAGEM, site, priceBRL } from '@/lib/site'
+import { ESTILOS, tuplaDaMusica } from '@/lib/catalogo-lista'
+import { OG_IMAGEM, site } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 
 export function generateStaticParams() {
@@ -54,38 +59,44 @@ export default async function ArtistPage({ params }) {
     })),
   }
 
+  const total = artist.songs.length
+  // VS MP3 é playback mixado, sem canais: a frase só promete canais se há multitrack.
+  const comCanais = artist.songs.some((s) => s.tipo !== 'VS MP3')
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson([ld, listaLd]) }} />
-      <div className="shell pt-12">
-        <Breadcrumbs
-          items={[
+      <Pagina>
+        <CabecaPagina
+          migalhas={[
             { href: '/', label: 'Início' },
             { href: '/artistas', label: 'Artistas' },
             { label: artist.name },
           ]}
+          sobre="Artista"
+          titulo={artist.name}
+          intro={`${total} ${total === 1 ? 'multitrack' : 'multitracks'}${
+            comCanais ? ' com clique, guia e canais separados' : ''
+          }, ${total === 1 ? 'incluída' : 'todas incluídas'} no pacote 2.000 VS.`}
+          acao={<CompraNoTopo linha={`todas as músicas de ${artist.name}`} />}
         />
-
-        <div className="mt-8 flex flex-wrap items-end justify-between gap-8 border-b border-line pb-12">
-          <div className="max-w-2xl">
-            <h1 className="text-d2 text-ink">
-              Multitracks de {artist.name}
-            </h1>
-            <p className="mt-5 text-[17px] leading-[1.7] text-ink-muted">
-              {artist.songs.length}{' '}
-              {artist.songs.length === 1 ? 'louvor' : 'louvores'} no acervo, com clique, guia e
-              canais separados. Todos fazem parte do pacote único.
-            </p>
-          </div>
-          <Link href="/assinar" className="btn-signal shrink-0">
-            Liberar por {priceBRL(site.price)}
-          </Link>
-        </div>
-
-        <div className="mt-10 border-t-2 border-ink">
-          <SongGrid songs={artist.songs} />
-        </div>
-      </div>
+        <CatalogBrowser
+          musicas={artist.songs.map(tuplaDaMusica)}
+          estilos={ESTILOS}
+          comFiltros={false}
+          porPagina={artist.songs.length}
+        />
+        <Link
+          href="/artistas"
+          className="flex min-h-[60px] items-center gap-3 border-y border-b-line border-t-ink py-2 hover:bg-surface"
+        >
+          <span className="flex flex-1 flex-col gap-0.5">
+            <span className="rotulo text-text-3">Mais artistas</span>
+            <span className="text-[17px] font-[650]">Ver os {artistList.length} artistas e ministérios</span>
+          </span>
+          <Icone nome="seta-direita" tamanho={20} traco={1.5} />
+        </Link>
+      </Pagina>
     </>
   )
 }

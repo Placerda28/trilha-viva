@@ -1,10 +1,14 @@
 'use client'
 
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Aviso, Botao, Campo, Icone, MolduraAccent } from '@/components/ds'
+import { esquecerUsuario } from '@/components/usuario'
 import { priceBRL, site } from '@/lib/site'
 import { carrinhoDaVisita, rastrear } from '@/components/MetaPixel'
+import AvisoCancelado from '@/components/AvisoCancelado'
 import CheckoutCupom from '@/components/CheckoutCupom'
 import CheckoutIndicacao, { AvisoIndicacao, useIndicacao } from '@/components/CheckoutIndicacao'
+import { useCupom } from '@/components/checkout/useCupom'
 import Turnstile, { useTurnstile } from '@/components/afiliados/Turnstile'
 import {
   celularValido,
@@ -19,24 +23,58 @@ import {
 
 const EVENTO_LIMPAR = 'tv-checkout-limpar'
 
-// Formulario que abre o pagamento: manda nome, e-mail e WhatsApp para /api/checkout e
-// leva a pessoa para a URL que volta (o Mercado Pago). A logica do envio e a
-// mesma em todo lugar; as opcoes so mudam a aparencia:
-//   tom="escuro"   para dentro do card preto de /assinar (botao .btn-glow)
-//   rotulo         texto do botao
-// Nome, e-mail e WhatsApp sao obrigatorios (a API recusa sem eles). O
-// WhatsApp serve para o lembrete de compra. Quem chega pelo
-// e-mail de lembrete traz ?r=<codigo do carrinho>: o formulario busca nome e
-// e-mail em /api/carrinho e preenche sozinho. O e-mail nunca vai no endereco
-// porque o Pixel da Meta manda o endereco da pagina para a Meta.
-// Os ids dos campos vem do useId, porque /assinar tem dois cards de preco
-// (topo e fim) e dois campos com o mesmo id quebram o rotulo dos leitores de
-// tela.
-// Os campos dizem ao navegador o que são (autocomplete name/email/tel), para o
-// celular oferecer os dados que já guarda e preencher os três de uma vez. Quem
-// já clicou em comprar neste aparelho encontra os campos preenchidos (só no
-// navegador dela, chave tv_checkout); o carrinho do lembrete vale mais.
-export default function CheckoutForm({ tom = 'claro', rotulo }) {
+// "Menos de R$ 0,05 por música": 89,90 ÷ 2.000 = 0,045, calculado do preço e do
+// tamanho do pacote para acompanhar se um dos dois mudar.
+const porMusica = site.price / site.totalTracks
+const porMusicaTeto = Math.ceil(porMusica * 100) / 100
+const CONTA_POR_MUSICA =
+  porMusicaTeto > porMusica ? `Menos de ${priceBRL(porMusicaTeto)} por música.` : `${priceBRL(porMusicaTeto)} por música.`
+
+const EMAIL_OK = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+
+// As mensagens de campo do desenho (MUDANÇAS §4). Só confere o que a pessoa
+// digitou; o servidor confere de novo.
+function conferir({ nome, email, telefone }) {
+  const erros = {}
+  if (!nome) erros.nome = 'Escreva seu nome.'
+  if (!EMAIL_OK.test(email)) erros.email = 'Esse e-mail parece incompleto. Confira o que vem depois do @.'
+  if (!celularValido(digitosCelular(telefone))) erros.telefone = 'Escreva o WhatsApp com DDD.'
+  return erros
+}
+const CAMPO_DO_ERRO = { nome: 'name', email: 'email', telefone: 'tel' }
+
+const SELOS = [
+  ['cadeado', 'Pagamento seguro pelo Mercado Pago'],
+  ['check', 'Acesso liberado na hora'],
+  ['check', 'Garantia de 7 dias'],
+]
+
+async function sairDaConta() {
+  try {
+    await fetch('/api/conta/sair', { method: 'POST' })
+  } catch {
+    /* mesmo sem resposta, recarrega: o cabeçalho confere de novo quem está logado */
+  }
+  esquecerUsuario()
+  window.location.href = '/assinar'
+}
+
+// Formulário que abre o pagamento: manda nome, e-mail e WhatsApp para
+// /api/checkout e leva a pessoa para a URL que volta (o Mercado Pago). Um só na
+// página (no computador fica fixo na coluna da direita, no celular vem logo
+// depois do título). A lógica do envio, do cupom, do código de quem indicou, do
+// anti-robô e dos eventos do Pixel é a de sempre; esta tela só mudou de cara.
+//
+// Nome, e-mail e WhatsApp são obrigatórios (a API recusa sem eles). O WhatsApp
+// serve para o lembrete de compra. Quem chega pelo e-mail de lembrete traz
+// ?r=<codigo do carrinho>: o formulário busca nome e e-mail em /api/carrinho e
+// preenche sozinho. O e-mail nunca vai no endereço porque o Pixel da Meta manda o
+// endereço da página para a Meta. Os campos dizem ao navegador o que são
+// (autocomplete name/email/tel), e quem já clicou em comprar neste aparelho
+// encontra tudo preenchido (só no navegador dela, chave tv_checkout).
+//
+// `logado`: a pessoa entrou na conta mas ainda não tem o pacote.
+export default function CheckoutForm({ logado = false }) {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [telefone, setTelefone] = useState('')
@@ -44,57 +82,19 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [lembrado, setLembrado] = useState(false)
+  const [conferirAgora, setConferirAgora] = useState(false) // vira true na primeira tentativa que falha
   const anti = useTurnstile() // anti-robô da Cloudflare, invisível para quase todos
-  const id = useId()
-  const escuro = tom === 'escuro'
-
-  // Cupom: fica escondido atrás de "Tenho um cupom" para não distrair quem não
-  // tem. Aplicar confere no servidor (/api/cupom) e mostra o preço novo; o
-  // /api/checkout confere de novo na hora de cobrar, então o valor mostrado
-  // aqui nunca é o que decide.
-  const [abrirCupom, setAbrirCupom] = useState(false)
-  const [cupom, setCupom] = useState('')
-  const [aplicado, setAplicado] = useState(null) // { cupom, preco, de }
-  const [checando, setChecando] = useState(false)
-  const [erroCupom, setErroCupom] = useState('')
+  const cupom = useCupom()
+  const abrirCupomComCodigo = cupom.abrirComCodigo
 
   // Código de quem indicou: só registra a venda, não mexe no preço.
   const indicacao = useIndicacao()
   const iniciarIndicacao = indicacao.iniciar
 
-  async function aplicarCupom(codigo) {
-    const limpo = String(codigo || '').trim()
-    if (!limpo) return
-    setErroCupom('')
-    setChecando(true)
-    try {
-      const res = await fetch('/api/cupom', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cupom: limpo }),
-      })
-      const dados = await res.json().catch(() => ({}))
-      if (!res.ok || !dados.ok) {
-        setAplicado(null)
-        setErroCupom(dados.erro || 'Não consegui conferir o cupom agora.')
-      } else {
-        setAplicado(dados)
-      }
-    } catch {
-      setErroCupom('Falha de conexão ao conferir o cupom.')
-    }
-    setChecando(false)
-  }
-
-  // Quem chega por /assinar?cupom=CODIGO já vê o cupom aplicado.
   useEffect(() => {
     const busca = new URLSearchParams(window.location.search)
     const doEndereco = busca.get('cupom')
-    if (doEndereco) {
-      setAbrirCupom(true)
-      setCupom(doEndereco)
-      aplicarCupom(doEndereco)
-    }
+    if (doEndereco) abrirCupomComCodigo(doEndereco)
 
     iniciarIndicacao(busca)
 
@@ -125,9 +125,8 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
     } else if (guardado) {
       preencher(null)
     }
-  }, [iniciarIndicacao])
+  }, [iniciarIndicacao, abrirCupomComCodigo])
 
-  // /assinar tem dois formulários (topo e fim): "Limpar" em um esvazia os dois.
   useEffect(() => {
     const esvaziar = () => {
       setNome('')
@@ -144,26 +143,27 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
     window.dispatchEvent(new Event(EVENTO_LIMPAR))
   }
 
-  const precoFinal = aplicado ? aplicado.preco : site.price
+  const precoFinal = cupom.aplicado ? cupom.aplicado.preco : site.price
+  const erros = conferirAgora ? conferir({ nome: nome.trim(), email: email.trim(), telefone }) : {}
+  const qtdErros = Object.keys(erros).length
 
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
-    const valores = valoresDoEnvio({ nome, email, telefone }, e.currentTarget)
+    const form = e.currentTarget
+    const valores = valoresDoEnvio({ nome, email, telefone }, form)
     if (valores.nome !== nome) setNome(valores.nome)
     if (valores.email !== email) setEmail(valores.email)
-    if (!valores.nome) {
-      setError('Informe seu nome.')
+    const primeira = Object.keys(conferir(valores))[0]
+    if (primeira) {
+      setConferirAgora(true)
+      form.elements.namedItem(CAMPO_DO_ERRO[primeira])?.focus()
       return
     }
     const celular = digitosCelular(valores.telefone)
-    if (!celularValido(celular)) {
-      setError('Informe seu WhatsApp com DDD.')
-      return
-    }
     setTelefone(mascaraCelular(celular))
     guardar({ nome: valores.nome, email: valores.email, telefone: celular })
-    if (anti.falta) return setError('Falta a verificação anti-robô: aguarde um instante (ou marque "Confirme que é humano", se aparecer) e toque em pagar de novo.')
+    if (anti.falta) return setError('Falta a verificação anti-robô: aguarde um instante (ou marque "Confirme que é humano", se aparecer) e toque em continuar de novo.')
     const codigoAfiliado = indicacao.codigoParaEnvio()
     setLoading(true)
     // Mesmo id no Pixel e no servidor: a Meta conta um evento só.
@@ -173,7 +173,7 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: valores.nome, email: valores.email, telefone: celular, eventoId, cupom: aplicado ? aplicado.cupom : '', codigo_afiliado: codigoAfiliado, utm, turnstile: anti.usar() }),
+        body: JSON.stringify({ nome: valores.nome, email: valores.email, telefone: celular, eventoId, cupom: cupom.aplicado ? cupom.aplicado.cupom : '', codigo_afiliado: codigoAfiliado, utm, turnstile: anti.usar() }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {
@@ -189,70 +189,53 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
     }
   }
 
-  const rotuloCls = `block text-[13px] font-semibold ${escuro ? 'text-white' : 'text-ink'}`
-  const campoCls = escuro
-    ? 'relative mt-2 w-full rounded border border-white/25 bg-white px-4 py-3.5 text-[16px] text-ink placeholder:text-ink-muted focus:border-signal-lite focus:outline-none'
-    : 'mt-2 w-full rounded border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none'
-  const textoFraco = escuro ? 'text-white/70' : 'text-ink-muted'
-  // Aviso discreto só quando a pessoa digitou algo que não fecha um número.
-  const celularIncompleto = telefone.trim() !== '' && !celularValido(digitosCelular(telefone))
-
   return (
-    <form onSubmit={onSubmit} className="space-y-4" noValidate>
-      <CheckoutCupom
-        id={id}
-        escuro={escuro}
-        rotuloCls={rotuloCls}
-        campoCls={campoCls}
-        abrirCupom={abrirCupom}
-        setAbrirCupom={setAbrirCupom}
-        cupom={cupom}
-        setCupom={setCupom}
-        aplicado={aplicado}
-        setAplicado={setAplicado}
-        checando={checando}
-        erroCupom={erroCupom}
-        aplicarCupom={aplicarCupom}
-      />
+    <MolduraAccent as="form" onSubmit={onSubmit} noValidate className="flex flex-col gap-5 p-5 sm:p-7">
+      <AvisoCancelado />
+      {qtdErros > 0 && (
+        <Aviso variante="erro" titulo={qtdErros === 1 ? 'Confira o campo marcado.' : `Confira os ${qtdErros} campos marcados.`} />
+      )}
+      {error && <Aviso variante="erro">{error}</Aviso>}
 
-      <CheckoutIndicacao
-        id={id}
-        escuro={escuro}
-        rotuloCls={rotuloCls}
-        campoCls={campoCls}
-        aberto={indicacao.aberto}
-        setAberto={indicacao.setAberto}
-        valor={indicacao.valor}
-        setValor={indicacao.setValor}
-      />
+      <div className="flex flex-col gap-3">
+        <div className="flex items-end justify-between gap-3">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <strong className="text-[17px] font-[650]">Pacote 2.000 VS</strong>
+            <span className="text-[14px] text-text-3">pagamento único, acesso vitalício</span>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-0.5 whitespace-nowrap tabular-nums">
+            <span className="text-[14px] text-text-4 line-through">de {priceBRL(site.fullPrice)}</span>
+            <span className="font-semi-condensed text-[32px] font-[800] leading-none">{priceBRL(site.price)}</span>
+          </div>
+        </div>
+        <p className="text-[14px] text-text-3">{CONTA_POR_MUSICA}</p>
+        <CheckoutCupom cupom={cupom} />
+      </div>
 
-      <div>
-        <label htmlFor={`${id}-nome`} className={rotuloCls}>
-          Seu nome <span aria-hidden="true" className={textoFraco}>*</span>
-        </label>
-        <input
-          id={`${id}-nome`}
+      <div className="flex flex-col gap-4 border-t border-line pt-5">
+        {logado && (
+          <Aviso variante="info" icone="usuario">
+            Você entrou na sua conta. Para o pacote ficar nela, use o e-mail dela abaixo.{' '}
+            <button type="button" onClick={sairDaConta} className="min-h-11 font-semibold underline underline-offset-[3px]">
+              Não é você? Sair
+            </button>
+          </Aviso>
+        )}
+        <Campo
+          rotulo="Seu nome"
           name="name"
-          type="text"
           autoComplete="name"
           autoCapitalize="words"
           required
           maxLength={80}
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          placeholder="Como devemos te chamar"
-          className={campoCls}
+          erro={erros.nome}
         />
-      </div>
-
-      <div>
-        <label htmlFor={`${id}-email`} className={rotuloCls}>
-          E-mail para receber o acesso <span aria-hidden="true" className={textoFraco}>*</span>
-        </label>
-        <input
-          id={`${id}-email`}
+        <Campo
+          rotulo="E-mail para receber o acesso"
+          tipo="email"
           name="email"
-          type="email"
           inputMode="email"
           autoComplete="email"
           autoCapitalize="off"
@@ -260,90 +243,65 @@ export default function CheckoutForm({ tom = 'claro', rotulo }) {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="voce@email.com"
-          aria-describedby={`${id}-ajuda`}
-          className={campoCls}
+          erro={erros.email}
         />
-        {!escuro && (
-          <p id={`${id}-ajuda`} className="mt-2 text-[12.5px] text-ink-muted">
-            É para esse endereço que enviamos o link do acervo. Confira antes de continuar.
-          </p>
-        )}
-      </div>
-
-      <div>
-        <label htmlFor={`${id}-celular`} className={rotuloCls}>
-          WhatsApp <span aria-hidden="true" className={textoFraco}>*</span>
-        </label>
-        <input
-          id={`${id}-celular`}
+        <Campo
+          rotulo="WhatsApp com DDD"
+          tipo="tel"
           name="tel"
-          type="tel"
           inputMode="tel"
-          autoComplete="tel"
+          autoComplete="tel-national"
           required
+          placeholder="(11) 91234-5678"
+          campoClassName="tabular-nums"
           value={telefone}
           onChange={(e) => setTelefone(mascaraCelular(e.target.value))}
-          placeholder="(27) 99999-9999"
-          aria-describedby={celularIncompleto ? `${id}-celular-aviso` : undefined}
-          className={campoCls}
+          erro={erros.telefone}
         />
-        {celularIncompleto && (
-          <p id={`${id}-celular-aviso`} className={`mt-1.5 text-[12.5px] ${textoFraco}`}>
-            Confira o número com DDD.
+        <CheckoutIndicacao
+          aberto={indicacao.aberto}
+          setAberto={indicacao.setAberto}
+          valor={indicacao.valor}
+          setValor={indicacao.setValor}
+        />
+        {lembrado && (
+          <p className="-mt-1 text-[14px] text-text-3">
+            Não é você?{' '}
+            <button type="button" onClick={limparLembrado} className="min-h-11 font-semibold text-ink underline underline-offset-4">
+              Limpar
+            </button>
           </p>
         )}
+        <p className="text-[13px] leading-[1.5] text-text-3">
+          Usamos seu e-mail e WhatsApp para enviar o acesso e, se a compra não for concluída, um lembrete.
+        </p>
       </div>
 
-      {lembrado && (
-        <p className={`-mt-1 text-[12.5px] ${textoFraco}`}>
-          Não é você?{' '}
-          <button
-            type="button"
-            onClick={limparLembrado}
-            className={`font-semibold underline underline-offset-4 ${escuro ? 'hover:text-white' : 'hover:text-ink'}`}
-          >
-            Limpar
-          </button>
-        </p>
-      )}
-
-      {error && (
-        <p
-          role="alert"
-          className="rounded border border-signal/30 bg-signal-wash px-4 py-3 text-[14px] font-medium text-ink"
-        >
-          {error}
-        </p>
-      )}
-
       <Turnstile {...anti.props} />
-      <button
-        type="submit"
-        disabled={loading}
-        className={`${escuro ? 'btn-glow py-[18px] text-[16px]' : 'btn-signal'} w-full disabled:opacity-60`}
-      >
-        {loading ? 'Abrindo pagamento seguro…' : aplicado ? `Pagar ${priceBRL(precoFinal)} e liberar acesso` : rotulo || `Pagar ${priceBRL(site.price)} e liberar acesso`}
-      </button>
-
-      <AvisoIndicacao aviso={indicacao.aviso} textoFraco={textoFraco} />
-
-      <p className={`text-center text-[12px] leading-relaxed ${textoFraco}`}>
-        Usamos seu e-mail e WhatsApp para enviar o acesso e, se a compra não for concluída, um lembrete.
-        Você pode cancelar a qualquer momento.
-      </p>
-
-      {escuro ? (
-        <p id={`${id}-ajuda`} className="text-center text-[12.5px] leading-relaxed text-white/70">
-          O link do acervo vai para esse e-mail. O pagamento é feito no ambiente do Mercado Pago.
-        </p>
-      ) : (
-        <p className="text-center text-[12.5px] leading-relaxed text-ink-muted">
-          Você será levado ao ambiente seguro do Mercado Pago para pagar com{' '}
-          <strong className="font-semibold text-ink-muted">Pix ou cartão, à vista ou parcelado</strong>.
-          Não guardamos dados de pagamento.
-        </p>
+      <Botao type="submit" variante="compra" tamanho="lg" bloco carregando={loading}>
+        {loading ? 'Abrindo o Mercado Pago…' : 'Continuar para o pagamento'}
+      </Botao>
+      {loading && (
+        <span role="status" className="sr-only">
+          Abrindo o Mercado Pago
+        </span>
       )}
-    </form>
+      <AvisoIndicacao aviso={indicacao.aviso} />
+
+      <div className="flex flex-col gap-2.5">
+        <p className="text-[14px] leading-[1.45] text-text-2">
+          Você termina o pagamento no Mercado Pago: Pix ou cartão em até 12x.
+        </p>
+        <ul className="flex flex-col gap-1.5 text-[14px] text-text-2">
+          {SELOS.map(([icone, texto]) => (
+            <li key={texto} className="flex items-center gap-2">
+              <Icone nome={icone} tamanho={16} />
+              {texto}
+            </li>
+          ))}
+        </ul>
+        <p className="text-[13px] text-text-3">Formas de pagamento aceitas: Pix · Visa · Mastercard · Elo</p>
+      </div>
+    </MolduraAccent>
   )
 }

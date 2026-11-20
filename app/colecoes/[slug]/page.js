@@ -1,15 +1,25 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Breadcrumbs, Faq, Check } from '@/components/ui'
+import Pagina from '@/components/catalogo/Pagina'
+import CabecaPagina from '@/components/catalogo/CabecaPagina'
+import PainelPacote from '@/components/catalogo/PainelPacote'
+import { CompraNoTopo } from '@/components/catalogo/SemPacote'
+import { H2 } from '@/components/catalogo/Titulos'
+import { LinhaMusica, ListaMusicas } from '@/components/catalogo/ListaMusicas'
+import { Icone, ListaSanfona, Quadrado } from '@/components/ds'
 import { getSong } from '@/lib/catalog'
-import { getFicha } from '@/lib/ficha'
-import { linhaDaFicha } from '@/lib/textos-musica'
-import { OG_IMAGEM, site, priceBRL, discountPct } from '@/lib/site'
+import { ESTILOS, tuplaDaMusica } from '@/lib/catalogo-lista'
+import { musicaDaTupla } from '@/lib/catalogo-util'
+import { getPost } from '@/lib/posts'
+import { OG_IMAGEM, site } from '@/lib/site'
 import { ldJson } from '@/lib/safe'
 import colecoes from '@/data/colecoes.json'
 
 // Modelo de coleção (item 4 do plano de SEO): Natal, Santa Ceia, batismo...
 // O conteúdo de cada uma fica em data/colecoes.json, que o Paulo pode editar.
+
+// Coleção que tem artigo no blog ganha o link no fim da página.
+const POST_DA_COLECAO = { natal: 'repertorio-de-natal-igreja-setlist-vs' }
 
 export function generateStaticParams() {
   return Object.keys(colecoes).map((slug) => ({ slug }))
@@ -29,7 +39,7 @@ export async function generateMetadata({ params }) {
 
 const comFicha = (slug) => {
   const song = getSong(slug)
-  return song && { song, ficha: getFicha(slug) }
+  return song && { song, musica: musicaDaTupla(tuplaDaMusica(song), ESTILOS) }
 }
 
 // Mapa de energia do setlist: a barra vai de 50 a 160 BPM, a faixa das músicas do acervo.
@@ -42,6 +52,7 @@ export default async function ColecaoPage({ params }) {
   const url = `${site.url}/colecoes/${slug}`
   const musicas = c.musicas.map(comFicha).filter(Boolean)
   const setlist = (c.setlist ?? []).map((i) => ({ ...comFicha(i.slug), motivo: i.motivo })).filter((i) => i.song)
+  const post = POST_DA_COLECAO[slug] && getPost(POST_DA_COLECAO[slug])
 
   const ld = [
     {
@@ -85,47 +96,28 @@ export default async function ColecaoPage({ params }) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(ld) }} />
-      <div className="shell pt-12">
-        <Breadcrumbs
-          items={[{ href: '/', label: 'Início' }, { href: '/colecoes', label: 'Coleções' }, { label: c.nome }]}
+      <Pagina espaco="clamp(32px,5cqi,56px)">
+        <CabecaPagina
+          migalhas={[{ href: '/', label: 'Início' }, { href: '/colecoes', label: 'Coleções' }, { label: c.nome }]}
+          sobre="Coleção"
+          titulo={c.h1}
+          intro={c.abertura}
+          grande
+          acao={<CompraNoTopo />}
         />
 
-        <header className="mt-8 max-w-3xl border-b border-line pb-12">
-          <h1 className="text-d1 text-ink [text-wrap:balance]">{c.h1}</h1>
-          <p className="mt-6 max-w-text font-read text-[18px] leading-[1.7] text-ink-muted">{c.abertura}</p>
-          <div className="mt-8">
-            <Link href="/assinar" className="btn-signal">
-              Liberar acesso vitalício por {priceBRL(site.price)}
-            </Link>
-          </div>
-        </header>
-
-        <section className="pt-16" aria-labelledby="musicas-titulo">
-          <h2 id="musicas-titulo" className="text-d3 text-ink">
+        <section aria-labelledby="musicas-titulo" className="flex flex-col gap-3.5">
+          <H2 id="musicas-titulo" pequeno>
             {musicas.length} músicas no acervo
-          </h2>
-          <ul className="mt-8 divide-y divide-line border-y-2 border-ink">
-            {musicas.map(({ song, ficha }) => {
-              const linha = linhaDaFicha(ficha)
-              return (
-                <li key={song.slug}>
-                  <Link
-                    href={`/musicas/${song.slug}`}
-                    className="group flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-4"
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-[17px] font-bold text-ink group-hover:underline">{song.title}</span>
-                      <span className="block text-[14.5px] text-ink-muted">{song.artist}</span>
-                    </span>
-                    {linha.length > 0 && <span className="figs text-[14.5px] text-ink-muted">{linha.join(' · ')}</span>}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-          <p className="mt-4 text-[13.5px] text-ink-muted">
+          </H2>
+          <ListaMusicas>
+            {musicas.map(({ musica }) => (
+              <LinhaMusica key={musica.slug} musica={musica} />
+            ))}
+          </ListaMusicas>
+          <p className="text-[14px] text-text-3">
             Tom e BPM são os da versão original e podem ser alterados no seu{' '}
-            <Link href="/como-usar#mudar-tom-e-bpm" className="link-quiet font-semibold">
+            <Link href="/como-usar#mudar-tom-e-bpm" className="font-semibold text-ink underline underline-offset-4">
               programa
             </Link>
             .
@@ -133,27 +125,25 @@ export default async function ColecaoPage({ params }) {
         </section>
 
         {setlist.length > 0 && (
-          <section className="pt-20 sm:pt-24" aria-labelledby="setlist-titulo">
-            <h2 id="setlist-titulo" className="text-d3 text-ink">
-              {c.setlistTitulo}
-            </h2>
-            <p className="mt-4 max-w-text text-[16px] leading-[1.7] text-ink-muted">{c.setlistTexto}</p>
-            <ol className="mt-10 max-w-4xl space-y-6">
-              {setlist.map(({ song, ficha, motivo }, i) => (
-                <li key={song.slug} className="grid grid-cols-[2.2rem_minmax(0,1fr)] gap-x-4">
-                  <span className="figs pt-0.5 text-[17px] font-bold text-ink">{i + 1}</span>
+          <section aria-labelledby="setlist-titulo" className="flex flex-col gap-3.5">
+            <H2 id="setlist-titulo">{c.setlistTitulo}</H2>
+            <p className="max-w-[680px] text-[17px] leading-[1.6] text-text-2">{c.setlistTexto}</p>
+            <ol className="m-0 mt-3 flex max-w-4xl list-none flex-col p-0">
+              {setlist.map(({ song, musica, motivo }, i) => (
+                <li key={song.slug} className="grid grid-cols-[2.2rem_minmax(0,1fr)] gap-x-3 border-t border-line py-4 last:border-b">
+                  <span className="figs pt-0.5 text-[17px] font-bold text-text-3">{i + 1}</span>
                   <div>
-                    <p className="text-[17px] font-bold text-ink">
-                      <Link href={`/musicas/${song.slug}`} className="hover:underline">
+                    <p className="text-[17px] font-semibold">
+                      <Link href={`/musicas/${song.slug}`} className="underline-offset-4 hover:underline">
                         {song.title}
                       </Link>{' '}
-                      <span className="font-normal text-ink-muted">· {song.artist}</span>
+                      <span className="font-normal text-text-3">· {song.artist}</span>
                     </p>
-                    {ficha?.bpm && (
-                      <span aria-hidden="true" className="mt-2 block h-[6px] bg-ink" style={{ width: largura(ficha.bpm) }} />
+                    {musica.bpm > 0 && (
+                      <span aria-hidden="true" className="mt-2 block h-1.5 bg-ink" style={{ width: largura(musica.bpm) }} />
                     )}
-                    <p className="mt-2 text-[15px] leading-[1.6] text-ink-muted">
-                      {ficha?.bpm && <span className="figs font-semibold text-ink">{ficha.bpm} BPM. </span>}
+                    <p className="mt-2 text-[15px] leading-[1.6] text-text-2">
+                      {musica.bpm > 0 && <span className="figs font-semibold text-ink">{musica.bpm} BPM. </span>}
                       {motivo}
                     </p>
                   </div>
@@ -163,47 +153,45 @@ export default async function ColecaoPage({ params }) {
           </section>
         )}
 
-        <section className="pt-20 sm:pt-24" aria-labelledby="dicas-titulo">
-          <h2 id="dicas-titulo" className="text-d3 text-ink">
-            {c.dicasTitulo}
-          </h2>
-          <ul className="mt-8 grid max-w-5xl gap-x-12 gap-y-8 md:grid-cols-2">
+        <section aria-labelledby="dicas-titulo" className="flex flex-col gap-3.5">
+          <H2 id="dicas-titulo">{c.dicasTitulo}</H2>
+          <ul className="m-0 mt-3 grid max-w-5xl list-none gap-x-12 gap-y-6 p-0 md:grid-cols-2">
             {c.dicas.map((d) => (
-              <li key={d.t} className="flex gap-4">
-                <Check className="mt-[9px] shrink-0" />
+              <li key={d.t} className="flex gap-3.5">
+                <Quadrado className="mt-2" />
                 <div>
-                  <p className="text-[17px] font-bold text-ink">{d.t}</p>
-                  <p className="mt-1.5 text-[15.5px] leading-[1.65] text-ink-muted">{d.d}</p>
+                  <p className="text-[17px] font-[650]">{d.t}</p>
+                  <p className="mt-1 text-[15.5px] leading-[1.6] text-text-2">{d.d}</p>
                 </div>
               </li>
             ))}
           </ul>
         </section>
 
-        <div className="panel mt-20 p-8 sm:mt-24 sm:p-11">
-          <p className="chip">Não vendemos por música</p>
-          <h2 className="text-d3 mt-6 text-white">Todas estas músicas vêm no pacote com mais de 2.000 multitracks.</h2>
-          <p className="mt-4 max-w-lg text-[15.5px] leading-[1.7] text-white/60">
-            {c.pacoteTexto}
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-6">
-            <Link href="/assinar" className="btn-signal">
-              Liberar acesso vitalício por {priceBRL(site.price)}
-            </Link>
-            <p className="text-[14px] text-white/55">
-              De <span className="line-through">{priceBRL(site.fullPrice)}</span>, com {discountPct}% de desconto no
-              lançamento
-            </p>
-          </div>
-        </div>
+        <PainelPacote
+          titulo="Todas estas músicas vêm no pacote com mais de 2.000 multitracks."
+          texto={c.pacoteTexto}
+          className="max-w-[560px]"
+        />
 
-        <section className="pt-20 sm:pt-24" aria-labelledby="faq-titulo">
-          <h2 id="faq-titulo" className="text-d3 text-ink">
-            {c.faqTitulo}
-          </h2>
-          <Faq items={c.faq} className="mt-8 max-w-4xl" />
+        <section aria-labelledby="faq-titulo" className="flex flex-col gap-3.5">
+          <H2 id="faq-titulo">{c.faqTitulo}</H2>
+          <ListaSanfona itens={c.faq.map((f) => ({ titulo: f.q, conteudo: f.a }))} className="max-w-4xl" />
         </section>
-      </div>
+
+        {post && (
+          <Link
+            href={`/blog/${post.slug}`}
+            className="flex min-h-[60px] items-center gap-3 border-y border-b-line border-t-ink py-2 hover:bg-surface"
+          >
+            <span className="flex flex-1 flex-col gap-0.5">
+              <span className="rotulo text-text-3">No blog</span>
+              <span className="text-[17px] font-[650]">{post.title}</span>
+            </span>
+            <Icone nome="seta-direita" tamanho={20} traco={1.5} />
+          </Link>
+        )}
+      </Pagina>
     </>
   )
 }

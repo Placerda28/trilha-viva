@@ -24,6 +24,7 @@ const paginas = {
   '/vs-gratis': '2026-10-21',
   '/bpm': '2026-10-22',
   '/afiliados': '2026-11-04',
+  '/palco': '2026-11-20',
 }
 
 // Data em que o modelo da página de música mudou para todas (ficha técnica real,
