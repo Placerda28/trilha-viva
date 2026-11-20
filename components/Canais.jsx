@@ -26,7 +26,7 @@ export const CANAIS_PREVIA = [
   { nome: 'Baixo', dest: 'PA', n: 70, arq: 'baixo' },
   { nome: 'Teclado / Piano', dest: 'PA', n: 58, arq: 'teclado' },
   { nome: 'Pads', dest: 'PA', n: 40, arq: 'pads' },
-  { nome: 'Vocal principal', dest: 'PA', n: 66, arq: 'vocal' },
+  { nome: 'Guitarra / Violão', dest: 'PA', n: 66, arq: 'guitarra' },
   { nome: 'Loops', dest: 'PA', n: 52, arq: 'loops' },
 ]
 export const PASTA_PREVIA = '/audio/previa/ousado-amor/'

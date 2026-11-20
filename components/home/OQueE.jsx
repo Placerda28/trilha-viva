@@ -6,9 +6,9 @@ import { H2, H3, LINK } from '@/components/venda/estilos'
 // Seção 2 da home (MUDANÇAS §3): o que é multitrack, ao lado do quadro de canais
 // com a prévia de 30 s. É a única prévia de áudio do site.
 //
-// Os mp3 ainda não foram enviados (public/audio/previa/ousado-amor/): sem eles, o
-// botão de tocar avisa "A prévia desta música ainda não está disponível." e nada
-// trava. Quando os arquivos chegarem, funciona sem mudar nada aqui.
+// Os mp3 ficam em public/audio/previa/ousado-amor/ (trecho 4:50–5:20 da VS, -6 dB
+// por canal para a soma dos 8 não estourar). Se faltarem, o botão de tocar avisa
+// "A prévia desta música ainda não está disponível." e nada trava.
 
 const SAIDAS = [
   ['Saída 1, fones.', 'Clique e guia vão só para o baterista e para quem conduz.'],
