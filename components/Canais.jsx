@@ -6,11 +6,11 @@ import { Icone } from './ds'
 // Quadro de canais da música (MUDANÇAS §13) e, com `previa`, o player de 30 s.
 //
 //   <Canais musica="Ousado Amor" artista="Vigília dos Asafes" canais={lista} />          // só o quadro
-//   <Canais previa pasta="/audio/previa/ousado-amor/" tema="escuro" ... />                // player
+//   <Canais previa pasta="/audio/previa/obediencia/" tema="escuro" ... />                 // player
 //
 // `canais`: [{ nome, dest: 'FONE' | 'PA', n: 0-100 (nível do medidor), sinal?: true, arq?: 'clique' }].
 // `sinal` marca clique e guia (traço vermelho ao lado do nome). Sem `canais`, usa
-// os 8 da prévia do Ousado Amor. Dado de música: SÓ da lista real do catálogo
+// os 8 da prévia de Obediência. Dado de música: SÓ da lista real do catálogo
 // (lib/ficha.js); o padrão existe para o player de demonstração.
 //
 // Player: 8 <audio> disparados juntos, um por canal; o nome do canal liga e
@@ -19,17 +19,20 @@ import { Icone } from './ds'
 // `pasta` + arq + '.mp3' (preload="none": nada baixa antes do clique). Se um
 // arquivo não existir ainda, o player avisa e volta ao início, sem travar a página.
 
+// Prévia: Obediência (FHOP Music), trecho 2:40–3:10 da VS, -3 dB por canal para
+// a soma dos 8 não estourar. A VS não tem vocal.
 export const CANAIS_PREVIA = [
   { nome: 'Clique', dest: 'FONE', n: 62, sinal: true, arq: 'clique' },
   { nome: 'Guia', dest: 'FONE', n: 46, sinal: true, arq: 'guia' },
   { nome: 'Bateria', dest: 'PA', n: 84, arq: 'bateria' },
   { nome: 'Baixo', dest: 'PA', n: 70, arq: 'baixo' },
-  { nome: 'Teclado / Piano', dest: 'PA', n: 58, arq: 'teclado' },
-  { nome: 'Pads', dest: 'PA', n: 40, arq: 'pads' },
-  { nome: 'Guitarra / Violão', dest: 'PA', n: 66, arq: 'guitarra' },
+  { nome: 'Guitarras', dest: 'PA', n: 66, arq: 'guitarras' },
+  { nome: 'Teclados', dest: 'PA', n: 58, arq: 'teclados' },
+  { nome: 'Cordas e sopros', dest: 'PA', n: 44, arq: 'cordas' },
   { nome: 'Loops', dest: 'PA', n: 52, arq: 'loops' },
 ]
-export const PASTA_PREVIA = '/audio/previa/ousado-amor/'
+export const PASTA_PREVIA = '/audio/previa/obediencia/'
+const CAPA_PREVIA = '/capas/obediencia-fhop-music.webp'
 const DURACAO = 30
 
 const TEMAS = {
@@ -61,12 +64,13 @@ const reduzMovimento = () =>
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 export default function Canais({
-  musica = 'Ousado Amor',
-  artista = 'Vigília dos Asafes',
+  musica = 'Obediência',
+  artista = 'FHOP Music',
   canais = CANAIS_PREVIA,
   tema = 'claro',
   previa = false,
   pasta = PASTA_PREVIA,
+  capa = CAPA_PREVIA,
   limite,
   className = '',
 }) {
@@ -171,6 +175,10 @@ export default function Canais({
             >
               <Icone nome={tocando ? 'pausa' : 'play'} tamanho={20} />
             </button>
+          )}
+          {previa && capa && (
+            // eslint-disable-next-line @next/next/no-img-element -- miniatura de 4 KB, sem custo no Worker
+            <img src={capa} alt="" width={48} height={48} loading="lazy" decoding="async" className="h-12 w-12 shrink-0 object-cover" />
           )}
           <div className="flex min-w-0 flex-col gap-0.5">
             <strong className="text-[17px] font-[650] leading-[1.25]">{musica}</strong>
