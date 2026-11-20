@@ -1,15 +1,28 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CHAVE_EMAIL_ENTRAR } from '@/lib/pos-pagamento'
+import { Aviso, Botao, Campo } from '@/components/ds'
+import CampoSenha from '@/components/acesso/CampoSenha'
+import { LinkEnviado, LinkVencido, SenhaTrocada, TITULO } from '@/components/acesso/Estados'
+import { CHAVE_EMAIL_ENTRAR, mascararEmail } from '@/lib/pos-pagamento'
 import { voltaPermitida } from '@/lib/afiliados-campos'
+import { EMAIL_SUPORTE } from '@/lib/site'
 
-// Uma peça para as quatro telas de conta. O que muda entre elas é pouco —
-// quais campos aparecem, para onde o formulário vai e o que dizer depois —
-// e manter isso junto evita quatro cópias que envelhecem diferente.
+// Uma peça para as telas de conta (MUDANÇAS §6): /entrar, /primeiro-acesso,
+// /criar-senha, /recuperar e /redefinir. O que muda entre elas é pouco (quais
+// campos aparecem, para onde o formulário vai e o que dizer depois), e manter
+// isso junto evita cinco cópias que envelhecem diferente. As rotas da API, as
+// regras de senha (mínimo de 8 caracteres) e a validade dos links são as de sempre.
+//
+// `embutido`: dentro da /sucesso (AccessPanel), sem título nem links de rodapé.
+// `emailFixo`: na /sucesso o e-mail vem da compra; aparece travado.
+const DESTINO = '/minha-conta/acervo'
+
 const MODOS = {
   entrar: {
     rota: '/api/conta/entrar',
+    titulo: 'Entrar',
+    sub: 'Use o e-mail da sua compra.',
     botao: 'Entrar',
     enviando: 'Entrando…',
     pedeEmail: true,
@@ -18,7 +31,9 @@ const MODOS = {
   },
   criar: {
     rota: '/api/conta/criar',
-    botao: 'Criar senha e abrir o acervo',
+    titulo: 'Crie sua senha',
+    sub: 'É o último passo. A conta usa o e-mail da sua compra.',
+    botao: 'Criar senha e abrir Minhas VS',
     enviando: 'Criando sua conta…',
     pedeEmail: false,
     pedeSenha: true,
@@ -27,7 +42,9 @@ const MODOS = {
   // Comprou e fechou a tela sem criar a senha: pede o link de criar senha.
   primeiro: {
     rota: '/api/conta/primeiro-acesso',
-    botao: 'Enviar link para criar minha senha',
+    titulo: 'Primeiro acesso',
+    sub: 'Comprou e ainda não criou sua senha? Digite o e-mail que você usou no pagamento. Mandamos um link para criar a senha.',
+    botao: 'Enviar link',
     enviando: 'Enviando…',
     pedeEmail: true,
     pedeSenha: false,
@@ -35,7 +52,9 @@ const MODOS = {
   },
   recuperar: {
     rota: '/api/conta/recuperar',
-    botao: 'Enviar link de redefinição',
+    titulo: 'Esqueci a senha',
+    sub: 'Digite seu e-mail. Mandamos um link para você criar uma senha nova.',
+    botao: 'Enviar link',
     enviando: 'Enviando…',
     pedeEmail: true,
     pedeSenha: false,
@@ -43,7 +62,9 @@ const MODOS = {
   },
   redefinir: {
     rota: '/api/conta/redefinir',
-    botao: 'Salvar nova senha',
+    titulo: 'Senha nova',
+    sub: 'Escolha a nova senha. Ao salvar, quem estiver logado nesta conta em outros aparelhos será desconectado.',
+    botao: 'Salvar senha nova',
     enviando: 'Salvando…',
     pedeEmail: false,
     pedeSenha: true,
@@ -51,46 +72,88 @@ const MODOS = {
   },
 }
 
-const campo =
-  'mt-2 w-full rounded border border-line bg-white px-4 py-3.5 text-[15.5px] text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none'
+const EMAIL_OK = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+const LINK = 'inline-flex min-h-11 items-center font-semibold text-ink underline underline-offset-[3px]'
 
-// emailFixo: na /sucesso o e-mail vem da compra. Ele aparece preenchido e
-// travado, só para a pessoa saber com qual e-mail vai entrar depois.
-export default function ContaForm({ modo, emailFixo = '' }) {
+// Mensagem do servidor que diz que o link de uso único já foi usado ou venceu.
+const linkVencido = (status, texto) => status === 410 || (status === 400 && /link/i.test(texto || ''))
+
+function Rodape({ modo }) {
+  if (modo === 'entrar') {
+    return (
+      <div className="flex flex-col border-t border-line pt-3 text-[15px] text-text-2">
+        <p className="flex flex-wrap items-center gap-x-1.5">
+          Comprou e ainda não tem senha?{' '}
+          <a href="/primeiro-acesso" className={LINK}>
+            Fazer o primeiro acesso
+          </a>
+        </p>
+        <p className="flex flex-wrap items-center gap-x-1.5">
+          Ainda não tem o pacote?{' '}
+          <a href="/assinar" className={LINK}>
+            Liberar as 2.000 VS
+          </a>
+        </p>
+      </div>
+    )
+  }
+  if (modo === 'redefinir') {
+    return (
+      <p className="border-t border-line pt-3 text-[15px] text-text-2">
+        O link vence em 1 hora e vale uma vez só. Se ele não funcionar mais,{' '}
+        <a href="/recuperar" className={LINK}>
+          peça outro
+        </a>
+        .
+      </p>
+    )
+  }
+  return (
+    <p className="flex flex-wrap items-center gap-x-1.5 border-t border-line pt-3 text-[15px] text-text-2">
+      {modo === 'criar' ? 'Já criou a senha antes?' : 'Já tem senha?'}{' '}
+      <a href="/entrar" className={LINK}>
+        Entrar
+      </a>
+    </p>
+  )
+}
+
+export default function ContaForm({ modo, emailFixo = '', embutido = false }) {
   const cfg = MODOS[modo]
+  const exigeChave = modo === 'criar' || modo === 'redefinir'
 
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [senha2, setSenha2] = useState('')
   const [mostrar, setMostrar] = useState(false)
   const [enviando, setEnviando] = useState(false)
-  const [erro, setErro] = useState('')
-  const [aviso, setAviso] = useState('')
-  const [pronto, setPronto] = useState('')
-  const [token, setToken] = useState('')
-  const [sessionId, setSessionId] = useState('')
-  const [paymentId, setPaymentId] = useState('')
-  const [ref, setRef] = useState('')
-  // Para onde ir depois de entrar ou criar a senha. Só passa um caminho da
-  // lista fechada de lib/afiliados-campos.js; qualquer outro vira o acervo.
-  const [volta, setVolta] = useState('')
+  const [erros, setErros] = useState({}) // { geral, email, senha, senha2 }
+  const [aviso, setAviso] = useState(null) // { variante, texto }
+  const [enviado, setEnviado] = useState(null) // { mensagem } (primeiro e recuperar)
+  const [vencido, setVencido] = useState(false)
+  const [trocada, setTrocada] = useState(false)
+  const [chave, setChave] = useState(null) // { token, sessionId, paymentId, ref, volta }
 
   // O endereço é lido no navegador, e não no servidor, de propósito: ler
   // parâmetro no servidor obrigaria a montar a página a cada visita, e essas
   // telas ficam prontas de antemão.
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
-    setToken(p.get('t') || '')
-    setSessionId(p.get('session_id') || p.get('s') || '')
-    setPaymentId(p.get('payment_id') || '')
-    setRef(p.get('external_reference') || '')
-    setVolta(voltaPermitida(p.get('volta')))
-    if (p.get('criada')) setAviso('Senha criada. Entre com ela abaixo.')
-    if (p.get('expirou')) setAviso('Sua sessão expirou. Entre de novo para continuar.')
+    setChave({
+      token: p.get('t') || '',
+      sessionId: p.get('session_id') || p.get('s') || '',
+      paymentId: p.get('payment_id') || '',
+      ref: p.get('external_reference') || '',
+      // Para onde ir depois de entrar ou criar a senha. Só passa um caminho da
+      // lista fechada de lib/afiliados-campos.js; qualquer outro vira Minhas VS.
+      volta: voltaPermitida(p.get('volta')),
+    })
+    if (p.get('criada')) setAviso({ variante: 'ok', texto: 'Senha criada. Entre com ela abaixo.' })
+    if (p.get('expirou')) setAviso({ variante: 'info', texto: 'Sua sessão expirou. Entre de novo para continuar.' })
     // Vindo da /sucesso de quem já tem senha: o e-mail chega pela memória da
     // aba (nunca pelo endereço) e é apagado depois de lido.
     if (p.get('ja')) {
-      setAviso('Pagamento confirmado. Você já tem uma senha com este e-mail: entre com ela.')
+      setAviso({ variante: 'info', texto: 'Pagamento confirmado. Você já tem uma senha com este e-mail: entre com ela.' })
       try {
         const guardado = sessionStorage.getItem(CHAVE_EMAIL_ENTRAR)
         if (guardado) setEmail(guardado)
@@ -101,190 +164,206 @@ export default function ContaForm({ modo, emailFixo = '' }) {
     }
   }, [])
 
+  const corpo = () =>
+    JSON.stringify({
+      email,
+      senha,
+      token: chave.token,
+      session_id: chave.sessionId,
+      payment_id: chave.paymentId,
+      ref: chave.ref,
+    })
+
+  // primeiro e recuperar: o servidor responde igual exista a conta ou não.
+  async function pedirLink() {
+    try {
+      const res = await fetch(cfg.rota, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: corpo() })
+      const dados = await res.json().catch(() => ({}))
+      // Respeitar o erro do servidor aqui é essencial: sem isto, uma resposta
+      // "o envio de e-mail não está ativo" virava a mesma mensagem de sucesso, e a
+      // tela mentia para quem estava esperando o link.
+      if (!res.ok || !dados.ok) return { erro: dados.erro || 'Não consegui enviar agora. Tente de novo em instantes.' }
+      return { mensagem: dados.mensagem || 'Se existir uma conta com esse e-mail, o link chega em instantes.' }
+    } catch {
+      return { erro: 'Falha de conexão. Confira sua internet e tente de novo.' }
+    }
+  }
+
+  async function reenviar() {
+    const r = await pedirLink()
+    if (r.erro) {
+      setEnviado(null)
+      setErros({ geral: r.erro })
+    } else {
+      setEnviado({ mensagem: r.mensagem })
+    }
+  }
+
   async function enviar(e) {
     e.preventDefault()
-    setErro('')
-    setAviso('')
+    setErros({})
+    setAviso(null)
 
-    if (cfg.pedeSenha && senha.length < 8) {
-      setErro('A senha precisa ter pelo menos 8 caracteres.')
-      return
+    const novos = {}
+    if (cfg.pedeEmail && !EMAIL_OK.test(email.trim())) {
+      novos.email = email.trim() ? 'Esse e-mail parece incompleto. Confira o que vem depois do @.' : 'Escreva o e-mail da sua compra.'
     }
-    if (cfg.confirma && senha !== senha2) {
-      setErro('As duas senhas não são iguais.')
+    if (modo === 'entrar' && !senha) novos.senha = 'Escreva a sua senha.'
+    if (cfg.confirma && senha.length < 8) novos.senha = 'A senha precisa ter pelo menos 8 caracteres.'
+    if (cfg.confirma && !novos.senha && senha !== senha2) novos.senha2 = 'As duas senhas não são iguais.'
+    if (Object.keys(novos).length) {
+      setErros(novos)
       return
     }
 
     setEnviando(true)
-    try {
-      const res = await fetch(cfg.rota, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha, token, session_id: sessionId, payment_id: paymentId, ref }),
-      })
-      const dados = await res.json().catch(() => ({}))
-
-      if (modo === 'recuperar' || modo === 'primeiro') {
-        // Respeitar o erro do servidor aqui é essencial: sem isto, uma
-        // resposta "o envio de e-mail não está ativo" virava a mesma mensagem
-        // de sucesso, e a tela mentia para quem estava esperando o link.
-        if (!res.ok || !dados.ok) {
-          setErro(dados.erro || 'Não consegui enviar agora. Tente de novo em instantes.')
-          setEnviando(false)
-          return
-        }
-        setPronto(dados.mensagem || 'Se existir uma conta com esse e-mail, o link chega em instantes.')
-        setEnviando(false)
-        return
-      }
-
-      if (!res.ok || !dados.ok) {
-        if (dados.jaExiste) {
-          window.location.href = '/entrar?criada=1' + (volta ? '&volta=' + encodeURIComponent(volta) : '')
-          return
-        }
-        setErro(dados.erro || 'Não consegui concluir agora. Tente de novo.')
-        setEnviando(false)
-        return
-      }
-
-      window.location.href = volta || '/acervo'
-    } catch {
-      setErro('Falha de conexão. Confira sua internet e tente de novo.')
+    if (!cfg.pedeSenha) {
+      const r = await pedirLink()
       setEnviando(false)
+      if (r.erro) setErros({ geral: r.erro })
+      else setEnviado({ mensagem: r.mensagem })
+      return
     }
+
+    try {
+      const res = await fetch(cfg.rota, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: corpo() })
+      const dados = await res.json().catch(() => ({}))
+      if (res.ok && dados.ok) {
+        if (modo === 'redefinir') {
+          setTrocada(true)
+          return
+        }
+        window.location.href = chave.volta || DESTINO
+        return
+      }
+      if (dados.jaExiste) {
+        window.location.href = '/entrar?criada=1' + (chave.volta ? '&volta=' + encodeURIComponent(chave.volta) : '')
+        return
+      }
+      if (exigeChave && linkVencido(res.status, dados.erro)) {
+        setVencido(true)
+        return
+      }
+      setErros({ geral: modo === 'entrar' && res.status === 401 ? 'senha-errada' : dados.erro || 'Não consegui concluir agora. Tente de novo.' })
+    } catch {
+      setErros({ geral: 'Falha de conexão. Confira sua internet e tente de novo.' })
+    }
+    setEnviando(false)
   }
 
-  // Sem moldura própria: quem chama esta peça já desenha o cartão em volta.
-  // Com moldura aqui virava cartão dentro de cartão, com duas bordas.
-  if (pronto) {
+  // Páginas de link único sem nenhuma chave no endereço: o link está vencido ou
+  // incompleto. Até ler o endereço, só reserva o espaço (sem piscar o formulário).
+  if (exigeChave && !chave) return <div className="min-h-[320px]" />
+  const semChave = exigeChave && !chave.token && !chave.sessionId && !(chave.paymentId && chave.ref)
+  if (vencido || semChave) return <LinkVencido modo={modo} />
+  if (trocada) return <SenhaTrocada />
+
+  const cabeca = !embutido && (
+    <div className="flex flex-col gap-2">
+      <h1 className={TITULO}>{cfg.titulo}</h1>
+      <p className="text-[16px] leading-[1.5] text-text-2 [text-wrap:pretty]">{cfg.sub}</p>
+    </div>
+  )
+
+  if (enviado) {
     return (
-      <div>
-        <p className="text-[15px] leading-relaxed text-ink">{pronto}</p>
-        <p className="mt-3 text-[13px] leading-relaxed text-ink-muted">
-          Não chegou em alguns minutos? Confira a caixa de spam ou a aba Promoções.
-        </p>
-        <a href="/entrar" className="link-signal mt-5 inline-block text-[14px] font-semibold">
-          Voltar para a entrada
-        </a>
+      <div className="flex flex-col gap-6">
+        {cabeca}
+        <LinkEnviado
+          titulo={`Confira o e-mail ${mascararEmail(email) || email}`}
+          texto={enviado.mensagem}
+          onReenviar={reenviar}
+          extra={
+            modo === 'primeiro' && (
+              <span className="text-[14px] leading-[1.5] text-text-3">
+                Confira se é o mesmo e-mail do pagamento. Ainda sem o link? Escreva para{' '}
+                <a href={`mailto:${EMAIL_SUPORTE}`} className="font-semibold text-ink underline underline-offset-[3px]">
+                  {EMAIL_SUPORTE}
+                </a>
+                .
+              </span>
+            )
+          }
+        />
+        {!embutido && <Rodape modo={modo} />}
       </div>
     )
   }
 
+  const geral =
+    erros.geral === 'senha-errada' ? (
+      <>
+        E-mail ou senha não conferem. Confira e tente de novo, ou{' '}
+        <a href="/recuperar" className="font-semibold underline underline-offset-[3px]">
+          crie uma senha nova
+        </a>
+        .
+      </>
+    ) : (
+      erros.geral
+    )
+
   return (
-    <form onSubmit={enviar} className="space-y-4" noValidate>
-      {aviso && (
-        <p className="rounded border border-line bg-mist px-4 py-3 text-[14px] text-ink">{aviso}</p>
-      )}
+    <div className="flex flex-col gap-6">
+      {cabeca}
+      <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
+        {aviso && <Aviso variante={aviso.variante}>{aviso.texto}</Aviso>}
+        {geral && <Aviso variante="erro">{geral}</Aviso>}
 
-      {emailFixo && !cfg.pedeEmail && (
-        <div>
-          <label htmlFor="email-fixo" className="block text-[13px] font-semibold text-ink">
-            E-mail da compra
-          </label>
-          <input
-            id="email-fixo"
-            type="email"
-            value={emailFixo}
-            readOnly
-            aria-readonly="true"
-            autoComplete="username"
-            className={campo.replace('bg-white', 'bg-mist')}
-          />
-        </div>
-      )}
-
-      {cfg.pedeEmail && (
-        <div>
-          <label htmlFor="email" className="block text-[13px] font-semibold text-ink">
-            E-mail da compra
-          </label>
-          <input
-            id="email"
+        {emailFixo && !cfg.pedeEmail && (
+          <Campo rotulo="E-mail da compra" tipo="email" value={emailFixo} readOnly autoComplete="username" campoClassName="bg-surface" />
+        )}
+        {cfg.pedeEmail && (
+          <Campo
+            rotulo="E-mail"
+            tipo="email"
             name="email"
-            type="email"
             inputMode="email"
             autoComplete="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="voce@email.com"
-            className={campo}
+            erro={erros.email}
           />
-        </div>
-      )}
-
-      {cfg.pedeSenha && (
-        <div>
-          <label htmlFor="senha" className="block text-[13px] font-semibold text-ink">
-            {modo === 'entrar' ? 'Sua senha' : 'Escolha uma senha'}
-          </label>
-          <input
-            id="senha"
+        )}
+        {cfg.pedeSenha && (
+          <CampoSenha
+            rotulo={modo === 'redefinir' ? 'Senha nova' : 'Senha'}
             name="senha"
-            type={mostrar ? 'text' : 'password'}
             autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'}
             required
-            minLength={8}
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
-            placeholder={modo === 'entrar' ? 'Sua senha' : 'Pelo menos 8 caracteres'}
-            className={campo}
+            mostrar={mostrar}
+            onAlternar={() => setMostrar((v) => !v)}
+            ajuda={cfg.confirma ? 'Use pelo menos 8 caracteres.' : undefined}
+            erro={erros.senha}
+            extra={
+              modo === 'entrar' && (
+                <a href="/recuperar" className="inline-flex min-h-11 items-center text-[14px] text-ink underline underline-offset-[3px]">
+                  Esqueci a senha
+                </a>
+              )
+            }
           />
-        </div>
-      )}
-
-      {cfg.confirma && (
-        <div>
-          <label htmlFor="senha2" className="block text-[13px] font-semibold text-ink">
-            Repita a senha
-          </label>
-          <input
-            id="senha2"
+        )}
+        {cfg.confirma && (
+          <CampoSenha
+            rotulo="Repita a senha"
             name="senha2"
-            type={mostrar ? 'text' : 'password'}
             autoComplete="new-password"
             required
             value={senha2}
             onChange={(e) => setSenha2(e.target.value)}
-            placeholder="A mesma senha de novo"
-            className={campo}
+            mostrar={mostrar}
+            erro={erros.senha2}
           />
-        </div>
-      )}
-
-      {cfg.pedeSenha && (
-        <label className="flex items-center gap-2 text-[13px] text-ink-muted">
-          <input
-            type="checkbox"
-            checked={mostrar}
-            onChange={(e) => setMostrar(e.target.checked)}
-            className="h-4 w-4 accent-signal-deep"
-          />
-          Mostrar senha
-        </label>
-      )}
-
-      {erro && (
-        <p
-          role="alert"
-          className="rounded border border-signal/30 bg-signal-wash px-4 py-3 text-[14px] font-medium text-ink"
-        >
-          {erro}
-        </p>
-      )}
-
-      <button type="submit" disabled={enviando} className="btn-signal w-full disabled:opacity-60">
-        {enviando ? cfg.enviando : cfg.botao}
-      </button>
-
-      {modo === 'entrar' && (
-        <p className="text-center text-[13px] text-ink-muted">
-          <a href="/recuperar" className="link-signal font-semibold">
-            Esqueci minha senha
-          </a>
-        </p>
-      )}
-    </form>
+        )}
+        <Botao type="submit" tamanho="lg" bloco carregando={enviando}>
+          {enviando ? cfg.enviando : cfg.botao}
+        </Botao>
+      </form>
+      {!embutido && <Rodape modo={modo} />}
+    </div>
   )
 }
