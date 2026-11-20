@@ -7,6 +7,8 @@
 //   node scripts/buscar-capas.mjs --aprovar a,b   promove capas "em dúvida" para public/capas
 //   node scripts/buscar-capas.mjs --reavaliar     reaplica a regra de nota às já baixadas
 //   node scripts/buscar-capas.mjs --usar-zips     capas de dentro dos zips (capas-dos-zips.py) passam na frente
+//   node scripts/buscar-capas.mjs --vazias        webp transparente de 1 px para quem ficou sem capa
+// Depois de buscar ou aprovar, rode --vazias de novo (música nova no acervo também).
 //
 // Fontes: Deezer (API aberta, rápida) e, se não achar, iTunes (Apple). Cada achado
 // recebe uma nota pela semelhança do título e do artista:
@@ -19,7 +21,7 @@
 // A capa vai em 112 px (o tamanho da lista da home), webp, poucos KB: o Worker
 // tem 10 ms de CPU, então é <img> simples, nada de otimizar imagem no servidor.
 // O endereço original fica no CSV para baixar maior depois, se precisar.
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
@@ -228,11 +230,32 @@ if (args.includes('--usar-zips')) {
   process.exit(0)
 }
 
+// Música sem capa ganha um webp transparente de 1 px (VAZIA): o navegador carrega
+// poucos bytes em vez da página 404 inteira (29 KB) e as iniciais aparecem por baixo.
+// Arquivo desse tamanho conta como "sem capa" para buscar de novo.
+const VAZIA = 200
+function temCapa(slug) {
+  const f = join(PUB, slug + '.webp')
+  return existsSync(f) && statSync(f).size > VAZIA
+}
+if (args.includes('--vazias')) {
+  let n = 0
+  for (const s of songs) {
+    if (temCapa(s.slug)) continue
+    await sharp({ create: { width: 1, height: 1, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+      .webp({ lossless: true })
+      .toFile(join(PUB, s.slug + '.webp'))
+    n++
+  }
+  console.log('capas vazias (transparentes) gravadas:', n)
+  process.exit(0)
+}
+
 const refazer = args.includes('--refazer')
 const limite = Number(valor('--limite')) || Infinity
 const so = valor('--so')?.split(',').map((s) => s.trim())
 const fila = songs
-  .filter((s) => !MANUAIS.has(s.slug) && (so ? so.includes(s.slug) : refazer || !existsSync(join(PUB, s.slug + '.webp'))))
+  .filter((s) => !MANUAIS.has(s.slug) && (so ? so.includes(s.slug) : refazer || !temCapa(s.slug)))
   .slice(0, limite)
 console.log(`${fila.length} músicas para buscar (de ${songs.length})`)
 
