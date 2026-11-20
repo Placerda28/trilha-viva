@@ -100,8 +100,8 @@ export default function AjudaConta({ nome = '', email = '' }) {
           <a href="/como-usar" className={LINK}>
             Como usar multitrack
           </a>
-          <a href="/palco/ajuda" className={LINK}>
-            Ajuda do Palco
+          <a href="/palco" className={LINK}>
+            Sobre o Palco
           </a>
           <a href="/termos" className={LINK}>
             Termos de uso

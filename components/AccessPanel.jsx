@@ -3,7 +3,6 @@
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { Botao } from '@/components/ds'
-import { useUsuario } from '@/components/usuario'
 import PagamentoAprovado from '@/components/sucesso/PagamentoAprovado'
 import PagamentoPendente from '@/components/sucesso/PagamentoPendente'
 import { Cabeca, PaginaSucesso } from '@/components/sucesso/Pecas'
@@ -29,7 +28,6 @@ export default function AccessPanel({ convite }) {
   const [state, setState] = useState({ status: temCompra ? 'loading' : 'missing' })
   const [passo, setPasso] = useState(temCompra ? 'esperar' : 'missing')
   const [rodada, setRodada] = useState(0)
-  const logado = useUsuario() !== 'visitante'
 
   const consultar = useCallback(async () => {
     try {
@@ -122,7 +120,7 @@ export default function AccessPanel({ convite }) {
     tela = <PagamentoPendente momento="esgotado" state={state} onVerificar={verificar} />
   } else if (passo === 'senha' || passo === 'entrar') {
     tela = (
-      <PagamentoAprovado state={state} passo={passo} logado={logado} paymentId={paymentId} convite={convite} />
+      <PagamentoAprovado state={state} passo={passo} paymentId={paymentId} convite={convite} />
     )
   } else {
     const recusado = passo === 'recusado'

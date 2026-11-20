@@ -49,7 +49,7 @@ export function AcaoDownload({ musica, acabou, repetido, onBaixar }) {
         <Icone nome="baixar" tamanho={18} />
         <span className="hidden sm:inline">Escolher versão ({musica.variantes.length})</span>
       </button>
-      <DialogContent className="max-w-[min(480px,calc(100vw-2rem))] gap-3.5 rounded-none border-ink p-6 shadow-[0_12px_32px_rgba(0,0,0,.25)]">
+      <DialogContent className="max-h-[85vh] max-w-[min(480px,calc(100vw-2rem))] gap-3.5 overflow-y-auto rounded-none border-ink p-6 shadow-[0_12px_32px_rgba(0,0,0,.25)]">
         <DialogTitle className="font-semi-condensed pr-10 text-[24px] font-bold leading-[1.1]">{musica.title}</DialogTitle>
         <p className="text-[15px] leading-[1.5] text-text-2">
           Escolha o arquivo. Cada download conta no limite de hoje.

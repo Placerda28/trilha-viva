@@ -46,7 +46,7 @@ function linhasDoPedido(state, paymentId) {
   ].filter(Boolean)
 }
 
-export default function PagamentoAprovado({ state, passo, logado, paymentId, convite }) {
+export default function PagamentoAprovado({ state, passo, paymentId, convite }) {
   const destino = state.email || state.emailMascarado
   const criaAqui = passo === 'senha'
   return (
@@ -83,15 +83,9 @@ export default function PagamentoAprovado({ state, passo, logado, paymentId, con
                   : 'Termine agora, nesta tela. Se fechar antes, use "Primeiro acesso" na página de entrada com este mesmo e-mail.'}
               </span>
             </>
-          ) : logado ? (
-            <>
-              <strong className={T}>Abra Minhas VS</strong>
-              <span className={D}>Você já está na sua conta. O acervo inteiro está liberado.</span>
-              <Botao href="/minha-conta/acervo" tamanho="md" className="self-start">
-                Abrir Minhas VS
-              </Botao>
-            </>
           ) : (
+            // Sempre "Entrar", mesmo com sessão aberta: a sessão do navegador pode
+            // ser de outra conta que não a do e-mail da compra.
             <>
               <strong className={T}>Entre na sua conta</strong>
               <span className={D}>Você já tem uma senha com este e-mail. Entre para abrir as VS.</span>
